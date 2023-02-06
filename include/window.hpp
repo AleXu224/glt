@@ -1,0 +1,30 @@
+#ifndef SQUI_WINDOW_HPP
+#define SQUI_WINDOW_HPP
+#include "glad/glad.h"
+#define GLFW_INCLUDE_NONE
+#include "GLFW/glfw3.h"
+#include "chrono"
+#include "memory"
+#include "renderer.hpp"
+
+using namespace std::chrono_literals;
+
+namespace squi {
+	class Window {
+		std::shared_ptr<GLFWwindow> window;
+		std::chrono::duration<double> deltaTime = 0s;
+
+		static void glfwError(int id, const char *description);
+
+	public:
+		Window();
+
+		void run();
+
+		Window(const Window &) = delete;
+		Window &operator=(const Window &) = delete;
+
+		operator GLFWwindow *() const { return window.get(); }
+	};
+}// namespace squi
+#endif

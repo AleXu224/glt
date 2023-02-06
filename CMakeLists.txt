@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.23)
+project(glt VERSION 0.1.0)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -fsave-optimization-record")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+
+file(GLOB_RECURSE all_files CONFIGURE_DEPENDS "src/*.cpp" "include/*.h")
+
+add_executable(glt main.cpp ${all_files})
+
+target_include_directories(glt PUBLIC include)
+
+# find_package(OpenGL REQUIRED)
+# include_directories(${OPENGL_INCLUDE_DIRS})
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(glad CONFIG REQUIRED)
+find_package(freetype-gl CONFIG REQUIRED)
+
+# target_link_libraries(glt PRIVATE ${OPENGL_LIBRARIES})
+target_link_libraries(glt PRIVATE glfw)
+target_link_libraries(glt PRIVATE glm::glm)
+target_link_libraries(glt PRIVATE glad::glad)
+target_link_libraries(glt PRIVATE freetype-gl)
+target_link_libraries(glt PRIVATE "Dwmapi.lib")
