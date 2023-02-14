@@ -49,6 +49,7 @@ Window::Window() {
 }
 
 void Window::run() {
+	QuadBatch<BoxVertex> quadBatch;
 	// glEnable(GL_DEPTH_TEST);
 	// glDepthFunc(GL_LEQUAL);
 	// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);

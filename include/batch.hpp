@@ -10,6 +10,8 @@
 constexpr unsigned int VERTEX_BATCH = 1000 * 4;
 constexpr unsigned int INDEX_BATCH = 1000 * 6;
 
+constexpr size_t BATCH_SIZE = 1024;
+
 namespace squi {
 	class Batch {
 		GLuint vbo;
@@ -46,6 +48,24 @@ namespace squi {
 		void render();
 
 		void freeBuffers();
+	};
+
+	template<typename T>
+		requires std::is_base_of_v<VertexBase, T>
+	class QuadBatch {
+		GLuint vao;
+		GLuint vbo;
+		GLuint ebo;
+
+		std::vector<T> vertices{};
+		std::vector<unsigned int> indices{};
+
+	public:
+		QuadBatch() {
+			std::tie(vao, vbo) = T().generateBuffers(BATCH_SIZE);
+		}
+
+		
 	};
 }// namespace squi
 
