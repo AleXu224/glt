@@ -49,11 +49,14 @@ Window::Window() {
 }
 
 void Window::run() {
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	// glEnable(GL_DEPTH_TEST);
+	// glDepthFunc(GL_LEQUAL);
+	// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+	// glDisable(GL_CULL_FACE);
+	// glEnable(GL_SAMPLE_ALPHA_TO_ONE);
 	Renderer& renderer = *Renderer::get();
-	Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, 25.0f, 2.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.40f};
-	Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 1.0f, 1.0f, 1.0f}, 25.0f, 2.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.5f};
+	Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 0.5f}, 25.0f, 10.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.40f};
+	Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 0.5f, 0.5f, 1.0f}, 25.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.5f};
 	// Quad quad2{{0.0f, 0.0f}, {-5, -5}, {1.0f, 0.0f, 0.0f, 1.0f}};
 	// auto mt = std::mt19937{std::random_device{}()};
 	// auto dist = std::uniform_real_distribution<float>{0.0f, 800.0f};
@@ -68,9 +71,13 @@ void Window::run() {
 	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// glEnable(GL_MULTISAMPLE);
+	// glEnable(GL_ALPHA_TEST);
+	// glBlendEquation(GL_FUNC_ADD);
+	// glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	unsigned int frames = 0;
 	double lastTime = glfwGetTime();
 	while (!glfwWindowShouldClose(window.get())) {

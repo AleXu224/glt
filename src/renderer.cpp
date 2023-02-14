@@ -62,7 +62,7 @@ auto fragmentShader = R"(
             if (b > -vBorderSize && vBorderSize > 0.0) {
                 outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
             }
-            FragColor = mix(outColor, vec4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 1.0, b));
+            FragColor = mix(outColor, vec4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 2.0, b));
         }
     )";
 
@@ -100,9 +100,10 @@ auto textFragmentShader = R"(
 
     void main()
     {
-        float dist = texture2D(uTexture, vUv.st).r;
+        float dist = texture(uTexture, vUv.st).r;
         float width = 0.75 * fwidth(dist);
-        float alpha = smoothstep(0.5-width, 0.5+width, dist);
+        // float width = length(dFdx(dist) + dFdy(dist)) * 0.70710678118654757;
+        float alpha = smoothstep(0.4-width, 0.4+width, dist);
         FragColor = vec4(vColor.rgb, alpha * vColor.a);
     }
 )";
@@ -120,8 +121,8 @@ Renderer::Renderer() : shader(vertexShader, fragmentShader), textShader(textVert
 
 	batches.push_back(Batch());
 
-	textBatches.push_back(TextBatch("segoe-semibold.ttf "));
-	textBatches.front().createQuads("REEEEEEEEEEEEEEEEEEEEEE", {10.0f, 10.0f}, 15.0f, {1.0f, 1.0f, 1.0f, 1.0f});
+	textBatches.push_back(TextBatch("C:\\Windows\\Fonts\\arial.ttf"));
+	textBatches.front().createQuads("Font looks really bad :(", {10.0f, 10.0f}, 12.0f, {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 Renderer::~Renderer() {

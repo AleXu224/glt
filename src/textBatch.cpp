@@ -10,7 +10,7 @@ TextBatch::TextBatch(std::string fontPath) {
 	// 					"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	// 					"`abcdefghijklmnopqrstuvwxyz{|}~";
 
-	this->font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(this->atlas.get(), 64, fontPath.c_str()), texture_font_delete);
+	this->font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(this->atlas.get(), 32, fontPath.c_str()), texture_font_delete);
 	font->rendermode = RENDER_SIGNED_DISTANCE_FIELD;
 	// texture_font_load_glyphs(this->font.get(), cache);
 	glGenTextures(1, &atlas->id);
