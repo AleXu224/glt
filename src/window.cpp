@@ -1,9 +1,9 @@
 #include "window.hpp"
 #include "batch.hpp"
-#include "textBatch.hpp"
 #include "quad.hpp"
-#include "stdexcept"
 #include "random"
+#include "stdexcept"
+#include "textBatch.hpp"
 
 using namespace squi;
 
@@ -31,7 +31,7 @@ Window::Window() {
 
 	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *window, int width, int height) {
 		glViewport(0, 0, width, height);
-		auto &renderer = *Renderer::get();
+		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer.render();
@@ -44,36 +44,40 @@ Window::Window() {
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
 		printf("OpenGL Error: %s\n", message);
-	}, nullptr);
+		printf("Source: %d, Type: %d, Severity: %d\n", source, type, severity);
+		exit(1);
+	},
+						   nullptr);
 	// glfwSwapInterval(1);
 }
 
 void Window::run() {
-	QuadBatch<BoxQuad> quadBatch;
-	quadBatch.add(BoxQuad());
 	// glEnable(GL_DEPTH_TEST);
 	// glDepthFunc(GL_LEQUAL);
 	// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 	// glDisable(GL_CULL_FACE);
 	// glEnable(GL_SAMPLE_ALPHA_TO_ONE);
-	Renderer& renderer = *Renderer::get();
-	Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 0.5f}, 25.0f, 10.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.40f};
-	Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 0.5f, 0.5f, 1.0f}, 25.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}, 0.5f};
-	// Quad quad2{{0.0f, 0.0f}, {-5, -5}, {1.0f, 0.0f, 0.0f, 1.0f}};
-	// auto mt = std::mt19937{std::random_device{}()};
-	// auto dist = std::uniform_real_distribution<float>{0.0f, 800.0f};
-	// auto dist2 = std::uniform_real_distribution<float>{0.0f, 600.0f};
-	// auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
-	// std::vector<Quad> quads;
-	// for (int i = 0; i < 10000; i++) {
-	// 	quads.emplace_back(glm::vec2{dist(mt), dist2(mt)}, glm::vec2{200.0f, 200.0f}, glm::vec4{colorDist(mt), colorDist(mt), colorDist(mt), 1.0f});
-	// }
+	Renderer &renderer = Renderer::getInstance();
+	Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 0.5f}, 25.0f, 10.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
+	Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 0.5f, 0.5f, 1.0f}, 25.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
+
+	std::vector<Quad> quads;
+	auto mt = std::mt19937{std::random_device{}()};
+	auto dist = std::uniform_real_distribution<float>{0.0f, 1920.0f};
+	auto dist2 = std::uniform_real_distribution<float>{0.0f, 1080.0f};
+	auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
+	auto sizeDist = std::uniform_real_distribution<float>{100.0f, 500.0f};
+	constexpr size_t numQuads = 100;
+	quads.reserve(numQuads);
+	for (size_t i = 0; i < numQuads; i++) {
+		quads.emplace_back(Quad{{dist(mt), dist2(mt)}, glm::vec2{sizeDist(mt)}, {colorDist(mt), colorDist(mt), colorDist(mt), 1.0f}, 2.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}});
+	}
 
 	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");
 	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
-	
-	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// glEnable(GL_MULTISAMPLE);
@@ -92,9 +96,11 @@ void Window::run() {
 			lastTime += 1.0;
 		}
 		glfwPollEvents();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		// glDrawArrays(GL_TRIANGLES, 0, 3);
+		for (auto &quad: quads) {
+			renderer.addQuad(quad);
+		}
 
 		renderer.render();
 

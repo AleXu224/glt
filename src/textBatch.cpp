@@ -10,8 +10,9 @@ TextBatch::TextBatch(std::string fontPath) {
 	// 					"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	// 					"`abcdefghijklmnopqrstuvwxyz{|}~";
 
-	this->font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(this->atlas.get(), 32, fontPath.c_str()), texture_font_delete);
+	this->font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(this->atlas.get(), 14, fontPath.c_str()), texture_font_delete);
 	font->rendermode = RENDER_SIGNED_DISTANCE_FIELD;
+	// font->rendermode = RENDER_NORMAL;
 	// texture_font_load_glyphs(this->font.get(), cache);
 	glGenTextures(1, &atlas->id);
 	glBindTexture(GL_TEXTURE_2D, atlas->id);
@@ -150,11 +151,11 @@ std::vector<unsigned int> TextBatch::createQuads(std::string text, glm::vec2 pos
 		quadIds.push_back(quadId);
 
 		// handle variable length encoding
-		if ((unsigned char)character >= 0b11110000) {
+		if ((unsigned char) character >= 0b11110000) {
 			charIter += 3;
-		} else if ((unsigned char)character >= 0b11100000) {
+		} else if ((unsigned char) character >= 0b11100000) {
 			charIter += 2;
-		} else if ((unsigned char)character >= 0b11000000) {
+		} else if ((unsigned char) character >= 0b11000000) {
 			charIter += 1;
 		}
 	}

@@ -2,36 +2,34 @@
 #define SQUI_RENDERER_HPP
 
 #include "array"
-#include "vertex.hpp"
 #include "batch.hpp"
-#include "textBatch.hpp"
-#include "shader.hpp"
 #include "list"
+#include "shader.hpp"
+#include "textBatch.hpp"
+#include "vertex.hpp"
 
 namespace squi {
-    class Renderer {
-        static Renderer *instance;
-        std::vector<Batch> batches{};
-        std::list<TextBatch> textBatches{};
-        Shader shader;
-        Shader textShader;
-        glm::mat4 projectionMatrix;
+	class Renderer {
+		static std::unique_ptr<Renderer> instance;
+		Batch batch{};
+		std::list<TextBatch> textBatches{};
+		Shader shader;
+		Shader textShader;
+		glm::mat4 projectionMatrix;
 
-        Renderer();
-        ~Renderer();
-        
-    public:
-        static Renderer *get();
 
-        std::tuple<std::span<Vertex>, std::span<unsigned int>, unsigned int, unsigned int>
-        addVertex();
+	public:
+		static Renderer &getInstance();
 
-        void removeVertex(unsigned int batchIndex, unsigned int vertexIndex);
+		void addQuad(Quad &quad);
 
-        void render();
+		void render();
 
-        void updateScreenSize(int width, int height);
-    };
-}
+		void updateScreenSize(int width, int height);
+
+		Renderer();
+		~Renderer();
+	};
+}// namespace squi
 
 #endif

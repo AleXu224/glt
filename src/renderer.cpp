@@ -2,18 +2,24 @@
 
 using namespace squi;
 
-Renderer *Renderer::instance = nullptr;
+std::unique_ptr<Renderer> Renderer::instance = nullptr;
 
 auto vertexShader = R"(
-        #version 330 core
-        layout (location = 0) in vec2 aPos;
-        layout (location = 1) in vec4 aColor;
-        layout (location = 2) in vec2 aUV;
-        layout (location = 3) in vec2 aSize;
-        layout (location = 4) in float aBorderRadius;
-        layout (location = 5) in float aBorderSize;
-        layout (location = 6) in vec4 aBorderColor;
-        layout (location = 7) in float z;
+        #version 430 core
+        // layout (location = 0) in vec2 aPos;
+        // layout (location = 1) in vec4 aColor;
+        // layout (location = 2) in vec2 aUV;
+        // layout (location = 3) in vec2 aSize;
+        // layout (location = 4) in float aBorderRadius;
+        // layout (location = 5) in float aBorderSize;
+        // layout (location = 6) in vec4 aBorderColor;
+        layout (location = 0) in vec2 aUV;
+        layout (location = 1) in vec2 aTexUV;
+        layout (location = 2) in float aID;
+
+        layout (std430, binding = 3) buffer SSBO {
+            mat4 data[1000];
+        };
 
         uniform mat4 uProjectionMatrix;
 
@@ -26,17 +32,19 @@ auto vertexShader = R"(
 
         void main()
         {
-            vColor = aColor;
+            mat4 quadData = data[int(aID)];
+            vColor = quadData[0];
             vUV = aUV;
-            vSize = aSize;
-            vBorderRadius = aBorderRadius;
-            vBorderSize = aBorderSize;
-            vBorderColor = aBorderColor;
-            gl_Position = vec4(uProjectionMatrix * vec4(aPos, z, 1.0));
+            vSize = quadData[2].zw;
+            vBorderRadius = quadData[3].x;
+            vBorderSize = quadData[3].y;
+            vBorderColor = quadData[1];
+            vec2 pos = quadData[2].xy + (aUV * quadData[2].zw);
+            gl_Position = vec4(uProjectionMatrix * vec4(pos, 0.0, 1.0));
         }
     )";
 auto fragmentShader = R"(
-        #version 330 core
+        #version 430 core
         out vec4 FragColor;
 
         in vec4 vColor;
@@ -105,6 +113,7 @@ auto textFragmentShader = R"(
         // float width = length(dFdx(dist) + dFdy(dist)) * 0.70710678118654757;
         float alpha = smoothstep(0.4-width, 0.4+width, dist);
         FragColor = vec4(vColor.rgb, alpha * vColor.a);
+        // FragColor = vec4(vColor.rgb, texture(uTexture, vUv.st).r * vColor.a);
     }
 )";
 
@@ -117,58 +126,37 @@ Renderer::Renderer() : shader(vertexShader, fragmentShader), textShader(textVert
 	// Translate to topleft corner
 	projectionMatrix[3][0] = -1.0f;
 	projectionMatrix[3][1] = 1.0f;
-    
 
-	batches.push_back(Batch());
-
-	textBatches.push_back(TextBatch("C:\\Windows\\Fonts\\arial.ttf"));
-	textBatches.front().createQuads("Font looks really bad :(", {10.0f, 10.0f}, 12.0f, {1.0f, 1.0f, 1.0f, 1.0f});
+	// textBatches.push_back(TextBatch("C:\\Windows\\Fonts\\arial.ttf"));
+	// textBatches.front().createQuads("Font looks really bad :(", {10.0f, 10.0f}, 12.0f, {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 Renderer::~Renderer() {
 	// glDeleteProgram(this->shaderProgram);
 }
 
-Renderer *Renderer::get() {
-	if (instance == nullptr) {
-		instance = new Renderer();
+Renderer &Renderer::getInstance() {
+	if (!instance) {
+		instance = std::make_unique<Renderer>();
 	}
-	return instance;
+	return *instance;
 }
 
-std::tuple<std::span<Vertex>, std::span<unsigned int>, unsigned int, unsigned int>
-Renderer::addVertex() {
-	for (unsigned int i = 0; i < batches.size(); i++) {
-		if (!batches[i].isFull()) {
-			auto [vertices, indices, index] = batches[i].addVertex();
-			return {vertices, indices, i, index};
-		}
-	}
-	batches.push_back(Batch());
-	auto [vertices, indices, index] = batches.back().addVertex();
-	return {vertices, indices, batches.size() - 1, index};
-}
-
-void Renderer::removeVertex(unsigned int batchIndex, unsigned int vertexIndex) {
-	batches[batchIndex].removeVertex(vertexIndex);
-	if (batches[batchIndex].isEmpty()) {
-		batches.erase(batches.begin() + batchIndex);
-	}
+void Renderer::addQuad(Quad &quad) {
+	batch.addQuad(quad);
 }
 
 void Renderer::render() {
 	shader.use();
 	shader.setUniform("uProjectionMatrix", projectionMatrix);
-	for (auto &batch: batches) {
-		batch.render();
-	}
+	batch.render();
 
-	textShader.use();
-    shader.setUniform("uTexture", 0);
-	shader.setUniform("uProjectionMatrix", projectionMatrix);
-	for (auto &batch: textBatches) {
-		batch.render();
-	}
+	// textShader.use();
+	// shader.setUniform("uTexture", 0);
+	// shader.setUniform("uProjectionMatrix", projectionMatrix);
+	// for (auto &batch: textBatches) {
+	// 	batch.render();
+	// }
 }
 
 void Renderer::updateScreenSize(int width, int height) {
