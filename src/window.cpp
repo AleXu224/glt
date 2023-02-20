@@ -67,10 +67,11 @@ void Window::run() {
 	auto dist2 = std::uniform_real_distribution<float>{0.0f, 1080.0f};
 	auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
 	auto sizeDist = std::uniform_real_distribution<float>{100.0f, 500.0f};
+	auto borderRadiusDist = std::uniform_real_distribution<float>{0.0f, 25.0f};
 	constexpr size_t numQuads = 100;
 	quads.reserve(numQuads);
 	for (size_t i = 0; i < numQuads; i++) {
-		quads.emplace_back(Quad{{dist(mt), dist2(mt)}, glm::vec2{sizeDist(mt)}, {colorDist(mt), colorDist(mt), colorDist(mt), 1.0f}, 2.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}});
+		quads.emplace_back(Quad{{dist(mt), dist2(mt)}, glm::vec2{sizeDist(mt)}, {colorDist(mt), colorDist(mt), colorDist(mt), 1.0f}, borderRadiusDist(mt), 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}});
 	}
 
 	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");

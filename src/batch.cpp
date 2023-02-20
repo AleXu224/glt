@@ -22,7 +22,7 @@ Batch::Batch() {
 	glEnableVertexAttribArray(1);
 	pos += sizeof(glm::vec2);
 	// ID
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, (void *) pos);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, stride, (void *) pos);
 	glEnableVertexAttribArray(2);
 	// pos += sizeof(uint16_t);
 
@@ -34,7 +34,7 @@ Batch::Batch() {
 	// SSBO buffer
 	glGenBuffers(1, &ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, BATCH_SIZE * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, BATCH_SIZE * sizeof(VertexData), nullptr, GL_DYNAMIC_DRAW);
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -82,7 +82,7 @@ void Batch::render() {
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, INDEX_BATCH * sizeof(unsigned int), indices.data());
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * BATCH_SIZE, data.data());
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VertexData) * BATCH_SIZE, data.data());
 
 	glDrawElements(GL_TRIANGLES, INDEX_BATCH, GL_UNSIGNED_INT, nullptr);
 

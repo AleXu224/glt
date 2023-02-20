@@ -7,16 +7,7 @@
 namespace squi {
 	class Quad {
 		std::array<Vertex, 4> vertices{};
-		/**
-		 * Quad data for the vertex shader
-		 * The format is the following:
-		 * colorR  	    colorG     colorB  colorA
-		 * borderR 	    borderG    borderB borderA
-		 * posX    	    posY       sizeX   sizeY
-		 * borderRadius borderSize texId   0
-		 * 
-		 */
-		glm::mat4 data;
+		VertexData data;
 
 	public:
 		Quad(
@@ -28,7 +19,7 @@ namespace squi {
 			glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f});
 
 		std::span<const Vertex> getVertices() const;
-		const glm::mat4 &getData() const;
+		const VertexData &getData() const;
 
 		void setId(int id);
 

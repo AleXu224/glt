@@ -24,10 +24,14 @@ Quad::Quad(glm::vec2 position,
 	vertices[2].texUv = {1.0f, 1.0f};
 	vertices[3].texUv = {0.0f, 1.0f};
 
-	data[0] = {color.r, color.g, color.b, color.a};
-	data[1] = {borderColor.r, borderColor.g, borderColor.b, borderColor.a};
-	data[2] = {position.x, position.y, size.x, size.y};
-	data[3] = {borderRadius, borderSize, 0.0f, 0.0f};
+	data.color = color;
+	data.borderColor = borderColor;
+	data.pos = position;
+	data.size = size;
+	data.offset = {0.0f, 0.0f};
+	data.borderRadius = borderRadius;
+	data.borderSize = borderSize;
+	data.textureId = 0;
 }
 
 void Quad::setId(int id) {
@@ -37,39 +41,37 @@ void Quad::setId(int id) {
 }
 
 void Quad::setTextureId(int id) {
-	data[3].z = id;
+	data.textureId = id;
 }
 
 std::span<const Vertex> Quad::getVertices() const {
 	return vertices;
 }
 
-const glm::mat4 &Quad::getData() const {
+const VertexData &Quad::getData() const {
 	return data;
 }
 
 void Quad::setPos(glm::vec2 pos) {
-	data[2].x = pos.x;
-	data[2].y = pos.y;
+	data.pos = pos;
 }
 
 void Quad::setSize(glm::vec2 size) {
-	data[2].z = size.x;
-	data[2].w = size.y;
+	data.size = size;
 }
 
 void Quad::setColor(glm::vec4 color) {
-	data[0] = {color.r, color.g, color.b, color.a};
+	data.color = color;
 }
 
 void Quad::setBorderColor(glm::vec4 color) {
-	data[1] = {color.r, color.g, color.b, color.a};
+	data.borderColor = color;
 }
 
 void Quad::setBorderRadius(float radius) {
-	data[3].x = radius;
+	data.borderRadius = radius;
 }
 
 void Quad::setBorderSize(float size) {
-	data[3].y = size;
+	data.borderSize = size;
 }

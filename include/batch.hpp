@@ -21,7 +21,7 @@ namespace squi {
 		GLuint ssbo;
 
 		std::array<Vertex, VERTEX_BATCH> vertices{};
-		std::array<glm::mat4, BATCH_SIZE> data{};
+		std::array<VertexData, BATCH_SIZE> data{};
 		std::array<unsigned int, INDEX_BATCH> indices{};
 
 		size_t cursor = 0;

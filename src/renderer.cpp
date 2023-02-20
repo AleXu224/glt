@@ -6,19 +6,23 @@ std::unique_ptr<Renderer> Renderer::instance = nullptr;
 
 auto vertexShader = R"(
         #version 430 core
-        // layout (location = 0) in vec2 aPos;
-        // layout (location = 1) in vec4 aColor;
-        // layout (location = 2) in vec2 aUV;
-        // layout (location = 3) in vec2 aSize;
-        // layout (location = 4) in float aBorderRadius;
-        // layout (location = 5) in float aBorderSize;
-        // layout (location = 6) in vec4 aBorderColor;
         layout (location = 0) in vec2 aUV;
         layout (location = 1) in vec2 aTexUV;
-        layout (location = 2) in float aID;
+        layout (location = 2) in uint aID;
+
+        struct VertexData {
+            vec4 color;
+            vec4 borderColor;
+            vec2 pos;
+            vec2 size;
+            vec2 offset;
+            float borderRadius;
+            float borderSize;
+            float textureId;
+        };
 
         layout (std430, binding = 3) buffer SSBO {
-            mat4 data[1000];
+            VertexData data[1000];
         };
 
         uniform mat4 uProjectionMatrix;
@@ -32,14 +36,14 @@ auto vertexShader = R"(
 
         void main()
         {
-            mat4 quadData = data[int(aID)];
-            vColor = quadData[0];
+            VertexData quadData = data[aID];
+            vColor = quadData.color;
             vUV = aUV;
-            vSize = quadData[2].zw;
-            vBorderRadius = quadData[3].x;
-            vBorderSize = quadData[3].y;
-            vBorderColor = quadData[1];
-            vec2 pos = quadData[2].xy + (aUV * quadData[2].zw);
+            vSize = quadData.size;
+            vBorderRadius = quadData.borderRadius;
+            vBorderSize = quadData.borderSize;
+            vBorderColor = quadData.borderColor;
+            vec2 pos = quadData.offset + quadData.pos + (aUV * quadData.size);
             gl_Position = vec4(uProjectionMatrix * vec4(pos, 0.0, 1.0));
         }
     )";
@@ -70,7 +74,7 @@ auto fragmentShader = R"(
             if (b > -vBorderSize && vBorderSize > 0.0) {
                 outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
             }
-            FragColor = mix(outColor, vec4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 2.0, b));
+            FragColor = mix(outColor, vec4(outColor.xyz, 0.0), smoothstep(0.0, 1.5, b));
         }
     )";
 
