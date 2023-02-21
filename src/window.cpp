@@ -63,12 +63,12 @@ void Window::run() {
 
 	std::vector<Quad> quads;
 	auto mt = std::mt19937{std::random_device{}()};
-	auto dist = std::uniform_real_distribution<float>{0.0f, 1920.0f};
-	auto dist2 = std::uniform_real_distribution<float>{0.0f, 1080.0f};
+	auto dist = std::uniform_real_distribution<float>{0.0f, 800.0f};
+	auto dist2 = std::uniform_real_distribution<float>{0.0f, 600.0f};
 	auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
-	auto sizeDist = std::uniform_real_distribution<float>{100.0f, 500.0f};
+	auto sizeDist = std::uniform_real_distribution<float>{20.0f, 20.0f};
 	auto borderRadiusDist = std::uniform_real_distribution<float>{0.0f, 25.0f};
-	constexpr size_t numQuads = 100;
+	constexpr size_t numQuads = 10;
 	quads.reserve(numQuads);
 	for (size_t i = 0; i < numQuads; i++) {
 		quads.emplace_back(Quad{{dist(mt), dist2(mt)}, glm::vec2{sizeDist(mt)}, {colorDist(mt), colorDist(mt), colorDist(mt), 1.0f}, borderRadiusDist(mt), 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}});

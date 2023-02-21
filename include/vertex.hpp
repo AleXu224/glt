@@ -55,6 +55,7 @@ namespace squi {
 		 * @brief Texture id of the quad. 0 if no texture is used
 		 */
 		glm::float32 textureId;
+		glm::vec3 padding; // Padding to make the struct 16 byte aligned
 	};
 }// namespace squi
 
