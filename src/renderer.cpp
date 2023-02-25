@@ -68,7 +68,7 @@ auto fragmentShader = R"(
         flat in uint vTextureId;
         flat in uint vTextureType;
 
-        uniform sampler2D uTexture[16];
+        uniform sampler2D uTexture[32];
 
         // Credit https://www.shadertoy.com/view/ldfSDj
         float udRoundBox( vec2 p, vec2 b, float r )
@@ -85,24 +85,61 @@ auto fragmentShader = R"(
             if (b > -vBorderSize && vBorderSize > 0.0) {
                 outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
             }
-            outColor.g = texture2D(uTexture[vTextureId], vTexUV).r;
             FragColor = mix(outColor, vec4(outColor.xyz, 0.0), smoothstep(0.0, 1.5, b));
         }
 
+        vec4 getTextureColor() {
+            switch (vTextureId) {
+                case 0:
+                    return texture(uTexture[0], vTexUV);
+                case 1:
+                    return texture(uTexture[1], vTexUV);
+                case 2:
+                    return texture(uTexture[2], vTexUV);
+                case 3:
+                    return texture(uTexture[3], vTexUV);
+                case 4:
+                    return texture(uTexture[4], vTexUV);
+                case 5:
+                    return texture(uTexture[5], vTexUV);
+                case 6:
+                    return texture(uTexture[6], vTexUV);
+                case 7:
+                    return texture(uTexture[7], vTexUV);
+                case 8:
+                    return texture(uTexture[8], vTexUV);
+                case 9:
+                    return texture(uTexture[9], vTexUV);
+                case 10:
+                    return texture(uTexture[10], vTexUV);
+                case 11:
+                    return texture(uTexture[11], vTexUV);
+                case 12:
+                    return texture(uTexture[12], vTexUV);
+                case 13:
+                    return texture(uTexture[13], vTexUV);
+                case 14:
+                    return texture(uTexture[14], vTexUV);
+                case 15:
+                    return texture(uTexture[15], vTexUV);
+            }
+        }
+
         void TextQuad() {
-            FragColor = vec4(vColor.rgb, texture2D(uTexture[int(vTextureId + 0.1)], vTexUV).r * vColor.a);
+            FragColor = vec4(vColor.rgb, getTextureColor().r * vColor.a);
+            // FragColor = vec4(vColor.rgb, texture2D(uTexture[vTextureId], vTexUV).r * vColor.a);
         }
 
         void main()
         {
-            NoTextureQuad();
-            // if (vTextureType == 0) {
-            //     NoTextureQuad();
-            // } else if (vTextureType == 2) {
-            //     TextQuad();
-            // } else {
-            //     FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-            // }
+            // NoTextureQuad();
+            if (vTextureType == 0) {
+                NoTextureQuad();
+            } else if (vTextureType == 2) {
+                TextQuad();
+            } else {
+                FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+            }
         }
     )";
 
@@ -181,6 +218,9 @@ void Renderer::addQuad(Quad &quad) {
 void Renderer::render() {
 	shader.use();
 	shader.setUniform("uProjectionMatrix", projectionMatrix);
+    constexpr uint32_t textureCount = 32;
+    std::array<int, textureCount> textureSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+    shader.setUniform("uTexture", textureSlots.data(), textureCount);
 	batch.render(shader);
 
 	// textShader.use();

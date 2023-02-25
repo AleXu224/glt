@@ -18,6 +18,7 @@ namespace squi {
 		void use();
 
 		void setUniform(const char *name, int value);
+		void setUniform(const char *name, int* value, uint32_t count);
 		void setUniform(const char *name, float value);
 		void setUniform(const char *name, glm::vec2 value);
 		void setUniform(const char *name, glm::vec3 value);

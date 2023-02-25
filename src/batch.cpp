@@ -24,7 +24,8 @@ Batch::Batch() {
 	// ID
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, stride, (void *) pos);
 	glEnableVertexAttribArray(2);
-	// pos += sizeof(uint16_t);
+	// pos += sizeof(uint32_t);
+
 
 	// Index buffer
 	glGenBuffers(1, &ebo);
@@ -56,10 +57,6 @@ void Batch::addQuad(Quad &quad, Shader &shader) {
 			if (textures.size() >= maxTextureCount) {
 				render(shader);
 			}
-			auto size = textures.size();
-			// glBindTextureUnit(textures.size(), textureId);
-			glActiveTexture(GL_TEXTURE0 + size);
-			glBindTexture(GL_TEXTURE_2D, textureId);
 			quad.setTextureIndex(textures.size());
 			textures.push_back(textureId);
 		} else {
@@ -101,7 +98,12 @@ void Batch::render(Shader &shader) {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VertexData) * BATCH_SIZE, data.data());
 
-	shader.setUniform("uTexture", textures);
+	// shader.setUniform("uTexture", textures);
+	for (auto i = textures.begin(); i != textures.end(); i++) {
+		auto index = std::distance(textures.begin(), i);
+		glActiveTexture(GL_TEXTURE0 + index);
+		glBindTexture(GL_TEXTURE_2D, textures[index]);
+	}
 
 	glDrawElements(GL_TRIANGLES, INDEX_BATCH, GL_UNSIGNED_INT, nullptr);
 

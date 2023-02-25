@@ -12,8 +12,8 @@ FontStore::Font::Font(std::string fontPath)
 	glBindTexture(GL_TEXTURE_2D, atlas->id);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, atlas->data);
 }
 
@@ -67,7 +67,7 @@ std::vector<Quad> FontStore::generateQuads(std::string text, std::string fontPat
 		quads.emplace_back(Quad::Args{
 			.pos = pos,
 			.size{glyph->width, glyph->height},
-			.offset = cursor,
+			.offset = cursor + glm::vec2(glyph->offset_x, 0),
 			.color = color,
 			.textureId = font->atlas->id,
             .textureType = Quad::TextureType::Text,

@@ -77,7 +77,7 @@ void Window::run() {
 			.pos{dist(mt), dist2(mt)},
 			.size = glm::vec2{sizeDist(mt)},
 			.color{colorDist(mt), colorDist(mt), colorDist(mt), 1.0f},
-			.borderColor = {0.0f, 0.0f, 1.0f, 1.0f},
+			.borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
 			.borderRadius = borderRadiusDist(mt),
 			.borderSize = 1.0f,
 		});
@@ -86,9 +86,9 @@ void Window::run() {
 	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");
 	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
-	auto text3 = FontStore::generateQuads("Si acum cu alt font!", "C:\\Windows\\Fonts\\arialbi.ttf", 20.0f, {100.0f, 148.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	auto text = FontStore::generateQuads("Florine facui sa mearga textul :D", "C:\\Windows\\Fonts\\arial.ttf", 14.0f, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	auto text2 = FontStore::generateQuads("Toata treaba asta e intr-un singur batch!", "C:\\Windows\\Fonts\\arial.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+	auto text3 = FontStore::generateQuads("Alt font", "C:\\Windows\\Fonts\\arialbi.ttf", 20.0f, {100.0f, 148.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+	auto text = FontStore::generateQuads("Font 1 %", "C:\\Windows\\Fonts\\arial.ttf", 14.0f, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+	auto text2 = FontStore::generateQuads("Font 1 dar cu alta marime", "C:\\Windows\\Fonts\\arial.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

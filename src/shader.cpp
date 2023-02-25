@@ -48,6 +48,10 @@ void Shader::setUniform(const char *name, int value) {
 	glUniform1i(glGetUniformLocation(shaderProgram, name), value);
 }
 
+void Shader::setUniform(const char *name, int* value, uint32_t count) {
+	glUniform1iv(glGetUniformLocation(shaderProgram, name), count, value);
+}
+
 void Shader::setUniform(const char *name, float value) {
 	glUniform1f(glGetUniformLocation(shaderProgram, name), value);
 }
