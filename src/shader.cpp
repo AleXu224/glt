@@ -71,3 +71,8 @@ void Shader::setUniform(const char *name, glm::mat3 value) {
 void Shader::setUniform(const char *name, glm::mat4 value) {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name), 1, GL_FALSE, &value[0][0]);
 }
+
+void Shader::setUniform(const char *name, std::vector<uint32_t> value) {
+	int data[16] = { 0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+	glUniform1iv(glGetUniformLocation(shaderProgram, name), 16, data);
+}

@@ -3,6 +3,7 @@
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
+#include "vector"
 
 namespace squi {
 	class Shader {
@@ -23,6 +24,7 @@ namespace squi {
 		void setUniform(const char *name, glm::vec4 value);
 		void setUniform(const char *name, glm::mat3 value);
 		void setUniform(const char *name, glm::mat4 value);
+		void setUniform(const char *name, std::vector<uint32_t> value);
 	};
 }// namespace squi
 

@@ -5,7 +5,7 @@ using namespace squi;
 std::unique_ptr<Renderer> Renderer::instance = nullptr;
 
 auto vertexShader = R"(
-        #version 430 core
+        #version 450 core
         layout (location = 0) in vec2 aUV;
         layout (location = 1) in vec2 aTexUV;
         layout (location = 2) in uint aID;
@@ -55,7 +55,7 @@ auto vertexShader = R"(
         }
     )";
 auto fragmentShader = R"(
-        #version 430 core
+        #version 450 core
         out vec4 FragColor;
 
         in vec4 vColor;
@@ -85,20 +85,24 @@ auto fragmentShader = R"(
             if (b > -vBorderSize && vBorderSize > 0.0) {
                 outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
             }
+            outColor.g = texture2D(uTexture[vTextureId], vTexUV).r;
             FragColor = mix(outColor, vec4(outColor.xyz, 0.0), smoothstep(0.0, 1.5, b));
         }
 
         void TextQuad() {
-            FragColor = vec4(vColor.rgb, texture(uTexture[vTextureId], vTexUV).r * vColor.a);
+            FragColor = vec4(vColor.rgb, texture2D(uTexture[int(vTextureId + 0.1)], vTexUV).r * vColor.a);
         }
 
         void main()
         {
-            if (vTextureType == 0) {
-                NoTextureQuad();
-            } else if (vTextureType == 2) {
-                TextQuad();
-            }
+            NoTextureQuad();
+            // if (vTextureType == 0) {
+            //     NoTextureQuad();
+            // } else if (vTextureType == 2) {
+            //     TextQuad();
+            // } else {
+            //     FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+            // }
         }
     )";
 
@@ -145,7 +149,7 @@ auto textFragmentShader = R"(
     }
 )";
 
-Renderer::Renderer() : shader(vertexShader, fragmentShader), textShader(textVertexShader, textFragmentShader) {
+Renderer::Renderer() : shader(vertexShader, fragmentShader) {
 	// projection matrix to identity
 	this->projectionMatrix = glm::mat4(1.0f);
 	// Scale to 800x600 and flip y axis
@@ -171,13 +175,13 @@ Renderer &Renderer::getInstance() {
 }
 
 void Renderer::addQuad(Quad &quad) {
-	batch.addQuad(quad);
+	batch.addQuad(quad, shader);
 }
 
 void Renderer::render() {
 	shader.use();
 	shader.setUniform("uProjectionMatrix", projectionMatrix);
-	batch.render();
+	batch.render(shader);
 
 	// textShader.use();
 	// shader.setUniform("uTexture", 0);

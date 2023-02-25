@@ -12,9 +12,7 @@ namespace squi {
 	class Renderer {
 		static std::unique_ptr<Renderer> instance;
 		Batch batch{};
-		std::list<TextBatch> textBatches{};
 		Shader shader;
-		Shader textShader;
 		glm::mat4 projectionMatrix;
 
 

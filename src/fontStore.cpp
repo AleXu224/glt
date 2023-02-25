@@ -36,10 +36,10 @@ std::shared_ptr<texture_font_t> FontStore::getFont(std::string fontPath, float s
 }
 
 std::vector<Quad> FontStore::generateQuads(std::string text, std::string fontPath, float size, glm::vec2 pos, glm::vec4 color) {
-	std::vector<Quad> quads;
-	glm::vec2 cursor;// This will be used as offset for each character
+	std::vector<Quad> quads{};
+	glm::vec2 cursor{0, 0};// This will be used as offset for each character
 	auto font = getFont(fontPath, size);
-	cursor.y += font->ascender;
+	// cursor.y += font->ascender;
 
 	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
 		const auto &character = text.at(charIter - text.begin());
@@ -53,12 +53,13 @@ std::vector<Quad> FontStore::generateQuads(std::string text, std::string fontPat
 			}
 
 			glBindTexture(GL_TEXTURE_2D, font->atlas->id);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font->atlas->width, font->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
+			// glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font->atlas->width, font->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
+			glTextureSubImage2D(font->atlas->id, 0, 0, 0, font->atlas->width, font->atlas->height, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
 		}
 
 		auto kerning = 0.0f;
 		if (charIter != text.begin()) {
-			kerning = texture_glyph_get_kerning(glyph, &text.at(charIter - text.begin() - 1));
+			kerning = texture_glyph_get_kerning(glyph, &text.at(std::distance(text.begin(), charIter) - 1));
 		}
 		cursor.x += kerning;
         cursor.y = font->ascender - glyph->offset_y;

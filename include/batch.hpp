@@ -8,6 +8,7 @@
 #include "unordered_map"
 #include "vector"
 #include "vertex.hpp"
+#include "shader.hpp"
 
 constexpr size_t BATCH_SIZE = 1000;
 constexpr size_t VERTEX_BATCH = BATCH_SIZE * 4;
@@ -31,9 +32,9 @@ namespace squi {
 	public:
 		Batch();
 
-		void addQuad(Quad &quad);
+		void addQuad(Quad &quad, Shader &shader);
 
-		void render();
+		void render(Shader &shader);
 
 		void freeBuffers();
 	};

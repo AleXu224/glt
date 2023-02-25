@@ -86,14 +86,15 @@ void Window::run() {
 	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");
 	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
+	auto text3 = FontStore::generateQuads("Si acum cu alt font!", "C:\\Windows\\Fonts\\arialbi.ttf", 20.0f, {100.0f, 148.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 	auto text = FontStore::generateQuads("Florine facui sa mearga textul :D", "C:\\Windows\\Fonts\\arial.ttf", 14.0f, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 	auto text2 = FontStore::generateQuads("Toata treaba asta e intr-un singur batch!", "C:\\Windows\\Fonts\\arial.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	auto text3 = FontStore::generateQuads("Si acum cu alt font!", "C:\\Windows\\Fonts\\calibri.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// glEnable(GL_ARB_bindless_texture);
 	// glEnable(GL_MULTISAMPLE);
 	// glEnable(GL_ALPHA_TEST);
 	// glBlendEquation(GL_FUNC_ADD);
@@ -119,14 +120,14 @@ void Window::run() {
 		for (auto &quad: text) {
 			renderer.addQuad(quad);
 		}
+		for (auto &quad: text3) {
+			renderer.addQuad(quad);
+		}
 
 		for (auto &quad: text2) {
 			renderer.addQuad(quad);
 		}
 
-		for (auto &quad: text3) {
-			renderer.addQuad(quad);
-		}
 
 		renderer.render();
 

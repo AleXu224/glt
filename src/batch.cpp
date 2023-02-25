@@ -45,18 +45,21 @@ void Batch::freeBuffers() {
 	glDeleteBuffers(1, &ebo);
 }
 
-void Batch::addQuad(Quad &quad) {
+void Batch::addQuad(Quad &quad, Shader &shader) {
 	if (cursor >= BATCH_SIZE) {
-		render();
+		render(shader);
 	}
 	if (quad.getTextureType() != Quad::TextureType::NoTexture) {
 		const auto &textureId = quad.getTextureId();
 		const auto iter = std::find(textures.begin(), textures.end(), textureId);
 		if (iter == textures.end()) {
 			if (textures.size() >= maxTextureCount) {
-				render();
+				render(shader);
 			}
-			glBindTextureUnit(textures.size(), textureId);
+			auto size = textures.size();
+			// glBindTextureUnit(textures.size(), textureId);
+			glActiveTexture(GL_TEXTURE0 + size);
+			glBindTexture(GL_TEXTURE_2D, textureId);
 			quad.setTextureIndex(textures.size());
 			textures.push_back(textureId);
 		} else {
@@ -82,7 +85,7 @@ void Batch::addQuad(Quad &quad) {
 	data[cursor++] = quad.getData();
 }
 
-void Batch::render() {
+void Batch::render(Shader &shader) {
 	if (cursor == 0) {
 		return;
 	}
@@ -97,6 +100,8 @@ void Batch::render() {
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VertexData) * BATCH_SIZE, data.data());
+
+	shader.setUniform("uTexture", textures);
 
 	glDrawElements(GL_TRIANGLES, INDEX_BATCH, GL_UNSIGNED_INT, nullptr);
 

@@ -28,6 +28,9 @@ Quad::Quad(const Args &args) {
 	data.borderSize = args.borderSize;
 	textureId = args.textureId;
 	data.textureType = static_cast<uint32_t>(args.textureType);
+	// if (args.textureType != TextureType::NoTexture) {
+	// 	data.textureIndex = glGetTextureHandleARB(textureId);
+	// }
 }
 
 void Quad::setId(int id) {
