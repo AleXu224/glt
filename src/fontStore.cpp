@@ -52,9 +52,9 @@ std::vector<Quad> FontStore::generateQuads(std::string text, std::string fontPat
 				continue;
 			}
 
-			glBindTexture(GL_TEXTURE_2D, font->atlas->id);
-			// glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font->atlas->width, font->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
+			// For some reason this generates a memory leak on some systems
 			glTextureSubImage2D(font->atlas->id, 0, 0, 0, font->atlas->width, font->atlas->height, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
+			glFlush();
 		}
 
 		auto kerning = 0.0f;

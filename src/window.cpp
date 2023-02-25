@@ -128,11 +128,9 @@ void Window::run() {
 			renderer.addQuad(quad);
 		}
 
-
 		renderer.render();
 
-
 		glfwSwapBuffers(window.get());
-		// glFinish();
+		glFlush();
 	}
 }
