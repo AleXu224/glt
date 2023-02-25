@@ -6,6 +6,7 @@
 #include "memory"
 #include "unordered_map"
 #include "quad.hpp"
+#include "string"
 
 namespace squi {
 	class FontStore {
