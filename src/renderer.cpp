@@ -18,7 +18,8 @@ auto vertexShader = R"(
             vec2 offset;
             float borderRadius;
             float borderSize;
-            float textureId;
+            uint textureId;
+            uint textureType;
         };
 
         layout (std430, binding = 3) buffer SSBO {
@@ -29,20 +30,26 @@ auto vertexShader = R"(
 
         out vec4 vColor;
         out vec2 vUV;
+        out vec2 vTexUV;
         out vec2 vSize;
         out float vBorderRadius;
         out float vBorderSize;
         out vec4 vBorderColor;
+        out uint vTextureId;
+        out uint vTextureType;
 
         void main()
         {
             VertexData quadData = data[aID];
             vColor = quadData.color;
             vUV = aUV;
+            vTexUV = aTexUV;
             vSize = quadData.size;
             vBorderRadius = quadData.borderRadius;
             vBorderSize = quadData.borderSize;
             vBorderColor = quadData.borderColor;
+            vTextureId = quadData.textureId;
+            vTextureType = quadData.textureType;
             vec2 pos = quadData.offset + quadData.pos + (aUV * quadData.size);
             gl_Position = vec4(uProjectionMatrix * vec4(pos, 0.0, 1.0));
         }
@@ -53,10 +60,15 @@ auto fragmentShader = R"(
 
         in vec4 vColor;
         in vec2 vUV;
+        in vec2 vTexUV;
         in vec2 vSize;
         in float vBorderRadius;
         in float vBorderSize;
         in vec4 vBorderColor;
+        flat in uint vTextureId;
+        flat in uint vTextureType;
+
+        uniform sampler2D uTexture[16];
 
         // Credit https://www.shadertoy.com/view/ldfSDj
         float udRoundBox( vec2 p, vec2 b, float r )
@@ -64,8 +76,7 @@ auto fragmentShader = R"(
             return length(max(abs(p)-b+r,0.0))-r;
         }
 
-        void main()
-        {
+        void NoTextureQuad() {
             vec2 coords = (vUV * vSize) - 0.5;
             vec2 halfRes = (0.5 * vSize) - 0.5;
             float borderRadius = min(vBorderRadius, min(halfRes.x, halfRes.y));
@@ -75,6 +86,19 @@ auto fragmentShader = R"(
                 outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
             }
             FragColor = mix(outColor, vec4(outColor.xyz, 0.0), smoothstep(0.0, 1.5, b));
+        }
+
+        void TextQuad() {
+            FragColor = vec4(vColor.rgb, texture(uTexture[vTextureId], vTexUV).r * vColor.a);
+        }
+
+        void main()
+        {
+            if (vTextureType == 0) {
+                NoTextureQuad();
+            } else if (vTextureType == 2) {
+                TextQuad();
+            }
         }
     )";
 

@@ -49,6 +49,20 @@ void Batch::addQuad(Quad &quad) {
 	if (cursor >= BATCH_SIZE) {
 		render();
 	}
+	if (quad.getTextureType() != Quad::TextureType::NoTexture) {
+		const auto &textureId = quad.getTextureId();
+		const auto iter = std::find(textures.begin(), textures.end(), textureId);
+		if (iter == textures.end()) {
+			if (textures.size() >= maxTextureCount) {
+				render();
+			}
+			glBindTextureUnit(textures.size(), textureId);
+			quad.setTextureIndex(textures.size());
+			textures.push_back(textureId);
+		} else {
+			quad.setTextureIndex(std::distance(textures.begin(), iter));
+		}
+	}
 	quad.setId(cursor);
 	auto quadVertices = quad.getVertices();
 	const auto verticesOffset = cursor * 4;
@@ -88,4 +102,5 @@ void Batch::render() {
 
 	cursor = 0;
 	indices.fill(0);
+	textures.clear();
 }

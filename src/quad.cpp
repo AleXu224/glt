@@ -3,13 +3,7 @@
 
 using namespace squi;
 
-Quad::Quad(glm::vec2 position,
-		   glm::vec2 size,
-		   glm::vec4 color,
-		   float borderRadius,
-		   float borderSize,
-		   glm::vec4 borderColor) {
-
+Quad::Quad(const Args &args) {
 	for (auto &vertex: vertices) {
 		vertex.id = 0;
 	}
@@ -19,19 +13,21 @@ Quad::Quad(glm::vec2 position,
 	vertices[2].uv = {1.0f, 1.0f};
 	vertices[3].uv = {0.0f, 1.0f};
 
-	vertices[0].texUv = {0.0f, 0.0f};
-	vertices[1].texUv = {1.0f, 0.0f};
-	vertices[2].texUv = {1.0f, 1.0f};
-	vertices[3].texUv = {0.0f, 1.0f};
+	const auto &texUv = args.textureUv;
+	vertices[0].texUv = {texUv.x, texUv.y};
+	vertices[1].texUv = {texUv.z, texUv.y};
+	vertices[2].texUv = {texUv.z, texUv.w};
+	vertices[3].texUv = {texUv.x, texUv.w};
 
-	data.color = color;
-	data.borderColor = borderColor;
-	data.pos = position;
-	data.size = size;
-	data.offset = {0.0f, 0.0f};
-	data.borderRadius = borderRadius;
-	data.borderSize = borderSize;
-	data.textureId = 0;
+	data.color = args.color;
+	data.borderColor = args.borderColor;
+	data.pos = args.pos;
+	data.size = args.size;
+	data.offset = args.offset;
+	data.borderRadius = args.borderRadius;
+	data.borderSize = args.borderSize;
+	textureId = args.textureId;
+	data.textureType = static_cast<uint32_t>(args.textureType);
 }
 
 void Quad::setId(int id) {
@@ -40,8 +36,16 @@ void Quad::setId(int id) {
 	}
 }
 
-void Quad::setTextureId(int id) {
-	data.textureId = id;
+void Quad::setTextureIndex(int id) {
+	data.textureIndex = id;
+}
+
+Quad::TextureType Quad::getTextureType() const {
+	return static_cast<const TextureType>(data.textureType);
+}
+
+const GLuint& Quad::getTextureId() const {
+	return textureId;
 }
 
 std::span<const Vertex> Quad::getVertices() const {

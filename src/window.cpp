@@ -4,6 +4,7 @@
 #include "random"
 #include "stdexcept"
 #include "textBatch.hpp"
+#include "fontStore.hpp"
 
 using namespace squi;
 
@@ -58,8 +59,8 @@ void Window::run() {
 	// glDisable(GL_CULL_FACE);
 	// glEnable(GL_SAMPLE_ALPHA_TO_ONE);
 	Renderer &renderer = Renderer::getInstance();
-	Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 0.5f}, 25.0f, 10.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
-	Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 0.5f, 0.5f, 1.0f}, 25.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
+	// Quad quad{{50.0f, 50.0f}, {500.0f, 500.0f}, {1.0f, 0.0f, 0.0f, 0.5f}, 25.0f, 10.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
+	// Quad quaz{{100.0f, 100.0f}, {500.0f, 500.0f}, {0.0f, 0.5f, 0.5f, 1.0f}, 25.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}};
 
 	std::vector<Quad> quads;
 	auto mt = std::mt19937{std::random_device{}()};
@@ -70,12 +71,24 @@ void Window::run() {
 	auto borderRadiusDist = std::uniform_real_distribution<float>{0.0f, 25.0f};
 	constexpr size_t numQuads = 10;
 	quads.reserve(numQuads);
+
 	for (size_t i = 0; i < numQuads; i++) {
-		quads.emplace_back(Quad{{dist(mt), dist2(mt)}, glm::vec2{sizeDist(mt)}, {colorDist(mt), colorDist(mt), colorDist(mt), 1.0f}, borderRadiusDist(mt), 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}});
+		quads.emplace_back(Quad::Args{
+			.pos{dist(mt), dist2(mt)},
+			.size = glm::vec2{sizeDist(mt)},
+			.color{colorDist(mt), colorDist(mt), colorDist(mt), 1.0f},
+			.borderColor = {0.0f, 0.0f, 1.0f, 1.0f},
+			.borderRadius = borderRadiusDist(mt),
+			.borderSize = 1.0f,
+		});
 	}
 
 	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");
 	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+
+	auto text = FontStore::generateQuads("Florine facui sa mearga textul :D", "C:\\Windows\\Fonts\\arial.ttf", 14.0f, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+	auto text2 = FontStore::generateQuads("Toata treaba asta e intr-un singur batch!", "C:\\Windows\\Fonts\\arial.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+	auto text3 = FontStore::generateQuads("Si acum cu alt font!", "C:\\Windows\\Fonts\\calibri.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
 
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -100,6 +113,18 @@ void Window::run() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		for (auto &quad: quads) {
+			renderer.addQuad(quad);
+		}
+
+		for (auto &quad: text) {
+			renderer.addQuad(quad);
+		}
+
+		for (auto &quad: text2) {
+			renderer.addQuad(quad);
+		}
+
+		for (auto &quad: text3) {
 			renderer.addQuad(quad);
 		}
 

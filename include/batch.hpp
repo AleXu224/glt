@@ -23,6 +23,8 @@ namespace squi {
 		std::array<Vertex, VERTEX_BATCH> vertices{};
 		std::array<VertexData, BATCH_SIZE> data{};
 		std::array<unsigned int, INDEX_BATCH> indices{};
+		std::vector<GLuint> textures{};
+		uint32_t maxTextureCount = 16; // 16 is the minimum required by OpenGL
 
 		size_t cursor = 0;
 
