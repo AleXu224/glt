@@ -3,7 +3,6 @@
 #include "quad.hpp"
 #include "random"
 #include "stdexcept"
-#include "textBatch.hpp"
 #include "fontStore.hpp"
 
 using namespace squi;

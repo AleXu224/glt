@@ -5,8 +5,8 @@
 #include "batch.hpp"
 #include "list"
 #include "shader.hpp"
-#include "textBatch.hpp"
 #include "vertex.hpp"
+#include "memory"
 
 namespace squi {
 	class Renderer {
