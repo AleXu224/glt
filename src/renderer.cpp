@@ -82,10 +82,14 @@ auto fragmentShader = R"(
             float borderRadius = min(vBorderRadius, min(halfRes.x, halfRes.y));
             float b = udRoundBox(coords - halfRes, halfRes, borderRadius);
             vec4 outColor = vColor;
-            if (b > -vBorderSize && vBorderSize > 0.0) {
-                outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + vBorderSize));
+            outColor *= vColor.a;
+            float bSize = vBorderSize;
+            if (b > -bSize && bSize > 0.0) {
+                vec4 borderColor = vBorderColor;
+                borderColor *= vBorderColor.a;
+                outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + bSize));
             }
-            FragColor = mix(outColor, vec4(outColor.xyz, 0.0), smoothstep(0.0, 1.5, b));
+            FragColor = mix(outColor, vec4(0.0), smoothstep(0.0, 1.0, b));
         }
 
         vec4 getTextureColor() {
@@ -126,7 +130,12 @@ auto fragmentShader = R"(
         }
 
         void TextQuad() {
-            FragColor = vec4(vColor.rgb, getTextureColor().r * vColor.a);
+            // float alpha = getTextureColor().r;
+            FragColor = vColor * vColor.a * getTextureColor().r;
+            // outColor *= vColor.a * alpha;
+            // outColor *= alpha;
+            // FragColor = outColor;
+            // FragColor = vec4(vColor.rgb, getTextureColor().r * vColor.a);
             // FragColor = vec4(vColor.rgb, texture2D(uTexture[vTextureId], vTexUV).r * vColor.a);
         }
 
