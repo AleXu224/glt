@@ -49,7 +49,7 @@ Window::Window() {
 		exit(1);
 	},
 						   nullptr);
-	// glfwSwapInterval(1);
+	glfwSwapInterval(1);
 }
 
 void Window::run() {
@@ -64,8 +64,8 @@ void Window::run() {
 
 	std::vector<Quad> quads;
 	auto mt = std::mt19937{std::random_device{}()};
-	auto dist = std::uniform_int_distribution<int>{0, 800};
-	auto dist2 = std::uniform_int_distribution<int>{0, 600};
+	auto dist = std::uniform_int_distribution<int>{0, 1920};
+	auto dist2 = std::uniform_int_distribution<int>{0, 1080};
 	auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
 	auto sizeDist = std::uniform_int_distribution<int>{20, 50};
 	auto borderRadiusDist = std::uniform_int_distribution<int>{0, 25};
