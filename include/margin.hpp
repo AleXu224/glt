@@ -48,6 +48,9 @@ namespace squi {
 
         [[nodiscard]] Margin withHorizontalOffset(const float &offset) const;
         [[nodiscard]] Margin withVerticalOffset(const float &offset) const;
+
+		[[nodiscard]] vec2 getPositionOffset() const;
+		[[nodiscard]] vec2 getSizeOffset() const;
 	};
 }// namespace squi
 

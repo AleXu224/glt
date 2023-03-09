@@ -3,19 +3,19 @@
 using namespace squi;
 
 Margin Margin::operator+(const Margin &other) const {
-	return Margin(top + other.top, right + other.right, bottom + other.bottom, left + other.left);
+	return {top + other.top, right + other.right, bottom + other.bottom, left + other.left};
 }
 
 Margin Margin::operator-(const Margin &other) const {
-	return Margin(top - other.top, right - other.right, bottom - other.bottom, left - other.left);
+	return {top - other.top, right - other.right, bottom - other.bottom, left - other.left};
 }
 
 Margin Margin::operator*(const Margin &other) const {
-	return Margin(top * other.top, right * other.right, bottom * other.bottom, left * other.left);
+	return {top * other.top, right * other.right, bottom * other.bottom, left * other.left};
 }
 
 Margin Margin::operator/(const Margin &other) const {
-	return Margin(top / other.top, right / other.right, bottom / other.bottom, left / other.left);
+	return {top / other.top, right / other.right, bottom / other.bottom, left / other.left};
 }
 
 void Margin::operator+=(const Margin &other) {
@@ -47,49 +47,57 @@ void Margin::operator/=(const Margin &other) {
 }
 
 Margin Margin::withTop(const float &newTop) const {
-	return Margin(newTop, right, bottom, left);
+	return {newTop, right, bottom, left};
 }
 
 Margin Margin::withRight(const float &newRight) const {
-	return Margin(top, newRight, bottom, left);
+	return {top, newRight, bottom, left};
 }
 
 Margin Margin::withBottom(const float &newBottom) const {
-	return Margin(top, right, newBottom, left);
+	return {top, right, newBottom, left};
 }
 
 Margin Margin::withLeft(const float &newLeft) const {
-	return Margin(top, right, bottom, newLeft);
+	return {top, right, bottom, newLeft};
 }
 
 Margin Margin::withTopOffset(const float &offset) const {
-	return Margin(top + offset, right, bottom, left);
+	return {top + offset, right, bottom, left};
 }
 
 Margin Margin::withRightOffset(const float &offset) const {
-	return Margin(top, right + offset, bottom, left);
+	return {top, right + offset, bottom, left};
 }
 
 Margin Margin::withBottomOffset(const float &offset) const {
-	return Margin(top, right, bottom + offset, left);
+	return {top, right, bottom + offset, left};
 }
 
 Margin Margin::withLeftOffset(const float &offset) const {
-	return Margin(top, right, bottom, left + offset);
+	return {top, right, bottom, left + offset};
 }
 
 Margin Margin::withHorizontal(const float &newHorizontal) const {
-	return Margin(top, newHorizontal, bottom, newHorizontal);
+	return {top, newHorizontal, bottom, newHorizontal};
 }
 
 Margin Margin::withVertical(const float &newVertical) const {
-	return Margin(newVertical, right, newVertical, left);
+	return {newVertical, right, newVertical, left};
 }
 
 Margin Margin::withHorizontalOffset(const float &offset) const {
-	return Margin(top, right + offset, bottom, left + offset);
+	return {top, right + offset, bottom, left + offset};
 }
 
 Margin Margin::withVerticalOffset(const float &offset) const {
-	return Margin(top + offset, right, bottom + offset, left);
+	return {top + offset, right, bottom + offset, left};
+}
+
+vec2 Margin::getPositionOffset() const {
+	return {left, top};
+}
+
+vec2 Margin::getSizeOffset() const {
+	return {left + right, top + bottom};
 }
