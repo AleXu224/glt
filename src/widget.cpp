@@ -5,7 +5,11 @@ using namespace squi;
 Widget::Widget(const Args &args, const Options &options)
 	: data(args),
 	  isContainer(options.isContainer),
-	  shouldUpdateChildren(options.shouldUpdateChildren) {
+	  shouldUpdateChildren(options.shouldUpdateChildren),
+	  shouldDrawChildren(options.shouldDrawChildren),
+	  shouldHandleSizeBehavior(options.shouldHandleSizeBehavior),
+	  isInteractive(options.isInteractive) {
+	init();
 	if (args.onInit) {
 		args.onInit(*this);
 	}
@@ -66,6 +70,31 @@ const std::vector<std::shared_ptr<Widget>> &Widget::getChildren() const {
 		return children;
 }
 
+Rect Widget::getRect() const {
+	return Rect::fromPosSize(getPos() + getMargin().getPositionOffset(), getSize());
+}
+
+Rect Widget::getContentRect() const {
+	const auto &margin = getMargin();
+	const auto &padding = getPadding();
+	return Rect::fromPosSize(
+		getPos() + margin.getPositionOffset() + padding.getPositionOffset(),
+		getSize() - padding.getSizeOffset());
+}
+
+Rect Widget::getLayoutRect() const {
+	return Rect::fromPosSize(
+		getPos(),
+		getSize() + getPadding().getSizeOffset());
+}
+
+std::vector<Rect> Widget::getHitcheckRect() const {
+	if (isInteractive)
+		return {getRect()};
+	else
+		return {};
+}
+
 void Widget::setSize(const vec2 &newSize) {
 	getData().size = newSize;
 }
@@ -101,16 +130,62 @@ void Widget::setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren
 	children = newChildren;
 }
 
-void Widget::addChild(const std::shared_ptr<Widget>& child) {
+void Widget::addChild(const std::shared_ptr<Widget> &child) {
 	children.push_back(child);
 }
 
 void Widget::update() {
 	if (data.beforeUpdate) data.beforeUpdate(*this);
 
-	// Expand the Widget
-	// Should be done before the child is update so that the child can get accurate size data
-//	if (data.sizeBehavior.horizontal == SizeBehaviorType::FillParent)
+	// Check if the size hint is set
+	bool horizontalHint = sizeHint.x != -1;
+	bool verticalHint = sizeHint.y != -1;
 
-	// TODO: add getContentSize, getSize, getLayoutSize
+	// Expand the Widget
+	// Should be done before the child is updated so that the child can get accurate size data
+	if (shouldHandleSizeBehavior && parent != nullptr) {
+		if (!horizontalHint && data.sizeBehavior.horizontal == SizeBehaviorType::FillParent)
+			data.size.x = parent->getContentRect().width() - data.margin.getSizeOffset().x;
+		if (!verticalHint && data.sizeBehavior.vertical == SizeBehaviorType::FillParent)
+			data.size.y = parent->getContentRect().height() - data.margin.getSizeOffset().y;
+	}
+
+	// On update
+	if (data.onUpdate) data.onUpdate(*this);
+	onUpdate();
+
+	// Update the children
+	if (shouldUpdateChildren) {
+		const auto childPos = getPos() + getMargin().getPositionOffset() + getPadding().getPositionOffset();
+		for (auto &child : children) {
+			child->setParent(this);
+			child->setPos(childPos);
+			child->update();
+		}
+	}
+
+	afterChildrenUpdate();
+
+	// Shrink the Widget
+	// Should be done after the child is updated since it depends on the child's size
+	if (shouldHandleSizeBehavior && !children.empty()) {
+		const auto &child = children.front();
+		if (!horizontalHint && data.sizeBehavior.horizontal == SizeBehaviorType::MatchChild)
+			data.size.x = child->getLayoutRect().width() + data.padding.getSizeOffset().x;
+		if (!verticalHint && data.sizeBehavior.vertical == SizeBehaviorType::MatchChild)
+			data.size.y = child->getLayoutRect().height() + data.padding.getSizeOffset().y;
+	}
+
+	// After update
+	if (data.afterUpdate) data.afterUpdate(*this);
+}
+
+void Widget::draw() {
+	onDraw();
+
+	if (shouldDrawChildren) {
+		for (auto &child : children) {
+			child->draw();
+		}
+	}
 }

@@ -7,13 +7,29 @@
 #include "sizeBehavior.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include "rect.hpp"
 
 namespace squi {
 	class Widget {
 		struct Args {
+			/**
+			 * The size of the Widget.
+			 * Will not be affected by the margin or padding.
+			 * Can be overriden by the size behavior.
+			 */
 			vec2 size;
+			/**
+			 * The space around the widget. Does not affect the size.
+			 */
 			Margin margin;
+			/**
+			 * The space inside the widget. Does not affect the size.
+			 */
 			Margin padding;
+			/**
+			 * The size behavior of the widget.
+			 * This will override the size of the widget.
+			 */
 			SizeBehavior sizeBehavior;
 			std::function<void(Widget &)> onInit{};
 			std::function<void(Widget &)> beforeUpdate{};
@@ -26,12 +42,30 @@ namespace squi {
 			 * When true this Widget will relay all the
 			 */
 			bool isContainer = true;
+			/**
+			 * Set to false to manually update the children
+			 */
 			bool shouldUpdateChildren = true;
+			/**
+			 * Set to false to manually draw the children
+			 */
+			bool shouldDrawChildren = true;
+			/**
+			 * Set to false to manually handle the size behavior
+			 */
+			bool shouldHandleSizeBehavior = true;
+			/**
+			 * Whether hit testing should be performed on this widget
+			 */
+			bool isInteractive = true;
 		};
 
 		Args data;
 		bool isContainer;
 		bool shouldUpdateChildren;
+		bool shouldDrawChildren;
+		bool shouldHandleSizeBehavior;
+		bool isInteractive;
 		vec2 pos{};
 		vec2 sizeHint{-1, -1};
 		Widget *parent = nullptr;
@@ -59,6 +93,10 @@ namespace squi {
 		[[nodiscard]] const SizeBehavior &getSizeBehavior() const;
 		[[nodiscard]] Widget &getParent() const;
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
+		[[nodiscard]] virtual Rect getRect() const;
+		[[nodiscard]] virtual Rect getContentRect() const;
+		[[nodiscard]] virtual Rect getLayoutRect() const;
+		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
 
 		// Setters
 		void setSize(const vec2 &newSize);
@@ -76,9 +114,10 @@ namespace squi {
 		void draw();
 
 		// Virtual methods
-		virtual void onUpdate();
-		virtual void afterChildrenUpdate();
-		virtual void onDraw();
+		virtual void init() {};
+		virtual void onUpdate() {};
+		virtual void afterChildrenUpdate() {};
+		virtual void onDraw() {};
 	};
 }// namespace squi
 
