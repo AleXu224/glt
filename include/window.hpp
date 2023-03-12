@@ -6,11 +6,12 @@
 #include "chrono"
 #include "memory"
 #include "renderer.hpp"
+#include "widget.hpp"
 
 using namespace std::chrono_literals;
 
 namespace squi {
-	class Window {
+	class Window : public Widget{
 		std::shared_ptr<GLFWwindow> window;
 		std::chrono::duration<double> deltaTime = 0s;
 

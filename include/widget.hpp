@@ -4,13 +4,15 @@
 #include "functional"
 #include "margin.hpp"
 #include "memory"
+#include "rect.hpp"
 #include "sizeBehavior.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include "rect.hpp"
+#include "child.hpp"
 
 namespace squi {
 	class Widget {
+	public:
 		struct Args {
 			/**
 			 * The size of the Widget.
@@ -60,16 +62,18 @@ namespace squi {
 			bool isInteractive = true;
 		};
 
+	private:
 		Args data;
 		bool isContainer;
 		bool shouldUpdateChildren;
 		bool shouldDrawChildren;
 		bool shouldHandleSizeBehavior;
 		bool isInteractive;
+		bool isInitialized = false;
 		vec2 pos{};
 		vec2 sizeHint{-1, -1};
 		Widget *parent = nullptr;
-		std::vector<std::shared_ptr<Widget>> children;
+		std::vector<std::shared_ptr<Widget>> children{};
 
 		[[nodiscard]] const Args &getData() const;
 		[[nodiscard]] Args &getData();
@@ -82,7 +86,8 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(const Args &args, const Options &options);
+		explicit Widget(Args args, const Options &options);
+		virtual ~Widget() = default;
 
 		// Getters
 		[[nodiscard]] const vec2 &getSize() const;
@@ -109,15 +114,17 @@ namespace squi {
 		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);
 
 		// Methods
-		void addChild(const std::shared_ptr<Widget>& child);
+		void addChild(const Child &child);
 		void update();
 		void draw();
+		void initialize();
 
 		// Virtual methods
-		virtual void init() {};
-		virtual void onUpdate() {};
-		virtual void afterChildrenUpdate() {};
-		virtual void onDraw() {};
+		virtual void init(){};
+		virtual void onUpdate(){};
+		virtual void afterChildrenUpdate(){};
+		virtual void afterUpdate(){};
+		virtual void onDraw(){};
 	};
 }// namespace squi
 

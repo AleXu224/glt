@@ -53,3 +53,7 @@ vec2 vec2::withXOffset(const float &offset) const {
 vec2 vec2::withYOffset(const float &offset) const {
     return vec2(x, y + offset);
 }
+
+vec2::operator glm::vec2() const {
+	return {x, y};
+}

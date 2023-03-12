@@ -34,14 +34,14 @@ namespace squi {
 
 		Quad(const Args &args);
 
-		std::span<const Vertex> getVertices() const;
-		const VertexData &getData() const;
+		[[nodiscard]] std::span<const Vertex> getVertices() const;
+		[[nodiscard]] const VertexData &getData() const;
 
 		void setId(int id);
 
 		void setTextureIndex(int id);
-		TextureType getTextureType() const;
-		const GLuint &getTextureId() const;
+		[[nodiscard]] TextureType getTextureType() const;
+		[[nodiscard]] const GLuint &getTextureId() const;
 
 		void setPos(glm::vec2 pos);
 		void setSize(glm::vec2 size);

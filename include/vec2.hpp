@@ -1,6 +1,7 @@
 #ifndef SQUI_VEC2_HPP
 #define SQUI_VEC2_HPP
 
+#include <glm/vec2.hpp>
 namespace squi {
 	struct vec2 {
 		float x;
@@ -25,6 +26,8 @@ namespace squi {
 
 		[[nodiscard]] vec2 withXOffset(const float &offset) const;
 		[[nodiscard]] vec2 withYOffset(const float &offset) const;
+
+		[[nodiscard]] operator glm::vec2() const;
 	};
 }// namespace squi
 

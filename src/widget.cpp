@@ -1,18 +1,21 @@
 #include "widget.hpp"
 
+#include <utility>
+
 using namespace squi;
 
-Widget::Widget(const Args &args, const Options &options)
-	: data(args),
+Widget::Widget(Args args, const Options &options)
+	: data(std::move(args)),
 	  isContainer(options.isContainer),
 	  shouldUpdateChildren(options.shouldUpdateChildren),
 	  shouldDrawChildren(options.shouldDrawChildren),
 	  shouldHandleSizeBehavior(options.shouldHandleSizeBehavior),
 	  isInteractive(options.isInteractive) {
-	init();
-	if (args.onInit) {
-		args.onInit(*this);
-	}
+	// TODO: Add these on the Child class that should act as a factory
+	//	init();
+//	if (args.onInit) {
+//		args.onInit(*this);
+//	}
 }
 
 const Widget::Args &Widget::getData() const {
@@ -130,8 +133,9 @@ void Widget::setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren
 	children = newChildren;
 }
 
-void Widget::addChild(const std::shared_ptr<Widget> &child) {
-	children.push_back(child);
+void Widget::addChild(const Child &child) {
+	if (child.hasChild())
+		children.push_back(child);
 }
 
 void Widget::update() {
@@ -177,6 +181,7 @@ void Widget::update() {
 	}
 
 	// After update
+	afterUpdate();
 	if (data.afterUpdate) data.afterUpdate(*this);
 }
 
@@ -188,4 +193,11 @@ void Widget::draw() {
 			child->draw();
 		}
 	}
+}
+
+void Widget::initialize() {
+	if (isInitialized) return;
+	isInitialized = true;
+	init();
+	if (data.onInit) data.onInit(*this);
 }
