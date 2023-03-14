@@ -20,8 +20,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		return;
 	}
 
-	window.reset(glfwCreateWindow(800, 600, "Window", nullptr, nullptr), [](GLFWwindow *window) {
-		glfwDestroyWindow(window);
+	window.reset(glfwCreateWindow(800, 600, "Window", nullptr, nullptr), [](GLFWwindow *windowPtr) {
+		glfwDestroyWindow(windowPtr);
 		glfwTerminate();
 	});
 
@@ -31,13 +31,13 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 	}
 
 
-	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *window, int width, int height) {
+	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *windowPtr, int width, int height) {
 		glViewport(0, 0, width, height);
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		renderer.render();
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(windowPtr);
 	});
 
 	glfwMakeContextCurrent(window.get());
@@ -50,7 +50,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		exit(1);
 	},
 						   nullptr);
-	glfwSwapInterval(1);
+		glfwSwapInterval(1);
 }
 
 void Window::run() {

@@ -45,6 +45,10 @@ Color Color::RGBA(float r, float g, float b, float a) {
 		static_cast<uint8_t>(a * 255));
 }
 
+Color Color::VEC4(const glm::vec4 &vec) {
+	return RGBA(vec.r, vec.g, vec.b, vec.a);
+}
+
 uint8_t Color::r() const {
 	return (value >> 24) & 0xFF;
 }

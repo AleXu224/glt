@@ -24,6 +24,17 @@ namespace squi {
 		Box(const Box::Args &args);
 
 		void onDraw() override;
+
+		void setColor(const Color &color);
+		void setBorderColor(const Color &color);
+		void setBorderWidth(float width);
+		void setBorderRadius(float radius);
+
+		[[nodiscard]] Color getColor() const;
+		[[nodiscard]] Color getBorderColor() const;
+		[[nodiscard]] float getBorderWidth() const;
+		[[nodiscard]] float getBorderRadius() const;
+		[[nodiscard]] Quad &getQuad();
 	};
 }// namespace squi
 

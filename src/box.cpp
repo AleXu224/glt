@@ -13,7 +13,9 @@ Box::Box(const Box::Args &args)
 		  .borderSize = args.borderWidth,
 		  .textureId = 0,
 		  .textureType = Quad::TextureType::NoTexture,
-	  }) {}
+	  }) {
+	addChild(args.child);
+}
 
 void Box::onDraw() {
 	quad.setPos(getPos() + getMargin().getPositionOffset());
@@ -21,4 +23,40 @@ void Box::onDraw() {
 
 	auto &renderer = Renderer::getInstance();
 	renderer.addQuad(quad);
+}
+
+void Box::setColor(const Color &color) {
+	quad.setColor(color);
+}
+
+void Box::setBorderColor(const Color &color) {
+	quad.setBorderColor(color);
+}
+
+void Box::setBorderWidth(float width) {
+	quad.setBorderSize(width);
+}
+
+void Box::setBorderRadius(float radius) {
+	quad.setBorderRadius(radius);
+}
+
+Color Box::getColor() const {
+	return Color::VEC4(quad.getData().color);
+}
+
+Color Box::getBorderColor() const {
+	return Color::VEC4(quad.getData().borderColor);
+}
+
+float Box::getBorderWidth() const {
+	return quad.getData().borderSize;
+}
+
+float Box::getBorderRadius() const {
+	return quad.getData().borderRadius;
+}
+
+Quad &Box::getQuad() {
+	return quad;
 }

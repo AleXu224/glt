@@ -13,6 +13,7 @@ namespace squi {
 		static Color HEX(std::string_view hex);
 		static Color RGBA255(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
 		static Color RGBA(float r, float g, float b, float a = 1.0f);
+		static Color VEC4(const glm::vec4 &vec);
 
 		[[nodiscard]] uint8_t r() const;
 		[[nodiscard]] uint8_t g() const;
