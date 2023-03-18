@@ -18,6 +18,12 @@ int main(int, char **) {
 			.widget {
 				.size = {50, 50},
 				.margin{10},
+				.onInit = [] (Widget &widget) {
+					auto &data = widget.data();
+					data.size.x.animateTo(100, 5s);
+					data.size.y.animateTo(200, 2.5s);
+					data.margin.left.animateTo(40, 1s);
+				},
 			},
 			.color = Color::RGBA(0.5, 0.5, 0.5, 1.0),
 		}),

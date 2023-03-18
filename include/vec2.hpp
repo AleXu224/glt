@@ -1,11 +1,13 @@
 #ifndef SQUI_VEC2_HPP
 #define SQUI_VEC2_HPP
 
-#include <glm/vec2.hpp>
+#include "AnimatedFloat.hpp"
+#include "glm/vec2.hpp"
+
 namespace squi {
 	struct vec2 {
-		float x;
-		float y;
+		AnimatedFloat x;
+		AnimatedFloat y;
 
 		vec2() : x(0), y(0) {}
 		vec2(float x, float y) : x(x), y(y) {}

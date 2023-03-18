@@ -144,8 +144,8 @@ void Window::run() {
 		auto &children = getChildren();
 
 		for (auto &child: std::views::reverse(children)) {
-			child->setPos({0, 0});
-			child->setParent(this);
+			child->data().pos = {0, 0};
+			child->data().parent = this;
 			child->update();
 		}
 

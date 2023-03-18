@@ -10,10 +10,10 @@ namespace squi {
      * 
      */
 	struct Margin {
-		float top;
-		float right;
-		float bottom;
-		float left;
+		AnimatedFloat top;
+		AnimatedFloat right;
+		AnimatedFloat bottom;
+		AnimatedFloat left;
 
 	public:
         Margin() : top(0), right(0), bottom(0), left(0) {}

@@ -35,6 +35,10 @@ namespace squi {
 		[[nodiscard]] bool hasChild() const {
 			return widget != nullptr;
 		}
+
+		[[nodiscard]] std::shared_ptr<Widget> operator->() {
+			return widget;
+		}
 	};
 
 }// namespace squi

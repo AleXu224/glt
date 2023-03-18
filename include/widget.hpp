@@ -1,6 +1,7 @@
 #ifndef SQUI_WIDGEt_HPP
 #define SQUI_WIDGEt_HPP
 
+#include "child.hpp"
 #include "functional"
 #include "margin.hpp"
 #include "memory"
@@ -8,7 +9,6 @@
 #include "sizeBehavior.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include "child.hpp"
 
 namespace squi {
 	class Widget {
@@ -63,20 +63,27 @@ namespace squi {
 		};
 
 	private:
-		Args data;
+		bool isInitialized = false;
 		bool isContainer;
 		bool shouldUpdateChildren;
 		bool shouldDrawChildren;
 		bool shouldHandleSizeBehavior;
 		bool isInteractive;
-		bool isInitialized = false;
-		vec2 pos{};
-		vec2 sizeHint{-1, -1};
-		Widget *parent = nullptr;
+		std::function<void(Widget &)> onInitArg;
+		std::function<void(Widget &)> beforeUpdateArg;
+		std::function<void(Widget &)> onUpdateArg;
+		std::function<void(Widget &)> afterUpdateArg;
+		struct Data {
+			vec2 size;
+			Margin margin;
+			Margin padding;
+			SizeBehavior sizeBehavior;
+			vec2 pos{};
+			vec2 sizeHint{-1, -1};
+			Widget *parent = nullptr;
+		};
+		Data m_data;
 		std::vector<std::shared_ptr<Widget>> children{};
-
-		[[nodiscard]] const Args &getData() const;
-		[[nodiscard]] Args &getData();
 
 	public:
 		// Disable copy
@@ -86,17 +93,12 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(Args args, const Options &options);
+		explicit Widget(const Args& args, const Options &options);
 		virtual ~Widget() = default;
 
 		// Getters
-		[[nodiscard]] const vec2 &getSize() const;
-		[[nodiscard]] const vec2 &getPos() const;
-		[[nodiscard]] const vec2 &getSizeHint() const;
-		[[nodiscard]] const Margin &getMargin() const;
-		[[nodiscard]] const Margin &getPadding() const;
-		[[nodiscard]] const SizeBehavior &getSizeBehavior() const;
-		[[nodiscard]] Widget &getParent() const;
+		[[nodiscard]] Data &data();
+		[[nodiscard]] const Data &data() const;
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
 		[[nodiscard]] virtual Rect getRect() const;
 		[[nodiscard]] virtual Rect getContentRect() const;
@@ -104,13 +106,6 @@ namespace squi {
 		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
 
 		// Setters
-		void setSize(const vec2 &newSize);
-		void setPos(const vec2 &newPos);
-		void setSizeHint(const vec2 &newSizeHint);
-		void setMargin(const Margin &newMargin);
-		void setPadding(const Margin &newPadding);
-		void setSizeBehavior(const SizeBehavior &newSizeBehavior);
-		void setParent(Widget *newParent);
 		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);
 
 		// Methods

@@ -3,19 +3,19 @@
 using namespace squi;
 
 vec2 vec2::operator+(const vec2 &other) const {
-    return vec2(x + other.x, y + other.y);
+    return {x + other.x, y + other.y};
 }
 
 vec2 vec2::operator-(const vec2 &other) const {
-    return vec2(x - other.x, y - other.y);
+    return {x - other.x, y - other.y};
 }
 
 vec2 vec2::operator*(const vec2 &other) const {
-    return vec2(x * other.x, y * other.y);
+    return {x * other.x, y * other.y};
 }
 
 vec2 vec2::operator/(const vec2 &other) const {
-    return vec2(x / other.x, y / other.y);
+    return {x / other.x, y / other.y};
 }
 
 void vec2::operator+=(const vec2 &other) {
@@ -39,19 +39,19 @@ void vec2::operator/=(const vec2 &other) {
 }
 
 vec2 vec2::withX(const float &newX) const {
-    return vec2(newX, y);
+    return {newX, y};
 }
 
 vec2 vec2::withY(const float &newY) const {
-    return vec2(x, newY);
+    return {x, newY};
 }
 
 vec2 vec2::withXOffset(const float &offset) const {
-    return vec2(x + offset, y);
+    return {x + offset, y};
 }
 
 vec2 vec2::withYOffset(const float &offset) const {
-    return vec2(x, y + offset);
+    return {x, y + offset};
 }
 
 vec2::operator glm::vec2() const {

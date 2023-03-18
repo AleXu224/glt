@@ -18,8 +18,9 @@ Box::Box(const Box::Args &args)
 }
 
 void Box::onDraw() {
-	quad.setPos(getPos() + getMargin().getPositionOffset());
-	quad.setSize(getSize());
+	auto &data = this->data();
+	quad.setPos(data.pos + data.margin.getPositionOffset());
+	quad.setSize(data.size);
 
 	auto &renderer = Renderer::getInstance();
 	renderer.addQuad(quad);

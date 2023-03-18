@@ -1,69 +1,44 @@
 #include "widget.hpp"
 
-#include <utility>
-
 using namespace squi;
 
-Widget::Widget(Args args, const Options &options)
-	: data(std::move(args)),
-	  isContainer(options.isContainer),
+Widget::Widget(const Args& args, const Options &options)
+	: isContainer(options.isContainer),
 	  shouldUpdateChildren(options.shouldUpdateChildren),
 	  shouldDrawChildren(options.shouldDrawChildren),
 	  shouldHandleSizeBehavior(options.shouldHandleSizeBehavior),
-	  isInteractive(options.isInteractive) {
+	  isInteractive(options.isInteractive),
+	  onInitArg(args.onInit),
+	  beforeUpdateArg(args.beforeUpdate),
+	  onUpdateArg(args.onUpdate),
+	  afterUpdateArg(args.afterUpdate),
+	  m_data(Widget::Data{
+		  .size = args.size,
+		  .margin = args.margin,
+		  .padding = args.padding,
+		  .sizeBehavior = args.sizeBehavior,
+	  }) {
 	// TODO: Add these on the Child class that should act as a factory
 	//	init();
-//	if (args.onInit) {
-//		args.onInit(*this);
-//	}
+	//	if (args.onInit) {
+	//		args.onInit(*this);
+	//	}
 }
 
-const Widget::Args &Widget::getData() const {
-	if (isContainer && !children.empty())
-		return children.front()->getData();
-	else
-		return data;
+Widget::Data &Widget::data() {
+	if (isContainer && !children.empty()) {
+		return children.front()->data();
+	} else {
+		return m_data;
+	}
 }
 
-Widget::Args &Widget::getData() {
-	if (isContainer && !children.empty())
-		return children.front()->getData();
-	else
-		return data;
-}
-
-const vec2 &Widget::getSize() const {
-	return getData().size;
-}
-
-const vec2 &Widget::getPos() const {
-	if (isContainer && !children.empty())
-		return children.front()->getPos();
-	else
-		return pos;
-}
-
-const vec2 &Widget::getSizeHint() const {
-	if (isContainer && !children.empty())
-		return children.front()->getSizeHint();
-	else
-		return sizeHint;
-}
-
-const Margin &Widget::getMargin() const {
-	return getData().margin;
-}
-
-const Margin &Widget::getPadding() const {
-	return getData().padding;
-}
-
-const SizeBehavior &Widget::getSizeBehavior() const {
-	return getData().sizeBehavior;
-}
-
-Widget &Widget::getParent() const {
-	return *parent;
+const Widget::Data &Widget::data() const {
+	if (isContainer && !children.empty()) {
+		return children.front()->data();
+	} else {
+		return m_data;
+	}
 }
 
 const std::vector<std::shared_ptr<Widget>> &Widget::getChildren() const {
@@ -74,21 +49,22 @@ const std::vector<std::shared_ptr<Widget>> &Widget::getChildren() const {
 }
 
 Rect Widget::getRect() const {
-	return Rect::fromPosSize(getPos() + getMargin().getPositionOffset(), getSize());
+	const auto& data = this->data();
+	return Rect::fromPosSize(data.pos + data.margin.getPositionOffset(), data.size);
 }
 
 Rect Widget::getContentRect() const {
-	const auto &margin = getMargin();
-	const auto &padding = getPadding();
+	const auto& data = this->data();
 	return Rect::fromPosSize(
-		getPos() + margin.getPositionOffset() + padding.getPositionOffset(),
-		getSize() - padding.getSizeOffset());
+		data.pos + data.margin.getPositionOffset() + data.padding.getPositionOffset(),
+		data.size - data.padding.getSizeOffset());
 }
 
 Rect Widget::getLayoutRect() const {
+	const auto& data = this->data();
 	return Rect::fromPosSize(
-		getPos(),
-		getSize() + getPadding().getSizeOffset());
+		data.pos,
+		data.size + data.padding.getSizeOffset());
 }
 
 std::vector<Rect> Widget::getHitcheckRect() const {
@@ -96,37 +72,6 @@ std::vector<Rect> Widget::getHitcheckRect() const {
 		return {getRect()};
 	else
 		return {};
-}
-
-void Widget::setSize(const vec2 &newSize) {
-	getData().size = newSize;
-}
-
-void Widget::setPos(const vec2 &newPos) {
-	pos = newPos;
-}
-
-void Widget::setSizeHint(const vec2 &newSizeHint) {
-	if (isContainer && !children.empty())
-		children.front()->setSizeHint(newSizeHint);
-	else
-		sizeHint = newSizeHint;
-}
-
-void Widget::setMargin(const Margin &newMargin) {
-	getData().margin = newMargin;
-}
-
-void Widget::setPadding(const Margin &newPadding) {
-	getData().padding = newPadding;
-}
-
-void Widget::setSizeBehavior(const SizeBehavior &newSizeBehavior) {
-	getData().sizeBehavior = newSizeBehavior;
-}
-
-void Widget::setParent(Widget *newParent) {
-	parent = newParent;
 }
 
 void Widget::setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren) {
@@ -139,31 +84,31 @@ void Widget::addChild(const Child &child) {
 }
 
 void Widget::update() {
-	if (data.beforeUpdate) data.beforeUpdate(*this);
+	if (beforeUpdateArg) beforeUpdateArg(*this);
 
 	// Check if the size hint is set
-	bool horizontalHint = sizeHint.x != -1;
-	bool verticalHint = sizeHint.y != -1;
+	bool horizontalHint = m_data.sizeHint.x != -1;
+	bool verticalHint = m_data.sizeHint.y != -1;
 
 	// Expand the Widget
 	// Should be done before the child is updated so that the child can get accurate size data
-	if (shouldHandleSizeBehavior && parent != nullptr) {
-		if (!horizontalHint && data.sizeBehavior.horizontal == SizeBehaviorType::FillParent)
-			data.size.x = parent->getContentRect().width() - data.margin.getSizeOffset().x;
-		if (!verticalHint && data.sizeBehavior.vertical == SizeBehaviorType::FillParent)
-			data.size.y = parent->getContentRect().height() - data.margin.getSizeOffset().y;
+	if (!isContainer && shouldHandleSizeBehavior && m_data.parent != nullptr) {
+		if (!horizontalHint && m_data.sizeBehavior.horizontal == SizeBehaviorType::FillParent)
+			m_data.size.x = m_data.parent->getContentRect().width() - m_data.margin.getSizeOffset().x;
+		if (!verticalHint && m_data.sizeBehavior.vertical == SizeBehaviorType::FillParent)
+			m_data.size.y = m_data.parent->getContentRect().height() - m_data.margin.getSizeOffset().y;
 	}
 
 	// On update
-	if (data.onUpdate) data.onUpdate(*this);
+	if (onUpdateArg) onUpdateArg(*this);
 	onUpdate();
 
 	// Update the children
 	if (shouldUpdateChildren) {
-		const auto childPos = getPos() + getMargin().getPositionOffset() + getPadding().getPositionOffset();
-		for (auto &child : children) {
-			child->setParent(this);
-			child->setPos(childPos);
+		const auto childPos = m_data.pos + m_data.margin.getPositionOffset() + m_data.padding.getPositionOffset();
+		for (auto &child: children) {
+			child->m_data.parent = this;
+			child->m_data.pos = childPos;
 			child->update();
 		}
 	}
@@ -172,24 +117,24 @@ void Widget::update() {
 
 	// Shrink the Widget
 	// Should be done after the child is updated since it depends on the child's size
-	if (shouldHandleSizeBehavior && !children.empty()) {
+	if (!isContainer && shouldHandleSizeBehavior && !children.empty()) {
 		const auto &child = children.front();
-		if (!horizontalHint && data.sizeBehavior.horizontal == SizeBehaviorType::MatchChild)
-			data.size.x = child->getLayoutRect().width() + data.padding.getSizeOffset().x;
-		if (!verticalHint && data.sizeBehavior.vertical == SizeBehaviorType::MatchChild)
-			data.size.y = child->getLayoutRect().height() + data.padding.getSizeOffset().y;
+		if (!horizontalHint && m_data.sizeBehavior.horizontal == SizeBehaviorType::MatchChild)
+			m_data.size.x = child->getLayoutRect().width() + m_data.padding.getSizeOffset().x;
+		if (!verticalHint && m_data.sizeBehavior.vertical == SizeBehaviorType::MatchChild)
+			m_data.size.y = child->getLayoutRect().height() + m_data.padding.getSizeOffset().y;
 	}
 
 	// After update
 	afterUpdate();
-	if (data.afterUpdate) data.afterUpdate(*this);
+	if (afterUpdateArg) afterUpdateArg(*this);
 }
 
 void Widget::draw() {
 	onDraw();
 
 	if (shouldDrawChildren) {
-		for (auto &child : children) {
+		for (auto &child: children) {
 			child->draw();
 		}
 	}
@@ -199,5 +144,5 @@ void Widget::initialize() {
 	if (isInitialized) return;
 	isInitialized = true;
 	init();
-	if (data.onInit) data.onInit(*this);
+	if (onInitArg) onInitArg(*this);
 }
