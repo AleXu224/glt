@@ -54,6 +54,7 @@ auto vertexShader = R"(
             gl_Position = vec4(uProjectionMatrix * vec4(pos, 0.0, 1.0));
         }
     )";
+    // TODO: Borders do not work with border radius = 0
 auto fragmentShader = R"(
         #version 450 core
         out vec4 FragColor;

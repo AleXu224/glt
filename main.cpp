@@ -26,6 +26,8 @@ int main(int, char **) {
 				},
 			},
 			.color = Color::RGBA(0.5, 0.5, 0.5, 1.0),
+			.borderWidth = 1,
+			.borderRadius = 100,
 		}),
 	}});
 	window.run();
