@@ -2,6 +2,7 @@
 
 #include <utility>
 #include "algorithm"
+#include "renderer.hpp"
 
 using namespace squi;
 
@@ -25,7 +26,7 @@ void AnimatedFloat::cancelAnimation() {
 AnimatedFloat::operator float() const {
 	if (animation.finished || animation.duration == 0s) return animation.finalValue;
 
-	const auto timeSinceStart = std::chrono::steady_clock::now() - animation.startTime;
+	const auto timeSinceStart = Renderer::getInstance().getCurrentFrameTime() - animation.startTime;
 	const auto progress = animation.easingFunction(timeSinceStart / animation.duration);
 	if (progress >= 1) {
 		animation.finished = true;

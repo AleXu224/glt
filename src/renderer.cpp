@@ -242,6 +242,22 @@ void Renderer::render() {
 }
 
 void Renderer::updateScreenSize(int width, int height) {
-	projectionMatrix[0][0] = 2.0f / width;
-	projectionMatrix[1][1] = -2.0f / height;
+	projectionMatrix[0][0] = 2.0f / (float)width;
+	projectionMatrix[1][1] = -2.0f / (float)height;
+}
+
+void Renderer::updateDeltaTime(std::chrono::duration<double> time) {
+	this->deltaTime = time;
+}
+
+void Renderer::updateCurrentFrameTime(std::chrono::time_point<std::chrono::steady_clock> time) {
+	this->currentFrameTime = time;
+}
+
+std::chrono::duration<double> Renderer::getDeltaTime() const {
+	return this->deltaTime;
+}
+
+std::chrono::time_point<std::chrono::steady_clock> Renderer::getCurrentFrameTime() const {
+	return this->currentFrameTime;
 }

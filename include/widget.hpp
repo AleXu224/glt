@@ -9,6 +9,7 @@
 #include "sizeBehavior.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include "gestureDetector.hpp"
 
 namespace squi {
 	class Widget {
@@ -81,6 +82,7 @@ namespace squi {
 			vec2 pos{};
 			vec2 sizeHint{-1, -1};
 			Widget *parent = nullptr;
+			GestureDetector gestureDetector;
 		};
 		Data m_data;
 		std::vector<std::shared_ptr<Widget>> children{};

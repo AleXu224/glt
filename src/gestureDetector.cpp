@@ -75,11 +75,11 @@ void GestureDetector::update() {
 	lastCursorPos = g_cursorPos;
 }
 
-const vec2 &GestureDetector::getMousePos() const {
+const vec2 &GestureDetector::getMousePos() {
 	return g_cursorPos;
 }
 
-vec2 GestureDetector::getMouseDelta() const {
+vec2 GestureDetector::getMouseDelta() {
 	return g_cursorPos - lastCursorPos;
 }
 

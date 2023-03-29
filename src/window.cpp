@@ -35,9 +35,38 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		glViewport(0, 0, width, height);
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		renderer.render();
-		glfwSwapBuffers(windowPtr);
+		// TODO: Add support for redrawing the window while resizing
+
+		//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//		renderer.render();
+		//		glfwSwapBuffers(windowPtr);
+	});
+	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
+		auto dpiScale = GestureDetector::g_dpi / vec2{96};
+		GestureDetector::g_cursorPos = vec2{(float) (xpos), (float) (ypos)} / dpiScale;
+	});
+	glfwSetCharCallback(window.get(), [](GLFWwindow *m_window, unsigned int codepoint) {
+		GestureDetector::g_textInput = static_cast<unsigned char>(codepoint);
+	});
+	glfwSetScrollCallback(window.get(), [](GLFWwindow *m_window, double xoffset, double yoffset) {
+		GestureDetector::g_scrollDelta = vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
+	});
+	glfwSetKeyCallback(window.get(), [](GLFWwindow *m_window, int key, int scancode, int action, int mods) {
+		//		Screen::getCurrentScreen()->animationRunning();
+		if (!GestureDetector::g_keys.contains(key))
+			GestureDetector::g_keys.insert({key, {action, mods}});
+		else
+			GestureDetector::g_keys.at(key) = {action, mods};
+	});
+	glfwSetMouseButtonCallback(window.get(), [](GLFWwindow *m_window, int button, int action, int mods) {
+		//		Screen::getCurrentScreen()->animationRunning();
+		if (!GestureDetector::g_keys.contains(button))
+			GestureDetector::g_keys.insert({button, {action, mods}});
+		else
+			GestureDetector::g_keys.at(button) = {action, mods};
+	});
+	glfwSetCursorEnterCallback(window.get(), [](GLFWwindow *m_window, int entered) {
+		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
 	glfwMakeContextCurrent(window.get());
@@ -50,103 +79,35 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		exit(1);
 	},
 						   nullptr);
-		glfwSwapInterval(1);
+	glfwSwapInterval(1);
 }
 
 void Window::run() {
 	Renderer &renderer = Renderer::getInstance();
 
-	//	std::vector<Quad> quads;
-	//	auto mt = std::mt19937{std::random_device{}()};
-	//	auto dist = std::uniform_int_distribution<int>{0, 1920};
-	//	auto dist2 = std::uniform_int_distribution<int>{0, 1080};
-	//	auto colorDist = std::uniform_real_distribution<float>{0.3f, 1.0f};
-	//	auto sizeDist = std::uniform_int_distribution<int>{20, 50};
-	//	auto borderRadiusDist = std::uniform_int_distribution<int>{0, 25};
-	//	auto burderSizeDist = std::uniform_int_distribution<int>{0, 5};
-	//	constexpr size_t numQuads = 10;
-	//	quads.reserve(numQuads);
-	//
-	//	for (size_t i = 0; i < numQuads; i++) {
-	//		quads.emplace_back(Quad::Args{
-	//			.pos{dist(mt), dist2(mt)},
-	//			.size = glm::vec2{(float)sizeDist(mt)},
-	//			.color{colorDist(mt), colorDist(mt), colorDist(mt), 1.0f},
-	//			.borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-	//			.borderRadius = (float)borderRadiusDist(mt),
-	//			.borderSize = (float)burderSizeDist(mt),
-	//		});
-	//	}
-	//
-	//	Quad WinUI(Quad::Args{
-	//		.pos{200, 200},
-	//		.size{100, 100},
-	//		.color{1.0f, 1.0f, 1.0f, 0.0605},
-	//		.borderColor = {0.29f, 0.29f, 0.29f, 1.0f},
-	//		.borderRadius = 8,
-	//		.borderSize = 1,
-	//	});
-	//
-	//	Quad WinUIBg(Quad::Args{
-	//		.pos{175, 175},
-	//		.size{150, 150},
-	//		.color{0.1529f, 0.1607f, 0.1686f, 1.0f},
-	//	});
-
-	// TextBatch textBatch("C:\\Windows\\Fonts\\arial.ttf");
-	// textBatch.createQuads("Hello World!", {0.0f, 0.0f}, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-
-	//	auto text3 = FontStore::generateQuads("Alt font", "C:\\Windows\\Fonts\\arialbi.ttf", 20.0f, {100.0f, 148.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	//	auto text = FontStore::generateQuads("Font 1 %", "C:\\Windows\\Fonts\\arial.ttf", 14.0f, {100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	//	auto text2 = FontStore::generateQuads("Font 1 dar cu alta marime", "C:\\Windows\\Fonts\\arial.ttf", 20.0f, {100.0f, 124.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-	//	auto WinUIText = FontStore::generateQuads("WinUI", "C:\\Windows\\Fonts\\segoeui.ttf", 14.0f, {208.0f, 208.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-
-
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	unsigned int frames = 0;
-	double lastTime = glfwGetTime();
+
+	auto lastTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window.get())) {
-		double currentTime = glfwGetTime();
-		frames++;
-		if (currentTime - lastTime >= 1.0) {
-			// printf("%f ms/frame (%d fps)\n", 1000.0 / double(frames), frames);
-			glfwSetWindowTitle(window.get(), std::to_string(frames).c_str());
-			frames = 0;
-			lastTime += 1.0;
-		}
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//		for (auto &quad: quads) {
-		//			renderer.addQuad(quad);
-		//		}
-		//
-		//		for (auto &quad: text) {
-		//			renderer.addQuad(quad);
-		//		}
-		//		for (auto &quad: text3) {
-		//			renderer.addQuad(quad);
-		//		}
-		//
-		//		for (auto &quad: text2) {
-		//			renderer.addQuad(quad);
-		//		}
-		//
-		//		renderer.addQuad(WinUIBg);
-		//		renderer.addQuad(WinUI);
-		//		for (auto &quad: WinUIText) {
-		//			renderer.addQuad(quad);
-		//		}
-
 		auto &children = getChildren();
 
-		for (auto &child: std::views::reverse(children)) {
-			child->data().pos = {0, 0};
-			child->data().parent = this;
-			child->update();
+		auto currentTime = std::chrono::steady_clock::now();
+		auto deltaTime = currentTime - lastTime;
+		constexpr bool UPDATE_DEBUG_STEP = false;
+		if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
+			renderer.updateDeltaTime(deltaTime);
+			renderer.updateCurrentFrameTime(currentTime);
+			for (auto &child: std::views::reverse(children)) {
+				child->data().pos = {0, 0};
+				child->data().parent = this;
+				child->update();
+			}
 		}
 
 		for (auto &child: children) {
@@ -157,5 +118,6 @@ void Window::run() {
 
 		glfwSwapBuffers(window.get());
 		glFlush();
+		lastTime = currentTime;
 	}
 }

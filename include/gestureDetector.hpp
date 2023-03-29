@@ -47,9 +47,9 @@ namespace squi {
 
 		void update();
 
-		[[nodiscard]] const vec2& getMousePos() const;
+		[[nodiscard]] static const vec2& getMousePos() ;
 		// Get how much the cursor has moved since the last frame
-		[[nodiscard]] vec2 getMouseDelta() const;
+		[[nodiscard]] static vec2 getMouseDelta() ;
 		// Get how much the scroll has moved in the last frame
 		[[nodiscard]] const vec2& getScroll() const;
 		// Get how much the cursor has moved since it began dragging

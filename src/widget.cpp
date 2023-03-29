@@ -17,6 +17,7 @@ Widget::Widget(const Args& args, const Options &options)
 		  .margin = args.margin,
 		  .padding = args.padding,
 		  .sizeBehavior = args.sizeBehavior,
+		  .gestureDetector = GestureDetector(this),
 	  }) {
 	// TODO: Add these on the Child class that should act as a factory
 	//	init();
@@ -85,6 +86,11 @@ void Widget::addChild(const Child &child) {
 
 void Widget::update() {
 	if (beforeUpdateArg) beforeUpdateArg(*this);
+
+	// Update the GestureDetector
+	// TODO: This will be executed even if the Widget does not need the input
+	// 	     Should somehow check if the Widget will need the input in the update
+	m_data.gestureDetector.update();
 
 	// Check if the size hint is set
 	bool horizontalHint = m_data.sizeHint.x != -1;

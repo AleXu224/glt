@@ -1,8 +1,8 @@
-#include "window.hpp"
-#include "child.hpp"
-#include "widget.hpp"
-#include "color.hpp"
 #include "box.hpp"
+#include "child.hpp"
+#include "color.hpp"
+#include "widget.hpp"
+#include "window.hpp"
 
 int main(int, char **) {
 	using namespace squi;
@@ -15,14 +15,32 @@ int main(int, char **) {
 		},
 		.borderRadius = 10,
 		.child = new Box(Box::Args{
-			.widget {
-				.size = {50, 50},
-				.margin{10},
-				.onInit = [] (Widget &widget) {
+			.widget{
+				//				.size = {50, 50},
+				//				.margin{10},
+				.size = {100, 200},
+				.margin = {10, 10, 10, 40},
+				.onInit = [](Widget &widget) {
 					auto &data = widget.data();
-					data.size.x.animateTo(100, 5s);
-					data.size.y.animateTo(200, 2.5s);
-					data.margin.left.animateTo(40, 1s);
+					//					data.size.x.animateTo(100, 5s);
+					//					data.size.y.animateTo(200, 2.5s);
+					//					data.margin.left.animateTo(40, 1s);
+					data.gestureDetector.onClick = [&data](GestureDetector &gd) {
+					  	static bool isBig = false;
+					  	if (isBig) {
+							data.size.x.animateTo(100, 200ms);
+							isBig = false;
+						} else {
+							data.size.x.animateTo(120, 200ms);
+							isBig = true;
+						}
+					};
+					data.gestureDetector.onEnter = [&widget](GestureDetector &gd) {
+						((Box&)widget).setColor(Color::RGBA(1.0, 0.0, 0.0, 1.0));
+					};
+					data.gestureDetector.onLeave = [&widget](GestureDetector &gd) {
+						((Box&)widget).setColor(Color::RGBA(0.5, 0.5, 0.5, 1.0));
+					};
 				},
 			},
 			.color = Color::RGBA(0.5, 0.5, 0.5, 1.0),
