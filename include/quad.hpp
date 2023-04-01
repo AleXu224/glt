@@ -3,6 +3,8 @@
 #include "array"
 #include "span"
 #include "vertex.hpp"
+#include "d3d11.h"
+#include "memory"
 
 namespace squi {
 	class Quad {
@@ -15,21 +17,21 @@ namespace squi {
 	private:
 
 		std::array<Vertex, 4> vertices{};
-		VertexData data;
-		GLuint textureId;
+		VertexData data{};
+		std::shared_ptr<ID3D11Texture2D> texture;
 
 	public:
 		struct Args {
-			glm::vec2 pos;
-			glm::vec2 size;
-			glm::vec2 offset;
-			glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-			glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
-			glm::f32 borderRadius;
-			glm::f32 borderSize;
-			glm::u32 textureId;
+			DirectX::XMFLOAT2 pos;
+			DirectX::XMFLOAT2 size;
+			DirectX::XMFLOAT2 offset;
+			DirectX::XMFLOAT4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+			DirectX::XMFLOAT4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
+			float borderRadius;
+			float borderSize;
+			std::shared_ptr<ID3D11Texture2D> texture;
 			TextureType textureType = TextureType::NoTexture;
-			glm::vec4 textureUv;
+			DirectX::XMFLOAT4 textureUv;
 		};
 
 		Quad(const Args &args);
@@ -37,16 +39,16 @@ namespace squi {
 		[[nodiscard]] std::span<const Vertex> getVertices() const;
 		[[nodiscard]] const VertexData &getData() const;
 
-		void setId(int id);
+		void setId(uint32_t id);
 
-		void setTextureIndex(int id);
+		void setTextureIndex(uint32_t id);
 		[[nodiscard]] TextureType getTextureType() const;
-		[[nodiscard]] const GLuint &getTextureId() const;
+		[[nodiscard]] std::shared_ptr<ID3D11Texture2D> getTexture() const;
 
-		void setPos(glm::vec2 pos);
-		void setSize(glm::vec2 size);
-		void setColor(glm::vec4 color);
-		void setBorderColor(glm::vec4 color);
+		void setPos(DirectX::XMFLOAT2 pos);
+		void setSize(DirectX::XMFLOAT2 size);
+		void setColor(DirectX::XMFLOAT4 color);
+		void setBorderColor(DirectX::XMFLOAT4 color);
 		void setBorderRadius(float radius);
 		void setBorderSize(float size);
 	};

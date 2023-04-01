@@ -45,8 +45,8 @@ Color Color::RGBA(float r, float g, float b, float a) {
 		static_cast<uint8_t>(a * 255));
 }
 
-Color Color::VEC4(const glm::vec4 &vec) {
-	return RGBA(vec.r, vec.g, vec.b, vec.a);
+Color Color::VEC4(const DirectX::XMFLOAT4 &vec) {
+	return RGBA(vec.z, vec.y, vec.z, vec.w);
 }
 
 uint8_t Color::r() const {
@@ -65,7 +65,7 @@ uint8_t Color::a() const {
 	return (value >> 0) & 0xFF;
 }
 
-Color::operator glm::vec4() const {
+Color::operator DirectX::XMFLOAT4() const {
 	return {
 		static_cast<float>(r()) / 255.0f,
 		static_cast<float>(g()) / 255.0f,
@@ -75,22 +75,22 @@ Color::operator glm::vec4() const {
 
 // TODO: Add support for transition curves
 Color Color::transistion(const Color &other, float t) const {
-	glm::vec4 color1 = *this;
-	glm::vec4 color2 = other;
+	DirectX::XMFLOAT4 color1 = *this;
+	DirectX::XMFLOAT4 color2 = other;
 
 	// Convert to premultiplied alpha
-	color1.r *= color1.a;
-	color1.g *= color1.a;
-	color1.b *= color1.a;
-	color2.r *= color2.a;
-	color2.g *= color2.a;
-	color2.b *= color2.a;
+	color1.x *= color1.w;
+	color1.y *= color1.w;
+	color1.z *= color1.w;
+	color2.x *= color2.w;
+	color2.y *= color2.w;
+	color2.z *= color2.w;
 
 	// Interpolate
-	auto r = color1.r * (1.0f - t) + color2.r * t;
-	auto g = color1.g * (1.0f - t) + color2.g * t;
-	auto b = color1.b * (1.0f - t) + color2.b * t;
-	auto a = color1.a * (1.0f - t) + color2.a * t;
+	auto r = color1.x * (1.0f - t) + color2.x * t;
+	auto g = color1.y * (1.0f - t) + color2.y * t;
+	auto b = color1.z * (1.0f - t) + color2.z * t;
+	auto a = color1.w * (1.0f - t) + color2.w * t;
 
 	// Convert back to straight alpha
 	r /= a;

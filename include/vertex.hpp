@@ -1,7 +1,6 @@
 #ifndef SQUI_VERTEX_HPP
 #define SQUI_VERTEX_HPP
-#include "glad/glad.h"
-#include "glm/glm.hpp"
+#include "DirectXMath.h"
 #include "tuple"
 
 namespace squi {
@@ -10,53 +9,52 @@ namespace squi {
 		 * @brief UV coordinates of the vertex.
 		 * Should always be 0,0 for the top left corner and 1,1 for the bottom right corner
 		 */
-		glm::vec2 uv;
+		DirectX::XMFLOAT2 uv;
 		/**
 		 * @brief UV coordinates for the texture.
 		 */
-		glm::vec2 texUv;
+		DirectX::XMFLOAT2 texUv;
 		/**
 		 * @brief Internally used by the shader to find its respective data.
 		 */
-		glm::u32 id;
+		uint32_t id;
 	};
 
 	struct VertexData {
 		/**
 		 * @brief Inner color of the quad
 		 */
-		glm::vec4 color;
+		DirectX::XMFLOAT4 color;
 		/**
 		 * @brief Border color of the quad
 		 */
-		glm::vec4 borderColor;
+		DirectX::XMFLOAT4 borderColor;
 		/**
 		 * @brief Screen position of the quad (top left corner)
 		 */
-		glm::vec2 pos;
+		DirectX::XMFLOAT2 pos;
 		/**
 		 * @brief Size of the quad
 		 */
-		glm::vec2 size;
+		DirectX::XMFLOAT2 size;
 		/**
 		 * @brief Used for text. This offset is given for all characters in a string of text
 		 * so that they all have the same position
 		 */
-		glm::vec2 offset;
+		DirectX::XMFLOAT2 offset;
 		/**
 		 * @brief Radius of the border
 		 */
-		glm::float32 borderRadius;
+		float borderRadius;
 		/**
 		 * @brief Size of the border
 		 */
-		glm::float32 borderSize;
+		float borderSize;
 		/**
 		 * @brief Texture id of the quad. 0 if no texture is used
 		 */
-		glm::uint32_t textureIndex;
-		glm::uint32_t textureType;
-		glm::vec2 padding; // Padding to make the struct 16 byte aligned
+		uint32_t textureIndex;
+		uint32_t textureType;
 	};
 }// namespace squi
 

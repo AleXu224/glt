@@ -11,7 +11,6 @@ Box::Box(const Box::Args &args)
 		  .borderColor = args.borderColor,
 		  .borderRadius = args.borderRadius,
 		  .borderSize = args.borderWidth,
-		  .textureId = 0,
 		  .textureType = Quad::TextureType::NoTexture,
 	  }) {
 	addChild(args.child);

@@ -2,63 +2,95 @@
 
 using namespace squi;
 
-Batch::Batch() {
+Batch::Batch(const std::shared_ptr<ID3D11Device>& device) {
 	// Vertex array
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	// Vertex buffer
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	const auto stride = sizeof(Vertex);
-	uintptr_t pos = 0;
-	glBufferData(GL_ARRAY_BUFFER, VERTEX_BATCH * stride, vertices.data(), GL_DYNAMIC_DRAW);
+	D3D11_BUFFER_DESC VBufferDesc = {};
+	VBufferDesc.ByteWidth = sizeof(vertices);
+	VBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	VBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	VBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	VBufferDesc.MiscFlags = 0;
+	VBufferDesc.StructureByteStride = sizeof(Vertex);
 
-	// UV
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, (void *) pos);
-	glEnableVertexAttribArray(0);
-	pos += sizeof(glm::vec2);
-	// texUV
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void *) pos);
-	glEnableVertexAttribArray(1);
-	pos += sizeof(glm::vec2);
-	// ID
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, stride, (void *) pos);
-	glEnableVertexAttribArray(2);
-	// pos += sizeof(uint32_t);
+	D3D11_SUBRESOURCE_DATA VBufferResource = {};
+	VBufferResource.pSysMem = vertices.data();
+	VBufferResource.SysMemPitch = 0;
+	VBufferResource.SysMemSlicePitch = 0;
 
+	ID3D11Buffer *VBufferPtr = nullptr;
+	device->CreateBuffer(&VBufferDesc, &VBufferResource, &VBufferPtr);
+	vertexBuffer.reset(VBufferPtr, [](ID3D11Buffer *bufferPtr) {
+		bufferPtr->Release();
+	});
 
-	// Index buffer
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDEX_BATCH * sizeof(unsigned int), indices.data(), GL_DYNAMIC_DRAW);
+	// Index array
+	D3D11_BUFFER_DESC IBufferDesc = {};
+	IBufferDesc.ByteWidth = sizeof(indices);
+	IBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	IBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	IBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	IBufferDesc.MiscFlags = 0;
+	IBufferDesc.StructureByteStride = sizeof(uint32_t);
 
-	// SSBO buffer
-	glGenBuffers(1, &ssbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, BATCH_SIZE * sizeof(VertexData), nullptr, GL_DYNAMIC_DRAW);
+	D3D11_SUBRESOURCE_DATA IBufferResource = {};
+	IBufferResource.pSysMem = indices.data();
+	IBufferResource.SysMemPitch = 0;
+	IBufferResource.SysMemSlicePitch = 0;
 
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	ID3D11Buffer *IBufferPtr = nullptr;
+	device->CreateBuffer(&IBufferDesc, &IBufferResource, &IBufferPtr);
+	indexBuffer.reset(IBufferPtr, [](ID3D11Buffer *bufferPtr) {
+		bufferPtr->Release();
+	});
+
+	// Structured buffer
+	D3D11_BUFFER_DESC SBufferDesc = {};
+	SBufferDesc.ByteWidth = sizeof(data);
+	SBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	SBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	SBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	SBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	SBufferDesc.StructureByteStride = sizeof(VertexData);
+
+	D3D11_SUBRESOURCE_DATA SBufferResource = {};
+	SBufferResource.pSysMem = data.data();
+
+	ID3D11Buffer *SBufferPtr = nullptr;
+	device->CreateBuffer(&SBufferDesc, &SBufferResource, &SBufferPtr);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SBufferViewDesc = {};
+	SBufferViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	SBufferViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	SBufferViewDesc.Buffer.FirstElement = 0;
+	SBufferViewDesc.Buffer.NumElements = 3;
+
+	ID3D11ShaderResourceView *SBufferViewPtr = nullptr;
+	device->CreateShaderResourceView(SBufferPtr, &SBufferViewDesc, &SBufferViewPtr);
+	structuredBuffer.reset(SBufferPtr, [](ID3D11Buffer *bufferPtr) {
+		bufferPtr->Release();
+	});
+	structuredBufferView.reset(SBufferViewPtr, [](ID3D11ShaderResourceView *viewPtr) {
+		viewPtr->Release();
+	});
 }
 
-void Batch::freeBuffers() {
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
-}
-
-void Batch::addQuad(Quad &quad, Shader &shader) {
+void Batch::addQuad(Quad &quad,
+					Shader &shader,
+					std::shared_ptr<ID3D11DeviceContext> &context,
+					std::shared_ptr<ID3D11RenderTargetView> &renderTargetView,
+					D3D11_VIEWPORT &viewport) {
 	if (cursor >= BATCH_SIZE) {
-		render(shader);
+		render(shader, context, renderTargetView, viewport);
 	}
 	if (quad.getTextureType() != Quad::TextureType::NoTexture) {
-		const auto &textureId = quad.getTextureId();
-		const auto iter = std::find(textures.begin(), textures.end(), textureId);
+		const auto &texture = quad.getTexture();
+		const auto iter = std::find(textures.begin(), textures.end(), texture);
 		if (iter == textures.end()) {
 			if (textures.size() >= maxTextureCount) {
-				render(shader);
+				render(shader, context, renderTargetView, viewport);
 			}
 			quad.setTextureIndex(textures.size());
-			textures.push_back(textureId);
+			textures.push_back(texture);
 		} else {
 			quad.setTextureIndex(std::distance(textures.begin(), iter));
 		}
@@ -82,30 +114,61 @@ void Batch::addQuad(Quad &quad, Shader &shader) {
 	data[cursor++] = quad.getData();
 }
 
-void Batch::render(Shader &shader) {
+void Batch::render(Shader &shader,
+				   const std::shared_ptr<ID3D11DeviceContext> &context,
+				   const std::shared_ptr<ID3D11RenderTargetView> &renderTargetView,
+				   const D3D11_VIEWPORT &viewport) {
 	if (cursor == 0) {
 		return;
 	}
 
-	glBindVertexArray(vao);
+	// Vertex Buffer
+	const UINT stride = sizeof(Vertex);
+	const UINT offset = 0;
+	auto *vertexBufferPtr = vertexBuffer.get();
+	context->IASetVertexBuffers(0, 1, &vertexBufferPtr, &stride, &offset);
+	// update vertex buffer
+	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
+	auto res = context->Map(vertexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(res)) {
+		printf("Failed to map vertex buffer (%#08x)", (unsigned int)res);
+		exit(1);
+	}
+	memcpy(mappedResource.pData, vertices.data(), sizeof(Vertex) * cursor * 4);
+	context->Unmap(vertexBuffer.get(), 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, VERTEX_BATCH * sizeof(Vertex), vertices.data());
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, INDEX_BATCH * sizeof(unsigned int), indices.data());
+	// Index Buffer
+	context->IASetIndexBuffer(indexBuffer.get(), DXGI_FORMAT_R32_UINT, 0);
+	// update index buffer
+	context->Map(indexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, indices.data(), sizeof(UINT) * cursor * 6);
+	context->Unmap(indexBuffer.get(), 0);
 
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VertexData) * BATCH_SIZE, data.data());
+	// Structured Buffer
+	auto *structuredBufferViewPtr = structuredBufferView.get();
+	context->VSSetShaderResources(0, 1, &structuredBufferViewPtr);
+	context->PSSetShaderResources(0, 1, &structuredBufferViewPtr);
+	// update structured buffer
+	context->Map(structuredBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, data.data(), sizeof(VertexData) * cursor);
+	context->Unmap(structuredBuffer.get(), 0);
 
-	// shader.setUniform("uTexture", textures);
+	// Topology
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Render target and viewport
+	auto *renderTargetViewPtr = renderTargetView.get();
+	context->OMSetRenderTargets(1, &renderTargetViewPtr, nullptr);
+	context->RSSetViewports(1, &viewport);
+
+	// Textures
 	for (auto i = textures.begin(); i != textures.end(); i++) {
 		auto index = std::distance(textures.begin(), i);
-		glActiveTexture(GL_TEXTURE0 + index);
-		glBindTexture(GL_TEXTURE_2D, textures[index]);
+		// TODO: Set textures
 	}
 
-	glDrawElements(GL_TRIANGLES, INDEX_BATCH, GL_UNSIGNED_INT, nullptr);
+	context->DrawIndexed(cursor * 6, 0, 0);
 
 	cursor = 0;
 	indices.fill(0);

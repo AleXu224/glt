@@ -1,5 +1,8 @@
 build/
 .vscode/
 .idea/
+out/
+.vs/
 cmake-build-debug-clang/
 cmake-build-release-clang/
+CMakeSettings.json

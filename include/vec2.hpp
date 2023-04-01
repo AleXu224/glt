@@ -2,7 +2,7 @@
 #define SQUI_VEC2_HPP
 
 #include "AnimatedFloat.hpp"
-#include "glm/vec2.hpp"
+#include "DirectXMath.h"
 
 namespace squi {
 	struct vec2 {
@@ -29,7 +29,7 @@ namespace squi {
 		[[nodiscard]] vec2 withXOffset(const float &offset) const;
 		[[nodiscard]] vec2 withYOffset(const float &offset) const;
 
-		[[nodiscard]] operator glm::vec2() const;
+		[[nodiscard]] operator DirectX::XMFLOAT2() const;
 	};
 }// namespace squi
 

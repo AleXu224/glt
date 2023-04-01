@@ -6,6 +6,10 @@
 #include "random"
 #include "ranges"
 #include "stdexcept"
+#define GLFW_INCLUDE_NONE
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include "GLFW/glfw3native.h"
+#include "renderer.hpp"
 
 using namespace squi;
 
@@ -20,6 +24,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		return;
 	}
 
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 	window.reset(glfwCreateWindow(800, 600, "Window", nullptr, nullptr), [](GLFWwindow *windowPtr) {
 		glfwDestroyWindow(windowPtr);
 		glfwTerminate();
@@ -30,11 +36,11 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		return;
 	}
 
-
 	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *windowPtr, int width, int height) {
-		glViewport(0, 0, width, height);
+		  // TODO: resize directx context
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
+//		  Renderer::initialize(glfwGetWin32Window(windowPtr), width, height);
 		// TODO: Add support for redrawing the window while resizing
 
 		//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -69,31 +75,32 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
-	glfwMakeContextCurrent(window.get());
-	gladLoadGL();
-	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
-		printf("OpenGL Error: %s\n", message);
-		printf("Source: %d, Type: %d, Severity: %d\n", source, type, severity);
-		exit(1);
-	},
-						   nullptr);
-	glfwSwapInterval(1);
+	HWND hwnd = glfwGetWin32Window(window.get());
+	Renderer::initialize(hwnd, 800, 600);
 }
 
 void Window::run() {
 	Renderer &renderer = Renderer::getInstance();
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
 	auto lastTime = std::chrono::steady_clock::now();
+
+	unsigned int fps = 0;
+	auto lastFpsTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window.get())) {
+		auto currentFpsTime = std::chrono::steady_clock::now();
+		auto fpsDeltaTime = currentFpsTime - lastFpsTime;
+		if (fpsDeltaTime > 1s) {
+			glfwSetWindowTitle(window.get(), std::to_string(fps).c_str());
+			fps = 0;
+			lastFpsTime = currentFpsTime;
+		}
+		fps++;
+		auto context = renderer.getDeviceContext();
 		glfwPollEvents();
-		glClear(GL_COLOR_BUFFER_BIT);
+
+		float color[] = {0.0f, 0.2f, 0.4f, 1.0f};
+		auto *renderTargetView = renderer.getRenderTargetView().get();
+		context->ClearRenderTargetView(renderTargetView, color);
 
 		auto &children = getChildren();
 
@@ -116,8 +123,8 @@ void Window::run() {
 
 		renderer.render();
 
-		glfwSwapBuffers(window.get());
-		glFlush();
+		auto *swapChain = renderer.getSwapChain().get();
+		swapChain->Present(0, 0);
 		lastTime = currentTime;
 	}
 }

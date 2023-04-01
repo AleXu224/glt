@@ -2,81 +2,70 @@
 
 using namespace squi;
 
-Shader::Shader(const char *vertexShaderSource, const char *fragmentShaderSource) {
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-	glCompileShader(vertexShader);
-	int success;
-	char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
-		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED %s\n", infoLog);
+Shader::Shader(const char *vertexShaderSource,
+			   const char *fragmentShaderSource,
+			   const std::shared_ptr<ID3D11Device> &device) {
+	ID3DBlob *vertexShaderBlob = nullptr;
+	ID3DBlob *fragmentShaderBlob = nullptr;
+	ID3DBlob *errorBlob = nullptr;
+
+	// Vertex Shader
+	auto res = D3DCompile(vertexShaderSource, strlen(vertexShaderSource), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vertexShaderBlob, &errorBlob);
+	if (res != S_OK) {
+		printf("Failed to compile vertex shader (%#08x):\n%s", (unsigned int)res, (char*)errorBlob->GetBufferPointer());
+		exit(1);
 	}
 
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-	glCompileShader(fragmentShader);
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED %s\n", infoLog);
+	ID3D11VertexShader *vertexShaderPtr = nullptr;
+	res = device->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &vertexShaderPtr);
+	if (res != S_OK) {
+		printf("Failed to create vertex shader (%#08x)", (unsigned int)res);
+		exit(1);
+	}
+	vertexShader.reset(vertexShaderPtr, [](ID3D11VertexShader *shaderPtr) {
+		shaderPtr->Release();
+	});
+
+	// Pixel shader
+	res = D3DCompile(fragmentShaderSource, strlen(fragmentShaderSource), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &fragmentShaderBlob, &errorBlob);
+	if (res != S_OK) {
+		printf("Failed to compile pixel shader (%#08x):\n%s", (unsigned int)res, (char*)errorBlob->GetBufferPointer());
+		exit(1);
 	}
 
-	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED %s\n", infoLog);
+	ID3D11PixelShader *pixelShaderPtr = nullptr;
+	res = device->CreatePixelShader(fragmentShaderBlob->GetBufferPointer(), fragmentShaderBlob->GetBufferSize(), nullptr, &pixelShaderPtr);
+	if (res != S_OK) {
+		printf("Failed to create pixel shader (%#08x)", (unsigned int)res);
+		exit(1);
 	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	pixelShader.reset(pixelShaderPtr, [](ID3D11PixelShader *shaderPtr) {
+		shaderPtr->Release();
+	});
+
+	// Input layout
+	D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[] = {
+		{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXUV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "ID", 0, DXGI_FORMAT_R32_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	ID3D11InputLayout *inputLayoutPtr = nullptr;
+	res = device->CreateInputLayout(inputLayoutDesc, 3, vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &inputLayoutPtr);
+	if (res != S_OK) {
+		printf("Failed to create input layout (%#08x)", (unsigned int)res);
+		exit(1);
+	}
+	inputLayout.reset(inputLayoutPtr, [](ID3D11InputLayout *inputLayoutPtr) {
+		inputLayoutPtr->Release();
+	});
+
+	vertexShaderBlob->Release();
+	fragmentShaderBlob->Release();
 }
 
-Shader::~Shader() {
-	glDeleteProgram(shaderProgram);
-}
-
-void Shader::use() {
-	glUseProgram(shaderProgram);
-}
-
-void Shader::setUniform(const char *name, int value) {
-	glUniform1i(glGetUniformLocation(shaderProgram, name), value);
-}
-
-void Shader::setUniform(const char *name, int* value, uint32_t count) {
-	glUniform1iv(glGetUniformLocation(shaderProgram, name), count, value);
-}
-
-void Shader::setUniform(const char *name, float value) {
-	glUniform1f(glGetUniformLocation(shaderProgram, name), value);
-}
-
-void Shader::setUniform(const char *name, glm::vec2 value) {
-	glUniform2fv(glGetUniformLocation(shaderProgram, name), 1, &value[0]);
-}
-
-void Shader::setUniform(const char *name, glm::vec3 value) {
-	glUniform3fv(glGetUniformLocation(shaderProgram, name), 1, &value[0]);
-}
-
-void Shader::setUniform(const char *name, glm::vec4 value) {
-	glUniform4fv(glGetUniformLocation(shaderProgram, name), 1, &value[0]);
-}
-
-void Shader::setUniform(const char *name, glm::mat3 value) {
-	glUniformMatrix3fv(glGetUniformLocation(shaderProgram, name), 1, GL_FALSE, &value[0][0]);
-}
-
-void Shader::setUniform(const char *name, glm::mat4 value) {
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name), 1, GL_FALSE, &value[0][0]);
-}
-
-void Shader::setUniform(const char *name, std::vector<uint32_t> value) {
-	int data[16] = { 0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-	glUniform1iv(glGetUniformLocation(shaderProgram, name), 16, data);
+void Shader::use(std::shared_ptr<ID3D11DeviceContext> &context) {
+	context->VSSetShader(vertexShader.get(), nullptr, 0);
+	context->PSSetShader(pixelShader.get(), nullptr, 0);
+	context->IASetInputLayout(inputLayout.get());
 }

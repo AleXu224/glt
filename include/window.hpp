@@ -1,6 +1,5 @@
 #ifndef SQUI_WINDOW_HPP
 #define SQUI_WINDOW_HPP
-#include "glad/glad.h"
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "chrono"

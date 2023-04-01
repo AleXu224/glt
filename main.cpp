@@ -13,6 +13,7 @@ int main(int, char **) {
 			.margin = {10},
 			.padding = {10},
 		},
+		.color = Color::RGBA(0.0, 0.5, 0.5, 1.0),
 		.borderRadius = 10,
 		.child = new Box(Box::Args{
 			.widget{
@@ -36,7 +37,7 @@ int main(int, char **) {
 						}
 					};
 					data.gestureDetector.onEnter = [&widget](GestureDetector &gd) {
-						((Box&)widget).setColor(Color::RGBA(1.0, 0.0, 0.0, 1.0));
+						((Box&)widget).setColor(Color::RGBA(0.0, 0.5, 0.0, 1.0));
 					};
 					data.gestureDetector.onLeave = [&widget](GestureDetector &gd) {
 						((Box&)widget).setColor(Color::RGBA(0.5, 0.5, 0.5, 1.0));

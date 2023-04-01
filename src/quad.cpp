@@ -26,20 +26,20 @@ Quad::Quad(const Args &args) {
 	data.offset = args.offset;
 	data.borderRadius = args.borderRadius;
 	data.borderSize = args.borderSize;
-	textureId = args.textureId;
+	texture = args.texture;
 	data.textureType = static_cast<uint32_t>(args.textureType);
 	// if (args.textureType != TextureType::NoTexture) {
 	// 	data.textureIndex = glGetTextureHandleARB(textureId);
 	// }
 }
 
-void Quad::setId(int id) {
+void Quad::setId(uint32_t id) {
 	for (auto &vertex: vertices) {
 		vertex.id = id;
 	}
 }
 
-void Quad::setTextureIndex(int id) {
+void Quad::setTextureIndex(uint32_t id) {
 	data.textureIndex = id;
 }
 
@@ -47,8 +47,8 @@ Quad::TextureType Quad::getTextureType() const {
 	return static_cast<const TextureType>(data.textureType);
 }
 
-const GLuint& Quad::getTextureId() const {
-	return textureId;
+std::shared_ptr<ID3D11Texture2D> Quad::getTexture() const {
+	return texture;
 }
 
 std::span<const Vertex> Quad::getVertices() const {
@@ -59,19 +59,19 @@ const VertexData &Quad::getData() const {
 	return data;
 }
 
-void Quad::setPos(glm::vec2 pos) {
+void Quad::setPos(DirectX::XMFLOAT2 pos) {
 	data.pos = pos;
 }
 
-void Quad::setSize(glm::vec2 size) {
+void Quad::setSize(DirectX::XMFLOAT2 size) {
 	data.size = size;
 }
 
-void Quad::setColor(glm::vec4 color) {
+void Quad::setColor(DirectX::XMFLOAT4 color) {
 	data.color = color;
 }
 
-void Quad::setBorderColor(glm::vec4 color) {
+void Quad::setBorderColor(DirectX::XMFLOAT4 color) {
 	data.borderColor = color;
 }
 

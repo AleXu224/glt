@@ -1,31 +1,24 @@
 #ifndef SQUI_SHADER_HPP
 #define SQUI_SHADER_HPP
 
-#include "glad/glad.h"
-#include "glm/glm.hpp"
+#include "d3d11.h"
+#include "d3dcompiler.h"
+#include "DirectXMath.h"
 #include "vector"
+#include "memory"
 
 namespace squi {
 	class Shader {
-		GLuint vertexShader;
-		GLuint fragmentShader;
-		GLuint shaderProgram;
+		std::shared_ptr<ID3D11VertexShader> vertexShader;
+		std::shared_ptr<ID3D11PixelShader> pixelShader;
+		std::shared_ptr<ID3D11InputLayout> inputLayout;
 
 	public:
-		Shader(const char *vertexShaderSource, const char *fragmentShaderSource);
-		~Shader();
+		Shader(const char *vertexShaderSource,
+			   const char *fragmentShaderSource,
+			   const std::shared_ptr<ID3D11Device> &device);
 
-		void use();
-
-		void setUniform(const char *name, int value);
-		void setUniform(const char *name, int* value, uint32_t count);
-		void setUniform(const char *name, float value);
-		void setUniform(const char *name, glm::vec2 value);
-		void setUniform(const char *name, glm::vec3 value);
-		void setUniform(const char *name, glm::vec4 value);
-		void setUniform(const char *name, glm::mat3 value);
-		void setUniform(const char *name, glm::mat4 value);
-		void setUniform(const char *name, std::vector<uint32_t> value);
+		void use(std::shared_ptr<ID3D11DeviceContext> &context);
 	};
 }// namespace squi
 

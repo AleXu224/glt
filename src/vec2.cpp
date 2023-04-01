@@ -54,6 +54,6 @@ vec2 vec2::withYOffset(const float &offset) const {
     return {x, y + offset};
 }
 
-vec2::operator glm::vec2() const {
+vec2::operator DirectX::XMFLOAT2() const {
 	return {x, y};
 }
