@@ -47,7 +47,7 @@ Quad::TextureType Quad::getTextureType() const {
 	return static_cast<const TextureType>(data.textureType);
 }
 
-std::shared_ptr<ID3D11Texture2D> Quad::getTexture() const {
+std::shared_ptr<ID3D11ShaderResourceView> Quad::getTexture() const {
 	return texture;
 }
 
@@ -65,6 +65,10 @@ void Quad::setPos(DirectX::XMFLOAT2 pos) {
 
 void Quad::setSize(DirectX::XMFLOAT2 size) {
 	data.size = size;
+}
+
+void Quad::setOffset(DirectX::XMFLOAT2 offset) {
+	data.offset = offset;
 }
 
 void Quad::setColor(DirectX::XMFLOAT4 color) {

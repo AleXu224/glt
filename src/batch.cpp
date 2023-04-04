@@ -62,7 +62,7 @@ Batch::Batch(const std::shared_ptr<ID3D11Device>& device) {
 	SBufferViewDesc.Format = DXGI_FORMAT_UNKNOWN;
 	SBufferViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 	SBufferViewDesc.Buffer.FirstElement = 0;
-	SBufferViewDesc.Buffer.NumElements = 3;
+	SBufferViewDesc.Buffer.NumElements = BATCH_SIZE;
 
 	ID3D11ShaderResourceView *SBufferViewPtr = nullptr;
 	device->CreateShaderResourceView(SBufferPtr, &SBufferViewDesc, &SBufferViewPtr);
@@ -71,6 +71,22 @@ Batch::Batch(const std::shared_ptr<ID3D11Device>& device) {
 	});
 	structuredBufferView.reset(SBufferViewPtr, [](ID3D11ShaderResourceView *viewPtr) {
 		viewPtr->Release();
+	});
+
+	// Sampler state for a alpha only texture
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	ID3D11SamplerState *samplerStatePtr = nullptr;
+	device->CreateSamplerState(&samplerDesc, &samplerStatePtr);
+	samplerState.reset(samplerStatePtr, [](ID3D11SamplerState *statePtr) {
+		statePtr->Release();
 	});
 }
 
@@ -148,7 +164,6 @@ void Batch::render(Shader &shader,
 	// Structured Buffer
 	auto *structuredBufferViewPtr = structuredBufferView.get();
 	context->VSSetShaderResources(0, 1, &structuredBufferViewPtr);
-	context->PSSetShaderResources(0, 1, &structuredBufferViewPtr);
 	// update structured buffer
 	context->Map(structuredBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	memcpy(mappedResource.pData, data.data(), sizeof(VertexData) * cursor);
@@ -163,10 +178,16 @@ void Batch::render(Shader &shader,
 	context->RSSetViewports(1, &viewport);
 
 	// Textures
+	// TODO: store them directly as pointers
+	std::vector<ID3D11ShaderResourceView *> texturesToSet{};
 	for (auto i = textures.begin(); i != textures.end(); i++) {
-		auto index = std::distance(textures.begin(), i);
-		// TODO: Set textures
+		texturesToSet.push_back((*i).get());
 	}
+	context->PSSetShaderResources(0, texturesToSet.size(), texturesToSet.data());
+
+	// Sampler
+	auto *samplerStatePtr = samplerState.get();
+	context->PSSetSamplers(0, 1, &samplerStatePtr);
 
 	context->DrawIndexed(cursor * 6, 0, 0);
 

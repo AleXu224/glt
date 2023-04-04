@@ -3,57 +3,6 @@
 using namespace squi;
 
 std::unique_ptr<Renderer> Renderer::instance = nullptr;
-
-auto vertexShader = R"(
-        #version 450 core
-        layout (location = 0) in vec2 aUV;
-        layout (location = 1) in vec2 aTexUV;
-        layout (location = 2) in uint aID;
-
-        struct VertexData {
-            vec4 color;
-            vec4 borderColor;
-            vec2 pos;
-            vec2 size;
-            vec2 offset;
-            float borderRadius;
-            float borderSize;
-            uint textureId;
-            uint textureType;
-        };
-
-        layout (std430, binding = 3) buffer SSBO {
-            VertexData data[1000];
-        };
-
-        uniform mat4 uProjectionMatrix;
-
-        out vec4 vColor;
-        out vec2 vUV;
-        out vec2 vTexUV;
-        out vec2 vSize;
-        out float vBorderRadius;
-        out float vBorderSize;
-        out vec4 vBorderColor;
-        out uint vTextureId;
-        out uint vTextureType;
-
-        void main()
-        {
-            VertexData quadData = data[aID];
-            vColor = quadData.color;
-            vUV = aUV;
-            vTexUV = aTexUV;
-            vSize = quadData.size;
-            vBorderRadius = quadData.borderRadius;
-            vBorderSize = quadData.borderSize;
-            vBorderColor = quadData.borderColor;
-            vTextureId = quadData.textureId;
-            vTextureType = quadData.textureType;
-            vec2 pos = quadData.offset + quadData.pos + (aUV * quadData.size);
-            gl_Position = vec4(uProjectionMatrix * vec4(pos, 0.0, 1.0));
-        }
-    )";
 auto vertexShaderHlsl = R"(
 		struct VertexData {
 			float4 color;
@@ -105,103 +54,6 @@ auto vertexShaderHlsl = R"(
 		}
 	)";
 // TODO: Borders do not work with border radius = 0
-auto fragmentShader = R"(
-        #version 450 core
-        out vec4 FragColor;
-
-        in vec4 vColor;
-        in vec2 vUV;
-        in vec2 vTexUV;
-        in vec2 vSize;
-        in float vBorderRadius;
-        in float vBorderSize;
-        in vec4 vBorderColor;
-        flat in uint vTextureId;
-        flat in uint vTextureType;
-
-        uniform sampler2D uTexture[32];
-
-        // Credit https://www.shadertoy.com/view/ldfSDj
-        float udRoundBox( vec2 p, vec2 b, float r )
-        {
-            return length(max(abs(p)-b+r,0.0))-r;
-        }
-
-        void NoTextureQuad() {
-            vec2 coords = (vUV * vSize) - 0.5;
-            vec2 halfRes = (0.5 * vSize) - 0.5;
-            float borderRadius = min(vBorderRadius, min(halfRes.x, halfRes.y));
-            float b = udRoundBox(coords - halfRes, halfRes, borderRadius);
-            vec4 outColor = vColor;
-            outColor *= vColor.a;
-            float bSize = vBorderSize;
-            if (b > -bSize && bSize > 0.0) {
-                vec4 borderColor = vBorderColor;
-                borderColor *= vBorderColor.a;
-                outColor = mix(outColor, vBorderColor, smoothstep(0.0, 1.0, b + bSize));
-            }
-            FragColor = mix(outColor, vec4(0.0), smoothstep(0.0, 1.0, b));
-        }
-
-        vec4 getTextureColor() {
-            switch (vTextureId) {
-                case 0:
-                    return texture(uTexture[0], vTexUV);
-                case 1:
-                    return texture(uTexture[1], vTexUV);
-                case 2:
-                    return texture(uTexture[2], vTexUV);
-                case 3:
-                    return texture(uTexture[3], vTexUV);
-                case 4:
-                    return texture(uTexture[4], vTexUV);
-                case 5:
-                    return texture(uTexture[5], vTexUV);
-                case 6:
-                    return texture(uTexture[6], vTexUV);
-                case 7:
-                    return texture(uTexture[7], vTexUV);
-                case 8:
-                    return texture(uTexture[8], vTexUV);
-                case 9:
-                    return texture(uTexture[9], vTexUV);
-                case 10:
-                    return texture(uTexture[10], vTexUV);
-                case 11:
-                    return texture(uTexture[11], vTexUV);
-                case 12:
-                    return texture(uTexture[12], vTexUV);
-                case 13:
-                    return texture(uTexture[13], vTexUV);
-                case 14:
-                    return texture(uTexture[14], vTexUV);
-                case 15:
-                    return texture(uTexture[15], vTexUV);
-            }
-        }
-
-        void TextQuad() {
-            // float alpha = getTextureColor().r;
-            FragColor = vColor * vColor.a * getTextureColor().r;
-            // outColor *= vColor.a * alpha;
-            // outColor *= alpha;
-            // FragColor = outColor;
-            // FragColor = vec4(vColor.rgb, getTextureColor().r * vColor.a);
-            // FragColor = vec4(vColor.rgb, texture2D(uTexture[vTextureId], vTexUV).r * vColor.a);
-        }
-
-        void main()
-        {
-            // NoTextureQuad();
-            if (vTextureType == 0) {
-                NoTextureQuad();
-            } else if (vTextureType == 2) {
-                TextQuad();
-            } else {
-                FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-            }
-        }
-    )";
 auto fragmentShaderHlsl = R"(
 		struct PS_INPUT {
 			float4 color : COLOR;
@@ -214,6 +66,31 @@ auto fragmentShaderHlsl = R"(
 			uint textureId : TEXCOORD6;
 			uint textureType : TEXCOORD7;
 		};
+
+		Texture2D uTexture[16] : register(t0);
+		SamplerState samp1 : register(s0);
+
+		float textureByIndex(uint index, float2 uv) {
+			[call] switch (index) {
+				case 0: return uTexture[0].Sample(samp1, uv).r;
+				case 1: return uTexture[1].Sample(samp1, uv).r;
+				case 2: return uTexture[2].Sample(samp1, uv).r;
+				case 3: return uTexture[3].Sample(samp1, uv).r;
+				case 4: return uTexture[4].Sample(samp1, uv).r;
+				case 5: return uTexture[5].Sample(samp1, uv).r;
+				case 6: return uTexture[6].Sample(samp1, uv).r;
+				case 7: return uTexture[7].Sample(samp1, uv).r;
+				case 8: return uTexture[8].Sample(samp1, uv).r;
+				case 9: return uTexture[9].Sample(samp1, uv).r;
+				case 10: return uTexture[10].Sample(samp1, uv).r;
+				case 11: return uTexture[11].Sample(samp1, uv).r;
+				case 12: return uTexture[12].Sample(samp1, uv).r;
+				case 13: return uTexture[13].Sample(samp1, uv).r;
+				case 14: return uTexture[14].Sample(samp1, uv).r;
+				case 15: return uTexture[15].Sample(samp1, uv).r;
+				default: return 0.0;
+			}
+		}
 
 		float udRoundBox(float2 p, float2 b, float r) {
 			return length(max(abs(p) - b + r, 0.0)) - r;
@@ -232,7 +109,12 @@ auto fragmentShaderHlsl = R"(
 				borderColor *= input.borderColor.a;
 				outColor = lerp(outColor, input.borderColor, smoothstep(0.0, 1.0, b + bSize));
 			}
-//			return float4(1, 1, 1, 1);
+			if (input.textureType == 2) {
+//				float alpha = uTexture[1].Sample(samp1, input.texUV).r * input.color.a;
+				float alpha = textureByIndex(input.textureId, input.texUV) * input.color.a;
+				float3 color = input.color.rgb * alpha;
+				return float4(color.r, color.g, color.b, alpha);
+			}
 			return lerp(outColor, float4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 1.0, b));
 		}
 	)";
@@ -359,30 +241,21 @@ Renderer &Renderer::getInstance() {
 	return *instance;
 }
 
-void Renderer::addQuad(Quad &quad) {
-	batch->addQuad(quad, *shader, deviceContext, renderTargetView, viewport);
+void Renderer::addQuad(Quad &quad) {batch->addQuad(quad, *shader, deviceContext, renderTargetView, viewport);
 }
 
-void Renderer::render() {
+void Renderer::prepare() {
 	shader->use(deviceContext);
 	auto *projectionMatrixBufferPtr = projectionMatrixBuffer.get();
 	deviceContext->VSSetConstantBuffers(0, 1, &projectionMatrixBufferPtr);
-	deviceContext->PSSetConstantBuffers(0, 1, &projectionMatrixBufferPtr);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	deviceContext->Map(projectionMatrixBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	memcpy(mappedResource.pData, &projectionMatrix, sizeof(DirectX::XMFLOAT4X4));
 	deviceContext->Unmap(projectionMatrixBufferPtr, 0);
-//	constexpr uint32_t textureCount = 32;
-//	std::array<int, textureCount> textureSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
-//	shader.setUniform("uTexture", textureSlots.data(), textureCount);
-	batch->render(*shader, deviceContext, renderTargetView, viewport);
+}
 
-	// textShader.use();
-	// shader.setUniform("uTexture", 0);
-	// shader.setUniform("uProjectionMatrix", projectionMatrix);
-	// for (auto &batch: textBatches) {
-	// 	batch.render();
-	// }
+void Renderer::render() {
+	batch->render(*shader, deviceContext, renderTargetView, viewport);
 }
 
 void Renderer::updateScreenSize(int width, int height) {

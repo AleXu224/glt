@@ -11,11 +11,10 @@ add_executable(glt main.cpp ${all_files})
 
 target_include_directories(glt PUBLIC include)
 
-# find_package(OpenGL REQUIRED)
-# include_directories(${OPENGL_INCLUDE_DIRS})
 find_package(glfw3 CONFIG REQUIRED)
+find_package(freetype CONFIG REQUIRED)
 
-# target_link_libraries(glt PRIVATE ${OPENGL_LIBRARIES})
+target_link_libraries(glt PRIVATE freetype)
 target_link_libraries(glt PRIVATE glfw)
 target_link_libraries(glt PRIVATE "Dwmapi.lib")
 target_link_libraries(glt PRIVATE "d3d11.lib")

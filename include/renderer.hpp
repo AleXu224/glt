@@ -32,6 +32,8 @@ namespace squi {
 
 		void addQuad(Quad &quad);
 
+		void prepare();
+
 		void render();
 
 		void updateScreenSize(int width, int height);

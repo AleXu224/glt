@@ -19,11 +19,12 @@ namespace squi {
 		std::shared_ptr<ID3D11Buffer> indexBuffer;
 		std::shared_ptr<ID3D11Buffer> structuredBuffer;
 		std::shared_ptr<ID3D11ShaderResourceView> structuredBufferView;
+		std::shared_ptr<ID3D11SamplerState> samplerState;
 
 		std::array<Vertex, VERTEX_BATCH> vertices{};
 		std::array<VertexData, BATCH_SIZE> data{};
 		std::array<uint32_t , INDEX_BATCH> indices{};
-		std::vector<std::shared_ptr<ID3D11Texture2D>> textures{};
+		std::vector<std::shared_ptr<ID3D11ShaderResourceView>> textures{};
 		uint32_t maxTextureCount = 16; // 16 is the minimum required by OpenGL
 
 		size_t cursor = 0;

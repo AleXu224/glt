@@ -1,9 +1,6 @@
 #include "window.hpp"
-#include "batch.hpp"
 #include "chrono"
 #include "fontStore.hpp"
-#include "quad.hpp"
-#include "random"
 #include "ranges"
 #include "stdexcept"
 #define GLFW_INCLUDE_NONE
@@ -20,8 +17,8 @@ void Window::glfwError(int id, const char *description) {
 Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, .isInteractive = false}) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
-		throw std::runtime_error("Failed to initialize GLFW");
-		return;
+		printf("Failed to initialize GLFW\n");
+		exit(1);
 	}
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -32,20 +29,13 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 	});
 
 	if (!window) {
-		throw std::runtime_error("Failed to create window");
-		return;
+		printf("Failed to create GLFW window\n");
+		exit(1);
 	}
 
 	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *windowPtr, int width, int height) {
-		  // TODO: resize directx context
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
-//		  Renderer::initialize(glfwGetWin32Window(windowPtr), width, height);
-		// TODO: Add support for redrawing the window while resizing
-
-		//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//		renderer.render();
-		//		glfwSwapBuffers(windowPtr);
 	});
 	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
@@ -84,6 +74,8 @@ void Window::run() {
 
 	auto lastTime = std::chrono::steady_clock::now();
 
+	auto textQuads = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\arial.ttf)", 20, {100, 140}, Color::HEX(0x000000FF));
+
 	unsigned int fps = 0;
 	auto lastFpsTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window.get())) {
@@ -98,7 +90,7 @@ void Window::run() {
 		auto context = renderer.getDeviceContext();
 		glfwPollEvents();
 
-		float color[] = {0.0f, 0.2f, 0.4f, 1.0f};
+		float color[] = {1.0f, 1.0f, 1.0f, 1.0f};
 		auto *renderTargetView = renderer.getRenderTargetView().get();
 		context->ClearRenderTargetView(renderTargetView, color);
 
@@ -117,8 +109,13 @@ void Window::run() {
 			}
 		}
 
+		renderer.prepare();
+
 		for (auto &child: children) {
 			child->draw();
+		}
+		for (auto &quad: textQuads) {
+			renderer.addQuad(quad);
 		}
 
 		renderer.render();

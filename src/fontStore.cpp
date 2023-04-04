@@ -1,94 +1,153 @@
-//#include "fontStore.hpp"
+#include "fontStore.hpp"
+
+#include <utility>
+
+using namespace squi;
+
+static bool isInitialized{false};
+FT_Library FontStore::ftLibrary{};
+
+FontStore::Font::Font(std::string fontPath)
+	: fontPath(std::move(fontPath)) {
+	if (FT_New_Face(ftLibrary, this->fontPath.c_str(), 0, &face)) {
+		printf("Failed to load font: %s\n", this->fontPath.c_str());
+		loaded = false;
+	}
+}
+
+char32_t UTF8ToUTF32(const unsigned char *character) {
+	char32_t codepoint{};
+	if (character[0] < 0x80) {
+		codepoint = character[0];
+	} else if (character[0] < 0xE0) {
+		codepoint = (character[0] & 0x1F) << 6;
+		codepoint |= character[1] & 0x3F;
+	} else if (character[0] < 0xF0) {
+		codepoint = (character[0] & 0x0F) << 12;
+		codepoint |= (character[1] & 0x3F) << 6;
+		codepoint |= character[2] & 0x3F;
+	} else if (character[0] < 0xF8) {
+		codepoint = (character[0] & 0x07) << 18;
+		codepoint |= (character[1] & 0x3F) << 12;
+		codepoint |= (character[2] & 0x3F) << 6;
+		codepoint |= character[3] & 0x3F;
+	}
+	return codepoint;
+}
+
+Quad FontStore::Font::getQuad(unsigned char *character, float size) {
+	// UTF8 to UTF32
+	char32_t codepoint = UTF8ToUTF32(character);
+
+	// Load the character
+	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
+	if (FT_Load_Glyph(face, FT_Get_Char_Index(face, codepoint), FT_LOAD_RENDER)) {
+		printf("Failed to load glyph: %c (%d)\n", codepoint, codepoint);
+		return Quad({Quad::Args{}}); // Return empty quad
+	}
+
+	// Check if the character is already in the atlas
+	if (chars.contains(size) && chars.at(size).contains(codepoint)) {
+		return chars.at(size).at(codepoint).getQuad(atlas.textureView);
+	}
+
+	if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)) {
+		printf("Failed to render glyph: %c (%d)\n", codepoint, codepoint);
+		return Quad({Quad::Args{}});
+	}
+
+	// Add the character to the atlas
+	auto [uvTopLeft, uvBottomRight, success] = atlas.add(face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+	if (!success) {
+		// TODO: Add a way to have multiple atlases
+		printf("Failed to add glyph to atlas: %c (%d)\n", codepoint, codepoint);
+		return Quad({Quad::Args{}});
+	}
+
+	// Add the character to the chars map
+	chars[size][codepoint] = {
+		.uvTopLeft = uvTopLeft,
+		.uvBottomRight = uvBottomRight,
+		.size = {
+			static_cast<float>(face->glyph->bitmap.width),
+			static_cast<float>(face->glyph->bitmap.rows),
+		},
+	};
+
+	return chars.at(size).at(codepoint).getQuad(atlas.textureView);
+}
+
+std::unordered_map<std::string, FontStore::Font> FontStore::fonts{};
+
+std::vector<Quad> FontStore::generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color) {
+	if (!isInitialized) {
+		if (FT_Init_FreeType(&ftLibrary)) {
+			printf("Failed to initialize FreeType\n");
+			exit(1);
+		}
+		isInitialized = true;
+	}
+
+	std::vector<Quad> quads{};
+	vec2 cursor{0, 0};// This will be used as offset for each character
+	if (!fonts.contains(fontPath)) {
+		fonts.insert({fontPath, Font(fontPath)});
+	}
+	auto &font = fonts.at(fontPath);
+
+	if (!font.loaded) {
+		return quads;
+	}
+
+	char *previousChar = nullptr;
+	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
+		const auto &character = text.at(charIter - text.begin());
+		auto quad = font.getQuad((unsigned char *) &character, size);
+
+		FT_Vector kerning{};
+		if (previousChar != nullptr) {
+			auto index1 = FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) previousChar));
+			auto index2 = FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) &character));
+			FT_Get_Kerning(font.face, index1, index2, FT_KERNING_DEFAULT, &kerning);
+		}
+		cursor.x += static_cast<float>(kerning.x >> 6);
+		// Getting the Y position:
+		// FreeType assumes bottom-left as origin while we use top-left
+		// So in that case we can just subtract the height of the glyph from the ascender
+        cursor.y = static_cast<float>(font.face->size->metrics.ascender >> 6);
+//		cursor.y -= static_cast<float>(font.face->glyph->bitmap.rows);
+
+		quad.setPos(pos);
+		const vec2 offset = {
+			static_cast<float>(font.face->glyph->metrics.horiBearingX >> 6),
+			-static_cast<float>(font.face->glyph->metrics.horiBearingY >> 6),
+		};
+		quad.setOffset(cursor + offset);
+		quad.setColor(color);
+		quads.emplace_back(std::move(quad));
+
+        cursor.x += static_cast<float>(font.face->glyph->advance.x >> 6);
+
+		previousChar = &text.at(charIter - text.begin());
+
+		if ((unsigned char) character >= 0b11110000) {
+			charIter += 3;
+		} else if ((unsigned char) character >= 0b11100000) {
+			charIter += 2;
+		} else if ((unsigned char) character >= 0b11000000) {
+			charIter += 1;
+		}
+	}
+
+//	font.printAtlas();
 //
-//using namespace squi;
-//
-//FontStore::Font::Font(std::string fontPath)
-//	: fontPath(fontPath),
-//	  atlas(std::shared_ptr<texture_atlas_t>(texture_atlas_new(1024, 1024, 1), texture_atlas_delete)) {
-//	// font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(atlas.get(), 16, fontPath.c_str()), texture_font_delete);
-//
-//	// TODO: Texture might not be cleaned up properly
-//	glGenTextures(1, &atlas->id);
-//	glBindTexture(GL_TEXTURE_2D, atlas->id);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, atlas->data);
-//}
-//
-//std::shared_ptr<texture_font_t> FontStore::Font::getSize(float size) {
-//	if (!sizes.contains(size)) {
-//		auto font = std::shared_ptr<texture_font_t>(texture_font_new_from_file(atlas.get(), size, fontPath.c_str()), texture_font_delete);
-//		font->rendermode = RENDER_NORMAL;
-//		sizes.insert({size, font});
-//	}
-//	return sizes.at(size);
-//}
-//
-//std::unordered_map<std::string, FontStore::Font> FontStore::fonts{};
-//
-//std::shared_ptr<texture_font_t> FontStore::getFont(std::string fontPath, float size) {
-//	if (!fonts.contains(fontPath)) {
-//		fonts.insert({fontPath, Font(fontPath)});
-//	}
-//	return fonts.at(fontPath).getSize(size);
-//}
-//
-//std::vector<Quad> FontStore::generateQuads(std::string text, std::string fontPath, float size, glm::vec2 pos, glm::vec4 color) {
-//	std::vector<Quad> quads{};
-//	glm::vec2 cursor{0, 0};// This will be used as offset for each character
-//	auto font = getFont(fontPath, size);
-//	// cursor.y += font->ascender;
-//
-//	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
-//		const auto &character = text.at(charIter - text.begin());
-//		auto glyph = texture_font_find_glyph(font.get(), &character);
-//
-//		if (glyph == nullptr) {
-//			glyph = texture_font_get_glyph(font.get(), &character);
-//
-//			if (glyph == nullptr) {
-//				continue;
-//			}
-//
-//			// For some reason this generates a memory leak on some systems
-//			glTextureSubImage2D(font->atlas->id, 0, 0, 0, font->atlas->width, font->atlas->height, GL_RED, GL_UNSIGNED_BYTE, font->atlas->data);
-//			glFlush();
-//		}
-//
-//		auto kerning = 0.0f;
-//		if (charIter != text.begin()) {
-//			kerning = texture_glyph_get_kerning(glyph, &text.at(std::distance(text.begin(), charIter) - 1));
-//		}
-//		cursor.x += kerning;
-//        cursor.y = font->ascender - glyph->offset_y;
-//
-//		quads.emplace_back(Quad::Args{
-//			.pos = pos,
-//			.size{glyph->width, glyph->height},
-//			.offset = cursor + glm::vec2(glyph->offset_x, 0),
-//			.color = color,
-//			.textureId = font->atlas->id,
-//            .textureType = Quad::TextureType::Text,
-//			.textureUv = {
-//				glyph->s0,
-//				glyph->t0,
-//				glyph->s1,
-//				glyph->t1,
-//			},
-//		});
-//
-//        cursor.x += glyph->advance_x;
-//
-//		if ((unsigned char) character >= 0b11110000) {
-//			charIter += 3;
-//		} else if ((unsigned char) character >= 0b11100000) {
-//			charIter += 2;
-//		} else if ((unsigned char) character >= 0b11000000) {
-//			charIter += 1;
-//		}
-//	}
-//
-//    return quads;
-//}
+//	exit(1);
+
+	font.updateTexture();
+
+    return quads;
+}
+
+void FontStore::Font::updateTexture() {
+	atlas.updateTexture();
+}

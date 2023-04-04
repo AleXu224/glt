@@ -18,7 +18,7 @@ namespace squi {
 
 		std::array<Vertex, 4> vertices{};
 		VertexData data{};
-		std::shared_ptr<ID3D11Texture2D> texture;
+		std::shared_ptr<ID3D11ShaderResourceView> texture;
 
 	public:
 		struct Args {
@@ -29,7 +29,7 @@ namespace squi {
 			DirectX::XMFLOAT4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
 			float borderRadius;
 			float borderSize;
-			std::shared_ptr<ID3D11Texture2D> texture;
+			std::shared_ptr<ID3D11ShaderResourceView> texture;
 			TextureType textureType = TextureType::NoTexture;
 			DirectX::XMFLOAT4 textureUv;
 		};
@@ -43,10 +43,11 @@ namespace squi {
 
 		void setTextureIndex(uint32_t id);
 		[[nodiscard]] TextureType getTextureType() const;
-		[[nodiscard]] std::shared_ptr<ID3D11Texture2D> getTexture() const;
+		[[nodiscard]] std::shared_ptr<ID3D11ShaderResourceView> getTexture() const;
 
 		void setPos(DirectX::XMFLOAT2 pos);
 		void setSize(DirectX::XMFLOAT2 size);
+		void setOffset(DirectX::XMFLOAT2 offset);
 		void setColor(DirectX::XMFLOAT4 color);
 		void setBorderColor(DirectX::XMFLOAT4 color);
 		void setBorderRadius(float radius);
