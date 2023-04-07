@@ -1,3 +1,7 @@
+// #ifdef NDEBUG
+// #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+// #endif
+
 #include "window.hpp"
 #include "chrono"
 #include "fontStore.hpp"
@@ -6,6 +10,8 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
+#include "VersionHelpers.h"
+#include "dwmapi.h"
 #include "renderer.hpp"
 
 using namespace squi;
@@ -22,6 +28,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 	}
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 
 	window.reset(glfwCreateWindow(800, 600, "Window", nullptr, nullptr), [](GLFWwindow *windowPtr) {
 		glfwDestroyWindow(windowPtr);
@@ -65,8 +72,41 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, 
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
+	bool isWin11 = false;
+	bool supportsNewMica = false;
+
+	const auto system = L"kernel32.dll";
+	DWORD dummy;
+	const auto cbInfo =
+		::GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, system, &dummy);
+	std::vector<char> buffer(cbInfo);
+	::GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, system, dummy,
+							buffer.size(), &buffer[0]);
+	void *p = nullptr;
+	UINT size = 0;
+	::VerQueryValueW(buffer.data(), L"\\", &p, &size);
+	assert(size >= sizeof(VS_FIXEDFILEINFO));
+	assert(p != nullptr);
+	auto pFixed = static_cast<const VS_FIXEDFILEINFO *>(p);
+
+	if (HIWORD(pFixed->dwFileVersionMS) == 10 && HIWORD(pFixed->dwFileVersionLS) >= 22000) {
+		isWin11 = true;
+		if (HIWORD(pFixed->dwFileVersionLS) >= 22523) supportsNewMica = true;
+	}
+
 	HWND hwnd = glfwGetWin32Window(window.get());
 	Renderer::initialize(hwnd, 800, 600);
+
+	int darkMode = 1;
+	int mica = 2;
+	int micaOld = 1;
+	if (isWin11) {
+		DwmSetWindowAttribute(hwnd, 20, &darkMode, sizeof(darkMode));
+		if (supportsNewMica)
+			DwmSetWindowAttribute(hwnd, 38, &mica, sizeof(mica));
+		else
+			DwmSetWindowAttribute(hwnd, 1029, &micaOld, sizeof(micaOld));
+	}
 }
 
 void Window::run() {
@@ -74,7 +114,9 @@ void Window::run() {
 
 	auto lastTime = std::chrono::steady_clock::now();
 
-	auto textQuads = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\arial.ttf)", 20, {100, 140}, Color::HEX(0x000000FF));
+	auto textQuads = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\arial.ttf)", 20, {100, 140}, Color::HEX(0xFFFFFFFF));
+	auto textQuads2 = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\calibri.ttf)", 9, {100, 180}, Color::HEX(0xFFFFFFCC));
+	auto textQuads3 = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\segoeui.ttf)", 20, {100, 220}, Color::HEX(0xFFFFFFFF));
 
 	unsigned int fps = 0;
 	auto lastFpsTime = std::chrono::steady_clock::now();
@@ -90,7 +132,7 @@ void Window::run() {
 		auto context = renderer.getDeviceContext();
 		glfwPollEvents();
 
-		float color[] = {1.0f, 1.0f, 1.0f, 1.0f};
+		float color[] = {0.0f, 0.0f, 0.0f, 0.0f};
 		auto *renderTargetView = renderer.getRenderTargetView().get();
 		context->ClearRenderTargetView(renderTargetView, color);
 
@@ -115,6 +157,12 @@ void Window::run() {
 			child->draw();
 		}
 		for (auto &quad: textQuads) {
+			renderer.addQuad(quad);
+		}
+		for (auto &quad: textQuads2) {
+			renderer.addQuad(quad);
+		}
+		for (auto &quad: textQuads3) {
 			renderer.addQuad(quad);
 		}
 
