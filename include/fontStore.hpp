@@ -19,9 +19,11 @@ namespace squi {
 				vec2 uvTopLeft{};
 				vec2 uvBottomRight{};
 				vec2 size{};
+				vec2 offset{};
+				float advance{};
 
-				Quad getQuad(const std::shared_ptr<ID3D11ShaderResourceView> &textureView) {
-					return Quad(Quad::Args{
+				std::tuple<Quad, vec2, float> getQuad(const std::shared_ptr<ID3D11ShaderResourceView> &textureView) {
+					return {Quad(Quad::Args{
 						.size = size,
 						.texture = textureView,
 						.textureType = Quad::TextureType::Text,
@@ -29,7 +31,7 @@ namespace squi {
 							uvTopLeft.x, uvTopLeft.y,
 							uvBottomRight.x, uvBottomRight.y,
 						},
-					});
+					}), offset, advance};
 				}
 			};
 
@@ -43,7 +45,7 @@ namespace squi {
 			FT_Face face{};
             Font(std::string fontPath);
 
-			Quad getQuad(unsigned char *character, float size);
+			std::tuple<Quad, vec2, float> getQuad(unsigned char *character, float size);
 
 			void updateTexture();
 		};
@@ -54,7 +56,7 @@ namespace squi {
 		static std::unordered_map<std::string, Font> fonts;
 
     public:
-        static std::vector<Quad> generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color);
+        static std::tuple<std::vector<Quad>, float, float> generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color);
 	};
 }// namespace squi
 

@@ -2,6 +2,7 @@
 #define GLT_CHILD_HPP
 
 #include "memory"
+#include "vector"
 
 namespace squi {
 	class Widget;
@@ -12,14 +13,12 @@ namespace squi {
 	public:
 		Child() = default;
 
-		template<class T>
-		Child(T *child) requires(std::is_base_of_v<Widget, T>) : widget(std::shared_ptr<Widget>(child)) {
+		Child(std::shared_ptr<Widget> child) : widget(child) {
 			initializeWidget();
 		}
 
-		template<class T>
-		Child& operator=(T *child) requires(std::is_base_of_v<Widget, T>) {
-			this->widget.reset(child);
+		Child& operator=(std::shared_ptr<Widget> child) {
+			this->widget = child;
 			initializeWidget();
 			return *this;
 		}
@@ -38,6 +37,35 @@ namespace squi {
 
 		[[nodiscard]] std::shared_ptr<Widget> operator->() {
 			return widget;
+		}
+	};
+
+	class Children {
+		std::vector<Child> children{};
+
+	public:
+		Children() = default;
+
+		Children(std::vector<Child> children) : children(children) {}
+
+		Children(std::vector<std::shared_ptr<Widget>> children) {
+			for (auto &child : children) {
+				this->children.emplace_back(child);
+			}
+		}
+
+		template<typename... Args>
+		Children(Args... args) : children{args...} {}
+
+		Children& operator=(std::vector<Child> children) {
+			this->children = children;
+			return *this;
+		}
+
+		[[nodiscard]] operator std::vector<std::shared_ptr<Widget>>() const;
+
+		[[nodiscard]] bool hasChildren() const {
+			return !children.empty();
 		}
 	};
 

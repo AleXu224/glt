@@ -14,6 +14,7 @@ auto vertexShaderHlsl = R"(
 			float borderSize;
 			uint textureId;
 			uint textureType;
+			float4 clipRect;
 		};
 
 		StructuredBuffer<VertexData> data : register(t0);
@@ -33,6 +34,7 @@ auto vertexShaderHlsl = R"(
 			uint textureId : TEXCOORD6;
 			uint textureType : TEXCOORD7;
 			float4 pos : SV_POSITION;
+			float2 clipValue : TEXCOORD8;
 		};
 
 		VS_OUTPUT main(float2 aUV : UV, float2 aTexUV : TEXUV, uint aID : ID) {
@@ -50,6 +52,8 @@ auto vertexShaderHlsl = R"(
 			float2 pos = quadData.offset + quadData.pos + (aUV * quadData.size);
 			output.pos = mul(uProjectionMatrix, float4(pos, 0.0, 1.0));
 //			output.pos = float4(pos, 0.0, 1.0);
+			float2 clipSize = quadData.clipRect.zw - quadData.clipRect.xy;
+			output.clipValue = (pos - quadData.clipRect.xy) / clipSize;
 			return output;
 		}
 	)";
@@ -65,6 +69,8 @@ auto fragmentShaderHlsl = R"(
 			float4 borderColor : TEXCOORD5;
 			uint textureId : TEXCOORD6;
 			uint textureType : TEXCOORD7;
+			float4 pos : SV_POSITION;
+			float2 clipValue : TEXCOORD8;
 		};
 
 		Texture2D uTexture[16] : register(t0);
@@ -97,6 +103,9 @@ auto fragmentShaderHlsl = R"(
 		}
 
 		float4 main(PS_INPUT input) : SV_TARGET {
+			if (input.clipValue.x < 0.0 || input.clipValue.x > 1.0 || input.clipValue.y < 0.0 || input.clipValue.y > 1.0) {
+				discard;
+			}
 			float2 coords = (input.uv * input.size) - 0.5;
 			float2 halfRes = (0.5 * input.size) - 0.5;
 			float borderRadius = min(input.borderRadius, min(halfRes.x, halfRes.y));
@@ -177,12 +186,12 @@ Renderer::Renderer(HWND hwnd, int width, int height) {
 			nullptr,
 			&contextPtr);
 		if (res != S_OK) {
-			printf("Failed to create device and swap chain (%#08x)\n", (unsigned int)res);
+			printf("Failed to create device and swap chain (%#08x)\n", (unsigned int) res);
 			exit(1);
 		}
 		printf("Hardware acceleration not available, using WARP\n");
 	}
-	swapChainPtr->GetBuffer(0, __uuidof(ID3D11Resource), (void**)&backBufferPtr);
+	swapChainPtr->GetBuffer(0, __uuidof(ID3D11Resource), (void **) &backBufferPtr);
 	devicePtr->CreateRenderTargetView(backBufferPtr, nullptr, &renderTargetViewPtr);
 
 	device.reset(devicePtr, [](ID3D11Device *devicePtr) { devicePtr->Release(); });
@@ -232,19 +241,38 @@ Renderer::Renderer(HWND hwnd, int width, int height) {
 	ID3D11Buffer *projectionMatrixBufferPtr;
 	device->CreateBuffer(&bufferDesc, &subresourceData, &projectionMatrixBufferPtr);
 	projectionMatrixBuffer.reset(projectionMatrixBufferPtr, [](ID3D11Buffer *buffer) { buffer->Release(); });
-
-	// textBatches.push_back(TextBatch("C:\\Windows\\Fonts\\arial.ttf"));
-	// textBatches.front().createQuads("Font looks really bad :(", {10.0f, 10.0f}, 12.0f, {1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 Renderer &Renderer::getInstance() {
 	return *instance;
 }
 
-void Renderer::addQuad(Quad &quad) {batch->addQuad(quad, *shader, deviceContext, renderTargetView, viewport);
+void Renderer::addClipRect(const Rect &clipRect) {
+	if (!clipRects.empty())
+		clipRects.push_back(clipRects.back().overlap(clipRect));
+	else
+		clipRects.push_back(clipRect);
+}
+
+void Renderer::popClipRect() {
+	if (clipRects.empty()) {
+		throw std::runtime_error("Clip rects empty, can't pop");
+		exit(1);
+	}
+	clipRects.pop_back();
+}
+
+void Renderer::addQuad(Quad &quad) {
+	quad.setClipRect(clipRects.back());
+	batch->addQuad(quad, *shader, deviceContext, renderTargetView, viewport);
 }
 
 void Renderer::prepare() {
+	if (!clipRects.empty()) {
+		throw std::runtime_error("Clip rects not empty at end of frame, you forgot to pop one or more clip rects");
+		exit(1);
+	}
+	addClipRect(Rect(vec2(0, 0), vec2(viewport.Width, viewport.Height)));
 	shader->use(deviceContext);
 	auto *projectionMatrixBufferPtr = projectionMatrixBuffer.get();
 	deviceContext->VSSetConstantBuffers(0, 1, &projectionMatrixBufferPtr);

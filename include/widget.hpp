@@ -38,13 +38,11 @@ namespace squi {
 			std::function<void(Widget &)> beforeUpdate{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
+			std::function<void(Widget &)> onDraw{};
+			std::function<void(Widget &)> afterDraw{};
 		};
 
 		struct Options {
-			/**
-			 * When true this Widget will relay all the
-			 */
-			bool isContainer = true;
 			/**
 			 * Set to false to manually update the children
 			 */
@@ -60,20 +58,28 @@ namespace squi {
 			/**
 			 * Whether hit testing should be performed on this widget
 			 */
-			bool isInteractive = true;
+			bool isInteractive = false;
+
+			static Options Default() {
+				return Options();
+			}
 		};
 
 	private:
 		bool isInitialized = false;
-		bool isContainer;
 		bool shouldUpdateChildren;
 		bool shouldDrawChildren;
 		bool shouldHandleSizeBehavior;
 		bool isInteractive;
-		std::function<void(Widget &)> onInitArg;
-		std::function<void(Widget &)> beforeUpdateArg;
-		std::function<void(Widget &)> onUpdateArg;
-		std::function<void(Widget &)> afterUpdateArg;
+		struct FunctionArgs {
+			std::function<void(Widget &)> onInit;
+			std::function<void(Widget &)> beforeUpdate;
+			std::function<void(Widget &)> onUpdate;
+			std::function<void(Widget &)> afterUpdate;
+			std::function<void(Widget &)> onDraw;
+			std::function<void(Widget &)> afterDraw;
+		};
+		FunctionArgs m_funcs;
 		struct Data {
 			vec2 size;
 			Margin margin;
@@ -101,6 +107,8 @@ namespace squi {
 		// Getters
 		[[nodiscard]] Data &data();
 		[[nodiscard]] const Data &data() const;
+		[[nodiscard]] FunctionArgs &funcs();
+		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
 		[[nodiscard]] virtual Rect getRect() const;
 		[[nodiscard]] virtual Rect getContentRect() const;
@@ -118,6 +126,8 @@ namespace squi {
 
 		// Virtual methods
 		virtual void init(){};
+		virtual void fillParentSizeBehavior(bool horizontalHint, bool verticalHint);
+		virtual void matchChildSizeBehavior(bool horizontalHint, bool verticalHint);
 		virtual void onUpdate(){};
 		virtual void afterChildrenUpdate(){};
 		virtual void afterUpdate(){};

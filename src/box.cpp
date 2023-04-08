@@ -3,8 +3,10 @@
 
 using namespace squi;
 
-Box::Box(const Box::Args &args)
-	: Widget(args.widget, Widget::Options{.isContainer = false}),
+Box::Impl::Impl(const Box &args)
+	: Widget(args.widget, Widget::Options{
+		.isInteractive = true,
+	}),
 	  quad(Quad::Args{
 		  .size = args.widget.size,
 		  .color = args.color,
@@ -16,7 +18,7 @@ Box::Box(const Box::Args &args)
 	addChild(args.child);
 }
 
-void Box::onDraw() {
+void Box::Impl::onDraw() {
 	auto &data = this->data();
 	quad.setPos(data.pos + data.margin.getPositionOffset());
 	quad.setSize(data.size);
@@ -25,38 +27,38 @@ void Box::onDraw() {
 	renderer.addQuad(quad);
 }
 
-void Box::setColor(const Color &color) {
+void Box::Impl::setColor(const Color &color) {
 	quad.setColor(color);
 }
 
-void Box::setBorderColor(const Color &color) {
+void Box::Impl::setBorderColor(const Color &color) {
 	quad.setBorderColor(color);
 }
 
-void Box::setBorderWidth(float width) {
+void Box::Impl::setBorderWidth(float width) {
 	quad.setBorderSize(width);
 }
 
-void Box::setBorderRadius(float radius) {
+void Box::Impl::setBorderRadius(float radius) {
 	quad.setBorderRadius(radius);
 }
 
-Color Box::getColor() const {
+Color Box::Impl::getColor() const {
 	return Color::VEC4(quad.getData().color);
 }
 
-Color Box::getBorderColor() const {
+Color Box::Impl::getBorderColor() const {
 	return Color::VEC4(quad.getData().borderColor);
 }
 
-float Box::getBorderWidth() const {
+float Box::Impl::getBorderWidth() const {
 	return quad.getData().borderSize;
 }
 
-float Box::getBorderRadius() const {
+float Box::Impl::getBorderRadius() const {
 	return quad.getData().borderRadius;
 }
 
-Quad &Box::getQuad() {
+Quad &Box::Impl::getQuad() {
 	return quad;
 }

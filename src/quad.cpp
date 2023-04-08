@@ -28,15 +28,13 @@ Quad::Quad(const Args &args) {
 	data.borderSize = args.borderSize;
 	texture = args.texture;
 	data.textureType = static_cast<uint32_t>(args.textureType);
-	// if (args.textureType != TextureType::NoTexture) {
-	// 	data.textureIndex = glGetTextureHandleARB(textureId);
-	// }
 }
 
 void Quad::setId(uint32_t id) {
-	for (auto &vertex: vertices) {
-		vertex.id = id;
-	}
+	vertices[0].id = id;
+	vertices[1].id = id;
+	vertices[2].id = id;
+	vertices[3].id = id;
 }
 
 void Quad::setTextureIndex(uint32_t id) {
@@ -47,11 +45,11 @@ Quad::TextureType Quad::getTextureType() const {
 	return static_cast<const TextureType>(data.textureType);
 }
 
-std::shared_ptr<ID3D11ShaderResourceView> Quad::getTexture() const {
+const std::shared_ptr<ID3D11ShaderResourceView> &Quad::getTexture() const {
 	return texture;
 }
 
-std::span<const Vertex> Quad::getVertices() const {
+const std::array<Vertex, 4> &Quad::getVertices() const {
 	return vertices;
 }
 
@@ -85,4 +83,8 @@ void Quad::setBorderRadius(float radius) {
 
 void Quad::setBorderSize(float size) {
 	data.borderSize = size;
+}
+
+void Quad::setClipRect(const Rect &clipRect) {
+	data.clipRect = DirectX::XMFLOAT4(clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
 }

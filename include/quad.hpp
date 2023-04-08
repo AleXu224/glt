@@ -5,6 +5,7 @@
 #include "vertex.hpp"
 #include "d3d11.h"
 #include "memory"
+#include "rect.hpp"
 
 namespace squi {
 	class Quad {
@@ -36,14 +37,14 @@ namespace squi {
 
 		Quad(const Args &args);
 
-		[[nodiscard]] std::span<const Vertex> getVertices() const;
+		[[nodiscard]] const std::array<Vertex, 4> &getVertices() const;
 		[[nodiscard]] const VertexData &getData() const;
 
 		void setId(uint32_t id);
 
 		void setTextureIndex(uint32_t id);
 		[[nodiscard]] TextureType getTextureType() const;
-		[[nodiscard]] std::shared_ptr<ID3D11ShaderResourceView> getTexture() const;
+		[[nodiscard]] const std::shared_ptr<ID3D11ShaderResourceView> &getTexture() const;
 
 		void setPos(DirectX::XMFLOAT2 pos);
 		void setSize(DirectX::XMFLOAT2 size);
@@ -52,6 +53,7 @@ namespace squi {
 		void setBorderColor(DirectX::XMFLOAT4 color);
 		void setBorderRadius(float radius);
 		void setBorderSize(float size);
+		void setClipRect(const Rect &clipRect);
 	};
 }// namespace squi
 

@@ -26,9 +26,13 @@ namespace squi {
 		std::shared_ptr<ID3D11RenderTargetView> renderTargetView{};
 		std::shared_ptr<ID3D11Resource> backBuffer{};
 		std::shared_ptr<ID3D11BlendState> blendState{};
+		std::vector<Rect> clipRects{};
 
 	public:
 		static Renderer &getInstance();
+
+		void addClipRect(const Rect &rect);
+		void popClipRect();
 
 		void addQuad(Quad &quad);
 

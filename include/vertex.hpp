@@ -55,6 +55,7 @@ namespace squi {
 		 */
 		uint32_t textureIndex;
 		uint32_t textureType;
+		DirectX::XMFLOAT4 clipRect;
 	};
 }// namespace squi
 

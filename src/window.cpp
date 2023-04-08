@@ -20,7 +20,7 @@ void Window::glfwError(int id, const char *description) {
 	printf("GLFW Error %d: %s\n", id, description);
 }
 
-Window::Window() : Widget(Widget::Args{}, Widget::Options{.isContainer = false, .isInteractive = false}) {
+Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false}) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");
@@ -114,10 +114,6 @@ void Window::run() {
 
 	auto lastTime = std::chrono::steady_clock::now();
 
-	auto textQuads = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\arial.ttf)", 20, {100, 140}, Color::HEX(0xFFFFFFFF));
-	auto textQuads2 = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\calibri.ttf)", 9, {100, 180}, Color::HEX(0xFFFFFFCC));
-	auto textQuads3 = FontStore::generateQuads("The quick brown fox jumps over the lazy dog", R"(C:\Windows\Fonts\segoeui.ttf)", 20, {100, 220}, Color::HEX(0xFFFFFFFF));
-
 	unsigned int fps = 0;
 	auto lastFpsTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window.get())) {
@@ -137,6 +133,10 @@ void Window::run() {
 		context->ClearRenderTargetView(renderTargetView, color);
 
 		auto &children = getChildren();
+		int width, height;
+		glfwGetWindowSize(window.get(), &width, &height);
+		auto &widgetData = data();
+		widgetData.size = {static_cast<float>(width), static_cast<float>(height)};
 
 		auto currentTime = std::chrono::steady_clock::now();
 		auto deltaTime = currentTime - lastTime;
@@ -156,20 +156,16 @@ void Window::run() {
 		for (auto &child: children) {
 			child->draw();
 		}
-		for (auto &quad: textQuads) {
-			renderer.addQuad(quad);
-		}
-		for (auto &quad: textQuads2) {
-			renderer.addQuad(quad);
-		}
-		for (auto &quad: textQuads3) {
-			renderer.addQuad(quad);
-		}
 
 		renderer.render();
+		renderer.popClipRect();
 
 		auto *swapChain = renderer.getSwapChain().get();
 		swapChain->Present(0, 0);
 		lastTime = currentTime;
+
+		GestureDetector::g_keys.clear();
+		GestureDetector::g_textInput = 0;
+		GestureDetector::g_scrollDelta = 0;
 	}
 }

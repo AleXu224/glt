@@ -112,15 +112,15 @@ void Batch::addQuad(Quad &quad,
 		}
 	}
 	quad.setId(cursor);
-	auto quadVertices = quad.getVertices();
+	const auto &quadVertices = quad.getVertices();
 	const auto verticesOffset = cursor * 4;
-	vertices[verticesOffset] = quadVertices[0];
+	vertices[verticesOffset + 0] = quadVertices[0];
 	vertices[verticesOffset + 1] = quadVertices[1];
 	vertices[verticesOffset + 2] = quadVertices[2];
 	vertices[verticesOffset + 3] = quadVertices[3];
 
 	const auto indicesOffset = cursor * 6;
-	indices[indicesOffset] = verticesOffset;
+	indices[indicesOffset + 0] = verticesOffset + 0;
 	indices[indicesOffset + 1] = verticesOffset + 1;
 	indices[indicesOffset + 2] = verticesOffset + 2;
 	indices[indicesOffset + 3] = verticesOffset + 0;

@@ -35,25 +35,27 @@ char32_t UTF8ToUTF32(const unsigned char *character) {
 	return codepoint;
 }
 
-Quad FontStore::Font::getQuad(unsigned char *character, float size) {
+std::tuple<Quad, vec2, float> FontStore::Font::getQuad(unsigned char *character, float size) {
 	// UTF8 to UTF32
 	char32_t codepoint = UTF8ToUTF32(character);
 
-	// Load the character
+	// Set the size
 	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
-	if (FT_Load_Glyph(face, FT_Get_Char_Index(face, codepoint), FT_LOAD_RENDER)) {
-		printf("Failed to load glyph: %c (%d)\n", codepoint, codepoint);
-		return Quad({Quad::Args{}}); // Return empty quad
-	}
 
 	// Check if the character is already in the atlas
 	if (chars.contains(size) && chars.at(size).contains(codepoint)) {
 		return chars.at(size).at(codepoint).getQuad(atlas.textureView);
 	}
+	
+	// Load the character
+	if (FT_Load_Glyph(face, FT_Get_Char_Index(face, codepoint), 0)) {
+		printf("Failed to load glyph: %c (%d)\n", codepoint, codepoint);
+		return {Quad({Quad::Args{}}), {0, 0}, 0}; // Return empty quad
+	}
 
 	if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)) {
 		printf("Failed to render glyph: %c (%d)\n", codepoint, codepoint);
-		return Quad({Quad::Args{}});
+		return {Quad({Quad::Args{}}), {0, 0}, 0};
 	}
 
 	// Add the character to the atlas
@@ -61,7 +63,7 @@ Quad FontStore::Font::getQuad(unsigned char *character, float size) {
 	if (!success) {
 		// TODO: Add a way to have multiple atlases
 		printf("Failed to add glyph to atlas: %c (%d)\n", codepoint, codepoint);
-		return Quad({Quad::Args{}});
+		return {Quad({Quad::Args{}}), {0, 0}, 0};
 	}
 
 	// Add the character to the chars map
@@ -72,6 +74,11 @@ Quad FontStore::Font::getQuad(unsigned char *character, float size) {
 			static_cast<float>(face->glyph->bitmap.width),
 			static_cast<float>(face->glyph->bitmap.rows),
 		},
+		.offset = {
+			static_cast<float>(face->glyph->metrics.horiBearingX >> 6),
+			-static_cast<float>(face->glyph->metrics.horiBearingY >> 6),
+		},
+		.advance = static_cast<float>(face->glyph->metrics.horiAdvance >> 6),
 	};
 
 	return chars.at(size).at(codepoint).getQuad(atlas.textureView);
@@ -79,7 +86,7 @@ Quad FontStore::Font::getQuad(unsigned char *character, float size) {
 
 std::unordered_map<std::string, FontStore::Font> FontStore::fonts{};
 
-std::vector<Quad> FontStore::generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color) {
+std::tuple<std::vector<Quad>, float, float> FontStore::generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color) {
 	if (!isInitialized) {
 		if (FT_Init_FreeType(&ftLibrary)) {
 			printf("Failed to initialize FreeType\n");
@@ -96,13 +103,13 @@ std::vector<Quad> FontStore::generateQuads(std::string text, const std::string &
 	auto &font = fonts.at(fontPath);
 
 	if (!font.loaded) {
-		return quads;
+		return {quads, 0, 0};
 	}
 
 	char *previousChar = nullptr;
 	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
 		const auto &character = text.at(charIter - text.begin());
-		auto quad = font.getQuad((unsigned char *) &character, size);
+		auto [quad, offset, advance]= font.getQuad((unsigned char *) &character, size);
 
 		FT_Vector kerning{};
 		if (previousChar != nullptr) {
@@ -115,18 +122,13 @@ std::vector<Quad> FontStore::generateQuads(std::string text, const std::string &
 		// FreeType assumes bottom-left as origin while we use top-left
 		// So in that case we can just subtract the height of the glyph from the ascender
         cursor.y = static_cast<float>(font.face->size->metrics.ascender >> 6);
-//		cursor.y -= static_cast<float>(font.face->glyph->bitmap.rows);
 
 		quad.setPos(pos);
-		const vec2 offset = {
-			static_cast<float>(font.face->glyph->metrics.horiBearingX >> 6),
-			-static_cast<float>(font.face->glyph->metrics.horiBearingY >> 6),
-		};
 		quad.setOffset(cursor + offset);
 		quad.setColor(color);
 		quads.emplace_back(std::move(quad));
 
-        cursor.x += static_cast<float>(font.face->glyph->advance.x >> 6);
+		cursor.x += advance;
 
 		previousChar = &text.at(charIter - text.begin());
 
@@ -145,7 +147,7 @@ std::vector<Quad> FontStore::generateQuads(std::string text, const std::string &
 
 	font.updateTexture();
 
-    return quads;
+    return {quads, cursor.x, static_cast<float>((font.face->ascender >> 6) - (font.face->descender >> 6))};
 }
 
 void FontStore::Font::updateTexture() {
