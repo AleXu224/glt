@@ -20,6 +20,12 @@ namespace squi {
 		uint32_t id;
 	};
 
+	enum class TextureType : uint32_t {
+		NoTexture = 0,
+		Texture = 1,
+		Text = 2
+	};
+
 	struct VertexData {
 		/**
 		 * @brief Inner color of the quad
@@ -54,7 +60,7 @@ namespace squi {
 		 * @brief Texture id of the quad. 0 if no texture is used
 		 */
 		uint32_t textureIndex;
-		uint32_t textureType;
+		TextureType textureType;
 		DirectX::XMFLOAT4 clipRect;
 	};
 }// namespace squi

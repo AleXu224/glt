@@ -39,6 +39,9 @@ namespace squi {
 
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
 		add(const uint16_t &width, const uint16_t& height, unsigned char *data);
+
+		std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE> &getAtlasData();
+		
 		void updateTexture();
 	};
 }// namespace squi

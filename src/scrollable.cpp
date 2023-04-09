@@ -10,7 +10,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 	addChild(Column{
 		.widget{
 			.sizeBehavior{
-				.horizontal = SizeBehaviorType::MatchChild,
+				.horizontal = SizeBehaviorType::FillParent,
 				.vertical = SizeBehaviorType::MatchChild,
 			},
 			.beforeUpdate = [&](Widget &widget) {

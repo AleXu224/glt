@@ -20,6 +20,8 @@ void Window::glfwError(int id, const char *description) {
 	printf("GLFW Error %d: %s\n", id, description);
 }
 
+std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
+
 Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false}) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
@@ -40,9 +42,13 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false
 		exit(1);
 	}
 
+	windowMap[window.get()] = this;
+
 	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *windowPtr, int width, int height) {
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
+		auto *window = windowMap[windowPtr];
+		window->updateAndDraw();
 	});
 	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
@@ -109,63 +115,67 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false
 	}
 }
 
+Window::~Window() {
+	Widget::~Widget();
+	windowMap.erase(window.get());
+}
+
 void Window::run() {
-	Renderer &renderer = Renderer::getInstance();
-
-	auto lastTime = std::chrono::steady_clock::now();
-
-	unsigned int fps = 0;
-	auto lastFpsTime = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window.get())) {
-		auto currentFpsTime = std::chrono::steady_clock::now();
-		auto fpsDeltaTime = currentFpsTime - lastFpsTime;
-		if (fpsDeltaTime > 1s) {
-			glfwSetWindowTitle(window.get(), std::to_string(fps).c_str());
-			fps = 0;
-			lastFpsTime = currentFpsTime;
-		}
-		fps++;
-		auto context = renderer.getDeviceContext();
-		glfwPollEvents();
-
-		float color[] = {0.0f, 0.0f, 0.0f, 0.0f};
-		auto *renderTargetView = renderer.getRenderTargetView().get();
-		context->ClearRenderTargetView(renderTargetView, color);
-
-		auto &children = getChildren();
-		int width, height;
-		glfwGetWindowSize(window.get(), &width, &height);
-		auto &widgetData = data();
-		widgetData.size = {static_cast<float>(width), static_cast<float>(height)};
-
-		auto currentTime = std::chrono::steady_clock::now();
-		auto deltaTime = currentTime - lastTime;
-		constexpr bool UPDATE_DEBUG_STEP = false;
-		if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
-			renderer.updateDeltaTime(deltaTime);
-			renderer.updateCurrentFrameTime(currentTime);
-			for (auto &child: std::views::reverse(children)) {
-				child->data().pos = {0, 0};
-				child->data().parent = this;
-				child->update();
-			}
-		}
-
-		renderer.prepare();
-
-		for (auto &child: children) {
-			child->draw();
-		}
-
-		renderer.render();
-		renderer.popClipRect();
-
-		auto *swapChain = renderer.getSwapChain().get();
-		swapChain->Present(0, 0);
-		lastTime = currentTime;
-
-		GestureDetector::g_keys.clear();
-		GestureDetector::g_textInput = 0;
-		GestureDetector::g_scrollDelta = 0;
+		updateAndDraw();
 	}
+}
+
+void Window::updateAndDraw() {
+	Renderer &renderer = Renderer::getInstance();
+	auto currentFpsTime = std::chrono::steady_clock::now();
+	auto fpsDeltaTime = currentFpsTime - lastFpsTime;
+	if (fpsDeltaTime > 1s) {
+		glfwSetWindowTitle(window.get(), std::to_string(fps).c_str());
+		fps = 0;
+		lastFpsTime = currentFpsTime;
+	}
+	fps++;
+	auto context = renderer.getDeviceContext();
+	glfwPollEvents();
+
+	float color[] = {0.0f, 0.0f, 0.0f, 0.0f};
+	auto *renderTargetView = renderer.getRenderTargetView().get();
+	context->ClearRenderTargetView(renderTargetView, color);
+
+	auto &children = getChildren();
+	int width, height;
+	glfwGetWindowSize(window.get(), &width, &height);
+	auto &widgetData = data();
+	widgetData.size = {static_cast<float>(width), static_cast<float>(height)};
+
+	auto currentTime = std::chrono::steady_clock::now();
+	auto deltaTime = currentTime - lastTime;
+	constexpr bool UPDATE_DEBUG_STEP = false;
+	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
+		renderer.updateDeltaTime(deltaTime);
+		renderer.updateCurrentFrameTime(currentTime);
+		for (auto &child: std::views::reverse(children)) {
+			child->data().pos = {0, 0};
+			child->data().parent = this;
+			child->update();
+		}
+	}
+
+	renderer.prepare();
+
+	for (auto &child: children) {
+		child->draw();
+	}
+
+	renderer.render();
+	renderer.popClipRect();
+
+	auto *swapChain = renderer.getSwapChain().get();
+	swapChain->Present(0, 0);
+	lastTime = currentTime;
+
+	GestureDetector::g_keys.clear();
+	GestureDetector::g_textInput = 0;
+	GestureDetector::g_scrollDelta = 0;
 }

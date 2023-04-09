@@ -98,7 +98,7 @@ void Batch::addQuad(Quad &quad,
 	if (cursor >= BATCH_SIZE) {
 		render(shader, context, renderTargetView, viewport);
 	}
-	if (quad.getTextureType() != Quad::TextureType::NoTexture) {
+	if (quad.getTextureType() != TextureType::NoTexture) {
 		const auto &texture = quad.getTexture();
 		const auto iter = std::find(textures.begin(), textures.end(), texture);
 		if (iter == textures.end()) {

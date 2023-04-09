@@ -1,4 +1,5 @@
 #include "column.hpp"
+#include "renderer.hpp"
 
 using namespace squi;
 
@@ -38,14 +39,14 @@ void Column::Impl::onUpdate() {
             totalHeight += childLayoutRect.height();
         }
         if (childData.sizeBehavior.horizontal != SizeBehaviorType::FillParent) {
-            maxWidth = std::max(maxWidth, childLayoutRect.width());
+            maxWidth = (std::max)(maxWidth, childLayoutRect.width());
         }
     }
 
     auto &widgetData = data();
 
     float spacingOffset = spacing * (children.size() - 1);
-    spacingOffset = std::max(0.0f, spacingOffset);
+    spacingOffset = (std::max)(0.0f, spacingOffset);
 
     const bool horizontalHint = widgetData.sizeHint.x != -1;
     const bool verticalHint = widgetData.sizeHint.y != -1;
@@ -74,10 +75,13 @@ void Column::Impl::onDraw() {
     const auto width = getContentRect().width();
     const auto childPos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 
+    const Rect &clipRect = Renderer::getInstance().getCurrentClipRect();
+
     for (auto &child: children) {
         if (!child) continue;
         auto &childData = child->data();
         childData.pos.y = childPos.y + cursor;
+        if (childData.pos.y > clipRect.bottom) break;
 
         switch (alignment) {
             case Alignment::left:
@@ -91,7 +95,9 @@ void Column::Impl::onDraw() {
                 break;
         }
 
+        const float childHeight = child->getLayoutRect().height();
+        cursor += childHeight + spacing;
+        if (childData.pos.y + childHeight < clipRect.top) continue;
         child->draw();
-        cursor += child->getLayoutRect().height() + spacing;
     }
 }

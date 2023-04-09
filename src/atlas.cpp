@@ -109,8 +109,13 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& h
 	return {uvTopLeft, uvBottomRight, true};
 }
 
+std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE> &Atlas::getAtlasData() {
+	return *atlas;
+}
+
 void Atlas::updateTexture() {
 	if (!textureDirty) return;
+	textureDirty = false;
 	auto context = Renderer::getInstance().getDeviceContext();
 //	context->UpdateSubresource(texture.get(), 0, nullptr, atlas->data(), ATLAS_SIZE, 0);
 	// Again, the above should be better but doesn't work on older OSes

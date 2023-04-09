@@ -254,6 +254,10 @@ void Renderer::addClipRect(const Rect &clipRect) {
 		clipRects.push_back(clipRect);
 }
 
+const Rect &Renderer::getCurrentClipRect() const {
+	return clipRects.back();
+}
+
 void Renderer::popClipRect() {
 	if (clipRects.empty()) {
 		throw std::runtime_error("Clip rects empty, can't pop");

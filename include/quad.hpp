@@ -9,30 +9,23 @@
 
 namespace squi {
 	class Quad {
-	public:
-		enum class TextureType : uint32_t {
-			NoTexture = 0,
-			Texture = 1,
-			Text = 2
-		};
-	private:
-
-		std::array<Vertex, 4> vertices{};
-		VertexData data{};
-		std::shared_ptr<ID3D11ShaderResourceView> texture;
-
-	public:
-		struct Args {
-			DirectX::XMFLOAT2 pos;
-			DirectX::XMFLOAT2 size;
-			DirectX::XMFLOAT2 offset;
-			DirectX::XMFLOAT4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-			DirectX::XMFLOAT4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
-			float borderRadius;
-			float borderSize;
+		private:
+			std::array<Vertex, 4> vertices{};
+			VertexData data{};
 			std::shared_ptr<ID3D11ShaderResourceView> texture;
-			TextureType textureType = TextureType::NoTexture;
-			DirectX::XMFLOAT4 textureUv;
+
+		public:
+			struct Args {
+				DirectX::XMFLOAT2 pos;
+				DirectX::XMFLOAT2 size;
+				DirectX::XMFLOAT2 offset;
+				DirectX::XMFLOAT4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+				DirectX::XMFLOAT4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
+				float borderRadius;
+				float borderSize;
+				std::shared_ptr<ID3D11ShaderResourceView> texture;
+				TextureType textureType = TextureType::NoTexture;
+				DirectX::XMFLOAT4 textureUv;
 		};
 
 		Quad(const Args &args);
@@ -43,7 +36,7 @@ namespace squi {
 		void setId(uint32_t id);
 
 		void setTextureIndex(uint32_t id);
-		[[nodiscard]] TextureType getTextureType() const;
+		[[nodiscard]] const TextureType &getTextureType() const;
 		[[nodiscard]] const std::shared_ptr<ID3D11ShaderResourceView> &getTexture() const;
 
 		void setPos(DirectX::XMFLOAT2 pos);

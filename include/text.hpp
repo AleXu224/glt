@@ -11,6 +11,7 @@ namespace squi {
         Widget::Args widget;
         std::string text;
         float fontSize{14.0f};
+        bool lineWrap{false};
         std::string fontPath{"C:\\Windows\\Fonts\\arial.ttf"};
         Color color{Color::HEX(0xFFFFFFFF)};
     
@@ -18,11 +19,13 @@ namespace squi {
             // Data
             float lastX{0};
             float lastY{0};
+            float lastParentWidth{0};
 			std::string text;
 			float fontSize;
+            bool lineWrap;
             std::string fontPath;
 			Color color;
-            std::vector<Quad> quads{};
+            std::vector<std::vector<Quad>> quads{};
 
 		public:
             Impl(const Text &args);

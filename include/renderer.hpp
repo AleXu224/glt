@@ -32,6 +32,7 @@ namespace squi {
 		static Renderer &getInstance();
 
 		void addClipRect(const Rect &rect);
+		const Rect &getCurrentClipRect() const;
 		void popClipRect();
 
 		void addQuad(Quad &quad);

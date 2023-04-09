@@ -27,7 +27,7 @@ Quad::Quad(const Args &args) {
 	data.borderRadius = args.borderRadius;
 	data.borderSize = args.borderSize;
 	texture = args.texture;
-	data.textureType = static_cast<uint32_t>(args.textureType);
+	data.textureType = args.textureType;
 }
 
 void Quad::setId(uint32_t id) {
@@ -41,8 +41,8 @@ void Quad::setTextureIndex(uint32_t id) {
 	data.textureIndex = id;
 }
 
-Quad::TextureType Quad::getTextureType() const {
-	return static_cast<const TextureType>(data.textureType);
+const TextureType &Quad::getTextureType() const {
+	return data.textureType;
 }
 
 const std::shared_ptr<ID3D11ShaderResourceView> &Quad::getTexture() const {

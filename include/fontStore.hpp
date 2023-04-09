@@ -15,6 +15,7 @@
 namespace squi {
 	class FontStore {
 		class Font {
+		public:
 			struct CharInfo {
 				vec2 uvTopLeft{};
 				vec2 uvBottomRight{};
@@ -26,7 +27,7 @@ namespace squi {
 					return {Quad(Quad::Args{
 						.size = size,
 						.texture = textureView,
-						.textureType = Quad::TextureType::Text,
+						.textureType = TextureType::Text,
 						.textureUv = {
 							uvTopLeft.x, uvTopLeft.y,
 							uvBottomRight.x, uvBottomRight.y,
@@ -34,6 +35,7 @@ namespace squi {
 					}), offset, advance};
 				}
 			};
+		private:
 
             std::string fontPath;
 			Atlas atlas{};
@@ -45,7 +47,37 @@ namespace squi {
 			FT_Face face{};
             Font(std::string fontPath);
 
-			std::tuple<Quad, vec2, float> getQuad(unsigned char *character, float size);
+			/**
+			 * @brief Generates the texture for a character and adds it to the atlas. 
+			 * There is no additional cost if the texture has already been generated.
+			 * 
+			 * @param character The character to generate the texture for
+			 * @param size The size of the font
+			 * @return true 
+			 * @return false 
+			 */
+			bool generateTexture(unsigned char *character, float size);
+
+			/**
+			 * @brief Gets the quad for a character.
+			 * Will return an empty quad if the character can't be generated.
+			 * 
+			 * @param character The character to get the quad for
+			 * @param size The size of the font
+			 * @return std::tuple<Quad, vec2, float> 
+			 */
+			std::tuple<Quad, vec2, float> getCharQuad(unsigned char *character, float size);
+
+			/**
+			 * @brief Gets the CharInfo for a character.
+			 * 
+			 * @param character The character to get the CharInfo for
+			 * @param size The size of the font
+			 * @return CharInfo& 
+			 */
+			CharInfo &getCharInfo(unsigned char *character, float size);
+
+			Atlas &getAtlas();
 
 			void updateTexture();
 		};
@@ -56,7 +88,9 @@ namespace squi {
 		static std::unordered_map<std::string, Font> fonts;
 
     public:
-        static std::tuple<std::vector<Quad>, float, float> generateQuads(std::string text, const std::string &fontPath, float size, const vec2 &pos, const Color &color);
+		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, const std::string &fontPath, float size);
+	
+        static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, const std::string &fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
 	};
 }// namespace squi
 

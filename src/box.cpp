@@ -13,7 +13,7 @@ Box::Impl::Impl(const Box &args)
 		  .borderColor = args.borderColor,
 		  .borderRadius = args.borderRadius,
 		  .borderSize = args.borderWidth,
-		  .textureType = Quad::TextureType::NoTexture,
+		  .textureType = TextureType::NoTexture,
 	  }) {
 	addChild(args.child);
 }
