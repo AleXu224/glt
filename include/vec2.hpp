@@ -23,6 +23,8 @@ namespace squi {
 		void operator*=(const vec2 &other);
 		void operator/=(const vec2 &other);
 
+		bool operator==(const vec2 &other) const;
+
 		[[nodiscard]] vec2 withX(const float &newX) const;
 		[[nodiscard]] vec2 withY(const float &newY) const;
 

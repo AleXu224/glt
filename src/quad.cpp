@@ -3,32 +3,42 @@
 
 using namespace squi;
 
-Quad::Quad(const Args &args) {
-	for (auto &vertex: vertices) {
-		vertex.id = 0;
-	}
-
-	vertices[0].uv = {0.0f, 0.0f};
-	vertices[1].uv = {1.0f, 0.0f};
-	vertices[2].uv = {1.0f, 1.0f};
-	vertices[3].uv = {0.0f, 1.0f};
-
-	const auto &texUv = args.textureUv;
-	vertices[0].texUv = {texUv.x, texUv.y};
-	vertices[1].texUv = {texUv.z, texUv.y};
-	vertices[2].texUv = {texUv.z, texUv.w};
-	vertices[3].texUv = {texUv.x, texUv.w};
-
-	data.color = args.color;
-	data.borderColor = args.borderColor;
-	data.pos = args.pos;
-	data.size = args.size;
-	data.offset = args.offset;
-	data.borderRadius = args.borderRadius;
-	data.borderSize = args.borderSize;
-	texture = args.texture;
-	data.textureType = args.textureType;
-}
+Quad::Quad(const Args &args)
+	: vertices{
+		  Vertex{
+			  .uv = {0.0f, 0.0f},
+			  .texUv = {args.textureUv.x, args.textureUv.y},
+			  .id = 0,
+		  },
+		  Vertex{
+			  .uv = {1.0f, 0.0f},
+			  .texUv = {args.textureUv.z, args.textureUv.y},
+			  .id = 0,
+		  },
+		  Vertex{
+			  .uv = {1.0f, 1.0f},
+			  .texUv = {args.textureUv.z, args.textureUv.w},
+			  .id = 0,
+		  },
+		  Vertex{
+			  .uv = {0.0f, 1.0f},
+			  .texUv = {args.textureUv.x, args.textureUv.w},
+			  .id = 0,
+		  },
+	  },
+	  data{
+		  .color = args.color,
+		  .borderColor = args.borderColor,
+		  .pos = args.pos,
+		  .size = args.size,
+		  .offset = args.offset,
+		  .borderRadius = args.borderRadius,
+		  .borderSize = args.borderSize,
+		  .textureIndex = 0,
+		  .textureType = args.textureType,
+		  .clipRect = {0.0f, 0.0f, 0.0f, 0.0f},
+	  },
+	  texture{args.texture} {}
 
 void Quad::setId(uint32_t id) {
 	vertices[0].id = id;

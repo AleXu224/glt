@@ -22,22 +22,10 @@ namespace squi {
 				vec2 size{};
 				vec2 offset{};
 				float advance{};
-
-				std::tuple<Quad, vec2, float> getQuad(const std::shared_ptr<ID3D11ShaderResourceView> &textureView) {
-					return {Quad(Quad::Args{
-						.size = size,
-						.texture = textureView,
-						.textureType = TextureType::Text,
-						.textureUv = {
-							uvTopLeft.x, uvTopLeft.y,
-							uvBottomRight.x, uvBottomRight.y,
-						},
-					}), offset, advance};
-				}
+				FT_UInt index{};
 			};
 		private:
 
-            std::string fontPath;
 			Atlas atlas{};
 			//
             std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
@@ -45,7 +33,7 @@ namespace squi {
 		public:
 			bool loaded{true};
 			FT_Face face{};
-            Font(std::string fontPath);
+            Font(std::string_view fontPath);
 
 			/**
 			 * @brief Generates the texture for a character and adds it to the atlas. 
@@ -57,16 +45,7 @@ namespace squi {
 			 * @return false 
 			 */
 			bool generateTexture(unsigned char *character, float size);
-
-			/**
-			 * @brief Gets the quad for a character.
-			 * Will return an empty quad if the character can't be generated.
-			 * 
-			 * @param character The character to get the quad for
-			 * @param size The size of the font
-			 * @return std::tuple<Quad, vec2, float> 
-			 */
-			std::tuple<Quad, vec2, float> getCharQuad(unsigned char *character, float size);
+			bool generateTexture(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
 
 			/**
 			 * @brief Gets the CharInfo for a character.
@@ -75,9 +54,12 @@ namespace squi {
 			 * @param size The size of the font
 			 * @return CharInfo& 
 			 */
-			CharInfo &getCharInfo(unsigned char *character, float size);
+			const CharInfo &getCharInfo(unsigned char *character, float size);
+			const CharInfo &getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
 
 			Atlas &getAtlas();
+
+			std::unordered_map<char32_t, CharInfo> &getSizeMap(float size);
 
 			void updateTexture();
 		};
@@ -85,12 +67,42 @@ namespace squi {
         // TODO: refcount fonts and delete when no longer used
 
 		static FT_Library ftLibrary;
-		static std::unordered_map<std::string, Font> fonts;
+		static std::unordered_map<std::string_view, Font> fonts;
 
     public:
-		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, const std::string &fontPath, float size);
+		/**
+		 * @brief Get the Height of a font at a given size.
+		 * 
+		 * @param fontPath 
+		 * @param size 
+		 * @return uint32_t 
+		 */
+		static uint32_t getLineHeight(std::string_view fontPath, float size);
 	
-        static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, const std::string &fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
+		/**
+		 * @brief Get the Width and Height of a string of text.
+		 * 
+		 * @param text 
+		 * @param fontPath 
+		 * @param size 
+		 * @return std::tuple<uint32_t, uint32_t> 
+		 */
+		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, std::string_view fontPath, float size);
+	
+		/**
+		 * @brief Generates a 2d vector of quads for a string of text.
+		 * 
+		 * Each row in the vector represents a line of text.
+		 * 
+		 * @param text 
+		 * @param fontPath 
+		 * @param size 
+		 * @param pos 
+		 * @param color 
+		 * @param maxWidth The max width of the text before wrapping. A value of -1 means no wrapping.
+		 * @return std::tuple<std::vector<std::vector<Quad>> quads, float width, float height> 
+		 */
+        static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
 	};
 }// namespace squi
 

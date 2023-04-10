@@ -38,6 +38,10 @@ void vec2::operator/=(const vec2 &other) {
     y /= other.y;
 }
 
+bool vec2::operator==(const vec2 &other) const {
+    return x == other.x && y == other.y;
+}
+
 vec2 vec2::withX(const float &newX) const {
     return {newX, y};
 }

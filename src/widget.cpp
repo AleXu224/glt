@@ -67,8 +67,8 @@ Rect Widget::getContentRect() const {
 Rect Widget::getLayoutRect() const {
 	const auto& data = this->data();
 	return Rect::fromPosSize(
-		data.pos,
-		data.size + data.padding.getSizeOffset());
+		data.pos - data.margin.getPositionOffset(),
+		data.size + data.margin.getPositionOffset());
 }
 
 std::vector<Rect> Widget::getHitcheckRect() const {

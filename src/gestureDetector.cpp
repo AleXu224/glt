@@ -5,6 +5,7 @@
 using namespace squi;
 
 vec2 GestureDetector::lastCursorPos{0};
+vec2 GestureDetector::mouseDelta{0};
 
 vec2 GestureDetector::g_cursorPos{0};
 std::unordered_map<int, KeyState> GestureDetector::g_keys{};
@@ -13,6 +14,12 @@ vec2 GestureDetector::g_scrollDelta{0};
 std::vector<Rect> GestureDetector::g_hitCheckRects{};
 vec2 GestureDetector::g_dpi{96};
 bool GestureDetector::g_cursorInside{false};
+
+void GestureDetector::setCursorPos(const vec2 &pos) {
+	lastCursorPos = g_cursorPos;
+	g_cursorPos = pos;
+	mouseDelta = g_cursorPos - lastCursorPos;
+}
 
 bool GestureDetector::isKey(int key, int action, int mods) {
 	if (!g_keys.contains(key)) return false;
@@ -47,11 +54,17 @@ void GestureDetector::update() {
 		hovered = true;
 
 		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !focusedOutside) {
-			if (!focused) dragStart = g_cursorPos;
+			if (!focused) {
+				dragStart = g_cursorPos;
+				if (onPress) onPress(*this);
+			}
 			focused = true;
 			active = true;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
-			if (focused && !focusedOutside && onClick) onClick(*this);
+			if (focused && !focusedOutside) {
+				if (onClick) onClick(*this);
+				if (onRelease) onRelease(*this);
+			}
 			focused = false;
 			focusedOutside = false;
 		}
@@ -70,9 +83,9 @@ void GestureDetector::update() {
 		}
 	}
 
+	if (active && onDrag) onDrag(*this);
 	if (active) charInput = g_textInput;
 	else charInput = 0;
-	lastCursorPos = g_cursorPos;
 }
 
 const vec2 &GestureDetector::getMousePos() {
@@ -87,9 +100,14 @@ const vec2 &GestureDetector::getScroll() const {
 	return scrollDelta;
 }
 
+vec2 GestureDetector::getDragDelta() const {
+	if (!focused || g_cursorPos == dragStart) return vec2{0};
+	return mouseDelta;
+}
+
 vec2 GestureDetector::getDragOffset() const {
 	if (!focused) return vec2{0};
-	return dragStart - g_cursorPos;
+	return g_cursorPos - dragStart;
 }
 
 const vec2 &GestureDetector::getDragStartPos() const {

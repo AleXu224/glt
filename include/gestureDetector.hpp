@@ -12,6 +12,7 @@ namespace squi {
 	};
 	class GestureDetector {
 		static vec2 lastCursorPos;
+		static vec2 mouseDelta;
 		vec2 scrollDelta{};
 		vec2 dragStart{};
 
@@ -24,6 +25,8 @@ namespace squi {
 		static std::vector<Rect> g_hitCheckRects;
 		static vec2 g_dpi;
 		static bool g_cursorInside;
+
+		static void setCursorPos(const vec2 &pos);
 
 		// Wether the cursor is directly above the widget, without a stacked widget being on top
 		bool hovered = false;
@@ -38,6 +41,9 @@ namespace squi {
 		std::function<void(GestureDetector &)> onEnter{};
 		std::function<void(GestureDetector &)> onLeave{};
 		std::function<void(GestureDetector &)> onClick{};
+		std::function<void(GestureDetector &)> onPress{};
+		std::function<void(GestureDetector &)> onRelease{};
+		std::function<void(GestureDetector &)> onDrag{};
 
 		explicit GestureDetector(Widget *parent) : parent(parent) {}
 
@@ -52,6 +58,8 @@ namespace squi {
 		[[nodiscard]] static vec2 getMouseDelta() ;
 		// Get how much the scroll has moved in the last frame
 		[[nodiscard]] const vec2& getScroll() const;
+		// Get how much the cursor has moved since last update
+		[[nodiscard]] vec2 getDragDelta() const;
 		// Get how much the cursor has moved since it began dragging
 		[[nodiscard]] vec2 getDragOffset() const;
 		// Get the location of where the drag began

@@ -8,10 +8,10 @@ using namespace squi;
 static bool isInitialized{false};
 FT_Library FontStore::ftLibrary{};
 
-FontStore::Font::Font(std::string fontPath)
-	: fontPath(std::move(fontPath)) {
-	if (FT_New_Face(ftLibrary, this->fontPath.c_str(), 0, &face)) {
-		printf("Failed to load font: %s\n", this->fontPath.c_str());
+FontStore::Font::Font(std::string_view fontPath) {
+	const std::string fontPathStr(fontPath);
+	if (FT_New_Face(ftLibrary, fontPathStr.c_str(), 0, &face)) {
+		printf("Failed to load font: %s\n", fontPathStr.c_str());
 		loaded = false;
 	}
 }
@@ -37,11 +37,15 @@ char32_t UTF8ToUTF32(const unsigned char *character) {
 }
 
 bool FontStore::Font::generateTexture(unsigned char *character, float size) {
+	return generateTexture(character, chars[size]);
+}
+
+bool FontStore::Font::generateTexture(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap) {
 	// UTF8 to UTF32
 	char32_t codepoint = UTF8ToUTF32(character);
 
 	// Check if the character is already in the atlas
-	if (chars.contains(size) && chars.at(size).contains(codepoint)) {
+	if (sizeMap.contains(codepoint)) {
 		return true;
 	}
 
@@ -65,7 +69,7 @@ bool FontStore::Font::generateTexture(unsigned char *character, float size) {
 	}
 
 	// Add the character to the chars map
-	chars[size][codepoint] = {
+	sizeMap[codepoint] = {
 		.uvTopLeft = uvTopLeft,
 		.uvBottomRight = uvBottomRight,
 		.size = {
@@ -77,22 +81,13 @@ bool FontStore::Font::generateTexture(unsigned char *character, float size) {
 			-static_cast<float>(face->glyph->metrics.horiBearingY >> 6),
 		},
 		.advance = static_cast<float>(face->glyph->metrics.horiAdvance >> 6),
+		.index = FT_Get_Char_Index(face, codepoint),
 	};
 
 	return true;
 }
 
-std::tuple<Quad, vec2, float> FontStore::Font::getCharQuad(unsigned char *character, float size) {
-	if (!generateTexture(character, size)) {
-		return {Quad(Quad::Args{}), {0, 0}, 0};
-	}
-
-	// UTF8 to UTF32
-	const char32_t codepoint = UTF8ToUTF32(character);
-	return chars.at(size).at(codepoint).getQuad(atlas.textureView);
-}
-
-FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, float size) {
+const FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, float size) {
 	if (!generateTexture(character, size)) {
 		return chars.at(size).at(0);
 	}
@@ -102,16 +97,40 @@ FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character
 	return chars.at(size).at(codepoint);
 }
 
+const FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap) {
+	if (!generateTexture(character, sizeMap)) {
+		return sizeMap.at(0);
+	}
+
+	// UTF8 to UTF32
+	const char32_t codepoint = UTF8ToUTF32(character);
+	return sizeMap.at(codepoint);
+}
+
 Atlas &FontStore::Font::getAtlas() {
 	return atlas;
 }
 
-std::unordered_map<std::string, FontStore::Font> FontStore::fonts{};
+std::unordered_map<char32_t, FontStore::Font::CharInfo> &FontStore::Font::getSizeMap(float size) {
+	return chars[size];
+}
 
-std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, const std::string &fontPath, float size) {
+std::unordered_map<std::string_view, FontStore::Font> FontStore::fonts{};
+
+uint32_t FontStore::getLineHeight(std::string_view fontPath, float size) {
+	const auto &font = fonts.at(fontPath);
+
+	FT_Set_Pixel_Sizes(font.face, 0, static_cast<uint32_t>(size));
+
+	return (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6);
+}
+
+std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, std::string_view fontPath, float size) {
 	uint32_t width = 0;
 	auto &font = fonts.at(fontPath);
+	auto &sizeMap = font.getSizeMap(size);
 	char *prevChar = nullptr;
+	const Font::CharInfo *prevCharInfo = nullptr;
 
 	uint8_t skip = 0;
 
@@ -122,14 +141,14 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, con
 		}
 		const auto &character = text.at(charIter - text.begin());
 
-		const auto &charInfo = font.getCharInfo((unsigned char *) &character, size);
+		const auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
 
 		FT_Vector kerning{};
 		if (prevChar) {
 			FT_Get_Kerning(
 				font.face,
-				FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) prevChar)),
-				FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) &character)),
+				prevCharInfo->index,
+				charInfo.index,
 				FT_KERNING_DEFAULT,
 				&kerning);
 		}
@@ -143,12 +162,15 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, con
 		} else if ((unsigned char) character >= 0b11000000) {
 			skip = 1;
 		}
+
+		prevChar = (char *) &character;
+		prevCharInfo = &charInfo;
 	}
 
-	return { width, (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6) };
+	return {width, (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6)};
 }
 
-std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, const std::string &fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
+std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
 	if (!isInitialized) {
 		if (FT_Init_FreeType(&ftLibrary)) {
 			printf("Failed to initialize FreeType\n");
@@ -159,7 +181,8 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 
 	std::vector<std::vector<Quad>> quads{};
 	quads.resize(1, std::vector<Quad>{});
-	vec2 cursor{0, 0};// This will be used as offset for each character
+	int32_t cursorX = 0;
+	int32_t cursorY = 0;
 	if (!fonts.contains(fontPath)) {
 		fonts.insert({fontPath, Font(fontPath)});
 	}
@@ -170,43 +193,57 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 		return {quads, 0, 0};
 	}
 
-	char const * previousChar = nullptr;
+	auto &sizeMap = font.getSizeMap(size);
+
+	const auto &textureView = font.getAtlas().textureView;
+
+	char const *previousChar = nullptr;
+	Font::CharInfo const *previousCharInfo = nullptr;
 	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
 		const auto &character = text.at(charIter - text.begin());
-		auto [quad, offset, advance] = font.getCharQuad((unsigned char *) &character, size);
+		const auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
 
 		FT_Vector kerning{};
 		if (previousChar != nullptr) {
-			auto index1 = FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) previousChar));
-			auto index2 = FT_Get_Char_Index(font.face, UTF8ToUTF32((unsigned char *) &character));
-			FT_Get_Kerning(font.face, index1, index2, FT_KERNING_DEFAULT, &kerning);
+			FT_Get_Kerning(font.face, previousCharInfo->index, charInfo.index, FT_KERNING_DEFAULT, &kerning);
 
 			if (*previousChar == ' ' && character != ' ' && maxWidth != -1) {
 				auto [width, height] = getTextSize({charIter, std::find(charIter, text.end(), ' ')}, fontPath, size);
-				if (static_cast<uint32_t>(cursor.x) + width > maxWidth) {
+				if (cursorX + width > maxWidth) {
 					quads.emplace_back(std::vector<Quad>{});
-					cursor.x = 0;
-					cursor.y += height;
+					cursorX = 0;
+					cursorY += height;
 				}
 			}
 		}
-		cursor.x += static_cast<float>(kerning.x >> 6);
+		cursorX += kerning.x >> 6;
 		// Getting the Y position:
 		// FreeType assumes bottom-left as origin while we use top-left
 		// So in that case we can just subtract the height of the glyph from the ascender
-		const float savedY = cursor.y;
-		cursor.y += static_cast<float>(font.face->size->metrics.ascender >> 6);
+		const auto savedY = cursorY;
+		cursorY += font.face->size->metrics.ascender >> 6;
 
-		quad.setPos(pos);
-		quad.setOffset(cursor + offset);
-		quad.setColor(color);
 		if (character != ' ')
-			quads.back().emplace_back(std::move(quad));
+			quads.back().emplace_back(Quad::Args{
+				.pos{pos},
+				.size{charInfo.size},
+				.offset{charInfo.offset.withXOffset(cursorX).withYOffset(cursorY)},
+				.color{color},
+				.texture{textureView},
+				.textureType = TextureType::Text,
+				.textureUv{
+					charInfo.uvTopLeft.x,
+					charInfo.uvTopLeft.y,
+					charInfo.uvBottomRight.x,
+					charInfo.uvBottomRight.y,
+				},
+			});
 
-		cursor.x += advance;
-		cursor.y = savedY;
+		cursorX += charInfo.advance;
+		cursorY = savedY;
 
 		previousChar = &text.at(charIter - text.begin());
+		previousCharInfo = &charInfo;
 
 		if ((unsigned char) character >= 0b11110000) {
 			charIter += 3;
@@ -217,13 +254,9 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 		}
 	}
 
-	//	font.printAtlas();
-	//
-	//	exit(1);
-
 	font.updateTexture();
 
-	return {quads, cursor.x, cursor.y + static_cast<float>((font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6))};
+	return {quads, cursorX, cursorY + (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6)};
 }
 
 void FontStore::Font::updateTexture() {

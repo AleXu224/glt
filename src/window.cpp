@@ -52,7 +52,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false
 	});
 	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
-		GestureDetector::g_cursorPos = vec2{(float) (xpos), (float) (ypos)} / dpiScale;
+		GestureDetector::setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
 	});
 	glfwSetCharCallback(window.get(), [](GLFWwindow *m_window, unsigned int codepoint) {
 		GestureDetector::g_textInput = static_cast<unsigned char>(codepoint);
@@ -178,4 +178,5 @@ void Window::updateAndDraw() {
 	GestureDetector::g_keys.clear();
 	GestureDetector::g_textInput = 0;
 	GestureDetector::g_scrollDelta = 0;
+	GestureDetector::setCursorPos(GestureDetector::g_cursorPos);
 }

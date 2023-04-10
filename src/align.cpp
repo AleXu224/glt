@@ -9,7 +9,8 @@ Align::operator Child() const {
 	});
 	auto &childFuncs = child->funcs();
 
-	childFuncs.onDraw = [storage](Widget &widget) {
+	childFuncs.onDraw = [storage, oldOnDraw = childFuncs.onDraw](Widget &widget) {
+		if (oldOnDraw) oldOnDraw(widget);
 		auto &data = widget.data();
 		if (!data.parent) return;
 
