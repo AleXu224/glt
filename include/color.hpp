@@ -23,6 +23,10 @@ namespace squi {
 		[[nodiscard]] operator DirectX::XMFLOAT4() const;
 
 		[[nodiscard]] Color transistion(const Color &other, float t) const;
+
+		[[nodiscard]] Color mix(const Color &other) const;
+
+		[[nodiscard]] Color operator*(const float &multiplier) const;
 	};
 }// namespace squi
 

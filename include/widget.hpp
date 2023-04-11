@@ -38,6 +38,7 @@ namespace squi {
 			std::function<void(Widget &)> beforeUpdate{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
+			std::function<void(Widget &)> beforeDraw{};
 			std::function<void(Widget &)> onDraw{};
 			std::function<void(Widget &)> afterDraw{};
 		};
@@ -76,6 +77,7 @@ namespace squi {
 			std::function<void(Widget &)> beforeUpdate;
 			std::function<void(Widget &)> onUpdate;
 			std::function<void(Widget &)> afterUpdate;
+			std::function<void(Widget &)> beforeDraw;
 			std::function<void(Widget &)> onDraw;
 			std::function<void(Widget &)> afterDraw;
 		};
@@ -89,6 +91,18 @@ namespace squi {
 			vec2 sizeHint{-1, -1};
 			Widget *parent = nullptr;
 			GestureDetector gestureDetector;
+			bool visible = true;
+
+			void print() const {
+				printf("Size: %f, %f\n", size.x, size.y);
+				printf("Margin: %f, %f, %f, %f\n", margin.left, margin.top, margin.right, margin.bottom);
+				printf("Padding: %f, %f, %f, %f\n", padding.left, padding.top, padding.right, padding.bottom);
+				printf("Size Behavior: %d, %d\n", sizeBehavior.horizontal, sizeBehavior.vertical);
+				printf("Pos: %f, %f\n", pos.x, pos.y);
+				printf("Size Hint: %f, %f\n", sizeHint.x, sizeHint.y);
+				printf("Parent: %p\n", parent);
+				printf("Visible: %d\n", visible);
+			}
 		};
 		Data m_data;
 		std::vector<std::shared_ptr<Widget>> children{};

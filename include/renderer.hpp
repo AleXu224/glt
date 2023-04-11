@@ -17,6 +17,10 @@ namespace squi {
 		DirectX::XMFLOAT4X4 projectionMatrix{};
 		std::shared_ptr<ID3D11Buffer> projectionMatrixBuffer{};
 		std::chrono::duration<double> deltaTime = std::chrono::duration<double>::zero();
+		std::chrono::duration<double> pollTime = std::chrono::duration<double>::zero();
+		std::chrono::duration<double> updateTime = std::chrono::duration<double>::zero();
+		std::chrono::duration<double> drawTime = std::chrono::duration<double>::zero();
+		std::chrono::duration<double> presentTime = std::chrono::duration<double>::zero();
 		std::chrono::time_point<std::chrono::steady_clock> currentFrameTime = std::chrono::steady_clock::now();
 
 		D3D11_VIEWPORT viewport{};
@@ -43,9 +47,17 @@ namespace squi {
 
 		void updateScreenSize(int width, int height);
 		void updateDeltaTime(std::chrono::duration<double> time);
+		void updatePollTime(std::chrono::duration<double> time);
+		void updateUpdateTime(std::chrono::duration<double> time);
+		void updateDrawTime(std::chrono::duration<double> time);
+		void updatePresentTime(std::chrono::duration<double> time);
 		void updateCurrentFrameTime(std::chrono::time_point<std::chrono::steady_clock> time);
 
 		[[nodiscard]] std::chrono::duration<double> getDeltaTime() const;
+		[[nodiscard]] std::chrono::duration<double> getPollTime() const;
+		[[nodiscard]] std::chrono::duration<double> getUpdateTime() const;
+		[[nodiscard]] std::chrono::duration<double> getDrawTime() const;
+		[[nodiscard]] std::chrono::duration<double> getPresentTime() const;
 		[[nodiscard]] std::chrono::time_point<std::chrono::steady_clock> getCurrentFrameTime() const;
 
 		[[nodiscard]] const D3D11_VIEWPORT &getViewport() const;

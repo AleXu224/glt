@@ -15,6 +15,7 @@ namespace squi {
 		std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
 		std::chrono::steady_clock::time_point lastFpsTime = std::chrono::steady_clock::now();
 		uint32_t fps = 0;
+		bool isWin11 = false;
 
 		static void glfwError(int id, const char *description);
 

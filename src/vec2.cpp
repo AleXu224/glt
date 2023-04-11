@@ -58,6 +58,10 @@ vec2 vec2::withYOffset(const float &offset) const {
     return {x, y + offset};
 }
 
+vec2 vec2::rounded() const {
+    return {std::round(x), std::round(y)};
+}
+
 vec2::operator DirectX::XMFLOAT2() const {
 	return {x, y};
 }

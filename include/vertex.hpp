@@ -26,6 +26,7 @@ namespace squi {
 		Text = 2
 	};
 
+	// TODO: switch to 16 bit floats
 	struct VertexData {
 		/**
 		 * @brief Inner color of the quad

@@ -147,7 +147,7 @@ Renderer::Renderer(HWND hwnd, int width, int height) {
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = 2;
+	swapChainDesc.BufferCount = 3;
 	swapChainDesc.OutputWindow = hwnd;
 	swapChainDesc.Windowed = TRUE;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -319,12 +319,44 @@ void Renderer::updateDeltaTime(std::chrono::duration<double> time) {
 	this->deltaTime = time;
 }
 
+void Renderer::updatePollTime(std::chrono::duration<double> time) {
+	this->pollTime = time;
+}
+
+void Renderer::updateUpdateTime(std::chrono::duration<double> time) {
+	this->updateTime = time;
+}
+
+void Renderer::updateDrawTime(std::chrono::duration<double> time) {
+	this->drawTime = time;
+}
+
+void Renderer::updatePresentTime(std::chrono::duration<double> time) {
+	this->presentTime = time;
+}
+
 void Renderer::updateCurrentFrameTime(std::chrono::time_point<std::chrono::steady_clock> time) {
 	this->currentFrameTime = time;
 }
 
 std::chrono::duration<double> Renderer::getDeltaTime() const {
 	return this->deltaTime;
+}
+
+std::chrono::duration<double> Renderer::getPollTime() const {
+	return this->pollTime;
+}
+
+std::chrono::duration<double> Renderer::getUpdateTime() const {
+	return this->updateTime;
+}
+
+std::chrono::duration<double> Renderer::getDrawTime() const {
+	return this->drawTime;
+}
+
+std::chrono::duration<double> Renderer::getPresentTime() const {
+	return this->presentTime;
 }
 
 std::chrono::time_point<std::chrono::steady_clock> Renderer::getCurrentFrameTime() const {

@@ -1,4 +1,5 @@
 #include "widget.hpp"
+#include "ranges"
 
 using namespace squi;
 
@@ -12,6 +13,7 @@ Widget::Widget(const Args& args, const Options &options)
 		.beforeUpdate = args.beforeUpdate,
 		.onUpdate = args.onUpdate,
 		.afterUpdate = args.afterUpdate,
+		.beforeDraw = args.beforeDraw,
 		.onDraw = args.onDraw,
 		.afterDraw = args.afterDraw,
 	  },
@@ -67,8 +69,8 @@ Rect Widget::getContentRect() const {
 Rect Widget::getLayoutRect() const {
 	const auto& data = this->data();
 	return Rect::fromPosSize(
-		data.pos - data.margin.getPositionOffset(),
-		data.size + data.margin.getPositionOffset());
+		data.pos,
+		data.size + data.margin.getSizeOffset());
 }
 
 std::vector<Rect> Widget::getHitcheckRect() const {
@@ -128,7 +130,7 @@ void Widget::update() {
 
 	// Update the children
 	if (shouldUpdateChildren) {
-		for (auto &child: children) {
+		for (auto &child: std::views::reverse(children)) {
 			child->m_data.parent = this;
 			child->update();
 		}
@@ -148,6 +150,8 @@ void Widget::update() {
 }
 
 void Widget::draw() {
+	if (m_funcs.beforeDraw) m_funcs.beforeDraw(*this);
+	if (!m_data.visible) return;
 	if (m_funcs.onDraw) m_funcs.onDraw(*this);
 	onDraw();
 

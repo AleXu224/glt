@@ -31,6 +31,8 @@ namespace squi {
 		[[nodiscard]] vec2 withXOffset(const float &offset) const;
 		[[nodiscard]] vec2 withYOffset(const float &offset) const;
 
+		[[nodiscard]] vec2 rounded() const;
+
 		[[nodiscard]] operator DirectX::XMFLOAT2() const;
 	};
 }// namespace squi

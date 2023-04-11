@@ -7,15 +7,25 @@
 
 namespace squi {
 	struct Box {
+		enum class BorderPosition {
+			inset,
+			outset,
+		};
+		
 		Widget::Args widget;
 		Color color{Color::HEX(0xFFFFFFFF)};
 		Color borderColor{Color::HEX(0x000000FF)};
 		float borderWidth{0.0f};
 		float borderRadius{0.0f};
+		BorderPosition borderPosition{BorderPosition::inset};
 		Child child;
 
 		class Impl : public Widget {
 			Quad quad;
+			// This is stored as a hack to get around the fact the renderer doesn't support
+			// overlapping the border color on top of the background color.
+			Color borderColor;
+			BorderPosition borderPosition;
 
 		public:
 			Impl(const Box &args);

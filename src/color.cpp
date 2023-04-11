@@ -1,4 +1,5 @@
 #include "color.hpp"
+#include "algorithm"
 
 using namespace squi;
 
@@ -98,4 +99,19 @@ Color Color::transistion(const Color &other, float t) const {
 	b /= a;
 
 	return RGBA(r, g, b, a);
+}
+
+Color Color::mix(const Color &other) const {
+	DirectX::XMFLOAT4 color1 = *this;
+	DirectX::XMFLOAT4 color2 = other;
+
+	const float alpha = (1 - color1.w) * color2.w + color1.w;
+	const float r = ((1 - color1.w) * color2.w * color2.x + color1.w * color1.x) / alpha;
+	const float g = ((1 - color1.w) * color2.w * color2.y + color1.w * color1.y) / alpha;
+	const float b = ((1 - color1.w) * color2.w * color2.z + color1.w * color1.z) / alpha;
+	return RGBA(r, g, b, alpha);
+}
+
+Color Color::operator*(const float &multiplier) const {
+	return RGBA255(r(), g(), b(), std::clamp(static_cast<uint8_t>(static_cast<float>(a()) * multiplier), (uint8_t)0, (uint8_t)255));
 }

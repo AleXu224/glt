@@ -33,6 +33,8 @@ namespace squi {
             void onUpdate() override;
 
             void onDraw() override;
+
+            void setText(const std::string_view &text);
         };
     
         operator Child() const {

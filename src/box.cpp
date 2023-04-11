@@ -10,11 +10,11 @@ Box::Impl::Impl(const Box &args)
 	  quad(Quad::Args{
 		  .size = args.widget.size,
 		  .color = args.color,
-		  .borderColor = args.borderColor,
+		  .borderColor = args.borderPosition == BorderPosition::inset ? args.borderColor.mix(args.color) : args.borderColor,
 		  .borderRadius = args.borderRadius,
 		  .borderSize = args.borderWidth,
 		  .textureType = TextureType::NoTexture,
-	  }) {
+	  }), borderColor(args.borderColor), borderPosition(args.borderPosition) {
 	addChild(args.child);
 }
 
@@ -29,6 +29,9 @@ void Box::Impl::onDraw() {
 
 void Box::Impl::setColor(const Color &color) {
 	quad.setColor(color);
+	if (borderPosition == BorderPosition::inset) {
+		quad.setBorderColor(borderColor.mix(color));
+	}
 }
 
 void Box::Impl::setBorderColor(const Color &color) {

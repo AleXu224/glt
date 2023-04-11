@@ -6,9 +6,12 @@
 #include "random"
 #include "row.hpp"
 #include "scrollable.hpp"
+#include "scrollableFrame.hpp"
 #include "scrollbar.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "button.hpp"
+#include "performanceOverlay.hpp"
 #include "widget.hpp"
 #include "window.hpp"
 
@@ -434,17 +437,31 @@ int main(int, char **) {
 	// 		},
 	// 	},
 	// });
-	window.addChild(Align{
-		.xAlign = 1,
-		.yAlign = 0,
-		.child{
-			Scrollbar{
-				.widget{
-					.sizeBehavior.vertical = SizeBehaviorType::FillParent,
-				},
-			},
+	window.addChild(ScrollableFrame{
+		.widget{
+			.sizeBehavior{.horizontal = SizeBehaviorType::FillParent, .vertical = SizeBehaviorType::FillParent},
+		},
+		.children{
+			[&color, &rng]() {
+				std::vector<Child> widgets;
+				widgets.push_back(Button{
+					.widget{
+						.margin{16},
+					},
+				});
+				for (int i = 0; i < 100; ++i) {
+					widgets.push_back(Box{
+						.widget{
+							.size{100, 100},
+						},
+						.color = Color::RGBA(color(rng), color(rng), color(rng), 1.0f),
+					});
+				}
+				return widgets;
+			}(),
 		},
 	});
+	// window.addChild(PerformanceOverlay{});
 	window.run();
 	return 0;
 }

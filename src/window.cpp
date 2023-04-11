@@ -58,7 +58,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false
 		GestureDetector::g_textInput = static_cast<unsigned char>(codepoint);
 	});
 	glfwSetScrollCallback(window.get(), [](GLFWwindow *m_window, double xoffset, double yoffset) {
-		GestureDetector::g_scrollDelta = vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
+		GestureDetector::g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
 	});
 	glfwSetKeyCallback(window.get(), [](GLFWwindow *m_window, int key, int scancode, int action, int mods) {
 		//		Screen::getCurrentScreen()->animationRunning();
@@ -78,7 +78,6 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
-	bool isWin11 = false;
 	bool supportsNewMica = false;
 
 	const auto system = L"kernel32.dll";
@@ -137,11 +136,16 @@ void Window::updateAndDraw() {
 	}
 	fps++;
 	auto context = renderer.getDeviceContext();
+	const auto beforePoll = std::chrono::steady_clock::now();
 	glfwPollEvents();
+	const auto afterPoll = std::chrono::steady_clock::now();
 
-	float color[] = {0.0f, 0.0f, 0.0f, 0.0f};
+	const auto color = [isWin11 = isWin11]() -> std::array<float, 4> {
+		if (isWin11) return {0.0f, 0.0f, 0.0f, 0.0f};
+		else return {32.f/255.f, 32.f/255.f, 32.f/255.f, 1.0f};
+	}();
 	auto *renderTargetView = renderer.getRenderTargetView().get();
-	context->ClearRenderTargetView(renderTargetView, color);
+	context->ClearRenderTargetView(renderTargetView, color.data());
 
 	auto &children = getChildren();
 	int width, height;
@@ -161,6 +165,7 @@ void Window::updateAndDraw() {
 			child->update();
 		}
 	}
+	const auto afterUpdateTime = std::chrono::steady_clock::now();
 
 	renderer.prepare();
 
@@ -168,15 +173,27 @@ void Window::updateAndDraw() {
 		child->draw();
 	}
 
+
 	renderer.render();
 	renderer.popClipRect();
+	const auto afterDrawTime = std::chrono::steady_clock::now();
 
 	auto *swapChain = renderer.getSwapChain().get();
 	swapChain->Present(0, 0);
 	lastTime = currentTime;
 
-	GestureDetector::g_keys.clear();
-	GestureDetector::g_textInput = 0;
-	GestureDetector::g_scrollDelta = 0;
-	GestureDetector::setCursorPos(GestureDetector::g_cursorPos);
+	const auto afterPresentTime = std::chrono::steady_clock::now();
+
+	renderer.updatePollTime(afterPoll - beforePoll);
+	renderer.updateUpdateTime(afterUpdateTime - currentTime);
+	renderer.updateDrawTime(afterDrawTime - afterUpdateTime);
+	renderer.updatePresentTime(afterPresentTime - afterDrawTime);
+
+	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
+		GestureDetector::g_keys.clear();
+		GestureDetector::g_textInput = 0;
+		GestureDetector::g_scrollDelta = 0;
+		GestureDetector::setCursorPos(GestureDetector::g_cursorPos);
+	}
+
 }

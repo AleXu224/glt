@@ -39,9 +39,10 @@ void Text::Impl::onDraw() {
 	auto &widgetData = data();
 	const auto pos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 	if (pos.x != lastX || pos.y != lastY) {
+    const vec2 roundedPos = pos.rounded();
 		for (auto &quadVec: quads) {
       for (auto &quad: quadVec) {
-        quad.setPos(pos);
+        quad.setPos(roundedPos);
       }
 		}
 		lastX = pos.x;
@@ -65,4 +66,12 @@ void Text::Impl::onDraw() {
       renderer.addQuad(quad);
     }
 	}
+}
+
+void Text::Impl::setText(const std::string_view &text) {
+  auto &widgetData = data();
+  this->text = text;
+  auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, widgetData.pos.rounded(), color);
+  quads = std::move(quadsVec);
+  widgetData.size = {width, height};
 }

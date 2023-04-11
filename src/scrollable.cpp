@@ -13,14 +13,25 @@ Scrollable::Impl::Impl(const Scrollable &args)
 				.horizontal = SizeBehaviorType::FillParent,
 				.vertical = SizeBehaviorType::MatchChild,
 			},
-			.beforeUpdate = [&](Widget &widget) {
-                const auto scrollableHeight = getContentRect().height();
-                const auto childHeight = widget.getLayoutRect().height();
-                const auto maxScroll = childHeight - scrollableHeight;
+			.afterUpdate = [&, onScroll = args.onScroll, setScroll = args.setScroll](Widget &widget) {
+                const auto viewHeight = getContentRect().height();
+                const auto contentHeight = widget.getLayoutRect().height();
+                const auto maxScroll = contentHeight - viewHeight;
+                
+                if (setScroll) {
+                    const float newScroll = setScroll();
+                    if (!scrolled && newScroll != scroll) {
+                        scroll = newScroll;
+                        if (onScroll) onScroll(scroll, contentHeight, viewHeight);
+                        return;
+                    }
+                };
 
-                if (scrollableHeight > childHeight) scroll = 0;
+                if (viewHeight > contentHeight) scroll = 0;
                 scroll = (std::min)(scroll, maxScroll);
 				scroll = (std::max)(0.0f, scroll);
+
+                if (onScroll) onScroll(scroll, contentHeight, viewHeight);
 			},
 		},
         .alignment = args.alignment,
@@ -30,11 +41,13 @@ Scrollable::Impl::Impl(const Scrollable &args)
 }
 
 void Scrollable::Impl::onUpdate() {
+    scrolled = false;
     auto &widgetData = this->data();
     auto &gd = widgetData.gestureDetector;
 
     if (gd.hovered) {
         scroll += gd.g_scrollDelta.y * -40.0f;
+        if (gd.g_scrollDelta.y != 0) scrolled = true;
     }
 }
 
