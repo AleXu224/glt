@@ -180,8 +180,9 @@ void Batch::render(Shader &shader,
 	// Textures
 	// TODO: store them directly as pointers
 	std::vector<ID3D11ShaderResourceView *> texturesToSet{};
-	for (auto i = textures.begin(); i != textures.end(); i++) {
-		texturesToSet.push_back((*i).get());
+	texturesToSet.reserve(textures.size());
+	for (auto &texture: textures) {
+		texturesToSet.push_back(texture.get());
 	}
 	context->PSSetShaderResources(0, texturesToSet.size(), texturesToSet.data());
 

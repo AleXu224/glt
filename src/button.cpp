@@ -9,21 +9,38 @@ using namespace squi;
 Button::operator squi::Child() const {
 	auto storage = std::make_shared<Storage>(Storage{
         .color = style.color,
+		.colorHover = style.colorHover,
+		.colorActive = style.colorActive,
+		.colorDisabled = style.colorDisabled,
         .borderColor = style.borderColor,
+		.borderColorHover = style.borderColorHover,
+		.borderColorActive = style.borderColorActive,
+		.borderColorDisabled = style.borderColorDisabled,
+		.disabled = disabled,
     });
     auto newWidget = widget;
-    newWidget.size.y = 32;
     newWidget.sizeBehavior.horizontal = SizeBehaviorType::MatchChild;
+    newWidget.sizeBehavior.vertical = SizeBehaviorType::MatchChild;
     newWidget.padding = style.padding;
-    newWidget.onUpdate = [storage](Widget &widget) {
-        Box::Impl &box = reinterpret_cast<Box::Impl &>(widget);
-        auto &data = box.data();
+	newWidget.onUpdate = [storage](Widget &widget) {
+		auto &box = reinterpret_cast<Box::Impl &>(widget);
+		auto &data = box.data();
         auto &gd = data.gestureDetector;
 
-        if (gd.focused) box.setColor(storage->color * 0.8f);
-        else if (gd.hovered) box.setColor(storage->color * 0.9f);
-        else box.setColor(storage->color);
-    };
+		if (storage->disabled) {
+			box.setColor(storage->colorDisabled);
+			box.setBorderColor(storage->borderColorDisabled);
+		} else if (gd.focused) {
+			box.setColor(storage->colorActive);
+			box.setBorderColor(storage->borderColorActive);
+		} else if (gd.hovered) {
+			box.setColor(storage->colorHover);
+			box.setBorderColor(storage->borderColorHover);
+		} else {
+			box.setColor(storage->color);
+			box.setBorderColor(storage->borderColor);
+		}
+	};
 
 	return Box{
 		.widget{newWidget},
@@ -31,6 +48,7 @@ Button::operator squi::Child() const {
 		.borderColor{style.borderColor},
 		.borderWidth = style.borderWidth,
 		.borderRadius = style.borderRadius,
+		.borderPosition = style.borderPosition,
 		.child = Align{
 			.child{
 				Text{

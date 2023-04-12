@@ -26,7 +26,7 @@ void Text::Impl::onUpdate() {
       const auto maxWidth = parentWidth - widgetData.margin.getSizeOffset().x - widgetData.padding.getSizeOffset().x;
       const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
       // Only update the text layout if the text is wider than the available space
-      if (widgetData.size.x > maxWidth || widgetData.size.y != lineHeight) {
+      if (widgetData.size.x > maxWidth || widgetData.size.y != static_cast<float>(lineHeight)) {
         auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, {lastX, lastY}, color, maxWidth);
         widgetData.size = {width, height};
         quads = std::move(quadsVec);

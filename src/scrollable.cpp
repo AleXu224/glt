@@ -46,9 +46,9 @@ void Scrollable::Impl::onUpdate() {
     auto &gd = widgetData.gestureDetector;
 
     if (gd.hovered) {
-        scroll += gd.g_scrollDelta.y * -40.0f;
-        if (gd.g_scrollDelta.y != 0) scrolled = true;
-    }
+		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
+		if (GestureDetector::g_scrollDelta.y != 0) scrolled = true;
+	}
 }
 
 void Scrollable::Impl::onDraw() {

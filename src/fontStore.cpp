@@ -209,8 +209,8 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 
 			if (*previousChar == ' ' && character != ' ' && maxWidth != -1) {
 				auto [width, height] = getTextSize({charIter, std::find(charIter, text.end(), ' ')}, fontPath, size);
-				if (cursorX + width > maxWidth) {
-					quads.emplace_back(std::vector<Quad>{});
+				if (cursorX + static_cast<int32_t>(width) > maxWidth) {
+					quads.emplace_back();
 					cursorX = 0;
 					cursorY += height;
 				}

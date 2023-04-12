@@ -18,6 +18,7 @@ namespace squi {
             float viewHeight = 100;
 			float scroll = 0;
 			float scrollDragStart = 0;
+			std::chrono::steady_clock::time_point lastHoverTime = std::chrono::steady_clock::now();
 		};
 
 		operator Child() const;

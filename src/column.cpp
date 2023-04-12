@@ -45,7 +45,7 @@ void Column::Impl::onUpdate() {
 
     auto &widgetData = data();
 
-    float spacingOffset = spacing * (children.size() - 1);
+    float spacingOffset = spacing * static_cast<float>(children.size() - 1);
     spacingOffset = (std::max)(0.0f, spacingOffset);
 
     const bool horizontalHint = widgetData.sizeHint.x != -1;
@@ -58,7 +58,7 @@ void Column::Impl::onUpdate() {
     }
 
     if (!expandedChildren.empty()) {
-        const float expandedHeight = (widgetData.size.y - widgetData.padding.getSizeOffset().y - spacingOffset - totalHeight) / expandedChildren.size();
+        const float expandedHeight = (widgetData.size.y - widgetData.padding.getSizeOffset().y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size());
         for (auto &child: expandedChildren) {
             auto &childData = child->data();
             childData.sizeHint.y = expandedHeight;

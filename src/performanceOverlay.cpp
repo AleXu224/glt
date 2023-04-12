@@ -1,30 +1,31 @@
 #include "performanceOverlay.hpp"
 #include "align.hpp"
 #include "box.hpp"
-#include "text.hpp"
 #include "column.hpp"
-#include "row.hpp"
 #include "renderer.hpp"
+#include "row.hpp"
+#include "text.hpp"
+
 
 using namespace squi;
 
 PerformanceOverlay::operator squi::Child() const {
-    auto storage = std::make_shared<Storage>();
+	auto storage = std::make_shared<Storage>();
 
 	return Align{
 		.xAlign = 1,
 		.yAlign = 1,
 		.child = Box{
-            .widget{
-                .margin{16},
-                .padding{8},
-                .sizeBehavior{
-                    .horizontal = SizeBehaviorType::MatchChild,
-                    .vertical = SizeBehaviorType::MatchChild,
-                },
-            },
-            .color{Color::HEX(0x00000080)},
-            .borderRadius = 4,
+			.widget{
+				.margin{16},
+				.padding{8},
+				.sizeBehavior{
+					.horizontal = SizeBehaviorType::MatchChild,
+					.vertical = SizeBehaviorType::MatchChild,
+				},
+			},
+			.color{Color::HEX(0x00000080)},
+			.borderRadius = 4,
 			.child{
 				Column{
 					.widget{
@@ -50,7 +51,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.0f}", 1.0 / renderer.getDeltaTime().count()));
 										},
@@ -74,7 +75,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.2f}ms", renderer.getDeltaTime().count() * 1000));
 										},
@@ -97,7 +98,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.2f}ms", renderer.getPollTime().count() * 1000));
 										},
@@ -120,7 +121,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.2f}ms", renderer.getUpdateTime().count() * 1000));
 										},
@@ -143,7 +144,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.2f}ms", renderer.getDrawTime().count() * 1000));
 										},
@@ -166,7 +167,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											Text::Impl &text = reinterpret_cast<Text::Impl &>(widget);
+											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
 											text.setText(std::format("{:>06.2f}ms", renderer.getPresentTime().count() * 1000));
 										},

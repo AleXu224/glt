@@ -35,7 +35,12 @@ void Box::Impl::setColor(const Color &color) {
 }
 
 void Box::Impl::setBorderColor(const Color &color) {
-	quad.setBorderColor(color);
+	if (borderPosition == BorderPosition::inset) {
+		const auto quadColor = quad.getData().color;
+		quad.setBorderColor(color.mix(Color::RGBA(quadColor.x, quadColor.y, quadColor.z, quadColor.w)));
+	} else {
+		quad.setBorderColor(color);
+	}
 }
 
 void Box::Impl::setBorderWidth(float width) {

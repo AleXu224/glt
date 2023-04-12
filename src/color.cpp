@@ -113,5 +113,5 @@ Color Color::mix(const Color &other) const {
 }
 
 Color Color::operator*(const float &multiplier) const {
-	return RGBA255(r(), g(), b(), std::clamp(static_cast<uint8_t>(static_cast<float>(a()) * multiplier), (uint8_t)0, (uint8_t)255));
+	return RGBA255(r(), g(), b(), std::clamp(static_cast<uint8_t>(static_cast<float>(a()) * multiplier), (uint8_t) 0, (uint8_t) 255));
 }

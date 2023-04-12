@@ -13,7 +13,8 @@ Child::operator std::shared_ptr<Widget>() const {
 
 Children::operator std::vector<std::shared_ptr<Widget>>() const {
 	std::vector<std::shared_ptr<Widget>> widgets{};
-	for (auto &child : children) {
+	widgets.reserve(children.size());
+	for (auto &child: children) {
 		widgets.push_back(child);
 	}
 	return widgets;

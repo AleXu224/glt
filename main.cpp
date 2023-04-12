@@ -448,6 +448,8 @@ int main(int, char **) {
 					.widget{
 						.margin{16},
 					},
+					.text{"Some test button"},
+					.style = ButtonStyle::Standard(),
 				});
 				for (int i = 0; i < 100; ++i) {
 					widgets.push_back(Box{

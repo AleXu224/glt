@@ -41,7 +41,7 @@ void Row::Impl::onUpdate() {
 
 	auto &widgetData = data();
 
-	float spacingOffset = spacing * (children.size() - 1);
+	float spacingOffset = spacing * static_cast<float>(children.size() - 1);
 	spacingOffset = (std::max)(0.0f, spacingOffset);
 
 	const bool horizontalHint = widgetData.sizeHint.x != -1;
@@ -54,7 +54,7 @@ void Row::Impl::onUpdate() {
 	}
 
 	if (!expandedChildren.empty()) {
-		const float expandedWidth = (widgetData.size.x - widgetData.padding.getSizeOffset().x - spacingOffset - totalWidth) / expandedChildren.size();
+		const float expandedWidth = (widgetData.size.x - widgetData.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size());
 		for (auto &child: expandedChildren) {
 			auto &childData = child->data();
 			childData.sizeHint.x = expandedWidth;

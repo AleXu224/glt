@@ -17,7 +17,7 @@ namespace squi {
             std::shared_ptr<ID3D11ShaderResourceView> textureView{};
 
         public:
-            Impl(const Texture &texture);
+            Impl(const Texture &args);
 
             [[nodiscard]] const std::shared_ptr<ID3D11ShaderResourceView> &getTextureView() const;
         };

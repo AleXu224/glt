@@ -18,9 +18,6 @@ Texture::Impl::Impl(const Texture &args) {
         case 2:
             format = DXGI_FORMAT_R8G8_UNORM;
             break;
-        case 3:
-            format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
         case 4:
             format = DXGI_FORMAT_R8G8B8A8_UNORM;
             break;
