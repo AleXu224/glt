@@ -1,5 +1,6 @@
 #include "widget.hpp"
 #include "ranges"
+#include <optional>
 
 using namespace squi;
 
@@ -7,7 +8,6 @@ Widget::Widget(const Args& args, const Options &options)
 	: shouldUpdateChildren(options.shouldUpdateChildren),
 	  shouldDrawChildren(options.shouldDrawChildren),
 	  shouldHandleSizeBehavior(options.shouldHandleSizeBehavior),
-	  isInteractive(options.isInteractive),
 	  m_funcs{
 		.onInit = args.onInit,
 		.beforeUpdate = args.beforeUpdate,
@@ -23,6 +23,7 @@ Widget::Widget(const Args& args, const Options &options)
 		  .padding = args.padding,
 		  .sizeBehavior = args.sizeBehavior,
 		  .gestureDetector = GestureDetector(this),
+		  .isInteractive = options.isInteractive,
 	  }) {
 	// TODO: Add these on the Child class that should act as a factory
 	//	init();
@@ -73,11 +74,11 @@ Rect Widget::getLayoutRect() const {
 		data.size + data.margin.getSizeOffset());
 }
 
-std::vector<Rect> Widget::getHitcheckRect() const {
-	if (isInteractive)
-		return {getRect()};
+std::optional<Rect> Widget::getHitcheckRect() const {
+	if (m_data.isInteractive)
+		return getRect();
 	else
-		return {};
+		return std::nullopt;
 }
 
 void Widget::setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren) {

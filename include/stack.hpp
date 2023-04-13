@@ -14,10 +14,12 @@ namespace squi {
     
         public:
             Impl(const Stack &args);
+
+            void onUpdate() override;
         };
     
         operator Child() const {
-            return Child(std::make_shared<Impl>(*this));
+            return {std::make_shared<Impl>(*this)};
         }
     };
 }

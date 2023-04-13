@@ -1,4 +1,5 @@
 #include "scrollbar.hpp"
+#include <memory>
 
 using namespace squi;
 
@@ -8,7 +9,7 @@ Scrollbar::operator Child() const {
 	newWidget.size.x = 16;
 	newWidget.sizeBehavior.horizontal = SizeBehaviorType::None;
 	newWidget.padding = 3;
-	newWidget.onUpdate = [storage](Widget &widget){
+	newWidget.onUpdate = [storage](Widget &widget) {
 		auto &data = widget.data();
 		auto &gd = data.gestureDetector;
 		const auto currentTime = std::chrono::steady_clock::now();
@@ -29,7 +30,7 @@ Scrollbar::operator Child() const {
 		if (!setScroll) return;
 		auto &data = widget.data();
 		auto [scroll, contentHeight, viewHeight] = setScroll();
-		
+
 		data.visible = contentHeight > viewHeight;
 	};
 
@@ -40,13 +41,12 @@ Scrollbar::operator Child() const {
 			Box{
 				.widget{
 					.size{10},
-                    .onInit = [storage](Widget &widget) {
+					.onInit = [storage](Widget &widget) {
                         auto &data = widget.data();
 
 						data.gestureDetector.onPress = [storage](auto &gd) {
 							storage->scrollDragStart = storage->scroll;
-						};
-                    },
+						}; },
 					.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
 						auto &data = widget.data();
 						auto &gestureDetector = data.gestureDetector;
@@ -65,8 +65,7 @@ Scrollbar::operator Child() const {
 						} else {
 							data.size.x = 10;
 							data.margin.left = 0;
-						}
-					},
+						} },
 					.beforeDraw = [storage, setScroll = setScroll](Widget &widget) {
 						auto &data = widget.data();
 						if (!data.parent) return;
@@ -81,8 +80,7 @@ Scrollbar::operator Child() const {
 						}
 						
 						const float contentHeight = data.parent->getContentRect().height() - data.size.y;
-						data.margin.top = storage->scroll * contentHeight;
-					},
+						data.margin.top = storage->scroll * contentHeight; },
 				},
 				.color{Color::HEX(0xFFFFFF8B)},
 				.borderRadius = 2,

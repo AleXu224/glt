@@ -3,13 +3,14 @@
 
 #include "child.hpp"
 #include "functional"
+#include "gestureDetector.hpp"
 #include "margin.hpp"
 #include "memory"
 #include "rect.hpp"
 #include "sizeBehavior.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include "gestureDetector.hpp"
+
 
 namespace squi {
 	class Widget {
@@ -62,7 +63,7 @@ namespace squi {
 			bool isInteractive = false;
 
 			static Options Default() {
-				return Options();
+				return {};
 			}
 		};
 
@@ -71,7 +72,6 @@ namespace squi {
 		bool shouldUpdateChildren;
 		bool shouldDrawChildren;
 		bool shouldHandleSizeBehavior;
-		bool isInteractive;
 		struct FunctionArgs {
 			std::function<void(Widget &)> onInit;
 			std::function<void(Widget &)> beforeUpdate;
@@ -92,6 +92,7 @@ namespace squi {
 			Widget *parent = nullptr;
 			GestureDetector gestureDetector;
 			bool visible = true;
+			bool isInteractive;
 
 			void print() const {
 				printf("Size: %f, %f\n", size.x, size.y);
@@ -102,6 +103,7 @@ namespace squi {
 				printf("Size Hint: %f, %f\n", sizeHint.x, sizeHint.y);
 				printf("Parent: %p\n", parent);
 				printf("Visible: %d\n", visible);
+				printf("Is Interactive: %d\n", isInteractive);
 			}
 		};
 		Data m_data;
@@ -115,7 +117,7 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(const Args& args, const Options &options);
+		explicit Widget(const Args &args, const Options &options);
 		virtual ~Widget() = default;
 
 		// Getters
@@ -127,7 +129,7 @@ namespace squi {
 		[[nodiscard]] virtual Rect getRect() const;
 		[[nodiscard]] virtual Rect getContentRect() const;
 		[[nodiscard]] virtual Rect getLayoutRect() const;
-		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
+		[[nodiscard]] virtual std::optional<Rect> getHitcheckRect() const;
 
 		// Setters
 		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);

@@ -1,6 +1,7 @@
 build/
 .vscode/
 .idea/
+.cache/
 out/
 .vs/
 cmake-build-debug-clang/

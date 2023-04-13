@@ -451,7 +451,49 @@ int main(int, char **) {
 					.text{"Some test button"},
 					.style = ButtonStyle::Standard(),
 				});
-				for (int i = 0; i < 100; ++i) {
+				widgets.push_back(Stack{
+					.widget{
+						.size{100, 100},
+					},
+					.children{
+						Box{
+							.widget{
+								.size{75, 75},
+								.onInit = [](Widget &widget){
+									auto &w = (Box::Impl &)widget;
+									auto &gd = widget.data().gestureDetector;
+
+									gd.onEnter = [&w](const auto &){
+										w.setColor(Color::HEX(0xFF0000FF));
+									};
+									gd.onLeave = [&w](const auto &){
+										w.setColor(Color::HEX(0x00FFAAFF));
+									};
+								},
+							},
+							.color{Color::HEX(0x00FFAAFF)},
+						},
+						Box{
+							.widget{
+								.size{75, 75},
+								.margin{25, 0, 0, 25},
+								.onInit = [](Widget &widget){
+									auto &w = (Box::Impl &)widget;
+									auto &gd = widget.data().gestureDetector;
+
+									gd.onEnter = [&w](const auto &){
+										w.setColor(Color::HEX(0xFF0000FF));
+									};
+									gd.onLeave = [&w](const auto &){
+										w.setColor(Color::HEX(0xFF00AAFF));
+									};
+								},
+							},
+							.color{Color::HEX(0xFF00AAFF)},
+						},
+					},
+				});
+				for (int i = 0; i < 1000; ++i) {
 					widgets.push_back(Box{
 						.widget{
 							.size{100, 100},
@@ -463,7 +505,7 @@ int main(int, char **) {
 			}(),
 		},
 	});
-	// window.addChild(PerformanceOverlay{});
+	window.addChild(PerformanceOverlay{});
 	window.run();
 	return 0;
 }

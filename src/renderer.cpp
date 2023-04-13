@@ -119,7 +119,6 @@ auto fragmentShaderHlsl = R"(
 				outColor = lerp(outColor, borderColor, smoothstep(0.0, 1.0, b + bSize));
 			}
 			if (input.textureType == 2) {
-//				float alpha = uTexture[1].Sample(samp1, input.texUV).r * input.color.a;
 				float alpha = textureByIndex(input.textureId, input.texUV) * input.color.a;
 				float3 color = input.color.rgb * alpha;
 				return float4(color.r, color.g, color.b, alpha);
