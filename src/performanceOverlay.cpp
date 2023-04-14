@@ -24,7 +24,7 @@ PerformanceOverlay::operator squi::Child() const {
 					.vertical = SizeBehaviorType::MatchChild,
 				},
 			},
-			.color{Color::HEX(0x00000080)},
+			.color{Color::HEX(0x000000F0)},
 			.borderRadius = 4,
 			.child{
 				Column{
@@ -53,7 +53,7 @@ PerformanceOverlay::operator squi::Child() const {
 										.onUpdate = [storage](Widget &widget) {
 											auto &text = reinterpret_cast<Text::Impl &>(widget);
 											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.0f}", 1.0 / renderer.getDeltaTime().count()));
+											text.setText(std::format("{:>08.0f}", 1.0 / renderer.getDeltaTime().count()));
 										},
 									},
 									.text = "60",

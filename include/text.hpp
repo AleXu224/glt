@@ -4,6 +4,7 @@
 #include "widget.hpp"
 #include "color.hpp"
 #include "quad.hpp"
+#include <string_view>
 
 namespace squi {
     struct Text {
@@ -12,7 +13,7 @@ namespace squi {
         std::string text;
         float fontSize{14.0f};
         bool lineWrap{false};
-        std::string fontPath{"C:\\Windows\\Fonts\\arial.ttf"};
+        std::string fontPath{R"(C:\Windows\Fonts\arial.ttf)"};
         Color color{Color::HEX(0xFFFFFFFF)};
     
         class Impl : public Widget {
@@ -35,10 +36,14 @@ namespace squi {
             void onDraw() override;
 
             void setText(const std::string_view &text);
+
+            [[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSize(const std::string_view &text) const;
+
+            [[nodiscard]] std::string_view getText() const;
         };
     
         operator Child() const {
-            return Child(std::make_shared<Impl>(*this));
+            return {std::make_shared<Impl>(*this)};
         }
     };
 }

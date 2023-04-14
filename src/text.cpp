@@ -1,6 +1,7 @@
 #include "text.hpp"
 #include "fontStore.hpp"
 #include "renderer.hpp"
+#include <string_view>
 
 using namespace squi;
 
@@ -50,7 +51,7 @@ void Text::Impl::onDraw() {
 	}
 
 	auto &renderer = Renderer::getInstance();
-  const auto &clipRect = renderer.getCurrentClipRect();
+  const auto &clipRect = renderer.getCurrentClipRect().rect;
   const auto minOffsetX = clipRect.left - widgetData.pos.x;
   const auto minOffsetY = clipRect.top - widgetData.pos.y;
   const auto maxOffsetX = clipRect.right - widgetData.pos.x;
@@ -74,4 +75,12 @@ void Text::Impl::setText(const std::string_view &text) {
   auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, widgetData.pos.rounded(), color);
   quads = std::move(quadsVec);
   widgetData.size = {width, height};
+}
+
+std::string_view Text::Impl::getText() const {
+  return text;
+}
+
+std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
+  return FontStore::getTextSize(text, fontPath, fontSize);
 }

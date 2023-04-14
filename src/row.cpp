@@ -75,7 +75,7 @@ void Row::Impl::onDraw() {
 	const auto height = getContentRect().height();
 	const auto childPos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 
-	const Rect &clipRect = Renderer::getInstance().getCurrentClipRect();
+	const Rect &clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
 	for (auto &child: children) {
 		if (!child) continue;

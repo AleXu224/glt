@@ -15,6 +15,7 @@ auto vertexShaderHlsl = R"(
 			uint textureId;
 			uint textureType;
 			float4 clipRect;
+			float clipBorderRadius;
 		};
 
 		StructuredBuffer<VertexData> data : register(t0);
@@ -34,7 +35,9 @@ auto vertexShaderHlsl = R"(
 			uint textureId : TEXCOORD6;
 			uint textureType : TEXCOORD7;
 			float4 pos : SV_POSITION;
-			float2 clipValue : TEXCOORD8;
+			float2 clipSize : TEXCOORD8;
+			float2 clipUV : TEXCOORD9;
+			float clipBorderRadius : TEXCOORD10;
 		};
 
 		VS_OUTPUT main(float2 aUV : UV, float2 aTexUV : TEXUV, uint aID : ID) {
@@ -52,8 +55,9 @@ auto vertexShaderHlsl = R"(
 			float2 pos = quadData.offset + quadData.pos + (aUV * quadData.size);
 			output.pos = mul(uProjectionMatrix, float4(pos, 0.0, 1.0));
 //			output.pos = float4(pos, 0.0, 1.0);
-			float2 clipSize = quadData.clipRect.zw - quadData.clipRect.xy;
-			output.clipValue = (pos - quadData.clipRect.xy) / clipSize;
+			output.clipSize = quadData.clipRect.zw - quadData.clipRect.xy;
+			output.clipUV = (pos - quadData.clipRect.xy) / output.clipSize;
+			output.clipBorderRadius = quadData.clipBorderRadius;
 			return output;
 		}
 	)";
@@ -70,7 +74,9 @@ auto fragmentShaderHlsl = R"(
 			uint textureId : TEXCOORD6;
 			uint textureType : TEXCOORD7;
 			float4 pos : SV_POSITION;
-			float2 clipValue : TEXCOORD8;
+			float2 clipSize : TEXCOORD8;
+			float2 clipUV : TEXCOORD9;
+			float clipBorderRadius : TEXCOORD10;
 		};
 
 		Texture2D uTexture[16] : register(t0);
@@ -103,9 +109,10 @@ auto fragmentShaderHlsl = R"(
 		}
 
 		float4 main(PS_INPUT input) : SV_TARGET {
-			if (input.clipValue.x < 0.0 || input.clipValue.x > 1.0 || input.clipValue.y < 0.0 || input.clipValue.y > 1.0) {
+			if (input.clipUV.x < 0.0 || input.clipUV.x > 1.0 || input.clipUV.y < 0.0 || input.clipUV.y > 1.0) {
 				discard;
 			}
+			float c = udRoundBox((input.clipUV * input.clipSize - 0.5) - (0.5 * input.clipSize - 0.5), (0.5 * input.clipSize - 0.5), input.clipBorderRadius);
 			float2 coords = (input.uv * input.size) - 0.5;
 			float2 halfRes = (0.5 * input.size) - 0.5;
 			float borderRadius = min(input.borderRadius, min(halfRes.x, halfRes.y));
@@ -123,7 +130,8 @@ auto fragmentShaderHlsl = R"(
 				float3 color = input.color.rgb * alpha;
 				return float4(color.r, color.g, color.b, alpha);
 			}
-			return lerp(outColor, float4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 1.0, b));
+			float4 retColor = lerp(outColor, float4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 1.0, b));
+			return lerp(retColor, float4(0.0, 0.0, 0.0, 0.0), smoothstep(0.0, 1.0, c));
 		}
 	)";
 
@@ -246,14 +254,14 @@ Renderer &Renderer::getInstance() {
 	return *instance;
 }
 
-void Renderer::addClipRect(const Rect &clipRect) {
+void Renderer::addClipRect(const Rect &clipRect, float clipBorderRadius) {
 	if (!clipRects.empty())
-		clipRects.push_back(clipRects.back().overlap(clipRect));
+		clipRects.push_back({clipRects.back().rect.overlap(clipRect), clipBorderRadius});
 	else
-		clipRects.push_back(clipRect);
+		clipRects.push_back({clipRect, clipBorderRadius});
 }
 
-const Rect &Renderer::getCurrentClipRect() const {
+const Renderer::ClipRect &Renderer::getCurrentClipRect() const {
 	return clipRects.back();
 }
 
@@ -266,7 +274,7 @@ void Renderer::popClipRect() {
 }
 
 void Renderer::addQuad(Quad &quad) {
-	quad.setClipRect(clipRects.back());
+	quad.setClipRect(clipRects.back().rect, clipRects.back().borderRadius);
 	batch->addQuad(quad, *shader, deviceContext, renderTargetView, viewport);
 }
 

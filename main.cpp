@@ -3,6 +3,7 @@
 #include "child.hpp"
 #include "color.hpp"
 #include "column.hpp"
+#include "fontStore.hpp"
 #include "random"
 #include "row.hpp"
 #include "scrollable.hpp"
@@ -10,6 +11,7 @@
 #include "scrollbar.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "textInput.hpp"
 #include "button.hpp"
 #include "performanceOverlay.hpp"
 #include "widget.hpp"
@@ -445,11 +447,22 @@ int main(int, char **) {
 			[&color, &rng]() {
 				std::vector<Child> widgets;
 				widgets.push_back(Button{
-					.widget{
-						.margin{16},
-					},
+					.margin{16},
 					.text{"Some test button"},
 					.style = ButtonStyle::Standard(),
+					.onClick = []() {
+						printf("Button clicked\n");
+					},
+				});
+				widgets.push_back(TextInput{
+					.widget{
+						.size{100, 100},
+						.margin{4},
+						.onInit = [](Widget &w) {
+							auto &data = w.data();
+							data.size.y = FontStore::getLineHeight(R"(C:\Windows\Fonts\arial.ttf)", 14);
+						},
+					},
 				});
 				widgets.push_back(Stack{
 					.widget{
@@ -493,7 +506,7 @@ int main(int, char **) {
 						},
 					},
 				});
-				for (int i = 0; i < 1000; ++i) {
+				for (int i = 0; i < 100; ++i) {
 					widgets.push_back(Box{
 						.widget{
 							.size{100, 100},

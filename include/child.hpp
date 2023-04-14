@@ -1,6 +1,8 @@
 #ifndef GLT_CHILD_HPP
 #define GLT_CHILD_HPP
 
+#include <utility>
+
 #include "memory"
 #include "vector"
 
@@ -13,12 +15,12 @@ namespace squi {
 	public:
 		Child() = default;
 
-		Child(std::shared_ptr<Widget> child) : widget(child) {
+		Child(std::shared_ptr<Widget> child) : widget(std::move(child)) {
 			initializeWidget();
 		}
 
 		Child& operator=(std::shared_ptr<Widget> child) {
-			this->widget = child;
+			this->widget = std::move(child);
 			initializeWidget();
 			return *this;
 		}
@@ -46,9 +48,9 @@ namespace squi {
 	public:
 		Children() = default;
 
-		Children(std::vector<Child> children) : children(children) {}
+		Children(std::vector<Child> children) : children(std::move(children)) {}
 
-		Children(std::vector<std::shared_ptr<Widget>> children) {
+		Children(const std::vector<std::shared_ptr<Widget>>& children) {
 			for (auto &child : children) {
 				this->children.emplace_back(child);
 			}
@@ -58,7 +60,7 @@ namespace squi {
 		Children(Args... args) : children{args...} {}
 
 		Children& operator=(std::vector<Child> children) {
-			this->children = children;
+			this->children = std::move(children);
 			return *this;
 		}
 

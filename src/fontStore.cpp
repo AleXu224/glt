@@ -5,7 +5,6 @@
 
 using namespace squi;
 
-static bool isInitialized{false};
 FT_Library FontStore::ftLibrary{};
 
 FontStore::Font::Font(std::string_view fontPath) {
@@ -171,13 +170,21 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, std
 }
 
 std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
-	if (!isInitialized) {
+	[[__maybe_unused__]] static auto _ = []() {
 		if (FT_Init_FreeType(&ftLibrary)) {
 			printf("Failed to initialize FreeType\n");
 			exit(1);
 		}
-		isInitialized = true;
-	}
+		return true;
+	}();
+	
+	// if (!isInitialized) {
+	// 	if (FT_Init_FreeType(&ftLibrary)) {
+	// 		printf("Failed to initialize FreeType\n");
+	// 		exit(1);
+	// 	}
+	// 	isInitialized = true;
+	// }
 
 	std::vector<std::vector<Quad>> quads{};
 	quads.resize(1, std::vector<Quad>{});

@@ -4,6 +4,7 @@
 #include "color.hpp"
 #include "widget.hpp"
 #include "box.hpp"
+#include <functional>
 
 namespace squi {
 	struct ButtonStyle {
@@ -18,7 +19,6 @@ namespace squi {
 		Box::BorderPosition borderPosition = Box::BorderPosition::inset;
 		float borderRadius{4.0f};
 		float borderWidth{1.0f};
-		Margin padding{6, 12, 6, 12};
 		Color textColor{Color::HEX(0x000000FF)};
 		float textSize{14.0f};
 
@@ -44,10 +44,17 @@ namespace squi {
 
 	struct Button {
 		// Args
-		Widget::Args widget;
+		vec2 size{};
+		Margin margin{};
+		Margin padding = {6, 12, 6, 12};
+		SizeBehavior sizeBehavior{
+			.horizontal = SizeBehaviorType::MatchChild,
+			.vertical = SizeBehaviorType::MatchChild,
+		};
 		std::string_view text{"Button"};
 		ButtonStyle style{};
 		bool disabled = false;
+		std::function<void()> onClick{};
 
 		struct Storage {
 			// Data

@@ -18,6 +18,7 @@ namespace squi {
 		float borderWidth{0.0f};
 		float borderRadius{0.0f};
 		BorderPosition borderPosition{BorderPosition::inset};
+		bool shouldClipContent = true;
 		Child child;
 
 		class Impl : public Widget {
@@ -26,6 +27,7 @@ namespace squi {
 			// overlapping the border color on top of the background color.
 			Color borderColor;
 			BorderPosition borderPosition;
+			bool shouldClipContent;
 
 		public:
 			Impl(const Box &args);

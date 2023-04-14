@@ -5,8 +5,8 @@ using namespace squi;
 
 Box::Impl::Impl(const Box &args)
 	: Widget(args.widget, Widget::Options{
-		.isInteractive = true,
-	}),
+							  .isInteractive = true,
+						  }),
 	  quad(Quad::Args{
 		  .size = args.widget.size,
 		  .color = args.color,
@@ -14,7 +14,8 @@ Box::Impl::Impl(const Box &args)
 		  .borderRadius = args.borderRadius,
 		  .borderSize = args.borderWidth,
 		  .textureType = TextureType::NoTexture,
-	  }), borderColor(args.borderColor), borderPosition(args.borderPosition) {
+	  }),
+	  borderColor(args.borderColor), borderPosition(args.borderPosition), shouldClipContent(args.shouldClipContent) {
 	addChild(args.child);
 }
 
@@ -24,7 +25,11 @@ void Box::Impl::onDraw() {
 	quad.setSize(data.size);
 
 	auto &renderer = Renderer::getInstance();
+	if (shouldClipContent)
+		renderer.addClipRect(getRect(), quad.getData().borderRadius);
 	renderer.addQuad(quad);
+	if (shouldClipContent)
+		renderer.popClipRect();
 }
 
 void Box::Impl::setColor(const Color &color) {

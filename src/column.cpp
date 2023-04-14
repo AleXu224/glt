@@ -75,7 +75,7 @@ void Column::Impl::onDraw() {
     const auto width = getContentRect().width();
     const auto childPos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 
-    const Rect &clipRect = Renderer::getInstance().getCurrentClipRect();
+    const Rect &clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
     for (auto &child: children) {
         if (!child) continue;

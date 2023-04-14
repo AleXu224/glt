@@ -37,6 +37,7 @@ Quad::Quad(const Args &args)
 		  .textureIndex = 0,
 		  .textureType = args.textureType,
 		  .clipRect = {0.0f, 0.0f, 0.0f, 0.0f},
+		  .clipBorderRadius = 0.0f,
 	  },
 	  texture{args.texture} {}
 
@@ -95,6 +96,7 @@ void Quad::setBorderSize(float size) {
 	data.borderSize = size;
 }
 
-void Quad::setClipRect(const Rect &clipRect) {
+void Quad::setClipRect(const Rect &clipRect, float clipBorderRadius) {
 	data.clipRect = DirectX::XMFLOAT4(clipRect.left, clipRect.top, clipRect.right, clipRect.bottom);
+	data.clipBorderRadius = clipBorderRadius;
 }

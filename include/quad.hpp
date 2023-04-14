@@ -46,7 +46,7 @@ namespace squi {
 		void setBorderColor(DirectX::XMFLOAT4 color);
 		void setBorderRadius(float radius);
 		void setBorderSize(float size);
-		void setClipRect(const Rect &clipRect);
+		void setClipRect(const Rect &clipRect, float clipBorderRadius);
 	};
 }// namespace squi
 
