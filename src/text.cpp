@@ -1,14 +1,17 @@
 #include "text.hpp"
 #include "fontStore.hpp"
+#include "ranges"
 #include "renderer.hpp"
+#include <algorithm>
 #include <string_view>
+
 
 using namespace squi;
 
 Text::Impl::Impl(const Text &args)
 	: Widget(args.widget, Widget::Options{
 							  .shouldDrawChildren = false,
-                .shouldHandleSizeBehavior = false,
+							  .shouldHandleSizeBehavior = false,
 						  }),
 	  text(args.text), fontSize(args.fontSize), lineWrap(args.lineWrap), fontPath(args.fontPath), color(args.color) {
 	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, 0, color);
@@ -18,69 +21,74 @@ Text::Impl::Impl(const Text &args)
 }
 
 void Text::Impl::onUpdate() {
-  auto &widgetData = data();
+	auto &widgetData = data();
 
-  if (lineWrap) {
-    const auto parentWidth = widgetData.parent->getContentRect().width();
-    if (parentWidth != lastParentWidth) {
-      lastParentWidth = parentWidth;
-      const auto maxWidth = parentWidth - widgetData.margin.getSizeOffset().x - widgetData.padding.getSizeOffset().x;
-      const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
-      // Only update the text layout if the text is wider than the available space
-      if (widgetData.size.x > maxWidth || widgetData.size.y != static_cast<float>(lineHeight)) {
-        auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, {lastX, lastY}, color, maxWidth);
-        widgetData.size = {width, height};
-        quads = std::move(quadsVec);
-      }
-    }
-  }
+	if (lineWrap) {
+		const auto parentWidth = widgetData.parent->getContentRect().width();
+		if (parentWidth != lastParentWidth) {
+			lastParentWidth = parentWidth;
+			const auto maxWidth = parentWidth - widgetData.margin.getSizeOffset().x - widgetData.padding.getSizeOffset().x;
+			const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
+			// Only update the text layout if the text is wider than the available space
+			if (widgetData.size.x > maxWidth || widgetData.size.y != static_cast<float>(lineHeight)) {
+				auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, {lastX, lastY}, color, maxWidth);
+				widgetData.size = {width, height};
+				quads = std::move(quadsVec);
+			}
+		}
+	}
 }
 
 void Text::Impl::onDraw() {
 	auto &widgetData = data();
 	const auto pos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 	if (pos.x != lastX || pos.y != lastY) {
-    const vec2 roundedPos = pos.rounded();
+		const vec2 roundedPos = pos.rounded();
 		for (auto &quadVec: quads) {
-      for (auto &quad: quadVec) {
-        quad.setPos(roundedPos);
-      }
+			for (auto &quad: quadVec) {
+				quad.setPos(roundedPos);
+			}
 		}
 		lastX = pos.x;
 		lastY = pos.y;
 	}
 
 	auto &renderer = Renderer::getInstance();
-  const auto &clipRect = renderer.getCurrentClipRect().rect;
-  const auto minOffsetX = clipRect.left - widgetData.pos.x;
-  const auto minOffsetY = clipRect.top - widgetData.pos.y;
-  const auto maxOffsetX = clipRect.right - widgetData.pos.x;
-  const auto maxOffsetY = clipRect.bottom - widgetData.pos.y;
+	const auto &clipRect = renderer.getCurrentClipRect().rect;
+	const auto minOffsetX = clipRect.left - widgetData.pos.x;
+	// const auto minOffsetY = clipRect.top - widgetData.pos.y;
+	const auto maxOffsetX = clipRect.right - widgetData.pos.x;
+	// const auto maxOffsetY = clipRect.bottom - widgetData.pos.y;
 
 	for (auto &quadVec: quads) {
-    for (auto &quad: quadVec) {
-      const auto &quadData = quad.getData();
-      if (quadData.offset.x > maxOffsetX || quadData.offset.y > maxOffsetY)
-        break;
-      if (quadData.offset.x + quadData.size.x < minOffsetX || quadData.offset.y + quadData.size.y < minOffsetY)
-        continue;
-      renderer.addQuad(quad);
-    }
+		auto it = std::lower_bound(
+			quadVec.begin(),
+			quadVec.end(),
+			minOffsetX,
+			[](const auto &quad, const auto &offset) {
+				return (quad.getData().offset.x + quad.getData().size.x) < offset;
+			});
+		for (auto &quad: std::views::counted(it, quadVec.end() - it)) {
+			const auto &quadData = quad.getData();
+			if (quadData.offset.x > maxOffsetX)
+				break;
+			renderer.addQuad(quad);
+		}
 	}
 }
 
 void Text::Impl::setText(const std::string_view &text) {
-  auto &widgetData = data();
-  this->text = text;
-  auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, widgetData.pos.rounded(), color);
-  quads = std::move(quadsVec);
-  widgetData.size = {width, height};
+	auto &widgetData = data();
+	this->text = text;
+	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, widgetData.pos.rounded(), color);
+	quads = std::move(quadsVec);
+	widgetData.size = {width, height};
 }
 
 std::string_view Text::Impl::getText() const {
-  return text;
+	return text;
 }
 
 std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
-  return FontStore::getTextSize(text, fontPath, fontSize);
+	return FontStore::getTextSize(text, fontPath, fontSize);
 }

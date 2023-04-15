@@ -8,6 +8,7 @@
 #include "widget.hpp"
 #include "window.hpp"
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <optional>
 
 
@@ -52,6 +53,10 @@ void TextInput::Impl::onUpdate() {
 
 	const auto oldValue = text.getText();
 	auto newValue = std::string(oldValue);
+
+	const auto oldCursor = cursor;
+	const auto oldSelectionStart = (std::min)(cursor, selectionStart.value_or(0));
+	const auto oldSelectionEnd = (std::max)(cursor, selectionStart.value_or(0));
 
 	cursor = (std::min)(cursor, static_cast<uint32_t>(newValue.size()));
 	if (selectionStart.has_value()) selectionStart = (std::min)(selectionStart.value_or(0), static_cast<uint32_t>(newValue.size()));
@@ -264,27 +269,41 @@ void TextInput::Impl::onUpdate() {
 		selectionStart = 0;
 		cursor = static_cast<int>(newValue.size());
 	}
-	const auto [width, height] = text.getTextSize(newValue.substr(0, cursor));
-	const auto cursorXPos = static_cast<float>(width);
+	if (oldCursor != cursor) {
+		const auto [width, height] = text.getTextSize(newValue.substr(0, cursor));
+		startToCursor = static_cast<float>(width);
+	}
 	// Check if the cursor is going out of bounds on the right
-	if (cursorXPos - scroll > widgetData.size.x) {
-		scroll = cursorXPos - widgetData.size.x;
+	if (startToCursor - scroll > widgetData.size.x) {
+		scroll = startToCursor - widgetData.size.x;
 	}
 	// Check if the cursor is going out of bounds on the left
-	if (cursorXPos - scroll < 0) {
-		scroll = cursorXPos;
+	if (startToCursor - scroll < 0) {
+		scroll = startToCursor;
 	}
-	// Check if there is empty non whitespace space on the right of the text
-	const auto [newWidth, newHeight] = text.getTextSize(newValue);
-	if (scroll + widgetData.size.x > static_cast<float>(newWidth)) {
-		scroll = static_cast<float>(newWidth) - widgetData.size.x;
-		scroll = scroll < 0 ? 0 : scroll;
-	}
-
 
 	if (oldValue != newValue) {
 		text.setText(newValue);
 		// if (onChange) onChange(newValue);
+	}
+
+	// Check if there is empty non whitespace space on the right of the text
+	const auto &textData = text.data();
+	if (scroll + widgetData.size.x > textData.size.x) {
+		scroll = textData.size.x - widgetData.size.x;
+		scroll = scroll < 0 ? 0 : scroll;
+	}
+
+	if (selectionStart.has_value()) {
+		auto start = (std::min)(cursor, selectionStart.value());
+		auto end = (std::max)(cursor, selectionStart.value());
+
+		if (start != oldSelectionStart || end != oldSelectionEnd) {
+			const auto [width, height] = text.getTextSize(newValue.substr(0, start));
+			startToSelection = static_cast<float>(width);
+			const auto [width2, height2] = text.getTextSize(newValue.substr(start, end - start));
+			selectionStartToSelectionEnd = static_cast<float>(width2);
+		}
 	}
 }
 
@@ -301,22 +320,16 @@ void TextInput::Impl::onDraw() {
 	const auto &pos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
 
 	if (selectionStart.has_value()) {
-		const uint32_t selectStartPos = (std::min)(cursor, selectionStart.value());
-		const uint32_t selectEndPos = (std::max)(cursor, selectionStart.value());
-
-		const auto [width, height] = textWidget.getTextSize(textWidget.getText().substr(0, selectStartPos));
 		auto &selectionData = selectionWidget.data();
-		selectionData.pos = pos.withXOffset(static_cast<float>(width));
-		const auto [selectionWidth, selectionHeight] = textWidget.getTextSize(textWidget.getText().substr(selectStartPos, selectEndPos - selectStartPos));
-		selectionData.size.x = static_cast<float>(selectionWidth);
+		selectionData.pos = pos.withXOffset(startToSelection);
+		selectionData.size.x = selectionStartToSelectionEnd;
 		selectionData.visible = true;
 	} else {
 		selectionWidget.data().visible = false;
 	}
 
 	textWidget.data().pos = pos;
-	const auto [width, height] = textWidget.getTextSize(textWidget.getText().substr(0, cursor));
-	cursorWidget.data().pos = pos.withXOffset(static_cast<float>(width));
+	cursorWidget.data().pos = pos.withXOffset(startToCursor);
 	cursorWidget.data().visible = widgetData.gestureDetector.active;
 
 	textWidget.draw();

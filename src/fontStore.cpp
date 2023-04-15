@@ -79,14 +79,14 @@ bool FontStore::Font::generateTexture(unsigned char *character, std::unordered_m
 			static_cast<float>(face->glyph->metrics.horiBearingX >> 6),
 			-static_cast<float>(face->glyph->metrics.horiBearingY >> 6),
 		},
-		.advance = static_cast<float>(face->glyph->metrics.horiAdvance >> 6),
+		.advance = face->glyph->metrics.horiAdvance >> 6,
 		.index = FT_Get_Char_Index(face, codepoint),
 	};
 
 	return true;
 }
 
-const FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, float size) {
+FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, float size) {
 	if (!generateTexture(character, size)) {
 		return chars.at(size).at(0);
 	}
@@ -96,13 +96,17 @@ const FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *cha
 	return chars.at(size).at(codepoint);
 }
 
-const FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap) {
+FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap) {
+	const char32_t codepoint = UTF8ToUTF32(character);
+	if (auto it = sizeMap.find(codepoint); it != sizeMap.end()) {
+		return it->second;
+	}
+	
 	if (!generateTexture(character, sizeMap)) {
 		return sizeMap.at(0);
 	}
 
 	// UTF8 to UTF32
-	const char32_t codepoint = UTF8ToUTF32(character);
 	return sizeMap.at(codepoint);
 }
 
@@ -140,19 +144,13 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, std
 		}
 		const auto &character = text.at(charIter - text.begin());
 
-		const auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
+		auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
 
-		FT_Vector kerning{};
 		if (prevChar) {
-			FT_Get_Kerning(
-				font.face,
-				prevCharInfo->index,
-				charInfo.index,
-				FT_KERNING_DEFAULT,
-				&kerning);
+			width += charInfo.getKerning(font.face, prevCharInfo->index);
 		}
 
-		width += static_cast<uint32_t>(charInfo.advance) + static_cast<uint32_t>(charInfo.offset.x) + (kerning.x >> 6);
+		width += static_cast<uint32_t>(charInfo.advance) + static_cast<uint32_t>(charInfo.offset.x);
 
 		if ((unsigned char) character >= 0b11110000) {
 			skip = 3;
@@ -177,14 +175,6 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 		}
 		return true;
 	}();
-	
-	// if (!isInitialized) {
-	// 	if (FT_Init_FreeType(&ftLibrary)) {
-	// 		printf("Failed to initialize FreeType\n");
-	// 		exit(1);
-	// 	}
-	// 	isInitialized = true;
-	// }
 
 	std::vector<std::vector<Quad>> quads{};
 	quads.resize(1, std::vector<Quad>{});
@@ -208,11 +198,10 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 	Font::CharInfo const *previousCharInfo = nullptr;
 	for (auto charIter = text.begin(); charIter != text.end(); charIter++) {
 		const auto &character = text.at(charIter - text.begin());
-		const auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
+		auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
 
-		FT_Vector kerning{};
 		if (previousChar != nullptr) {
-			FT_Get_Kerning(font.face, previousCharInfo->index, charInfo.index, FT_KERNING_DEFAULT, &kerning);
+			cursorX += charInfo.getKerning(font.face, previousCharInfo->index);
 
 			if (*previousChar == ' ' && character != ' ' && maxWidth != -1) {
 				auto [width, height] = getTextSize({charIter, std::find(charIter, text.end(), ' ')}, fontPath, size);
@@ -223,7 +212,7 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 				}
 			}
 		}
-		cursorX += kerning.x >> 6;
+		// cursorX += kerning.x >> 6;
 		// Getting the Y position:
 		// FreeType assumes bottom-left as origin while we use top-left
 		// So in that case we can just subtract the height of the glyph from the ascender

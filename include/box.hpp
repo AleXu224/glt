@@ -30,7 +30,7 @@ namespace squi {
 			bool shouldClipContent;
 
 		public:
-			Impl(const Box &args);
+			explicit Impl(const Box &args);
 
 			void onDraw() override;
 
@@ -46,12 +46,8 @@ namespace squi {
 			[[nodiscard]] Quad &getQuad();
 		};
 
-		operator std::shared_ptr<Widget>() {
-			return std::make_shared<Impl>(*this);
-		}
-
 		operator Child() {
-			return Child(std::make_shared<Impl>(*this));
+			return {std::make_shared<Impl>(*this)};
 		}
 	};
 }// namespace squi

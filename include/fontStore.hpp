@@ -2,6 +2,8 @@
 #define SQUI_FONTSTORE_HPP
 
 #include "ft2build.h"
+#include <freetype/fttypes.h>
+#include <tuple>
 #include FT_FREETYPE_H
 #include "DirectXMath.h"
 #include "memory"
@@ -21,8 +23,21 @@ namespace squi {
 				vec2 uvBottomRight{};
 				vec2 size{};
 				vec2 offset{};
-				float advance{};
+				int32_t advance{};
 				FT_UInt index{};
+
+				std::unordered_map<char32_t, int32_t> kerning{};
+
+				int32_t getKerning(const FT_Face &face, const FT_UInt &prevIndex) {
+					if (const auto &it = kerning.find(prevIndex); it != kerning.end()) {
+						return it->second;
+					}
+
+					FT_Vector kerning;
+					FT_Get_Kerning(face, prevIndex, index, FT_KERNING_DEFAULT, &kerning);
+					this->kerning[prevIndex] = kerning.x >> 6;
+					return kerning.x;
+				}
 			};
 		private:
 
@@ -33,7 +48,7 @@ namespace squi {
 		public:
 			bool loaded{true};
 			FT_Face face{};
-            Font(std::string_view fontPath);
+            explicit Font(std::string_view fontPath);
 
 			/**
 			 * @brief Generates the texture for a character and adds it to the atlas. 
@@ -54,8 +69,8 @@ namespace squi {
 			 * @param size The size of the font
 			 * @return CharInfo& 
 			 */
-			const CharInfo &getCharInfo(unsigned char *character, float size);
-			const CharInfo &getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
+			CharInfo &getCharInfo(unsigned char *character, float size);
+			CharInfo &getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
 
 			Atlas &getAtlas();
 

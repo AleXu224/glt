@@ -12,6 +12,9 @@ namespace squi {
         class Impl : public Widget {
             // Data
             uint32_t cursor{};
+            float startToCursor{};
+            float startToSelection{};
+            float selectionStartToSelectionEnd{};
             float scroll{};
             std::optional<uint32_t> selectionStart{};
     
