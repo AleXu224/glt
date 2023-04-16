@@ -5,12 +5,14 @@
 #include "renderer.hpp"
 #include "row.hpp"
 #include "text.hpp"
+#include <string_view>
 
 
 using namespace squi;
 
 PerformanceOverlay::operator squi::Child() const {
 	auto storage = std::make_shared<Storage>();
+	constexpr std::string_view font = R"(C:\Windows\Fonts\segoeui.ttf)";
 
 	return Align{
 		.xAlign = 1,
@@ -24,8 +26,11 @@ PerformanceOverlay::operator squi::Child() const {
 					.vertical = SizeBehaviorType::MatchChild,
 				},
 			},
-			.color{Color::HEX(0x000000F0)},
+			.color{Color::HEX(0xFFFFFF0D)},
+			.borderColor{Color::HEX(0x0000001A)},
+			.borderWidth = 1.0f,
 			.borderRadius = 4,
+			.borderPosition = Box::BorderPosition::outset,
 			.child{
 				Column{
 					.widget{
@@ -47,6 +52,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.text = "FPS: ",
 									.fontSize = 16,
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -58,6 +64,7 @@ PerformanceOverlay::operator squi::Child() const {
 									},
 									.text = "60",
 									.fontSize = 16,
+									.fontPath{font},
 								},
 							},
 						},
@@ -71,6 +78,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Frame time: ",
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -81,6 +89,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "16.6ms",
+									.fontPath{font},
 								},
 							},
 						},
@@ -94,6 +103,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Poll time: ",
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -104,6 +114,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "100",
+									.fontPath{font},
 								},
 							},
 						},
@@ -117,6 +128,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Update time: ",
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -127,6 +139,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "100",
+									.fontPath{font},
 								},
 							},
 						},
@@ -140,6 +153,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Draw time: ",
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -150,6 +164,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "10000",
+									.fontPath{font},
 								},
 							},
 						},
@@ -163,6 +178,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Present time: ",
+									.fontPath{font},
 								},
 								Text{
 									.widget{
@@ -173,6 +189,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "10000",
+									.fontPath{font},
 								},
 							},
 						},

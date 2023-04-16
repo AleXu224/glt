@@ -1,5 +1,7 @@
 #ifndef SQUI_WINDOW_HPP
 #define SQUI_WINDOW_HPP
+#include "overlay.hpp"
+#include <vector>
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "chrono"
@@ -20,6 +22,8 @@ namespace squi {
 		static void glfwError(int id, const char *description);
 
 		static std::unordered_map<GLFWwindow *, Window *> windowMap;
+
+		std::vector<std::unique_ptr<Overlay::Impl>> overlays{};
 
 		void updateAndDraw();
 

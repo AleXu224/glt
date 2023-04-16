@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <optional>
+#include <stdint.h>
 
 
 using namespace squi;
@@ -31,7 +32,14 @@ TextInput::Impl::Impl(const TextInput &args)
 				.vertical = SizeBehaviorType::FillParent,
 			},
 		},
-		.color{Color::HEX(0x0022FF80)},
+		.color{Color::HEX(0x0078D4FF)},
+	});
+	// Selected text
+	addChild(Text{
+		.text{""},
+		.fontSize = args.fontSize,
+		.fontPath{args.font},
+		.color{Color::HEX(0xFFFFFFFF)},
 	});
 	// Cursor
 	addChild(Box{
@@ -53,13 +61,14 @@ void TextInput::Impl::onUpdate() {
 
 	auto &children = getChildren();
 	auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
+	auto &selectedText = reinterpret_cast<Text::Impl &>(*children[2]);
 
 	const auto oldValue = text.getText();
 	auto newValue = std::string(oldValue);
 
 	const auto oldCursor = cursor;
-	const auto oldSelectionStart = (std::min)(cursor, selectionStart.value_or(0));
-	const auto oldSelectionEnd = (std::max)(cursor, selectionStart.value_or(0));
+	const auto oldSelectionStart = (std::min)(cursor, selectionStart.value_or(-1));
+	const auto oldSelectionEnd = (std::max)(cursor, selectionStart.value_or(-1));
 
 	cursor = (std::min)(cursor, static_cast<uint32_t>(newValue.size()));
 	if (selectionStart.has_value()) selectionStart = (std::min)(selectionStart.value_or(0), static_cast<uint32_t>(newValue.size()));
@@ -270,7 +279,7 @@ void TextInput::Impl::onUpdate() {
 	}
 	if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_A, GLFW_MOD_CONTROL)) {
 		selectionStart = 0;
-		cursor = static_cast<int>(newValue.size());
+		cursor = static_cast<uint32_t>(newValue.size());
 	}
 	if (oldCursor != cursor) {
 		const auto [width, height] = text.getTextSize(newValue.substr(0, cursor));
@@ -299,14 +308,15 @@ void TextInput::Impl::onUpdate() {
 	}
 
 	if (selectionStart.has_value()) {
-		auto start = (std::min)(cursor, selectionStart.value());
-		auto end = (std::max)(cursor, selectionStart.value());
+		const auto start = (std::min)(cursor, selectionStart.value());
+		const auto end = (std::max)(cursor, selectionStart.value());
 
 		if (start != oldSelectionStart || end != oldSelectionEnd) {
 			const auto [width, height] = text.getTextSize(newValue.substr(0, start));
 			startToSelection = static_cast<float>(width);
 			const auto [width2, height2] = text.getTextSize(newValue.substr(start, end - start));
 			selectionStartToSelectionEnd = static_cast<float>(width2);
+			selectedText.setText(newValue.substr(start, end - start));
 		}
 	}
 }
@@ -316,7 +326,8 @@ void TextInput::Impl::onDraw() {
 	auto &children = getChildren();
 	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
 	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
-	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[2]);
+	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
+	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
 
 	auto &renderer = Renderer::getInstance();
 	renderer.addClipRect(getRect());
@@ -328,8 +339,13 @@ void TextInput::Impl::onDraw() {
 		selectionData.pos = pos.withXOffset(startToSelection);
 		selectionData.size.x = selectionStartToSelectionEnd;
 		selectionData.visible = true;
+
+		auto &selectedTextData = selectedTextWidget.data();
+		selectedTextData.pos = pos.withXOffset(startToSelection);
+		selectedTextData.visible = true;
 	} else {
 		selectionWidget.data().visible = false;
+		selectedTextWidget.data().visible = false;
 	}
 
 	textWidget.data().pos = pos;
@@ -338,6 +354,7 @@ void TextInput::Impl::onDraw() {
 
 	textWidget.draw();
 	selectionWidget.draw();
+	selectedTextWidget.draw();
 	cursorWidget.draw();
 
 	renderer.popClipRect();

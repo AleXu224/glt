@@ -118,11 +118,11 @@ auto fragmentShaderHlsl = R"(
 			float borderRadius = min(input.borderRadius, min(halfRes.x, halfRes.y));
 			float b = udRoundBox(coords - halfRes, halfRes, borderRadius);
 			float4 outColor = input.color;
-			outColor *= input.color.a;
+			outColor.xyz *= input.color.a;
 			float bSize = input.borderSize;
 			if (b > -bSize && bSize > 0.0) {
 				float4 borderColor = input.borderColor;
-				borderColor *= input.borderColor.a;
+				borderColor.xyz *= input.borderColor.a;
 				outColor = lerp(outColor, borderColor, smoothstep(0.0, 1.0, b + bSize));
 			}
 			if (input.textureType == 2) {

@@ -5,6 +5,8 @@
 #include "window.hpp"
 #include "chrono"
 #include "fontStore.hpp"
+#include "gestureDetector.hpp"
+#include "overlay.hpp"
 #include "ranges"
 #include "stdexcept"
 #define GLFW_INCLUDE_NONE
@@ -159,10 +161,36 @@ void Window::updateAndDraw() {
 	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
 		renderer.updateDeltaTime(deltaTime);
 		renderer.updateCurrentFrameTime(currentTime);
+		uint32_t hitChecks = 0;
+		for (auto &overlay : std::views::reverse(overlays)) {
+			overlay->data().pos = {0, 0};
+			overlay->data().parent = this;
+			overlay->update();
+			auto hitCheck = overlay->getHitcheckRect();
+			if (hitCheck.has_value()) {
+				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
+				hitChecks++;
+			}
+		}
+		
 		for (auto &child: std::views::reverse(children)) {
 			child->data().pos = {0, 0};
 			child->data().parent = this;
 			child->update();
+			// TODO: for aligned widgets the position will be overriden by the parent
+			// 		 and the hitcheck will be wrong
+			//       Maybe the position should be a hint instead
+			//       Or maybe adopt a pattern that uses a bounding box instead of a position
+			//       in the layout part
+			auto hitCheck = child->getHitcheckRect();
+			if (hitCheck.has_value()) {
+				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
+				hitChecks++;
+			}
+		}
+
+		for (uint32_t i = 0; i < hitChecks; i++) {
+			GestureDetector::g_hitCheckRects.pop_back();
 		}
 	}
 	const auto afterUpdateTime = std::chrono::steady_clock::now();

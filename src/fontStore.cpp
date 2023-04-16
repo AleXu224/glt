@@ -1,6 +1,7 @@
 #include "fontStore.hpp"
 #include "texture.hpp"
 
+#include <freetype/freetype.h>
 #include <utility>
 
 using namespace squi;
