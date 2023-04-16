@@ -1,9 +1,11 @@
 #include "align.hpp"
 #include "box.hpp"
+#include "button.hpp"
 #include "child.hpp"
 #include "color.hpp"
 #include "column.hpp"
 #include "fontStore.hpp"
+#include "performanceOverlay.hpp"
 #include "random"
 #include "row.hpp"
 #include "scrollable.hpp"
@@ -11,11 +13,11 @@
 #include "scrollbar.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "textBox.hpp"
 #include "textInput.hpp"
-#include "button.hpp"
-#include "performanceOverlay.hpp"
 #include "widget.hpp"
 #include "window.hpp"
+
 
 int main(int, char **) {
 	using namespace squi;
@@ -464,48 +466,49 @@ int main(int, char **) {
 						},
 					},
 				});
-				widgets.push_back(Stack{
-					.widget{
-						.size{100, 100},
-					},
-					.children{
-						Box{
-							.widget{
-								.size{75, 75},
-								.onInit = [](Widget &widget){
-									auto &w = (Box::Impl &)widget;
-									auto &gd = widget.data().gestureDetector;
-
-									gd.onEnter = [&w](const auto &){
-										w.setColor(Color::HEX(0xFF0000FF));
-									};
-									gd.onLeave = [&w](const auto &){
-										w.setColor(Color::HEX(0x00FFAAFF));
-									};
-								},
-							},
-							.color{Color::HEX(0x00FFAAFF)},
+				widgets.push_back(TextBox{}),
+					widgets.push_back(Stack{
+						.widget{
+							.size{100, 100},
 						},
-						Box{
-							.widget{
-								.size{75, 75},
-								.margin{25, 0, 0, 25},
-								.onInit = [](Widget &widget){
-									auto &w = (Box::Impl &)widget;
-									auto &gd = widget.data().gestureDetector;
+						.children{
+							Box{
+								.widget{
+									.size{75, 75},
+									.onInit = [](Widget &widget) {
+										auto &w = (Box::Impl &) widget;
+										auto &gd = widget.data().gestureDetector;
 
-									gd.onEnter = [&w](const auto &){
-										w.setColor(Color::HEX(0xFF0000FF));
-									};
-									gd.onLeave = [&w](const auto &){
-										w.setColor(Color::HEX(0xFF00AAFF));
-									};
+										gd.onEnter = [&w](const auto &) {
+											w.setColor(Color::HEX(0xFF0000FF));
+										};
+										gd.onLeave = [&w](const auto &) {
+											w.setColor(Color::HEX(0x00FFAAFF));
+										};
+									},
 								},
+								.color{Color::HEX(0x00FFAAFF)},
 							},
-							.color{Color::HEX(0xFF00AAFF)},
+							Box{
+								.widget{
+									.size{75, 75},
+									.margin{25, 0, 0, 25},
+									.onInit = [](Widget &widget) {
+										auto &w = (Box::Impl &) widget;
+										auto &gd = widget.data().gestureDetector;
+
+										gd.onEnter = [&w](const auto &) {
+											w.setColor(Color::HEX(0xFF0000FF));
+										};
+										gd.onLeave = [&w](const auto &) {
+											w.setColor(Color::HEX(0xFF00AAFF));
+										};
+									},
+								},
+								.color{Color::HEX(0xFF00AAFF)},
+							},
 						},
-					},
-				});
+					});
 				for (int i = 0; i < 100; ++i) {
 					widgets.push_back(Box{
 						.widget{

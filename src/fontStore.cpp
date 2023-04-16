@@ -150,7 +150,7 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, std
 			width += charInfo.getKerning(font.face, prevCharInfo->index);
 		}
 
-		width += static_cast<uint32_t>(charInfo.advance) + static_cast<uint32_t>(charInfo.offset.x);
+		width += static_cast<uint32_t>(charInfo.advance);
 
 		if ((unsigned char) character >= 0b11110000) {
 			skip = 3;
@@ -212,7 +212,6 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuad
 				}
 			}
 		}
-		// cursorX += kerning.x >> 6;
 		// Getting the Y position:
 		// FreeType assumes bottom-left as origin while we use top-left
 		// So in that case we can just subtract the height of the glyph from the ascender

@@ -1,13 +1,18 @@
 #ifndef SQUI_TEXTINPUT_HPP
 #define SQUI_TEXTINPUT_HPP
 
+#include "color.hpp"
 #include "widget.hpp"
 #include <optional>
+#include <string_view>
 
 namespace squi {
     struct TextInput {
         // Args
         Widget::Args widget;
+        float fontSize = 14.0f;
+        std::string_view font = R"(C:\Windows\Fonts\arial.ttf)";
+        Color color{Color::HEX(0xFFFFFFFF)};
     
         class Impl : public Widget {
             // Data

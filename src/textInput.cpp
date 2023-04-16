@@ -19,7 +19,10 @@ TextInput::Impl::Impl(const TextInput &args)
 							  .shouldDrawChildren = false,
 						  }) {
 	addChild(Text{
-		.text{"scjsnjcnaskjcas"},
+		.text{""},
+		.fontSize = args.fontSize,
+		.fontPath{args.font},
+		.color{args.color},
 	});
 	// Selection
 	addChild(Box{
@@ -38,7 +41,7 @@ TextInput::Impl::Impl(const TextInput &args)
 				.vertical = SizeBehaviorType::FillParent,
 			},
 		},
-		.color{Color::HEX(0xFF0000FF)},
+		.color{Color::HEX(0xFFFFFFFF)},
 	});
 }
 
@@ -274,8 +277,9 @@ void TextInput::Impl::onUpdate() {
 		startToCursor = static_cast<float>(width);
 	}
 	// Check if the cursor is going out of bounds on the right
-	if (startToCursor - scroll > widgetData.size.x) {
-		scroll = startToCursor - widgetData.size.x;
+	const auto contentWidth = getContentRect().width();
+	if (startToCursor - scroll > contentWidth) {
+		scroll = startToCursor - contentWidth;
 	}
 	// Check if the cursor is going out of bounds on the left
 	if (startToCursor - scroll < 0) {
@@ -289,8 +293,8 @@ void TextInput::Impl::onUpdate() {
 
 	// Check if there is empty non whitespace space on the right of the text
 	const auto &textData = text.data();
-	if (scroll + widgetData.size.x > textData.size.x) {
-		scroll = textData.size.x - widgetData.size.x;
+	if (scroll + contentWidth > textData.size.x) {
+		scroll = textData.size.x - contentWidth;
 		scroll = scroll < 0 ? 0 : scroll;
 	}
 
