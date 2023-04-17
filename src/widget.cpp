@@ -55,24 +55,24 @@ const std::vector<std::shared_ptr<Widget>> &Widget::getChildren() const {
 		return children;
 }
 
-Rect Widget::getRect() const {
-	const auto& data = this->data();
-	return Rect::fromPosSize(data.pos + data.margin.getPositionOffset(), data.size);
-}
+// Rect Widget::getRect() const {
+// 	const auto& data = this->data();
+// 	return Rect::fromPosSize(data.pos + data.margin.getPositionOffset(), data.size);
+// }
 
-Rect Widget::getContentRect() const {
-	const auto& data = this->data();
-	return Rect::fromPosSize(
-		data.pos + data.margin.getPositionOffset() + data.padding.getPositionOffset(),
-		data.size - data.padding.getSizeOffset());
-}
+// Rect Widget::getContentRect() const {
+// 	const auto& data = this->data();
+// 	return Rect::fromPosSize(
+// 		data.pos + data.margin.getPositionOffset() + data.padding.getPositionOffset(),
+// 		data.size - data.padding.getSizeOffset());
+// }
 
-Rect Widget::getLayoutRect() const {
-	const auto& data = this->data();
-	return Rect::fromPosSize(
-		data.pos,
-		data.size + data.margin.getSizeOffset());
-}
+// Rect Widget::getLayoutRect() const {
+// 	const auto& data = this->data();
+// 	return Rect::fromPosSize(
+// 		data.pos,
+// 		data.size + data.margin.getSizeOffset());
+// }
 
 std::optional<Rect> Widget::getHitcheckRect() const {
 	if (m_data.isInteractive)

@@ -23,15 +23,43 @@ namespace squi {
         Margin(const vec2 &vec) : top(vec.y), right(vec.x), bottom(vec.y), left(vec.x) {}
         Margin(const vec2 &topLeft, const vec2 &bottomRight) : top(topLeft.y), right(bottomRight.x), bottom(bottomRight.y), left(topLeft.x) {}
 
-        [[nodiscard]] Margin operator+(const Margin &other) const;
-        [[nodiscard]] Margin operator-(const Margin &other) const;
-        [[nodiscard]] Margin operator*(const Margin &other) const;
-        [[nodiscard]] Margin operator/(const Margin &other) const;
+        [[nodiscard]] inline Margin operator+(const Margin &other) const {
+            return {top + other.top, right + other.right, bottom + other.bottom, left + other.left};
+        }
+        [[nodiscard]] inline Margin operator-(const Margin &other) const {
+            return {top - other.top, right - other.right, bottom - other.bottom, left - other.left};
+        }
+        [[nodiscard]] inline Margin operator*(const Margin &other) const {
+            return {top * other.top, right * other.right, bottom * other.bottom, left * other.left};
+        }
+        [[nodiscard]] inline Margin operator/(const Margin &other) const {
+            return {top / other.top, right / other.right, bottom / other.bottom, left / other.left};
+        }
 
-        void operator+=(const Margin &other);
-        void operator-=(const Margin &other);
-        void operator*=(const Margin &other);
-        void operator/=(const Margin &other);
+        inline void operator+=(const Margin &other) {
+            top += other.top;
+            right += other.right;
+            bottom += other.bottom;
+            left += other.left;
+        }
+        inline void operator-=(const Margin &other) {
+            top -= other.top;
+            right -= other.right;
+            bottom -= other.bottom;
+            left -= other.left;
+        }
+        inline void operator*=(const Margin &other) {
+            top *= other.top;
+            right *= other.right;
+            bottom *= other.bottom;
+            left *= other.left;
+        }
+        inline void operator/=(const Margin &other) {
+            top /= other.top;
+            right /= other.right;
+            bottom /= other.bottom;
+            left /= other.left;
+        }
 
         [[nodiscard]] Margin withTop(const float &newTop) const;
         [[nodiscard]] Margin withRight(const float &newRight) const;
@@ -49,8 +77,12 @@ namespace squi {
         [[nodiscard]] Margin withHorizontalOffset(const float &offset) const;
         [[nodiscard]] Margin withVerticalOffset(const float &offset) const;
 
-		[[nodiscard]] vec2 getPositionOffset() const;
-		[[nodiscard]] vec2 getSizeOffset() const;
+		[[nodiscard]] inline vec2 getPositionOffset() const {
+            return {left, top};
+        }
+		[[nodiscard]] inline vec2 getSizeOffset() const {
+            return {left + right, top + bottom};
+        }
 	};
 }// namespace squi
 

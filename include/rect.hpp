@@ -11,14 +11,23 @@ namespace squi {
 		float bottom;
 
 		Rect(vec2 topLeft, vec2 bottomRight);
-		[[nodiscard]] static Rect fromPosSize(vec2 position, vec2 size);
+		[[nodiscard]] inline static Rect fromPosSize(vec2 position, vec2 size) {
+			return {position, position + size};
+		}
 
-		[[nodiscard]] float width() const;
-		[[nodiscard]] float height() const;
-		[[nodiscard]] vec2 size() const;
+		[[nodiscard]] inline float width() const {
+			return right - left;
+		}
+		[[nodiscard]] inline float height() const {
+			return bottom - top;
+		}
+		[[nodiscard]] vec2 size() const {
+			return {width(), height()};
+		}
 
-
-		[[nodiscard]] bool contains(const vec2 &position) const;
+		[[nodiscard]] inline bool contains(const vec2 &position) const {
+			return position.x >= left && position.x < right && position.y >= top && position.y < bottom;
+		}
 		[[nodiscard]] Rect overlap(const Rect &other) const;
 	};
 }// namespace squi

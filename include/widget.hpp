@@ -126,9 +126,19 @@ namespace squi {
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
-		[[nodiscard]] virtual Rect getRect() const;
-		[[nodiscard]] virtual Rect getContentRect() const;
-		[[nodiscard]] virtual Rect getLayoutRect() const;
+		[[nodiscard]] inline Rect getRect() const {
+			return Rect::fromPosSize(m_data.pos + m_data.margin.getPositionOffset(), m_data.size);
+		}
+		[[nodiscard]] inline Rect getContentRect() const {
+			return Rect::fromPosSize(
+				m_data.pos + m_data.margin.getPositionOffset() + m_data.padding.getPositionOffset(),
+				m_data.size - m_data.padding.getSizeOffset());
+		}
+		[[nodiscard]] inline Rect getLayoutRect() const {
+			return Rect::fromPosSize(
+				m_data.pos,
+				m_data.size + m_data.margin.getSizeOffset());
+		}
 		[[nodiscard]] virtual std::optional<Rect> getHitcheckRect() const;
 
 		// Setters

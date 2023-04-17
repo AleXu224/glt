@@ -13,27 +13,61 @@ namespace squi {
 		vec2(float x, float y) : x(x), y(y) {}
 		vec2(float xy) : x(xy), y(xy) {}
 
-		[[nodiscard]] vec2 operator+(const vec2 &other) const;
-		[[nodiscard]] vec2 operator-(const vec2 &other) const;
-		[[nodiscard]] vec2 operator*(const vec2 &other) const;
-		[[nodiscard]] vec2 operator/(const vec2 &other) const;
+		[[nodiscard]] inline vec2 operator+(const vec2 &other) const {
+			return {x + other.x, y + other.y};
+		}
+		[[nodiscard]] inline vec2 operator-(const vec2 &other) const {
+			return {x - other.x, y - other.y};
+		}
+		[[nodiscard]] inline vec2 operator*(const vec2 &other) const {
+			return {x * other.x, y * other.y};
+		}
+		[[nodiscard]] inline vec2 operator/(const vec2 &other) const {
+			return {x / other.x, y / other.y};
+		}
 
-		void operator+=(const vec2 &other);
-		void operator-=(const vec2 &other);
-		void operator*=(const vec2 &other);
-		void operator/=(const vec2 &other);
+		inline void operator+=(const vec2 &other) {
+			x += other.x;
+			y += other.y;
+		}
+		inline void operator-=(const vec2 &other) {
+			x -= other.x;
+			y -= other.y;
+		}
+		inline void operator*=(const vec2 &other) {
+			x *= other.x;
+			y *= other.y;
+		}
+		inline void operator/=(const vec2 &other) {
+			x /= other.x;
+			y /= other.y;
+		}
 
-		bool operator==(const vec2 &other) const;
+		inline bool operator==(const vec2 &other) const {
+			return x == other.x && y == other.y;
+		}
 
-		[[nodiscard]] vec2 withX(const float &newX) const;
-		[[nodiscard]] vec2 withY(const float &newY) const;
+		[[nodiscard]] inline vec2 withX(const float &newX) const {
+			return {newX, y};
+		}
+		[[nodiscard]] inline vec2 withY(const float &newY) const {
+			return {x, newY};
+		}
 
-		[[nodiscard]] vec2 withXOffset(const float &offset) const;
-		[[nodiscard]] vec2 withYOffset(const float &offset) const;
+		[[nodiscard]] inline vec2 withXOffset(const float &offset) const {
+			return {x + offset, y};
+		}
+		[[nodiscard]] inline vec2 withYOffset(const float &offset) const {
+			return {x, y + offset};
+		}
 
-		[[nodiscard]] vec2 rounded() const;
+		[[nodiscard]] inline vec2 rounded() const {
+			return {std::round(x), std::round(y)};
+		}
 
-		[[nodiscard]] operator DirectX::XMFLOAT2() const;
+		[[nodiscard]] inline operator DirectX::XMFLOAT2() const {
+			return {x, y};
+		}
 	};
 }// namespace squi
 
