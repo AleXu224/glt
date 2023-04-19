@@ -3,13 +3,13 @@
 
 #include "child.hpp"
 #include "functional"
-#include "gestureDetector.hpp"
 #include "margin.hpp"
 #include "memory"
 #include "rect.hpp"
 #include "vec2.hpp"
 #include "vector"
 #include <optional>
+#include <stdint.h>
 #include <variant>
 
 
@@ -61,7 +61,6 @@ namespace squi {
 			 */
 			Margin padding;
 			std::function<void(Widget &)> onInit{};
-			std::function<void(Widget &)> beforeUpdate{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
 			std::function<void(Widget &, vec2 &, vec2 &)> onLayout{};
@@ -106,7 +105,6 @@ namespace squi {
 		bool shouldArrangeChildren;
 		struct FunctionArgs {
 			std::vector<std::function<void(Widget &)>> onInit{};
-			std::vector<std::function<void(Widget &)>> beforeUpdate{};
 			std::vector<std::function<void(Widget &)>> onUpdate{};
 			std::vector<std::function<void(Widget &)>> afterUpdate{};
 			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> onLayout{};
@@ -128,7 +126,6 @@ namespace squi {
 			Margin margin;
 			Margin padding;
 			Widget *parent = nullptr;
-			GestureDetector gestureDetector;
 			bool visible = true;
 			bool isInteractive;
 
@@ -142,6 +139,7 @@ namespace squi {
 		};
 		Data m_data;
 		std::vector<std::shared_ptr<Widget>> children{};
+		static uint32_t widgetCount;
 
 	public:
 		// Disable copy
@@ -152,7 +150,7 @@ namespace squi {
 		Widget &operator=(Widget &&) = delete;
 
 		explicit Widget(const Args &args, const Options &options);
-		virtual ~Widget() = default;
+		virtual ~Widget();
 
 		// Getters
 		[[nodiscard]] Data &data();

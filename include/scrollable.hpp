@@ -1,8 +1,10 @@
 #ifndef SQUI_SCROLLABLE_HPP
 #define SQUI_SCROLLABLE_HPP
 
+#include "gestureDetector.hpp"
 #include "widget.hpp"
 #include "column.hpp"
+#include <memory>
 
 namespace squi {
     struct Scrollable {
@@ -18,6 +20,7 @@ namespace squi {
         Children children{};
     
         class Impl : public Widget {
+            std::shared_ptr<GestureDetector::Storage> gd = GestureDetector{}.initializeFor(*this);
         public:
             float scroll = 0;
             bool scrolled = false;
@@ -30,9 +33,7 @@ namespace squi {
             void onDraw() override;
         };
     
-        operator Child() const {
-            return Child(std::make_shared<Impl>(*this));
-        }
+        operator Child() const;
     };
 }
 

@@ -2,6 +2,7 @@
 #define SQUI_SCROLLBAR_HPP
 
 #include "box.hpp"
+#include "gestureDetector.hpp"
 #include "memory"
 #include "widget.hpp"
 
@@ -19,6 +20,7 @@ namespace squi {
 			float scroll = 0;
 			float scrollDragStart = 0;
 			std::chrono::steady_clock::time_point lastHoverTime = std::chrono::steady_clock::now();
+			std::shared_ptr<GestureDetector::Storage> gd{};
 		};
 
 		operator Child() const;

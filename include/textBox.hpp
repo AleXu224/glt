@@ -2,7 +2,9 @@
 #define SQUI_TEXTBOX_HPP
 
 #include "color.hpp"
+#include "gestureDetector.hpp"
 #include "widget.hpp"
+#include <memory>
 #include <string_view>
 
 namespace squi {
@@ -37,6 +39,7 @@ namespace squi {
             };
             State state = State::rest;
             bool changed = false;
+            std::shared_ptr<GestureDetector::Storage> gd{};
         };
     
         operator Child() const;

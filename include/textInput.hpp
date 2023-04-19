@@ -2,7 +2,9 @@
 #define SQUI_TEXTINPUT_HPP
 
 #include "color.hpp"
+#include "gestureDetector.hpp"
 #include "widget.hpp"
+#include <memory>
 #include <optional>
 #include <string_view>
 
@@ -21,20 +23,21 @@ namespace squi {
             float startToSelection{};
             float scroll{};
             std::optional<uint32_t> selectionStart{};
-    
-        public:
+			std::shared_ptr<GestureDetector::Storage> gd = GestureDetector{}.initializeFor(*this);
+
+		public:
             explicit Impl(const TextInput &args);
 
             void onUpdate() override;
             void onLayout(vec2 &maxSize, vec2 &minSize) override;
             void onArrange(vec2 &pos) override;
 
+            void setActive(bool active);
+
             void onDraw() override;
         };
     
-        operator Child() const {
-            return {std::make_shared<Impl>(*this)};
-        }
+        operator Child() const;
     };
 }
 

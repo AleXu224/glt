@@ -29,12 +29,19 @@ void Text::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 			lastAvailableSpace = maxSize.x;
 			const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
 			const auto rect = getRect();
+			const auto padding = widgetData.padding.getSizeOffset();
 			// Only update the text layout if the text is wider than the available space
-			if (rect.width() > maxSize.x || rect.height() != static_cast<float>(lineHeight)) {
-				auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, {lastX, lastY}, color, maxSize.x);
-				const auto padding = widgetData.padding.getSizeOffset();
+			if (rect.width() > maxSize.x || rect.height() != (static_cast<float>(lineHeight) + padding.y)) {
+				auto [quadsVec, width, height] = FontStore::generateQuads(
+					text,
+					fontPath,
+					fontSize,
+					{lastX, lastY},
+					color,
+					maxSize.x - padding.x);
 				widgetData.sizeMode.width = width + padding.x;
 				widgetData.sizeMode.height = height + padding.y;
+				// minSize = {width + padding.x, height + padding.y};
 				quads = std::move(quadsVec);
 			}
 		}

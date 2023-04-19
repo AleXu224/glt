@@ -5,6 +5,8 @@
 
 using namespace squi;
 
+uint32_t Widget::widgetCount = 0;
+
 Widget::Widget(const Args &args, const Options &options)
 	: shouldUpdateChildren(options.shouldUpdateChildren),
 	  shouldDrawChildren(options.shouldDrawChildren),
@@ -18,11 +20,9 @@ Widget::Widget(const Args &args, const Options &options)
 		  .sizeConstraints = args.sizeConstraints,
 		  .margin = args.margin,
 		  .padding = args.padding,
-		  .gestureDetector = GestureDetector(this),
 		  .isInteractive = options.isInteractive,
 	  }) {
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
-	if (args.beforeUpdate) m_funcs.beforeUpdate.push_back(args.beforeUpdate);
 	if (args.onUpdate) m_funcs.onUpdate.push_back(args.onUpdate);
 	if (args.afterUpdate) m_funcs.afterUpdate.push_back(args.afterUpdate);
 	if (args.onLayout) m_funcs.onLayout.push_back(args.onLayout);
@@ -30,6 +30,11 @@ Widget::Widget(const Args &args, const Options &options)
 	if (args.beforeDraw) m_funcs.beforeDraw.push_back(args.beforeDraw);
 	if (args.onDraw) m_funcs.onDraw.push_back(args.onDraw);
 	if (args.afterDraw) m_funcs.afterDraw.push_back(args.afterDraw);
+	widgetCount++;
+}
+
+Widget::~Widget() {
+	widgetCount--;
 }
 
 Widget::Data &Widget::data() {
@@ -69,15 +74,6 @@ void Widget::addChild(const Child &child) {
 }
 
 void Widget::update() {
-	for (auto &func: m_funcs.beforeUpdate) {
-		if (func) func(*this);
-	}
-
-	// Update the GestureDetector
-	// TODO: This will be executed even if the Widget does not need the input
-	// 	     Should somehow check if the Widget will need the input in the update
-	m_data.gestureDetector.update();
-
 	// On update
 	for (auto &func: m_funcs.onUpdate) {
 		if (func) func(*this);
@@ -112,23 +108,24 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		maxSize.y = *constraints.maxHeight;
 	}
 
-	if (m_data.sizeMode.width.index() == 0) {
-		maxSize.x = std::min(maxSize.x, std::get<0>(m_data.sizeMode.width));
-	}
-	if (m_data.sizeMode.height.index() == 0) {
-		maxSize.y = std::min(maxSize.y, std::get<0>(m_data.sizeMode.height));
-	}
 
 	vec2 minSize{
 		std::min(0.0f, maxSize.x),
 		std::min(0.0f, maxSize.y),
 	};
+	
 	for (auto &func: m_funcs.onLayout) {
 		if (func) func(*this, maxSize, minSize);
 	}
 	onLayout(maxSize, minSize);
 	if (shouldHandleLayout) {
-		const vec2 childMaxSize = maxSize - m_data.padding.getSizeOffset();
+		vec2 childMaxSize = maxSize - m_data.padding.getSizeOffset();
+		if (m_data.sizeMode.width.index() == 0) {
+			childMaxSize.x = std::min(childMaxSize.x, std::get<0>(m_data.sizeMode.width));
+		}
+		if (m_data.sizeMode.height.index() == 0) {
+			childMaxSize.y = std::min(childMaxSize.y, std::get<0>(m_data.sizeMode.height));
+		}
 
 		for (auto &child: children) {
 			const auto size = child->layout(childMaxSize);
@@ -193,6 +190,7 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 }
 
 void Widget::arrange(vec2 pos) {
+	if (!m_data.visible) return;
 	for (auto &onArrange: m_funcs.onArrange) {
 		if (onArrange) onArrange(*this, pos);
 	}

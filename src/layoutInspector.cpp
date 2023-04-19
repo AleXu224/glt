@@ -87,6 +87,9 @@ LayoutInspector::operator Child() const {
 			.widget{
 				.width = 400.f,
 				.height = 400.f,
+				.onLayout = [](auto &, auto &, auto &) {
+					1;
+				},
 			},
 			.color{Color::HEX(0x202020CC)},
 			.borderColor{Color::HEX(0x75757566)},

@@ -1,10 +1,11 @@
+#include "gestureDetector.hpp"
 #define NOMINMAX
-#include "textInput.hpp"
 #include "box.hpp"
 #include "cstdint"
 #include "fontStore.hpp"
 #include "renderer.hpp"
 #include "text.hpp"
+#include "textInput.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
 #include "window.hpp"
@@ -13,6 +14,7 @@
 #include <limits>
 #include <optional>
 #include <stdint.h>
+
 
 
 using namespace squi;
@@ -51,8 +53,8 @@ TextInput::Impl::Impl(const TextInput &args)
 
 // TODO: Fix the horrible performance of this
 void TextInput::Impl::onUpdate() {
-	auto &widgetData = data();
-	auto &gd = widgetData.gestureDetector;
+	if (!gd) return;
+	auto &gd = *this->gd;
 	if (!gd.active) return;
 
 	auto &children = getChildren();
@@ -322,7 +324,7 @@ void TextInput::Impl::onUpdate() {
 
 void TextInput::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 	auto &children = getChildren();
-	for (auto &child : children) {
+	for (auto &child: children) {
 		child->layout(maxSize.withX(std::numeric_limits<float>::max()));
 	}
 }
@@ -343,7 +345,7 @@ void TextInput::Impl::onArrange(vec2 &pos) {
 		selectionWidget.data().visible = false;
 		selectedTextWidget.data().visible = false;
 	}
-	cursorWidget.data().visible = widgetData.gestureDetector.active;
+	cursorWidget.data().visible = gd->active;
 
 	const auto contentPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
 
@@ -369,4 +371,11 @@ void TextInput::Impl::onDraw() {
 	cursorWidget.draw();
 
 	renderer.popClipRect();
+}
+TextInput::operator Child() const {
+	return Child{std::make_shared<Impl>(*this)};
+}
+
+void squi::TextInput::Impl::setActive(bool active) {
+	gd->active = active;
 }

@@ -1,3 +1,4 @@
+#include "gestureDetector.hpp"
 #define NOMINMAX
 #include "scrollbar.hpp"
 #include <algorithm>
@@ -13,8 +14,7 @@ Scrollbar::operator Child() const {
 	newWidget.width = 16.0f;
 	newWidget.padding = 3;
 	newWidget.onUpdate = [storage](Widget &widget) {
-		auto &data = widget.data();
-		auto &gd = data.gestureDetector;
+		auto &gd = *storage->gd;
 		const auto currentTime = std::chrono::steady_clock::now();
 		if (gd.hovered || gd.focused) {
 			storage->lastHoverTime = std::chrono::steady_clock::now();
@@ -37,23 +37,21 @@ Scrollbar::operator Child() const {
 		data.visible = contentHeight > viewHeight;
 	};
 
-	return Child(Box{
-		.widget{std::move(newWidget)},
-		.color{Color::HEX(0xFFFFFF0F)},
+	return GestureDetector{
+		.onPress = [storage](auto &w, auto &gd) { storage->scrollDragStart = storage->scroll; },
+		.getState = [storage](auto &w, auto newGd) { storage->gd = newGd; },
 		.child{
 			Box{
-				.widget{
-					.width = 10.0f,
-					.height = Size::Shrink,
-					.onInit = [storage](Widget &widget) {
-                        auto &data = widget.data();
-
-						data.gestureDetector.onPress = [storage](auto &gd) {
-							storage->scrollDragStart = storage->scroll;
-						}; },
-					.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
+				.widget{std::move(newWidget)},
+				.color{Color::HEX(0xFFFFFF0F)},
+				.child{
+					Box{
+						.widget{
+							.width = 10.0f,
+							.height = Size::Shrink,
+							.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
 						auto &data = widget.data();
-						auto &gestureDetector = data.gestureDetector;
+						auto &gestureDetector = *storage->gd;
 
                         const float contentHeight = data.parent->getContentRect().height() - widget.getSize().y;
 						if (gestureDetector.focused && data.visible) {
@@ -70,7 +68,7 @@ Scrollbar::operator Child() const {
 							data.sizeMode.width = 10.0f;
 							data.margin.left = 0;
 						} },
-					.onLayout = [storage, setScroll = setScroll](Widget &widget, vec2 &maxSize, vec2 &minSize) {
+							.onLayout = [storage, setScroll = setScroll](Widget &widget, vec2 &maxSize, vec2 &minSize) {
 						auto &data = widget.data();
 						if (!data.parent) return;
 						if (setScroll) {
@@ -82,20 +80,20 @@ Scrollbar::operator Child() const {
 							else storage->scroll = scroll / (contentHeight - viewHeight);
 							minSize.y = viewHeight / contentHeight * maxSize.y;
 							minSize.y = std::max(minSize.y, 24.0f);
-						}
-					},
-					.onArrange = [storage](Widget &widget, vec2 &pos) {
+						} },
+							.onArrange = [storage](Widget &widget, vec2 &pos) {
 						auto &data = widget.data();
 						if (!data.parent) return;
 
 						const auto maxOffset = data.parent->getContentSize() - widget.getLayoutSize();
 
-						pos.y += maxOffset.y * storage->scroll; 
+						pos.y += maxOffset.y * storage->scroll; },
+						},
+						.color{Color::HEX(0xFFFFFF8B)},
+						.borderRadius = 2,
 					},
 				},
-				.color{Color::HEX(0xFFFFFF8B)},
-				.borderRadius = 2,
 			},
 		},
-	});
+	};
 }

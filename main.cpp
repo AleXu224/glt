@@ -5,6 +5,7 @@
 #include "color.hpp"
 #include "column.hpp"
 #include "fontStore.hpp"
+#include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
 #include "performanceOverlay.hpp"
 #include "random"
@@ -448,7 +449,7 @@ int main(int, char **) {
 				std::vector<Child> widgets;
 				widgets.push_back(Button{
 					.margin{16},
-					.text{"Some test button with a lot of text"},
+					.text{"Some test button with a lot of text. Did I mention that it has a lot of text?"},
 					.style = ButtonStyle::Standard(),
 					.onClick = []() {
 						printf("Button clicked\n");
@@ -473,46 +474,36 @@ int main(int, char **) {
 						.height = 100.f,
 					},
 					.children{
-						Box{
-							.widget{
-								.width = 75.f,
-								.height = 75.f,
-								.onInit = [](Widget &widget) {
-									auto &w = (Box::Impl &) widget;
-									auto &gd = widget.data().gestureDetector;
-
-									gd.onEnter = [&w](const auto &) {
-										w.setColor(Color::HEX(0xFF0000FF));
-									};
-									gd.onLeave = [&w](const auto &) {
-										w.setColor(Color::HEX(0x00FFAAFF));
-									};
+						GestureDetector{
+							.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
+							.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0x00FFAAFF)); },
+							.child{
+								Box{
+									.widget{
+										.width = 75.f,
+										.height = 75.f,
+									},
+									.color{Color::HEX(0x00FFAAFF)},
 								},
 							},
-							.color{Color::HEX(0x00FFAAFF)},
 						},
-						Box{
-							.widget{
-								.width = 75.f,
-								.height = 75.f,
-								.margin{25, 0, 0, 25},
-								.onInit = [](Widget &widget) {
-									auto &w = (Box::Impl &) widget;
-									auto &gd = widget.data().gestureDetector;
-
-									gd.onEnter = [&w](const auto &) {
-										w.setColor(Color::HEX(0xFF0000FF));
-									};
-									gd.onLeave = [&w](const auto &) {
-										w.setColor(Color::HEX(0xFF00AAFF));
-									};
+						GestureDetector{
+							.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
+							.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF00AAFF)); },
+							.child{
+								Box{
+									.widget{
+										.width = 75.f,
+										.height = 75.f,
+										.margin{25, 0, 0, 25},
+									},
+									.color{Color::HEX(0xFF00AAFF)},
 								},
 							},
-							.color{Color::HEX(0xFF00AAFF)},
 						},
 					},
 				});
-				for (int i = 0; i < 100; ++i) {
+				for (int i = 0; i < 1000; ++i) {
 					widgets.push_back(Box{
 						.widget{
 							.width = 100.f,
@@ -526,7 +517,7 @@ int main(int, char **) {
 		},
 	});
 	window.addChild(PerformanceOverlay{});
-	window.addChild(LayoutInspector{.window = &window});
+	// window.addChild(LayoutInspector{.window = &window});
 	window.run();
 	return 0;
 }

@@ -4,7 +4,7 @@
 
 using namespace squi;
 
-vec2 GestureDetector::lastCursorPos{0};
+vec2 GestureDetector::lastCursorPos{};
 vec2 GestureDetector::mouseDelta{0};
 
 vec2 GestureDetector::g_cursorPos{0};
@@ -35,9 +35,9 @@ bool GestureDetector::isKeyPressedOrRepeat(int key, int mods) {
 	return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
 }
 
-void GestureDetector::update() {
+void GestureDetector::Storage::update(Widget &widget) {
 	bool cursorInsideAnotherWidget = false;
-	const bool cursorInsideWidget = parent->getRect().contains(g_cursorPos);
+	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
 	if (cursorInsideWidget) {
 		for (auto &widgetRect : g_hitCheckRects) {
 			if (widgetRect.contains(g_cursorPos)) {
@@ -50,20 +50,20 @@ void GestureDetector::update() {
 	if (g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget) {
 		scrollDelta = g_scrollDelta;
 
-		if (!hovered && onEnter) onEnter(*this);
+		if (!hovered && onEnter) onEnter(widget, *this);
 		hovered = true;
 
 		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !focusedOutside) {
 			if (!focused) {
 				dragStart = g_cursorPos;
-				if (onPress) onPress(*this);
+				if (onPress) onPress(widget, *this);
 			}
 			focused = true;
 			active = true;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
 			if (focused && !focusedOutside) {
-				if (onClick) onClick(*this);
-				if (onRelease) onRelease(*this);
+				if (onClick) onClick(widget, *this);
+				if (onRelease) onRelease(widget, *this);
 			}
 			focused = false;
 			focusedOutside = false;
@@ -71,7 +71,7 @@ void GestureDetector::update() {
 	} else {
 		scrollDelta = vec2{0};
 
-		if (hovered && onLeave) onLeave(*this);
+		if (hovered && onLeave) onLeave(widget, *this);
 		hovered = false;
 
 		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !focused) {
@@ -83,7 +83,7 @@ void GestureDetector::update() {
 		}
 	}
 
-	if (active && onDrag) onDrag(*this);
+	if (active && onDrag) onDrag(widget, *this);
 	if (active) charInput = g_textInput;
 	else charInput = 0;
 }
@@ -96,20 +96,60 @@ vec2 GestureDetector::getMouseDelta() {
 	return g_cursorPos - lastCursorPos;
 }
 
-const vec2 &GestureDetector::getScroll() const {
+const vec2 &GestureDetector::Storage::getScroll() const {
 	return scrollDelta;
 }
 
-vec2 GestureDetector::getDragDelta() const {
+vec2 GestureDetector::Storage::getDragDelta() const {
 	if (!focused || g_cursorPos == dragStart) return vec2{0};
 	return mouseDelta;
 }
 
-vec2 GestureDetector::getDragOffset() const {
+vec2 GestureDetector::Storage::getDragOffset() const {
 	if (!focused) return vec2{0};
 	return g_cursorPos - dragStart;
 }
 
-const vec2 &GestureDetector::getDragStartPos() const {
+const vec2 &GestureDetector::Storage::getDragStartPos() const {
 	return dragStart;
+}
+
+squi::GestureDetector::operator Child() const {
+	auto storage = std::make_shared<Storage>(Storage{
+		.onEnter = onEnter,
+		.onLeave = onLeave,
+		.onClick = onClick,
+		.onPress = onPress,
+		.onRelease = onRelease,
+		.onDrag = onDrag,
+		.onUpdate = onUpdate,
+	});
+	if (getState) getState(*static_cast<std::shared_ptr<Widget>>(child), storage);
+	auto &childFuncs = child->funcs();
+	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [storage](Widget &widget) {
+		storage->update(widget);
+		if (storage->onUpdate) storage->onUpdate(widget, *storage);
+	});
+	
+	return child;
+}
+
+std::shared_ptr<GestureDetector::Storage> squi::GestureDetector::initializeFor(Widget &widget) const {
+	auto storage = std::make_shared<Storage>(Storage{
+		.onEnter = onEnter,
+		.onLeave = onLeave,
+		.onClick = onClick,
+		.onPress = onPress,
+		.onRelease = onRelease,
+		.onDrag = onDrag,
+		.onUpdate = onUpdate,
+	});
+	if (getState) getState(widget, storage);
+	auto &childFuncs = widget.funcs();
+	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [storage](Widget &widget) {
+		storage->update(widget);
+		if (storage->onUpdate) storage->onUpdate(widget, *storage);
+	});
+
+	return storage;
 }

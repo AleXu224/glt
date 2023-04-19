@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "fontStore.hpp"
 #include "texture.hpp"
 
@@ -188,6 +189,7 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text,
 
 	std::vector<std::vector<Quad>> quads{};
 	quads.resize(1, std::vector<Quad>{});
+	int32_t biggestWidth = 0;
 	int32_t cursorX = 0;
 	int32_t cursorY = 0;
 	if (!fonts.contains(fontPath)) {
@@ -245,6 +247,7 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text,
 			});
 
 		cursorX += charInfo.advance;
+		biggestWidth = std::max(biggestWidth, cursorX);
 		cursorY = savedY;
 
 		previousChar = &text.at(charIter - text.begin());
@@ -261,7 +264,7 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text,
 
 	font.updateTexture();
 
-	return {quads, cursorX, cursorY + (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6)};
+	return {quads, biggestWidth, cursorY + (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6)};
 }
 
 void FontStore::Font::updateTexture() {
