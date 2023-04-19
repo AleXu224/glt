@@ -3,7 +3,6 @@
 #include "box.hpp"
 #include "column.hpp"
 #include "scrollableFrame.hpp"
-#include "sizeBehavior.hpp"
 #include "text.hpp"
 #include "window.hpp"
 
@@ -22,20 +21,15 @@ struct LayoutItem {
 
 		return Column{
 			.widget{
-				.sizeBehavior{
-					.horizontal = SizeBehaviorType::FillParent,
-					.vertical = SizeBehaviorType::MatchChild,
-				},
+				.height = Size::Shrink,
 			},
 			.children{
 				Box{
 					.widget{
-						.size{32},
+						.width = Size::Expand,
+						.height = 32.f,
 						.margin{2},
 						.padding{0, 0, 0, 4},
-						.sizeBehavior{
-							.horizontal = SizeBehaviorType::FillParent,
-						},
 					},
 					.color{Color::HEX(0xFFFFFF0D)},
 					.borderColor{Color::HEX(0x0000001A)},
@@ -52,28 +46,34 @@ struct LayoutItem {
 						},
 					},
 				},
-				Column{
-					.widget{
-						.margin{0, 0, 0, 4},
-						.sizeBehavior{
-							.horizontal = SizeBehaviorType::FillParent,
-							.vertical = SizeBehaviorType::MatchChild,
+				[&]() {
+					auto &children = widget.getChildren();
+
+					if (children.empty()) {
+						return Child{};
+					}
+
+					return Child(Column{
+						.widget{
+							.height = Size::Shrink,
+							.margin{0, 0, 0, 4},
 						},
-					},
-					.children{
-						[&]() {
-							auto &children = widget.getChildren();
+						.children{
+							[&]() {
+								auto &children = widget.getChildren();
 
-							std::vector<Child> result{};
-							result.reserve(children.size());
+								std::vector<Child> result{};
+								result.reserve(children.size());
 
-							for (auto &child: children) {
-								result.push_back(LayoutItem{*child});
-							}
+								for (auto &child: children) {
+									result.push_back(LayoutItem{*child});
+								}
 
-							return Children(result);
-						}()},
-				},
+								return Children(result);
+							}(),
+						},
+					});
+				}(),
 			},
 		};
 	}
@@ -85,7 +85,8 @@ LayoutInspector::operator Child() const {
 	return Align{
 		.child = Box{
 			.widget{
-				.size{400, 400},
+				.width = 400.f,
+				.height = 400.f,
 			},
 			.color{Color::HEX(0x202020CC)},
 			.borderColor{Color::HEX(0x75757566)},
@@ -93,12 +94,6 @@ LayoutInspector::operator Child() const {
 			.borderRadius = 8.0f,
 			.child{
 				ScrollableFrame{
-					.widget{
-						.sizeBehavior{
-							.horizontal = SizeBehaviorType::FillParent,
-							.vertical = SizeBehaviorType::FillParent,
-						},
-					},
 					.children{
 						[window = window]() {
 							// auto &w = (Window&)*window;

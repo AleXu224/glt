@@ -9,7 +9,7 @@ Box::Impl::Impl(const Box &args)
 							  .isInteractive = true,
 						  }),
 	  quad(Quad::Args{
-		  .size = args.widget.size,
+		  .size = vec2(args.widget.width.index() == 0 ? std::get<float>(args.widget.width) : 0, args.widget.height.index() == 0 ? std::get<float>(args.widget.height) : 0),
 		  .color = args.color,
 		  .borderColor = args.borderPosition == BorderPosition::inset ? args.borderColor.mix(args.color) : args.borderColor,
 		  .borderRadius = args.borderRadius,
@@ -21,25 +21,26 @@ Box::Impl::Impl(const Box &args)
 }
 
 void Box::Impl::onDraw() {
-	auto &data = this->data();
-	quad.setPos(data.pos + data.margin.getPositionOffset());
-	quad.setSize(data.size);
-
 	auto &renderer = Renderer::getInstance();
 	renderer.addQuad(quad);
 	if (shouldClipContent)
 		renderer.addClipRect(getRect(), quad.getData().borderRadius);
 
-	const auto childPos = data.pos + data.margin.getPositionOffset() + data.padding.getPositionOffset();
 	auto &children = getChildren();
 	for (auto &child: children) {
-		auto &childData = child->data();
-		childData.pos = childPos;
 		child->draw();
 	}
 
 	if (shouldClipContent)
 		renderer.popClipRect();
+}
+
+void Box::Impl::postLayout(vec2 size) {
+	quad.setSize(size);
+}
+
+void Box::Impl::postArrange(vec2 pos) {
+	quad.setPos(pos + data().margin.getPositionOffset());
 }
 
 void Box::Impl::setColor(const Color &color) {

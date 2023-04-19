@@ -50,7 +50,7 @@ bool FontStore::Font::generateTexture(unsigned char *character, std::unordered_m
 	}
 
 	// Load the character
-	if (FT_Load_Glyph(face, FT_Get_Char_Index(face, codepoint), 0)) {
+	if (FT_Load_Glyph(face, FT_Get_Char_Index(face, codepoint), FT_LOAD_RENDER)) {
 		printf("Failed to load glyph: %c (%d)\n", codepoint, codepoint);
 		return false;
 	}
@@ -168,7 +168,16 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSize(std::string_view text, std
 	return {width, (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6)};
 }
 
-std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
+std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text, std::string_view fontPath, float size) {
+	if (!fonts.contains(fontPath)) {
+		fonts.insert({fontPath, Font(fontPath)});
+	}
+	auto &font = fonts.at(fontPath);
+	FT_Set_Pixel_Sizes(font.face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
+	return getTextSize(text, fontPath, size);
+}
+
+	std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
 	[[__maybe_unused__]] static auto _ = []() {
 		if (FT_Init_FreeType(&ftLibrary)) {
 			printf("Failed to initialize FreeType\n");

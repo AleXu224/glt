@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "textInput.hpp"
 #include "box.hpp"
 #include "cstdint"
@@ -9,6 +10,7 @@
 #include "window.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <limits>
 #include <optional>
 #include <stdint.h>
 
@@ -18,6 +20,8 @@ using namespace squi;
 TextInput::Impl::Impl(const TextInput &args)
 	: Widget(args.widget, Widget::Options{
 							  .shouldDrawChildren = false,
+							  .shouldHandleLayout = false,
+							  .shouldArrangeChildren = false,
 						  }) {
 	addChild(Text{
 		.text{""},
@@ -27,11 +31,6 @@ TextInput::Impl::Impl(const TextInput &args)
 	});
 	// Selection
 	addChild(Box{
-		.widget{
-			.sizeBehavior{
-				.vertical = SizeBehaviorType::FillParent,
-			},
-		},
 		.color{Color::HEX(0x0078D4FF)},
 	});
 	// Selected text
@@ -44,10 +43,7 @@ TextInput::Impl::Impl(const TextInput &args)
 	// Cursor
 	addChild(Box{
 		.widget{
-			.size{2},
-			.sizeBehavior{
-				.vertical = SizeBehaviorType::FillParent,
-			},
+			.width = 2.f,
 		},
 		.color{Color::HEX(0xFFFFFFFF)},
 	});
@@ -301,9 +297,9 @@ void TextInput::Impl::onUpdate() {
 	}
 
 	// Check if there is empty non whitespace space on the right of the text
-	const auto &textData = text.data();
-	if (scroll + contentWidth > textData.size.x) {
-		scroll = textData.size.x - contentWidth;
+	const auto &textSize = text.getSize();
+	if (scroll + contentWidth > textSize.x) {
+		scroll = textSize.x - contentWidth;
 		scroll = scroll < 0 ? 0 : scroll;
 	}
 
@@ -315,14 +311,49 @@ void TextInput::Impl::onUpdate() {
 			const auto [width, height] = text.getTextSize(newValue.substr(0, start));
 			startToSelection = static_cast<float>(width);
 			const auto [width2, height2] = text.getTextSize(newValue.substr(start, end - start));
-			selectionStartToSelectionEnd = static_cast<float>(width2);
 			selectedText.setText(newValue.substr(start, end - start));
+
+			// Update selection size
+			auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
+			selectionWidget.data().sizeMode.width = static_cast<float>(width2);
 		}
 	}
 }
 
-void TextInput::Impl::onDraw() {
+void TextInput::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
+	auto &children = getChildren();
+	for (auto &child : children) {
+		child->layout(maxSize.withX(std::numeric_limits<float>::max()));
+	}
+}
+
+void TextInput::Impl::onArrange(vec2 &pos) {
 	auto &widgetData = data();
+	auto &children = getChildren();
+	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
+	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
+	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
+	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
+
+
+	if (selectionStart.has_value()) {
+		selectionWidget.data().visible = true;
+		selectedTextWidget.data().visible = true;
+	} else {
+		selectionWidget.data().visible = false;
+		selectedTextWidget.data().visible = false;
+	}
+	cursorWidget.data().visible = widgetData.gestureDetector.active;
+
+	const auto contentPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
+
+	textWidget.arrange(contentPos);
+	selectionWidget.arrange(contentPos.withXOffset(startToSelection));
+	selectedTextWidget.arrange(contentPos.withXOffset(startToSelection));
+	cursorWidget.arrange(contentPos.withXOffset(startToCursor));
+}
+
+void TextInput::Impl::onDraw() {
 	auto &children = getChildren();
 	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
 	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
@@ -331,26 +362,6 @@ void TextInput::Impl::onDraw() {
 
 	auto &renderer = Renderer::getInstance();
 	renderer.addClipRect(getRect());
-
-	const auto &pos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
-
-	if (selectionStart.has_value()) {
-		auto &selectionData = selectionWidget.data();
-		selectionData.pos = pos.withXOffset(startToSelection);
-		selectionData.size.x = selectionStartToSelectionEnd;
-		selectionData.visible = true;
-
-		auto &selectedTextData = selectedTextWidget.data();
-		selectedTextData.pos = pos.withXOffset(startToSelection);
-		selectedTextData.visible = true;
-	} else {
-		selectionWidget.data().visible = false;
-		selectedTextWidget.data().visible = false;
-	}
-
-	textWidget.data().pos = pos;
-	cursorWidget.data().pos = pos.withXOffset(startToCursor);
-	cursorWidget.data().visible = widgetData.gestureDetector.active;
 
 	textWidget.draw();
 	selectionWidget.draw();

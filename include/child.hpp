@@ -2,6 +2,7 @@
 #define GLT_CHILD_HPP
 
 #include <utility>
+#include <xmemory>
 
 #include "memory"
 #include "vector"
@@ -48,16 +49,24 @@ namespace squi {
 	public:
 		Children() = default;
 
-		Children(std::vector<Child> children) : children(std::move(children)) {}
+		Children(std::vector<Child> children) : children(std::move(children)) {
+			children.erase(std::remove_if(children.begin(), children.end(), [](const Child &child) {
+				return !child.hasChild();
+			}), children.end());
+		}
 
 		Children(const std::vector<std::shared_ptr<Widget>>& children) {
 			for (auto &child : children) {
-				this->children.emplace_back(child);
+				if (child) this->children.emplace_back(child);
 			}
 		}
 
 		template<typename... Args>
-		Children(Args... args) : children{args...} {}
+		Children(Args... args) : children{args...} {
+			children.erase(std::remove_if(children.begin(), children.end(), [](const Child &child) {
+				return !child.hasChild();
+			}), children.end());
+		}
 
 		Children& operator=(std::vector<Child> children) {
 			this->children = std::move(children);

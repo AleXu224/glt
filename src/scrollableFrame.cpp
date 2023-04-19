@@ -14,10 +14,8 @@ ScrollableFrame::operator squi::Child() const {
         .children{
             Scrollable{
                 .widget{
-                    .sizeBehavior{
-                        .horizontal = SizeBehaviorType::FillParent,
-                        .vertical = SizeBehaviorType::FillParent,
-                    },
+                    .width = Size::Expand,
+                    .height = Size::Expand,
                 },
                 .onScroll = [storage](auto scroll, auto contentHeight, auto viewHeight) {
                     storage->scroll = scroll;
@@ -35,9 +33,7 @@ ScrollableFrame::operator squi::Child() const {
                 .child{
                     Scrollbar{
                         .widget{
-                            .sizeBehavior{
-                                .vertical = SizeBehaviorType::FillParent,
-                            },
+                            .height = Size::Expand,
                         },
                         .onScroll = [storage](const float &scroll) {
                             storage->scroll = scroll;

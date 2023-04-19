@@ -19,12 +19,10 @@ PerformanceOverlay::operator squi::Child() const {
 		.yAlign = 1,
 		.child = Box{
 			.widget{
+				.width = Size::Shrink,
+				.height = Size::Shrink,
 				.margin{16},
 				.padding{8},
-				.sizeBehavior{
-					.horizontal = SizeBehaviorType::MatchChild,
-					.vertical = SizeBehaviorType::MatchChild,
-				},
 			},
 			.color{Color::HEX(0xFFFFFF0D)},
 			.borderColor{Color::HEX(0x0000001A)},
@@ -34,19 +32,15 @@ PerformanceOverlay::operator squi::Child() const {
 			.child{
 				Column{
 					.widget{
-						.sizeBehavior{
-							.horizontal = SizeBehaviorType::MatchChild,
-							.vertical = SizeBehaviorType::MatchChild,
-						},
+						.width = Size::Shrink,
+						.height = Size::Shrink,
 					},
 					.alignment = Column::Alignment::right,
 					.children = {
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{
@@ -70,10 +64,8 @@ PerformanceOverlay::operator squi::Child() const {
 						},
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{
@@ -95,10 +87,8 @@ PerformanceOverlay::operator squi::Child() const {
 						},
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{
@@ -120,10 +110,8 @@ PerformanceOverlay::operator squi::Child() const {
 						},
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{
@@ -145,10 +133,8 @@ PerformanceOverlay::operator squi::Child() const {
 						},
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{
@@ -170,10 +156,8 @@ PerformanceOverlay::operator squi::Child() const {
 						},
 						Row{
 							.widget{
-								.sizeBehavior{
-									.horizontal = SizeBehaviorType::MatchChild,
-									.vertical = SizeBehaviorType::MatchChild,
-								},
+								.width = Size::Shrink,
+								.height = Size::Shrink,
 							},
 							.children = {
 								Text{

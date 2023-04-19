@@ -9,15 +9,14 @@ Align::operator Child() const {
 	});
 	auto &childFuncs = child->funcs();
 
-	childFuncs.onDraw = [storage, oldOnDraw = childFuncs.onDraw](Widget &widget) {
-		if (oldOnDraw) oldOnDraw(widget);
+	childFuncs.onArrange.emplace_back([storage](Widget &widget, vec2 &pos) {
 		auto &data = widget.data();
 		if (!data.parent) return;
 
-		const auto maxOffset = data.parent->getContentRect().size() - widget.getLayoutRect().size();
+		const auto maxOffset = data.parent->getContentSize() - widget.getLayoutSize();
 
-		data.pos = data.pos + maxOffset * vec2(storage->xAlign, storage->yAlign);
-	};
+		pos += (maxOffset * vec2(storage->xAlign, storage->yAlign)).rounded();
+	});
 
 	return child;
 }

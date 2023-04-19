@@ -26,16 +26,11 @@ namespace squi {
 		public:
 			Impl(const Row &args);
 
-            void matchChildSizeBehavior(bool horizontalHint, bool verticalHint) override;
-
-            void onUpdate() override;
+            void onLayout(vec2 &maxSize, vec2 &minSize) override;
+            void onArrange(vec2 &pos) override;
 
             void onDraw() override;
 		};
-
-		operator std::shared_ptr<Widget>() const {
-			return std::make_shared<Impl>(*this);
-		}
 
 		operator Child() const {
 			return Child(std::make_shared<Impl>(*this));

@@ -19,7 +19,8 @@ TextBox::operator Child() const {
 	return {
 		Box{
 			.widget{
-				.size{160, 32},
+				.width = 160.f,
+				.height = 32.f,
 				.margin{4},
 				.padding{0, 1, 0, 1},
 				.onUpdate = [&, storage](Widget &w){
@@ -67,25 +68,17 @@ TextBox::operator Child() const {
 			.borderRadius = 4.0f,
 			.child{
 				Stack{
-					.widget{
-						.sizeBehavior{
-							.horizontal = SizeBehaviorType::FillParent,
-							.vertical = SizeBehaviorType::FillParent,
-						},
-					},
 					.children{
 						Align{
 							.xAlign = 0.0f,
 							.child{
 								TextInput{
 									.widget{
+										.width = Size::Expand,
 										.padding{0, 11, 0, 11},
-										.sizeBehavior{
-											.horizontal = SizeBehaviorType::FillParent,
-										},
 										.onInit = [font = font](Widget &w) {
 											auto &data = w.data();
-											data.size.y = static_cast<float>(FontStore::getLineHeight(font, 14));
+											data.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14));
 										},
 										// TODO: Add support for text color change
 										.onUpdate = [&, storage](Widget &w) {
@@ -123,10 +116,7 @@ TextBox::operator Child() const {
 							.child{
 								Box{
 									.widget{
-										.size{1},
-										.sizeBehavior{
-											.horizontal = SizeBehaviorType::FillParent,
-										},
+										.height = 1.f,
 										.onUpdate = [&, storage](Widget &w){
 											auto &box = (Box::Impl &)w;
 											auto &widgetData = w.data();
@@ -134,19 +124,19 @@ TextBox::operator Child() const {
 											if (storage->changed) {
 												switch (storage->state) {
 													case Storage::State::rest:
-														widgetData.size.y = 1.0f;
+														widgetData.sizeMode.height = 1.0f;
 														box.setColor(theme.bottomBorder);
 														break;
 													case Storage::State::hover:
-														widgetData.size.y = 1.0f;
+														widgetData.sizeMode.height = 1.0f;
 														box.setColor(theme.bottomBorder);
 														break;
 													case Storage::State::active:
-														widgetData.size.y = 2.0f;
+														widgetData.sizeMode.height = 2.0f;
 														box.setColor(theme.bottomBorderActive);
 														break;
 													case Storage::State::disabled:
-														widgetData.size.y = 0.0f;
+														widgetData.sizeMode.height = 0.0f;
 														box.setColor(theme.bottomBorder);
 														break;
 												}

@@ -24,7 +24,11 @@ void Window::glfwError(int id, const char *description) {
 
 std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
 
-Window::Window() : Widget(Widget::Args{}, Widget::Options{.isInteractive = false}) {
+Window::Window() : Widget(Widget::Args{}, Widget::Options{
+	.shouldHandleLayout = false,
+	.shouldArrangeChildren = false,
+	.isInteractive = false,
+	}) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");
@@ -144,7 +148,8 @@ void Window::updateAndDraw() {
 
 	const auto color = [isWin11 = isWin11]() -> std::array<float, 4> {
 		if (isWin11) return {0.0f, 0.0f, 0.0f, 0.0f};
-		else return {32.f/255.f, 32.f/255.f, 32.f/255.f, 1.0f};
+		else
+			return {32.f / 255.f, 32.f / 255.f, 32.f / 255.f, 1.0f};
 	}();
 	auto *renderTargetView = renderer.getRenderTargetView().get();
 	context->ClearRenderTargetView(renderTargetView, color.data());
@@ -153,7 +158,7 @@ void Window::updateAndDraw() {
 	int width, height;
 	glfwGetWindowSize(window.get(), &width, &height);
 	auto &widgetData = data();
-	widgetData.size = {static_cast<float>(width), static_cast<float>(height)};
+	widgetData.sizeMode = {static_cast<float>(width), static_cast<float>(height)};
 
 	auto currentTime = std::chrono::steady_clock::now();
 	auto deltaTime = currentTime - lastTime;
@@ -162,26 +167,25 @@ void Window::updateAndDraw() {
 		renderer.updateDeltaTime(deltaTime);
 		renderer.updateCurrentFrameTime(currentTime);
 		uint32_t hitChecks = 0;
-		for (auto &overlay : std::views::reverse(overlays)) {
-			overlay->data().pos = {0, 0};
+		layout({static_cast<float>(width), static_cast<float>(height)});
+		arrange({0.0f, 0.0f});
+		for (auto &overlay: std::views::reverse(overlays)) {
 			overlay->data().parent = this;
 			overlay->update();
+			overlay->layout({static_cast<float>(width), static_cast<float>(height)});
+			overlay->arrange({0.0f, 0.0f});
 			auto hitCheck = overlay->getHitcheckRect();
 			if (hitCheck.has_value()) {
 				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
 				hitChecks++;
 			}
 		}
-		
+
 		for (auto &child: std::views::reverse(children)) {
-			child->data().pos = {0, 0};
 			child->data().parent = this;
 			child->update();
-			// TODO: for aligned widgets the position will be overriden by the parent
-			// 		 and the hitcheck will be wrong
-			//       Maybe the position should be a hint instead
-			//       Or maybe adopt a pattern that uses a bounding box instead of a position
-			//       in the layout part
+			child->layout({static_cast<float>(width), static_cast<float>(height)});
+			child->arrange({0.0f, 0.0f});
 			auto hitCheck = child->getHitcheckRect();
 			if (hitCheck.has_value()) {
 				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
@@ -201,6 +205,9 @@ void Window::updateAndDraw() {
 		child->draw();
 	}
 
+	for (auto &overlay: overlays) {
+		overlay->draw();
+	}
 
 	renderer.render();
 	renderer.popClipRect();
@@ -223,5 +230,4 @@ void Window::updateAndDraw() {
 		GestureDetector::g_scrollDelta = 0;
 		GestureDetector::setCursorPos(GestureDetector::g_cursorPos);
 	}
-
 }

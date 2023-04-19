@@ -20,7 +20,7 @@ namespace squi {
             // Data
             float lastX{0};
             float lastY{0};
-            float lastParentWidth{0};
+            float lastAvailableSpace{0};
 			std::string text;
 			float fontSize;
             bool lineWrap;
@@ -31,9 +31,10 @@ namespace squi {
 		public:
             Impl(const Text &args);
 
-            void onUpdate() override;
+            void onLayout(vec2 &maxSize, vec2 &minSize) override;
+            void onArrange(vec2 &pos) override;
 
-            void onDraw() override;
+            void onDraw () override;
 
             void setText(const std::string_view &text);
 

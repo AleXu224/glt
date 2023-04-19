@@ -24,21 +24,16 @@ namespace squi {
             float spacing;
     
         public:
-            Impl(const Column &args);
+            explicit Impl(const Column &args);
 
-            void matchChildSizeBehavior(bool, bool) override;
-
-            void onUpdate() override;
+            void onLayout(vec2 &maxSize, vec2 &minSize) override;
+            void onArrange(vec2 &pos) override;
 
             void onDraw() override;
         };
     
-        operator std::shared_ptr<Widget>() const {
-            return std::make_shared<Impl>(*this);
-        }
-    
         operator Child() const {
-            return Child(std::make_shared<Impl>(*this));
+            return {std::make_shared<Impl>(*this)};
         }
     };
 }

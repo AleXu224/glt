@@ -34,6 +34,9 @@ namespace squi {
 
 			void onDraw() override;
 
+			void postLayout(vec2 size) override;
+			void postArrange(vec2 pos) override;
+
 			void setColor(const Color &color);
 			void setBorderColor(const Color &color);
 			void setBorderWidth(float width);

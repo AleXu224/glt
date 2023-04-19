@@ -36,7 +36,7 @@ namespace squi {
 					FT_Vector kerning;
 					FT_Get_Kerning(face, prevIndex, index, FT_KERNING_DEFAULT, &kerning);
 					this->kerning[prevIndex] = kerning.x >> 6;
-					return kerning.x;
+					return kerning.x >> 6;
 				}
 			};
 		private:
@@ -103,6 +103,7 @@ namespace squi {
 		 * @return std::tuple<uint32_t, uint32_t> 
 		 */
 		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, std::string_view fontPath, float size);
+		static std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, std::string_view fontPath, float size);
 	
 		/**
 		 * @brief Generates a 2d vector of quads for a string of text.

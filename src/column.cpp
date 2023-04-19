@@ -1,28 +1,29 @@
 #include "column.hpp"
 #include "renderer.hpp"
+#include "widget.hpp"
+#include <tuple>
 
 using namespace squi;
 
 Column::Impl::Impl(const Column &args)
-    : Widget(args.widget, Widget::Options{
-        .shouldUpdateChildren = false,
-        .shouldDrawChildren = false,}),
-      alignment(args.alignment),
-      spacing(args.spacing) {
-    setChildren(args.children);
+	: Widget(args.widget, Widget::Options{
+							  .shouldDrawChildren = false,
+							  .shouldHandleLayout = false,
+                              .shouldArrangeChildren = false,
+						  }),
+	  alignment(args.alignment), spacing(args.spacing) {
+	setChildren(args.children);
 }
 
-void Column::Impl::matchChildSizeBehavior(bool horizontalHint, bool verticalHint) {
-    // No-op
-}
-
-void Column::Impl::onUpdate() {
-    auto &children = getChildren();
+void Column::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
+	auto &children = getChildren();
 
     float totalHeight = 0.0f;
     float maxWidth = 0.0f;
     
     std::vector<std::shared_ptr<Widget>> expandedChildren{};
+
+    const vec2 maxChildSize = maxSize + data().padding.getSizeOffset();
 
     for (auto &child: children) {
         if (!child) continue;
@@ -30,17 +31,15 @@ void Column::Impl::onUpdate() {
         auto &childData = child->data();
         childData.parent = this;
 
-        const auto childLayoutRect = child->getLayoutRect();
-
-        if (childData.sizeBehavior.vertical == SizeBehaviorType::FillParent) {
-            expandedChildren.push_back(child);
-        } else {
-            child->update();
-            totalHeight += childLayoutRect.height();
-        }
-        if (childData.sizeBehavior.horizontal != SizeBehaviorType::FillParent) {
-            maxWidth = (std::max)(maxWidth, childLayoutRect.width());
-        }
+		if (childData.sizeMode.height.index() == 1 && std::get<1>(childData.sizeMode.height) == Size::Expand) {
+			expandedChildren.push_back(child);
+		} else {
+            const auto childSize = child->layout(maxChildSize);
+            totalHeight += childSize.y;
+            if (childData.sizeMode.width.index() != 1 || std::get<1>(childData.sizeMode.width) != Size::Expand) {
+                maxWidth = (std::max)(maxWidth, childSize.x);
+            }
+		}
     }
 
     auto &widgetData = data();
@@ -48,56 +47,62 @@ void Column::Impl::onUpdate() {
     float spacingOffset = spacing * static_cast<float>(children.size() - 1);
     spacingOffset = (std::max)(0.0f, spacingOffset);
 
-    const bool horizontalHint = widgetData.sizeHint.x != -1;
-    const bool verticalHint = widgetData.sizeHint.y != -1;
-    if (!horizontalHint && widgetData.sizeBehavior.horizontal == SizeBehaviorType::MatchChild) {
-        widgetData.size.x = maxWidth + widgetData.padding.getSizeOffset().x;
-    }
-    if (!verticalHint && widgetData.sizeBehavior.vertical == SizeBehaviorType::MatchChild && expandedChildren.empty()) {
-        widgetData.size.y = totalHeight + spacingOffset + widgetData.padding.getSizeOffset().y;
-    }
-
     if (!expandedChildren.empty()) {
-        const float expandedHeight = (widgetData.size.y - widgetData.padding.getSizeOffset().y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size());
+        const vec2 maxChildSize = {
+            maxSize.x - widgetData.padding.getSizeOffset().x,
+            (maxSize.y - widgetData.padding.getSizeOffset().y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size()),
+        };
         for (auto &child: expandedChildren) {
             auto &childData = child->data();
-            childData.sizeHint.y = expandedHeight;
-            child->update();
-        }
+			const auto childSize = child->layout(maxChildSize);
+			if (childData.sizeMode.width.index() != 1 || std::get<1>(childData.sizeMode.width) != Size::Expand) {
+				maxWidth = (std::max)(maxWidth, childSize.x);
+			}
+		}
     }
+
+    minSize.x = maxWidth + widgetData.padding.getSizeOffset().x;
+    minSize.y = totalHeight + spacingOffset + widgetData.padding.getSizeOffset().y;
+}
+
+void Column::Impl::onArrange(vec2 &pos) {
+    const auto &widgetData = data();
+	auto &children = getChildren();
+	const auto width = getContentRect().width();
+	auto cursor = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
+    const auto initialX = cursor.x;
+
+	for (auto &child: children) {
+		if (!child) continue;
+
+		switch (alignment) {
+			case Alignment::left:
+				cursor.x = initialX;
+				break;
+			case Alignment::center:
+				cursor.x = initialX + (width - child->getLayoutSize().x) / 2.0f;
+				break;
+			case Alignment::right:
+				cursor.x = initialX + width - child->getLayoutSize().x;
+				break;
+		}
+
+		child->arrange(cursor);
+		cursor.y += child->getLayoutSize().y + spacing;
+	}
 }
 
 void Column::Impl::onDraw() {
-    auto &widgetData = data();
-
     auto &children = getChildren();
-    float cursor = 0.0f;
-    const auto width = getContentRect().width();
-    const auto childPos = widgetData.pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
 
     const Rect &clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
     for (auto &child: children) {
         if (!child) continue;
-        auto &childData = child->data();
-        childData.pos.y = childPos.y + cursor;
-        if (childData.pos.y > clipRect.bottom) break;
+        if (child->getPos().y > clipRect.bottom) break;
 
-        switch (alignment) {
-            case Alignment::left:
-                childData.pos.x = childPos.x;
-                break;
-            case Alignment::center:
-                childData.pos.x = childPos.x + (width - child->getLayoutRect().width()) / 2.0f;
-                break;
-            case Alignment::right:
-                childData.pos.x = childPos.x + width - child->getLayoutRect().width();
-                break;
-        }
-
-        const float childHeight = child->getLayoutRect().height();
-        cursor += childHeight + spacing;
-        if (childData.pos.y + childHeight < clipRect.top) continue;
+        const float childHeight = child->getLayoutSize().y;
+        if (child->getPos().y + childHeight < clipRect.top) continue;
         child->draw();
     }
 }

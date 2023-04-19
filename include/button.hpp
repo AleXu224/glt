@@ -44,12 +44,13 @@ namespace squi {
 
 	struct Button {
 		// Args
-		vec2 size{};
+		std::variant<float, Size> width = Size::Shrink;
+		std::variant<float, Size> height = Size::Shrink;
 		Margin margin{};
 		Margin padding = {6, 12, 6, 12};
-		SizeBehavior sizeBehavior{
-			.horizontal = SizeBehaviorType::MatchChild,
-			.vertical = SizeBehaviorType::MatchChild,
+		SizeConstraints sizeConstraints{
+			.minWidth = 32.0f,
+			.minHeight = 32.0f,
 		};
 		std::string_view text{"Button"};
 		ButtonStyle style{};

@@ -19,7 +19,6 @@ namespace squi {
             uint32_t cursor{};
             float startToCursor{};
             float startToSelection{};
-            float selectionStartToSelectionEnd{};
             float scroll{};
             std::optional<uint32_t> selectionStart{};
     
@@ -27,6 +26,8 @@ namespace squi {
             explicit Impl(const TextInput &args);
 
             void onUpdate() override;
+            void onLayout(vec2 &maxSize, vec2 &minSize) override;
+            void onArrange(vec2 &pos) override;
 
             void onDraw() override;
         };

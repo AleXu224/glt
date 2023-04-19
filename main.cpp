@@ -443,15 +443,12 @@ int main(int, char **) {
 	// 	},
 	// });
 	window.addChild(ScrollableFrame{
-		.widget{
-			.sizeBehavior{.horizontal = SizeBehaviorType::FillParent, .vertical = SizeBehaviorType::FillParent},
-		},
 		.children{
 			[&color, &rng]() {
 				std::vector<Child> widgets;
 				widgets.push_back(Button{
 					.margin{16},
-					.text{"Some test button"},
+					.text{"Some test button with a lot of text"},
 					.style = ButtonStyle::Standard(),
 					.onClick = []() {
 						printf("Button clicked\n");
@@ -459,11 +456,12 @@ int main(int, char **) {
 				});
 				widgets.push_back(TextInput{
 					.widget{
-						.size{100, 100},
+						.width = 100.f,
+						.height = 100.f,
 						.margin{4},
 						.onInit = [](Widget &w) {
 							auto &data = w.data();
-							data.size.y = FontStore::getLineHeight(R"(C:\Windows\Fonts\arial.ttf)", 14);
+							data.sizeMode.height = static_cast<float>(FontStore::getLineHeight(R"(C:\Windows\Fonts\arial.ttf)", 14));
 						},
 					},
 				});
@@ -471,12 +469,14 @@ int main(int, char **) {
 
 				widgets.push_back(Stack{
 					.widget{
-						.size{100, 100},
+						.width = 100.f,
+						.height = 100.f,
 					},
 					.children{
 						Box{
 							.widget{
-								.size{75, 75},
+								.width = 75.f,
+								.height = 75.f,
 								.onInit = [](Widget &widget) {
 									auto &w = (Box::Impl &) widget;
 									auto &gd = widget.data().gestureDetector;
@@ -493,7 +493,8 @@ int main(int, char **) {
 						},
 						Box{
 							.widget{
-								.size{75, 75},
+								.width = 75.f,
+								.height = 75.f,
 								.margin{25, 0, 0, 25},
 								.onInit = [](Widget &widget) {
 									auto &w = (Box::Impl &) widget;
@@ -514,7 +515,8 @@ int main(int, char **) {
 				for (int i = 0; i < 100; ++i) {
 					widgets.push_back(Box{
 						.widget{
-							.size{100, 100},
+							.width = 100.f,
+							.height = 100.f,
 						},
 						.color = Color::RGBA(color(rng), color(rng), color(rng), 1.0f),
 					});

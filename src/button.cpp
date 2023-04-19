@@ -3,6 +3,7 @@
 #include "box.hpp"
 #include "memory"
 #include "text.hpp"
+#include <debugapi.h>
 #include <iterator>
 
 using namespace squi;
@@ -22,10 +23,11 @@ Button::operator squi::Child() const {
 
 	return Box{
 		.widget{
-			.size = size,
+			.width = width,
+			.height = height,
+			.sizeConstraints = sizeConstraints,
 			.margin = margin,
 			.padding = padding,
-			.sizeBehavior = sizeBehavior,
 			.onInit = [storage, onClick = onClick](Widget &widget) {
 				auto &gd = widget.data().gestureDetector;
 				gd.onClick = [storage, onClick = onClick](auto &gd) {
@@ -63,6 +65,8 @@ Button::operator squi::Child() const {
 			.child{
 				Text{
 					.text{std::string(text)},
+					// TODO: Make this work
+					.lineWrap = true,
 					.color{style.textColor},
 				},
 			},
