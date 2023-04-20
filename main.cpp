@@ -4,6 +4,7 @@
 #include "child.hpp"
 #include "color.hpp"
 #include "column.hpp"
+#include "contextMenu.hpp"
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
@@ -443,81 +444,82 @@ int main(int, char **) {
 	// 		},
 	// 	},
 	// });
-	window.addChild(ScrollableFrame{
-		.children{
-			[&color, &rng]() {
-				std::vector<Child> widgets;
-				widgets.push_back(Button{
-					.margin{16},
-					.text{"Some test button with a lot of text. Did I mention that it has a lot of text?"},
-					.style = ButtonStyle::Standard(),
-					.onClick = []() {
-						printf("Button clicked\n");
-					},
-				});
-				widgets.push_back(TextInput{
-					.widget{
-						.width = 100.f,
-						.height = 100.f,
-						.margin{4},
-						.onInit = [](Widget &w) {
-							auto &data = w.data();
-							data.sizeMode.height = static_cast<float>(FontStore::getLineHeight(R"(C:\Windows\Fonts\arial.ttf)", 14));
-						},
-					},
-				});
-				widgets.push_back(TextBox{});
+	// window.addChild(ScrollableFrame{
+	// 	.children{
+	// 		[&color, &rng]() {
+	// 			std::vector<Child> widgets;
+	// 			widgets.push_back(Button{
+	// 				.margin{16},
+	// 				.text{"Some test button with a lot of text. Did I mention that it has a lot of text?"},
+	// 				.style = ButtonStyle::Standard(),
+	// 				.onClick = []() {
+	// 					printf("Button clicked\n");
+	// 				},
+	// 			});
+	// 			widgets.push_back(TextInput{
+	// 				.widget{
+	// 					.width = 100.f,
+	// 					.height = 100.f,
+	// 					.margin{4},
+	// 					.onInit = [](Widget &w) {
+	// 						auto &data = w.data();
+	// 						data.sizeMode.height = static_cast<float>(FontStore::getLineHeight(R"(C:\Windows\Fonts\arial.ttf)", 14));
+	// 					},
+	// 				},
+	// 			});
+	// 			widgets.push_back(TextBox{});
 
-				widgets.push_back(Stack{
-					.widget{
-						.width = 100.f,
-						.height = 100.f,
-					},
-					.children{
-						GestureDetector{
-							.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
-							.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0x00FFAAFF)); },
-							.child{
-								Box{
-									.widget{
-										.width = 75.f,
-										.height = 75.f,
-									},
-									.color{Color::HEX(0x00FFAAFF)},
-								},
-							},
-						},
-						GestureDetector{
-							.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
-							.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF00AAFF)); },
-							.child{
-								Box{
-									.widget{
-										.width = 75.f,
-										.height = 75.f,
-										.margin{25, 0, 0, 25},
-									},
-									.color{Color::HEX(0xFF00AAFF)},
-								},
-							},
-						},
-					},
-				});
-				for (int i = 0; i < 1000; ++i) {
-					widgets.push_back(Box{
-						.widget{
-							.width = 100.f,
-							.height = 100.f,
-						},
-						.color = Color::RGBA(color(rng), color(rng), color(rng), 1.0f),
-					});
-				}
-				return widgets;
-			}(),
-		},
-	});
-	window.addChild(PerformanceOverlay{});
+	// 			widgets.push_back(Stack{
+	// 				.widget{
+	// 					.width = 100.f,
+	// 					.height = 100.f,
+	// 				},
+	// 				.children{
+	// 					GestureDetector{
+	// 						.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
+	// 						.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0x00FFAAFF)); },
+	// 						.child{
+	// 							Box{
+	// 								.widget{
+	// 									.width = 75.f,
+	// 									.height = 75.f,
+	// 								},
+	// 								.color{Color::HEX(0x00FFAAFF)},
+	// 							},
+	// 						},
+	// 					},
+	// 					GestureDetector{
+	// 						.onEnter = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF0000FF)); },
+	// 						.onLeave = [](auto &w, auto &gd) { ((Box::Impl &) w).setColor(Color::HEX(0xFF00AAFF)); },
+	// 						.child{
+	// 							Box{
+	// 								.widget{
+	// 									.width = 75.f,
+	// 									.height = 75.f,
+	// 									.margin{25, 0, 0, 25},
+	// 								},
+	// 								.color{Color::HEX(0xFF00AAFF)},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			});
+	// 			for (int i = 0; i < 1000; ++i) {
+	// 				widgets.push_back(Box{
+	// 					.widget{
+	// 						.width = 100.f,
+	// 						.height = 100.f,
+	// 					},
+	// 					.color = Color::RGBA(color(rng), color(rng), color(rng), 1.0f),
+	// 				});
+	// 			}
+	// 			return widgets;
+	// 		}(),
+	// 	},
+	// });
+	// window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
+	window.addChild(ContextMenu{});
 	window.run();
 	return 0;
 }
