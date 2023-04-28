@@ -519,7 +519,22 @@ int main(int, char **) {
 	// });
 	// window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
-	window.addChild(ContextMenu{});
+	window.addChild(ContextMenu{
+		.items{
+			ContextMenuItem{
+				.text{"Item 1"},
+			},
+			ContextMenuItem{
+				.text{"Item 2"},
+			},
+			ContextMenuItem{
+				.text{"Item 33"},
+			},
+			ContextMenuItem{
+				.text{"Item 444"},
+			},
+		},
+	});
 	window.run();
 	return 0;
 }
