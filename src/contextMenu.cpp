@@ -5,6 +5,7 @@
 #include "gestureDetector.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include <numeric>
 
 using namespace squi;
 
@@ -66,6 +67,9 @@ ContextMenu::operator Child() const {
 					Column{
 						.widget{
 							.height = Size::Shrink,
+							.onLayout = [](Widget &w, auto &maxSize, auto &minSize) {
+								maxSize.x = w.getMinWidth();
+							},
 						},
 						.children{
 							ContextMenuButton{

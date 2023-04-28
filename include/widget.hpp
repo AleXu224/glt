@@ -214,6 +214,8 @@ namespace squi {
 		virtual void init(){};
 		virtual void onUpdate(){};
 		virtual void afterUpdate(){};
+		virtual float getMinWidth();
+		virtual float getMinHeight();
 		virtual void onLayout(vec2 &maxSize, vec2 &minSize){};
 		virtual void postLayout(vec2 size){};
 		virtual void onArrange(vec2 &pos){};

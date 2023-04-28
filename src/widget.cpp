@@ -1,7 +1,9 @@
 #include "widget.hpp"
 #include "ranges"
 #include <algorithm>
+#include <numeric>
 #include <optional>
+#include "utility"
 
 using namespace squi;
 
@@ -187,6 +189,40 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 	postLayout(size);
 
 	return size + m_data.margin.getSizeOffset();
+}
+
+float squi::Widget::getMinWidth() {
+	switch (m_data.sizeMode.width.index()) {
+		case 0: {
+			return std::get<0>(m_data.sizeMode.width) + m_data.margin.getSizeOffset().x;
+		}
+		case 1: {
+			return m_data.margin.getSizeOffset().x + m_data.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+				return std::max(acc, child->getMinWidth());
+			});
+		}
+		default: {
+			std::unreachable();
+			return 0.0f;
+		}
+	}
+}
+
+float squi::Widget::getMinHeight() {
+	switch (m_data.sizeMode.height.index()) {
+		case 0: {
+			return std::get<0>(m_data.sizeMode.height) + m_data.margin.getSizeOffset().y;
+		}
+		case 1: {
+			return m_data.margin.getSizeOffset().y + m_data.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+				return std::max(acc, child->getMinHeight());
+			});
+		}
+		default: {
+			std::unreachable();
+			return 0.0f;
+		}
+	}
 }
 
 void Widget::arrange(vec2 pos) {

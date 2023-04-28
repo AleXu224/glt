@@ -51,9 +51,6 @@ Button::operator squi::Child() const {
 					.sizeConstraints = sizeConstraints,
 					.margin = margin,
 					.padding = padding,
-					.onLayout = [](auto &, auto &, auto &) {
-						1;
-					},
 				},
 				.color{style.color},
 				.borderColor{style.borderColor},
