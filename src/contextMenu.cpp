@@ -14,6 +14,7 @@ using namespace squi;
 struct ContextMenuButton {
 	// Args
 	const ContextMenuItem &item;
+	Widget *root;
 
 	struct Storage {
 		// Data
@@ -25,6 +26,10 @@ struct ContextMenuButton {
 		return GestureDetector{
 			.onEnter = [](auto &w, auto) { reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0xFFFFFF0F)); },
 			.onLeave = [](auto &w, auto) { reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000)); },
+			.onClick = [root = root](auto &w, auto &s){
+				root->data().shouldDelete = true;
+				printf("Clicked\n");
+			},
 			.child{
 				Box{
 					.widget{
@@ -54,6 +59,7 @@ struct ContextMenuFrame {
 	// Args
 	Widget::Args widget;
 	const std::vector<ContextMenuItem> &items;
+	Widget *root;
 
 	struct Storage {
 		// Data
@@ -81,7 +87,7 @@ struct ContextMenuFrame {
 						},
 					},
 					.children{
-						[items = items]() -> Children {
+						[items = items, root = root]() -> Children {
 							std::vector<Child> children{};
 
 							children.reserve(items.size());
@@ -93,6 +99,7 @@ struct ContextMenuFrame {
 								// } else {
 								children.emplace_back(ContextMenuButton{
 									.item = item,
+									.root = root,
 								});
 								// }
 							}
@@ -109,11 +116,13 @@ struct ContextMenuFrame {
 ContextMenu::operator Child() const {
 	auto storage = std::make_shared<Storage>();
 
-	return Stack{
-		.children{
-			ContextMenuFrame{
-				.items = items,
-			},
+	Child stack = Stack{};
+	stack->setChildren(Children{
+		ContextMenuFrame{
+			.items = items,
+			.root = stack.getAddress(),
 		},
-	};
+	});
+
+	return stack;
 }

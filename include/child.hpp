@@ -41,6 +41,10 @@ namespace squi {
 		[[nodiscard]] std::shared_ptr<Widget> operator->() {
 			return widget;
 		}
+
+		[[nodiscard]] Widget *getAddress() const {
+			return widget.get();
+		}
 	};
 
 	class Children {

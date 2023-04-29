@@ -89,6 +89,9 @@ void Widget::update() {
 			child->update();
 		}
 	}
+	children.erase(std::remove_if(children.begin(), children.end(), [](const auto &child) {
+		return child->m_data.shouldDelete;
+	}), children.end());
 
 	// After update
 	for (auto &func: m_funcs.afterUpdate) {

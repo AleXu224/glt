@@ -128,6 +128,7 @@ namespace squi {
 			Widget *parent = nullptr;
 			bool visible = true;
 			bool isInteractive;
+			bool shouldDelete = false;
 
 			void print() const {
 				printf("Margin: %f, %f, %f, %f\n", margin.left, margin.top, margin.right, margin.bottom);
