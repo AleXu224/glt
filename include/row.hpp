@@ -29,11 +29,13 @@ namespace squi {
             void onLayout(vec2 &maxSize, vec2 &minSize) override;
             void onArrange(vec2 &pos) override;
 
+            float getMinWidth() override;
+
             void onDraw() override;
 		};
 
 		operator Child() const {
-			return Child(std::make_shared<Impl>(*this));
+			return {std::make_shared<Impl>(*this)};
 		}
 	};
 };// namespace squi

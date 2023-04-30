@@ -1,9 +1,10 @@
 #include "widget.hpp"
 #include "ranges"
+#include "utility"
 #include <algorithm>
 #include <numeric>
 #include <optional>
-#include "utility"
+
 
 using namespace squi;
 
@@ -39,14 +40,6 @@ Widget::~Widget() {
 	widgetCount--;
 }
 
-Widget::Data &Widget::data() {
-	return m_data;
-}
-
-const Widget::Data &Widget::data() const {
-	return m_data;
-}
-
 Widget::FunctionArgs &Widget::funcs() {
 	return m_funcs;
 }
@@ -55,7 +48,7 @@ const Widget::FunctionArgs &Widget::funcs() const {
 	return m_funcs;
 }
 
-const std::vector<std::shared_ptr<Widget>> &Widget::getChildren() const {
+std::vector<std::shared_ptr<Widget>> &Widget::getChildren() {
 	return children;
 }
 
@@ -90,8 +83,9 @@ void Widget::update() {
 		}
 	}
 	children.erase(std::remove_if(children.begin(), children.end(), [](const auto &child) {
-		return child->m_data.shouldDelete;
-	}), children.end());
+					   return child->m_data.shouldDelete;
+				   }),
+				   children.end());
 
 	// After update
 	for (auto &func: m_funcs.afterUpdate) {
@@ -118,11 +112,17 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		std::min(0.0f, maxSize.x),
 		std::min(0.0f, maxSize.y),
 	};
-	
+
 	for (auto &func: m_funcs.onLayout) {
 		if (func) func(*this, maxSize, minSize);
 	}
 	onLayout(maxSize, minSize);
+	if (m_data.sizeMode.width.index() == 1 && std::get<1>(m_data.sizeMode.width) == Size::Shrink) {
+		maxSize.x = std::min(getMinWidth() - m_data.margin.getSizeOffset().x, maxSize.x);
+	}
+	if (m_data.sizeMode.height.index() == 1 && std::get<1>(m_data.sizeMode.height) == Size::Shrink) {
+		maxSize.y = std::min(getMinHeight() - m_data.margin.getSizeOffset().y, maxSize.y);
+	}
 	if (shouldHandleLayout) {
 		vec2 childMaxSize = maxSize - m_data.padding.getSizeOffset();
 		if (m_data.sizeMode.width.index() == 0) {
@@ -201,8 +201,8 @@ float squi::Widget::getMinWidth() {
 		}
 		case 1: {
 			return m_data.margin.getSizeOffset().x + m_data.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-				return std::max(acc, child->getMinWidth());
-			});
+					   return std::max(acc, child->getMinWidth());
+				   });
 		}
 		default: {
 			std::unreachable();
@@ -218,8 +218,8 @@ float squi::Widget::getMinHeight() {
 		}
 		case 1: {
 			return m_data.margin.getSizeOffset().y + m_data.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-				return std::max(acc, child->getMinHeight());
-			});
+					   return std::max(acc, child->getMinHeight());
+				   });
 		}
 		default: {
 			std::unreachable();

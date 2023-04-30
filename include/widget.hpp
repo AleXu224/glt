@@ -154,11 +154,15 @@ namespace squi {
 		virtual ~Widget();
 
 		// Getters
-		[[nodiscard]] Data &data();
-		[[nodiscard]] const Data &data() const;
+		[[nodiscard]] inline Data &data() {
+			return m_data;
+		}
+		[[nodiscard]] inline const Data &data() const {
+			return m_data;
+		}
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
-		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
+		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
 		[[nodiscard]] inline Rect getRect() const {
 			return Rect::fromPosSize(pos + m_data.margin.getPositionOffset(), size);
 		}

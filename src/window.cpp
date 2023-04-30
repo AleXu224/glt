@@ -25,10 +25,10 @@ void Window::glfwError(int id, const char *description) {
 std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
 
 Window::Window() : Widget(Widget::Args{}, Widget::Options{
-	.shouldHandleLayout = false,
-	.shouldArrangeChildren = false,
-	.isInteractive = false,
-	}) {
+											  .shouldHandleLayout = false,
+											  .shouldArrangeChildren = false,
+											  .isInteractive = false,
+										  }) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");
@@ -172,6 +172,7 @@ void Window::updateAndDraw() {
 		for (auto &overlay: std::views::reverse(overlays)) {
 			overlay->data().parent = this;
 			overlay->update();
+			if (overlay->data().shouldDelete) continue;
 			overlay->layout({static_cast<float>(width), static_cast<float>(height)});
 			overlay->arrange({0.0f, 0.0f});
 			auto hitCheck = overlay->getHitcheckRect();
@@ -181,9 +182,16 @@ void Window::updateAndDraw() {
 			}
 		}
 
+		overlays.erase(std::remove_if(overlays.begin(), overlays.end(),
+									  [](const auto &overlay) {
+										  return overlay->data().shouldDelete;
+									  }),
+					   overlays.end());
+
 		for (auto &child: std::views::reverse(children)) {
 			child->data().parent = this;
 			child->update();
+			if (child->data().shouldDelete) continue;
 			child->layout({static_cast<float>(width), static_cast<float>(height)});
 			child->arrange({0.0f, 0.0f});
 			auto hitCheck = child->getHitcheckRect();
@@ -192,6 +200,12 @@ void Window::updateAndDraw() {
 				hitChecks++;
 			}
 		}
+
+		children.erase(std::remove_if(children.begin(), children.end(),
+									  [](const auto &child) {
+										  return child->data().shouldDelete;
+									  }),
+					   children.end());
 
 		for (uint32_t i = 0; i < hitChecks; i++) {
 			GestureDetector::g_hitCheckRects.pop_back();

@@ -1,5 +1,6 @@
 #include "row.hpp"
 #include "renderer.hpp"
+#include <numeric>
 
 using namespace squi;
 
@@ -100,6 +101,26 @@ void Row::Impl::onDraw() {
 
 		const float childWidth = child->getLayoutSize().x;
 		if (child->getPos().x + childWidth < clipRect.left) continue;
-        child->draw();
+		child->draw();
+	}
+}
+
+float squi::Row::Impl::getMinWidth() {
+
+	const auto &widgetData = data();
+	const auto &children = getChildren();
+	switch (widgetData.sizeMode.width.index()) {
+		case 0: {
+			return std::get<0>(widgetData.sizeMode.width) + widgetData.margin.getSizeOffset().x;
+		}
+		case 1: {
+			return widgetData.margin.getSizeOffset().x + widgetData.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+					   return acc + child->getMinWidth();
+				   });
+		}
+		default: {
+			std::unreachable();
+			return 0.0f;
+		}
 	}
 }

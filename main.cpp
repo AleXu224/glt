@@ -20,6 +20,7 @@
 #include "textInput.hpp"
 #include "widget.hpp"
 #include "window.hpp"
+#include <vector>
 
 
 int main(int, char **) {
@@ -520,6 +521,7 @@ int main(int, char **) {
 	// window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
 	window.addChild(ContextMenu{
+		.position{16},
 		.items{
 			ContextMenuItem{
 				.text{"Item 1"},
@@ -529,9 +531,45 @@ int main(int, char **) {
 			},
 			ContextMenuItem{
 				.text{"Item 33"},
+				.action = std::vector<ContextMenuItem>{
+					ContextMenuItem{
+						.text{"Hello"},
+					},
+					ContextMenuItem{
+						.text{"Hello"},
+					},
+					ContextMenuItem{
+						.text{"Hello"},
+					},
+				},
 			},
 			ContextMenuItem{
 				.text{"Item 444"},
+				.action = std::vector<ContextMenuItem>{
+					ContextMenuItem{
+						.text{"Mr."},
+					},
+					ContextMenuItem{
+						.text{"Mr."},
+					},
+					ContextMenuItem{
+						.text{"Mr."},
+					},
+				},
+			},
+			ContextMenuItem{
+				.text{"Item 5555"},
+				.action = std::vector<ContextMenuItem>{
+					ContextMenuItem{
+						.text{"Poespas"},
+					},
+					ContextMenuItem{
+						.text{"Poespas"},
+					},
+					ContextMenuItem{
+						.text{"Poespas"},
+					},
+				},
 			},
 		},
 	});

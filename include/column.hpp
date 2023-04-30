@@ -29,6 +29,8 @@ namespace squi {
             void onLayout(vec2 &maxSize, vec2 &minSize) override;
             void onArrange(vec2 &pos) override;
 
+            float getMinHeight() override;
+
             void onDraw() override;
         };
     
