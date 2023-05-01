@@ -18,13 +18,21 @@ struct ContextMenuButton {
 	// Args
 	const ContextMenuItem &item;
 	Widget *root;
-	std::shared_ptr<ContextMenu::Storage> state;
+	std::shared_ptr<ContextMenu::Storage> rootState;
 
 	struct Storage {
 		// Data
+		std::shared_ptr<ContextMenu::Storage> rootState;
 		std::variant<std::function<void()>, std::vector<ContextMenuItem>> action;
+		bool hovered = false;
 		bool submenuHovered = false;
+		bool submenuOpened = false;
+		bool stateChanged = false;
 		uint32_t submenuId = 0;
+
+		~Storage() {
+			if (submenuOpened) rootState->removeMenu(submenuId);
+		}
 	};
 
 	operator Child() const;
@@ -35,7 +43,7 @@ struct ContextMenuFrame {
 	vec2 position;
 	const std::vector<ContextMenuItem> &items;
 	Widget *root;
-	std::shared_ptr<ContextMenu::Storage> state;
+	std::shared_ptr<ContextMenu::Storage> rootState;
 
 	struct Storage {
 		// Data
@@ -45,36 +53,56 @@ struct ContextMenuFrame {
 };
 
 ContextMenuButton::operator Child() const {
-	auto storage = std::make_shared<Storage>(Storage{.action = item.action});
+	auto storage = std::make_shared<Storage>(Storage{.rootState = rootState, .action = item.action});
 
 	return GestureDetector{
-		.onEnter = [storage = storage, root = root, state = state](Widget &w, auto) { 
+		.onEnter = [storage = storage](auto&, auto&) {
+			storage->hovered = true;
+			storage->stateChanged = true;
+		},
+		.onLeave = [storage = storage](auto&, auto&) {
+			storage->hovered = false;
+			storage->stateChanged = true;
+		},
+		.onClick = [storage = storage, root = root](auto&, auto&) { 
+			if (storage->action.index() == 0)
+				root->data().shouldDelete = true;
+		},
+		.onUpdate = [storage = storage, root = root](Widget &w, auto){
+			if (!storage->stateChanged) return;
+			if (!storage->hovered && !storage->submenuHovered) {
+				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000));
+				if (storage->action.index() == 1 && storage->submenuOpened) {
+					storage->rootState->removeMenu(storage->submenuId);
+					storage->submenuOpened = false;
+				}
+			} else {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0xFFFFFF0F));
-				if (storage->action.index() == 1) {
+				if (storage->action.index() == 1 && !storage->submenuOpened) {
+					storage->submenuOpened = true;
 					storage->submenuHovered = false;
 					const auto &rect = w.getRect();
-					storage->submenuId = state->addMenu(GestureDetector{
-						.onEnter = [storage = storage](Widget &w, auto &s){
+					storage->submenuId = storage->rootState->addMenu(GestureDetector{
+						.onEnter = [storage = storage](Widget &w, auto &s) {
 							storage->submenuHovered = true;
+							storage->stateChanged = true;
+						},
+						.onLeave = [storage = storage](auto &w, auto &s) {
+							storage->submenuHovered = false;
+							storage->stateChanged = true;
 						},
 						.child{
 							ContextMenuFrame{
 								.position = vec2{rect.right, rect.top},
 								.items = std::get<1>(storage->action),
 								.root = root,
-								.state = state,
+								.rootState = storage->rootState,
 							},
 						},
 					});
-				} },
-		.onLeave = [storage = storage, state = state](auto &w, auto) { 
-			reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000)); 
-			if (storage->action.index() == 1) {
-				state->removeMenu(storage->submenuId);
-			} },
-		.onClick = [storage = storage, root = root](auto &w, auto &s) { 
-				if (storage->action.index() == 0)
-					root->data().shouldDelete = true; },
+				}
+			}
+		},
 		.child{
 			Box{
 				.widget{
@@ -120,7 +148,7 @@ ContextMenuFrame::operator Child() const {
 					.height = Size::Shrink,
 				},
 				.children{
-					[items = items, root = root, state = state]() -> Children {
+					[items = items, root = root, rootState = rootState]() -> Children {
 						std::vector<Child> children{};
 
 						children.reserve(items.size());
@@ -128,7 +156,7 @@ ContextMenuFrame::operator Child() const {
 							children.emplace_back(ContextMenuButton{
 								.item = item,
 								.root = root,
-								.state = state,
+								.rootState = rootState,
 							});
 						}
 
@@ -158,7 +186,7 @@ ContextMenu::operator Child() const {
 			.position = position,
 			.items = items,
 			.root = stack.getAddress(),
-			.state = storage,
+			.rootState = storage,
 		},
 	});
 
