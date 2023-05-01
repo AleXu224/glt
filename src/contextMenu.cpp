@@ -29,10 +29,6 @@ struct ContextMenuButton {
 		bool submenuOpened = false;
 		bool stateChanged = false;
 		uint32_t submenuId = 0;
-
-		~Storage() {
-			if (submenuOpened) rootState->removeMenu(submenuId);
-		}
 	};
 
 	operator Child() const;
@@ -69,11 +65,17 @@ ContextMenuButton::operator Child() const {
 				root->data().shouldDelete = true;
 		},
 		.onUpdate = [storage = storage, root = root](Widget &w, auto){
+			if (storage->action.index() == 1 && storage->submenuOpened) {
+				if (!storage->rootState->menuIndexes.empty() && storage->rootState->menuIndexes.back() != storage->submenuId) {
+					return;
+				}
+			}
 			if (!storage->stateChanged) return;
 			if (!storage->hovered && !storage->submenuHovered) {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000));
 				if (storage->action.index() == 1 && storage->submenuOpened) {
 					storage->rootState->removeMenu(storage->submenuId);
+					storage->rootState->menuIndexes.pop_back();
 					storage->submenuOpened = false;
 				}
 			} else {
@@ -171,13 +173,20 @@ ContextMenuFrame::operator Child() const {
 ContextMenu::operator Child() const {
 	auto storage = std::make_shared<Storage>();
 
-	Child stack = Stack{
-		.widget{
-			.onUpdate = [storage = storage](Widget &w) {
-				for (auto &menu: storage->menusToAdd) {
-					w.addChild(menu);
-				}
-				storage->menusToAdd.clear();
+	Child stack = GestureDetector{
+		.onClick = [](Widget &w, auto&) {
+			w.data().shouldDelete = true;
+		},
+		.child{
+			Stack{
+				.widget{
+					.onUpdate = [storage = storage](Widget &w) {
+						for (auto &menu: storage->menusToAdd) {
+							w.addChild(menu);
+						}
+						storage->menusToAdd.clear();
+					},
+				},
 			},
 		},
 	};
@@ -203,6 +212,7 @@ std::optional<std::shared_ptr<Widget>> squi::ContextMenu::Storage::getMenu(uint3
 uint32_t squi::ContextMenu::Storage::addMenu(const Child &menu) {
 	menusToAdd.emplace_back(menu);
 	menus[id] = menu;
+	menuIndexes.push_back(id);
 	return id++;
 }
 

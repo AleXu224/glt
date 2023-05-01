@@ -27,6 +27,7 @@ namespace squi {
 		struct Storage {
 			// Data
 			uint32_t id = 0;
+			std::vector<uint32_t> menuIndexes{};
 			std::unordered_map<uint32_t, std::shared_ptr<Widget>> menus{};
 			std::vector<Child> menusToAdd{};
 
