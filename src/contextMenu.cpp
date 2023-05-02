@@ -61,8 +61,11 @@ ContextMenuButton::operator Child() const {
 			storage->stateChanged = true;
 		},
 		.onClick = [storage = storage, root = root](auto&, auto&) { 
-			if (storage->action.index() == 0)
+			if (storage->action.index() == 0) {
 				root->data().shouldDelete = true;
+				auto &f = std::get<0>(storage->action);
+				if (f) f();
+			}
 		},
 		.onUpdate = [storage = storage, root = root](Widget &w, auto){
 			if (storage->action.index() == 1 && storage->submenuOpened) {
