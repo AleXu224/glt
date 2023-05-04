@@ -74,10 +74,13 @@ ContextMenuButton::operator Child() const {
 			storage->stateChanged = true;
 		},
 		.onClick = [storage = storage, root = root](Widget &, GestureDetector::Storage &) { 
-			if (storage->action.index() == 0) {
-				root->data().shouldDelete = true;
-				auto &f = std::get<0>(storage->action);
-				if (f) f();
+			switch(storage->action.index()) {
+				case 0: {
+					root->data().shouldDelete = true;
+					auto &f = std::get<0>(storage->action);
+					if (f) f();
+					break;
+				}
 			}
 		},
 		.onUpdate = [storage = storage, root = root](Widget &w, auto){
@@ -94,7 +97,6 @@ ContextMenuButton::operator Child() const {
 					storage->submenuOpened = false;
 					if (storage->menuToLock.has_value()) {
 						storage->rootState->locked[storage->menuToLock.value()] = false;
-						printf("UnLocking %d\n", storage->menuToLock.value());
 					}
 				}
 			} else {
@@ -103,7 +105,6 @@ ContextMenuButton::operator Child() const {
 					storage->submenuOpened = true;
 					if (storage->menuToLock.has_value()) {
 						storage->rootState->locked[storage->menuToLock.value()] = true;
-						printf("Locking %d\n", storage->menuToLock.value());
 					}
 					storage->submenuHovered = false;
 					const auto &rect = w.getRect();
