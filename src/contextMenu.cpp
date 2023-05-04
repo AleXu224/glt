@@ -9,6 +9,7 @@
 #include "text.hpp"
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -18,10 +19,14 @@ struct ContextMenuButton {
 	// Args
 	const ContextMenuItem &item;
 	Widget *root;
+	uint32_t menuId;
 	std::shared_ptr<ContextMenu::Storage> rootState;
+	std::optional<uint32_t> menuToLock{};
 
 	struct Storage {
 		// Data
+		std::optional<uint32_t> menuToLock{};
+		uint32_t menuId;
 		std::shared_ptr<ContextMenu::Storage> rootState;
 		std::variant<std::function<void()>, std::vector<ContextMenuItem>> action;
 		bool hovered = false;
@@ -40,16 +45,24 @@ struct ContextMenuFrame {
 	const std::vector<ContextMenuItem> &items;
 	Widget *root;
 	std::shared_ptr<ContextMenu::Storage> rootState;
+	uint32_t id;
+	std::optional<uint32_t> menuToLock{};
 
 	struct Storage {
 		// Data
+		uint32_t id;
 	};
 
 	operator Child() const;
 };
 
 ContextMenuButton::operator Child() const {
-	auto storage = std::make_shared<Storage>(Storage{.rootState = rootState, .action = item.action});
+	auto storage = std::make_shared<Storage>(Storage{
+		.menuToLock = menuToLock,
+		.menuId = menuId,
+		.rootState = rootState,
+		.action = item.action,
+	});
 
 	return GestureDetector{
 		.onEnter = [storage = storage](auto&, auto&) {
@@ -60,7 +73,7 @@ ContextMenuButton::operator Child() const {
 			storage->hovered = false;
 			storage->stateChanged = true;
 		},
-		.onClick = [storage = storage, root = root](auto&, auto&) { 
+		.onClick = [storage = storage, root = root](Widget &, GestureDetector::Storage &) { 
 			if (storage->action.index() == 0) {
 				root->data().shouldDelete = true;
 				auto &f = std::get<0>(storage->action);
@@ -69,7 +82,7 @@ ContextMenuButton::operator Child() const {
 		},
 		.onUpdate = [storage = storage, root = root](Widget &w, auto){
 			if (storage->action.index() == 1 && storage->submenuOpened) {
-				if (!storage->rootState->menuIndexes.empty() && storage->rootState->menuIndexes.back() != storage->submenuId) {
+				if (storage->rootState->locked.contains(storage->menuId) && storage->rootState->locked.at(storage->menuId)) {
 					return;
 				}
 			}
@@ -78,13 +91,20 @@ ContextMenuButton::operator Child() const {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000));
 				if (storage->action.index() == 1 && storage->submenuOpened) {
 					storage->rootState->removeMenu(storage->submenuId);
-					storage->rootState->menuIndexes.pop_back();
 					storage->submenuOpened = false;
+					if (storage->menuToLock.has_value()) {
+						storage->rootState->locked[storage->menuToLock.value()] = false;
+						printf("UnLocking %d\n", storage->menuToLock.value());
+					}
 				}
 			} else {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0xFFFFFF0F));
 				if (storage->action.index() == 1 && !storage->submenuOpened) {
 					storage->submenuOpened = true;
+					if (storage->menuToLock.has_value()) {
+						storage->rootState->locked[storage->menuToLock.value()] = true;
+						printf("Locking %d\n", storage->menuToLock.value());
+					}
 					storage->submenuHovered = false;
 					const auto &rect = w.getRect();
 					storage->submenuId = storage->rootState->addMenu(GestureDetector{
@@ -102,6 +122,8 @@ ContextMenuButton::operator Child() const {
 								.items = std::get<1>(storage->action),
 								.root = root,
 								.rootState = storage->rootState,
+								.id = storage->rootState->id,
+								.menuToLock = storage->menuId,
 							},
 						},
 					});
@@ -133,7 +155,7 @@ ContextMenuButton::operator Child() const {
 }
 
 ContextMenuFrame::operator Child() const {
-	auto storage = std::make_shared<Storage>();
+	auto storage = std::make_shared<Storage>(Storage{.id = id});
 
 	return Box{
 		.widget{
@@ -153,7 +175,7 @@ ContextMenuFrame::operator Child() const {
 					.height = Size::Shrink,
 				},
 				.children{
-					[items = items, root = root, rootState = rootState]() -> Children {
+					[items = items, root = root, rootState = rootState, storage = storage, menuToLock = menuToLock]() -> Children {
 						std::vector<Child> children{};
 
 						children.reserve(items.size());
@@ -161,7 +183,9 @@ ContextMenuFrame::operator Child() const {
 							children.emplace_back(ContextMenuButton{
 								.item = item,
 								.root = root,
+								.menuId = storage->id,
 								.rootState = rootState,
+								.menuToLock = menuToLock,
 							});
 						}
 
@@ -199,6 +223,7 @@ ContextMenu::operator Child() const {
 			.items = items,
 			.root = stack.getAddress(),
 			.rootState = storage,
+			.id = storage->id,
 		},
 	});
 
@@ -215,7 +240,7 @@ std::optional<std::shared_ptr<Widget>> squi::ContextMenu::Storage::getMenu(uint3
 uint32_t squi::ContextMenu::Storage::addMenu(const Child &menu) {
 	menusToAdd.emplace_back(menu);
 	menus[id] = menu;
-	menuIndexes.push_back(id);
+	locked[id] = false;
 	return id++;
 }
 
@@ -223,5 +248,8 @@ void squi::ContextMenu::Storage::removeMenu(uint32_t id) {
 	if (menus.contains(id)) {
 		menus.at(id)->data().shouldDelete = true;
 		menus.erase(id);
+	}
+	if (locked.contains(id)) {
+		locked.erase(id);
 	}
 }
