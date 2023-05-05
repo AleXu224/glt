@@ -20,6 +20,7 @@
 #include "textInput.hpp"
 #include "widget.hpp"
 #include "window.hpp"
+#include <cstdio>
 #include <vector>
 
 
@@ -523,78 +524,99 @@ int main(int, char **) {
 	window.addChild(ContextMenu{
 		.position{16},
 		.items{
-			ContextMenuItem{
+			ContextMenu::Item{
+				.text{"Toggle"},
+				.content = ContextMenu::Item::Toggle{
+					.value = true,
+					.callback = [](bool newValue) {
+						printf("Toggle value changed to %s\n", newValue ? "true" : "false");
+					},
+				},
+			},
+			ContextMenu::Item{
 				.text{"Item 1"},
 			},
-			ContextMenuItem{
+			ContextMenu::Item{
 				.text{"Item 2"},
 			},
-			ContextMenuItem{
+			ContextMenu::Item{
 				.text{"Item 3"},
-				.action = std::vector<ContextMenuItem>{
-					ContextMenuItem{
-						.text{"Item 31"},
-					},
-					ContextMenuItem{
-						.text{"Item 32"},
-					},
-					ContextMenuItem{
-						.text{"Item 33"},
+				.content = ContextMenu::Item::Submenu{
+					.items{
+						ContextMenu::Item{
+							.text{"Item 31"},
+						},
+						ContextMenu::Item{
+							.text{"Item 32"},
+						},
+						ContextMenu::Item{
+							.text{"Item 33"},
+						},
 					},
 				},
 			},
-			ContextMenuItem{
+			ContextMenu::Item{
 				.text{"Item 4"},
-				.action = std::vector<ContextMenuItem>{
-					ContextMenuItem{
-						.text{"Item 41"},
-					},
-					ContextMenuItem{
-						.text{"Item 42"},
-					},
-					ContextMenuItem{
-						.text{"Item 43"},
+				.content = ContextMenu::Item::Submenu{
+					.items{
+						ContextMenu::Item{
+							.text{"Item 41"},
+						},
+						ContextMenu::Item{
+							.text{"Item 42"},
+						},
+						ContextMenu::Item{
+							.text{"Item 43"},
+						},
 					},
 				},
 			},
-			ContextMenuItem{
+			ContextMenu::Item{
 				.text{"Item 5"},
-				.action = std::vector<ContextMenuItem>{
-					ContextMenuItem{
-						.text{"Item 51"},
-					},
-					ContextMenuItem{
-						.text{"Item 52"},
-					},
-					ContextMenuItem{
-						.text{"Item 53"},
-						.action = std::vector<ContextMenuItem>{
-							ContextMenuItem{
-								.text{"Item 531"},
-							},
-							ContextMenuItem{
-								.text{"Item 532"},
-							},
-							ContextMenuItem{
-								.text{"Item 533"},
-								.action = std::vector<ContextMenuItem>{
-									ContextMenuItem{
-										.text{"Item 5331"},
+				.content = ContextMenu::Item::Submenu{
+					.items{
+						ContextMenu::Item{
+							.text{"Item 51"},
+						},
+						ContextMenu::Item{
+							.text{"Item 52"},
+						},
+						ContextMenu::Item{
+							.text{"Item 53"},
+							.content = ContextMenu::Item::Submenu{
+								.items{
+									ContextMenu::Item{
+										.text{"Item 531"},
 									},
-									ContextMenuItem{
-										.text{"Item 5332"},
+									ContextMenu::Item{
+										.text{"Item 532"},
 									},
-									ContextMenuItem{
-										.text{"Item 5333"},
-										.action = std::vector<ContextMenuItem>{
-											ContextMenuItem{
-												.text{"Item 53331"},
-											},
-											ContextMenuItem{
-												.text{"Item 53332"},
-											},
-											ContextMenuItem{
-												.text{"Item 53333"},
+									ContextMenu::Item{
+										.text{"Item 533"},
+										.content = ContextMenu::Item::Submenu{
+											.items{
+												ContextMenu::Item{
+													.text{"Item 5331"},
+												},
+												ContextMenu::Item{
+													.text{"Item 5332"},
+												},
+												ContextMenu::Item{
+													.text{"Item 5333"},
+													.content = ContextMenu::Item::Submenu{
+														.items{
+															ContextMenu::Item{
+																.text{"Item 53331"},
+															},
+															ContextMenu::Item{
+																.text{"Item 53332"},
+															},
+															ContextMenu::Item{
+																.text{"Item 53333"},
+															},
+														},
+													},
+												},
 											},
 										},
 									},

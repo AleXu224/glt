@@ -9,20 +9,24 @@
 #include <vector>
 
 namespace squi {
-	struct ContextMenuItem {
-		std::string_view text;
-		std::variant<
-			std::function<void()>,      // On click
-			std::vector<ContextMenuItem>// Submenu
-			>
-			action{};
-    	};
-	struct ContextMenuDivider{};
-
 	struct ContextMenu {
+		struct Item {
+			struct Submenu {
+				std::vector<Item> items;
+			};
+			struct Toggle {
+				bool value;
+				std::function<void(bool)> callback;
+			};
+			struct Divider{};
+			
+			std::string_view text;
+			std::variant<std::function<void()>, Submenu, Toggle> content;
+		};
+
 		// Args
 		vec2 position{};
-		std::vector<ContextMenuItem> items;
+		std::vector<Item> items;
 
 		struct Storage {
 			// Data

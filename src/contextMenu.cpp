@@ -4,6 +4,7 @@
 #include "child.hpp"
 #include "column.hpp"
 #include "gestureDetector.hpp"
+#include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
@@ -17,7 +18,7 @@ using namespace squi;
 
 struct ContextMenuButton {
 	// Args
-	const ContextMenuItem &item;
+	const ContextMenu::Item &item;
 	Widget *root;
 	uint32_t menuId;
 	std::shared_ptr<ContextMenu::Storage> rootState;
@@ -28,7 +29,7 @@ struct ContextMenuButton {
 		std::optional<uint32_t> menuToLock{};
 		uint32_t menuId;
 		std::shared_ptr<ContextMenu::Storage> rootState;
-		std::variant<std::function<void()>, std::vector<ContextMenuItem>> action;
+		std::variant<std::function<void()>, ContextMenu::Item::Submenu, ContextMenu::Item::Toggle> content;
 		bool hovered = false;
 		bool submenuHovered = false;
 		bool submenuOpened = false;
@@ -42,7 +43,7 @@ struct ContextMenuButton {
 struct ContextMenuFrame {
 	// Args
 	vec2 position;
-	const std::vector<ContextMenuItem> &items;
+	const std::vector<ContextMenu::Item> &items;
 	Widget *root;
 	std::shared_ptr<ContextMenu::Storage> rootState;
 	uint32_t id;
@@ -61,7 +62,7 @@ ContextMenuButton::operator Child() const {
 		.menuToLock = menuToLock,
 		.menuId = menuId,
 		.rootState = rootState,
-		.action = item.action,
+		.content = item.content,
 	});
 
 	return GestureDetector{
@@ -74,17 +75,23 @@ ContextMenuButton::operator Child() const {
 			storage->stateChanged = true;
 		},
 		.onClick = [storage = storage, root = root](Widget &, GestureDetector::Storage &) { 
-			switch(storage->action.index()) {
+			switch(storage->content.index()) {
 				case 0: {
 					root->data().shouldDelete = true;
-					auto &f = std::get<0>(storage->action);
+					auto &f = std::get<0>(storage->content);
 					if (f) f();
 					break;
+				}
+				case 2: {
+					root->data().shouldDelete = true;
+					auto &t = std::get<2>(storage->content);
+					t.value = !t.value;
+					if (t.callback) t.callback(t.value);
 				}
 			}
 		},
 		.onUpdate = [storage = storage, root = root](Widget &w, auto){
-			if (storage->action.index() == 1 && storage->submenuOpened) {
+			if (storage->content.index() == 1 && storage->submenuOpened) {
 				if (storage->rootState->locked.contains(storage->menuId) && storage->rootState->locked.at(storage->menuId)) {
 					return;
 				}
@@ -92,7 +99,7 @@ ContextMenuButton::operator Child() const {
 			if (!storage->stateChanged) return;
 			if (!storage->hovered && !storage->submenuHovered) {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0x00000000));
-				if (storage->action.index() == 1 && storage->submenuOpened) {
+				if (storage->content.index() == 1 && storage->submenuOpened) {
 					storage->rootState->removeMenu(storage->submenuId);
 					storage->submenuOpened = false;
 					if (storage->menuToLock.has_value()) {
@@ -101,7 +108,7 @@ ContextMenuButton::operator Child() const {
 				}
 			} else {
 				reinterpret_cast<Box::Impl &>(w).setColor(Color::HEX(0xFFFFFF0F));
-				if (storage->action.index() == 1 && !storage->submenuOpened) {
+				if (storage->content.index() == 1 && !storage->submenuOpened) {
 					storage->submenuOpened = true;
 					if (storage->menuToLock.has_value()) {
 						storage->rootState->locked[storage->menuToLock.value()] = true;
@@ -120,7 +127,7 @@ ContextMenuButton::operator Child() const {
 						.child{
 							ContextMenuFrame{
 								.position = vec2{rect.right, rect.top},
-								.items = std::get<1>(storage->action),
+								.items = std::get<1>(storage->content).items,
 								.root = root,
 								.rootState = storage->rootState,
 								.id = storage->rootState->id,
@@ -141,9 +148,15 @@ ContextMenuButton::operator Child() const {
 				.color{Color::HEX(0)},
 				.borderRadius = 4.f,
 				.child{
-					Align{
-						.xAlign = 0.f,
-						.child{
+					Row{
+						.alignment = Row::Alignment::center,
+						.children{
+							Box{
+								.widget{
+									.width = 12.f,
+									.height = 12.f,
+								},
+							},
 							Text{
 								.text{item.text},
 							},
