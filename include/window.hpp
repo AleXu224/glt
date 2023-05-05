@@ -6,7 +6,6 @@
 #include "GLFW/glfw3.h"
 #include "chrono"
 #include "memory"
-#include "renderer.hpp"
 #include "widget.hpp"
 
 using namespace std::chrono_literals;
@@ -37,6 +36,8 @@ namespace squi {
 		Window &operator=(const Window &) = delete;
 
 		operator GLFWwindow *() const { return window.get(); }
+
+		std::vector<std::unique_ptr<Overlay::Impl>> &getOverlays() { return overlays; }
 	};
 }// namespace squi
 #endif

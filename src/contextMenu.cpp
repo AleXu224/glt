@@ -3,6 +3,7 @@
 #include "box.hpp"
 #include "child.hpp"
 #include "column.hpp"
+#include "fontIcon.hpp"
 #include "gestureDetector.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
@@ -66,14 +67,12 @@ ContextMenuButton::operator Child() const {
 	});
 
 	return GestureDetector{
-		.onEnter = [storage = storage](auto&, auto&) {
+		.onEnter = [storage = storage](auto &, auto &) {
 			storage->hovered = true;
-			storage->stateChanged = true;
-		},
-		.onLeave = [storage = storage](auto&, auto&) {
+			storage->stateChanged = true; },
+		.onLeave = [storage = storage](auto &, auto &) {
 			storage->hovered = false;
-			storage->stateChanged = true;
-		},
+			storage->stateChanged = true; },
 		.onClick = [storage = storage, root = root](Widget &, GestureDetector::Storage &) { 
 			switch(storage->content.index()) {
 				case 0: {
@@ -88,9 +87,8 @@ ContextMenuButton::operator Child() const {
 					t.value = !t.value;
 					if (t.callback) t.callback(t.value);
 				}
-			}
-		},
-		.onUpdate = [storage = storage, root = root](Widget &w, auto){
+			} },
+		.onUpdate = [storage = storage, root = root](Widget &w, auto) {
 			if (storage->content.index() == 1 && storage->submenuOpened) {
 				if (storage->rootState->locked.contains(storage->menuId) && storage->rootState->locked.at(storage->menuId)) {
 					return;
@@ -136,8 +134,7 @@ ContextMenuButton::operator Child() const {
 						},
 					});
 				}
-			}
-		},
+			} },
 		.child{
 			Box{
 				.widget{
@@ -151,11 +148,11 @@ ContextMenuButton::operator Child() const {
 					Row{
 						.alignment = Row::Alignment::center,
 						.children{
-							Box{
-								.widget{
-									.width = 12.f,
-									.height = 12.f,
-								},
+							FontIcon{
+								.margin{0.f, 14.f, 0.f, 9.f},
+								.icon{"\uE2AB"},
+								.font{R"(C:\Windows\Fonts\seguisym.ttf)"},
+								.size = 12.f,
 							},
 							Text{
 								.text{item.text},

@@ -103,7 +103,7 @@ FontStore::Font::CharInfo &FontStore::Font::getCharInfo(unsigned char *character
 	if (auto it = sizeMap.find(codepoint); it != sizeMap.end()) {
 		return it->second;
 	}
-	
+
 	if (!generateTexture(character, sizeMap)) {
 		return sizeMap.at(0);
 	}
@@ -178,7 +178,7 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text,
 	return getTextSize(text, fontPath, size);
 }
 
-	std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
+std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
 	[[__maybe_unused__]] static auto _ = []() {
 		if (FT_Init_FreeType(&ftLibrary)) {
 			printf("Failed to initialize FreeType\n");

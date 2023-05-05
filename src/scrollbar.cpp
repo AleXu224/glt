@@ -14,7 +14,7 @@ Scrollbar::operator Child() const {
 	newWidget.width = 16.0f;
 	newWidget.padding = 3;
 	newWidget.onUpdate = [storage](Widget &widget) {
-		auto &gd = *storage->gd;
+		auto &gd = *storage->containerGd;
 		const auto currentTime = std::chrono::steady_clock::now();
 		if (gd.hovered || gd.focused) {
 			storage->lastHoverTime = std::chrono::steady_clock::now();
@@ -38,59 +38,64 @@ Scrollbar::operator Child() const {
 	};
 
 	return GestureDetector{
-		.onPress = [storage](auto &w, auto &gd) { storage->scrollDragStart = storage->scroll; },
-		.getState = [storage](auto &w, auto newGd) { storage->gd = newGd; },
+		.getState = [storage](auto &w, auto newGd) { storage->containerGd = newGd; },
 		.child{
 			Box{
 				.widget{std::move(newWidget)},
 				.color{Color::HEX(0xFFFFFF0F)},
 				.child{
-					Box{
-						.widget{
-							.width = 10.0f,
-							.height = Size::Shrink,
-							.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
-						auto &data = widget.data();
-						auto &gestureDetector = *storage->gd;
+					GestureDetector{
+						.onPress = [storage](auto &w, auto &gd) { storage->scrollDragStart = storage->scroll; },
+						.getState = [storage](auto &w, auto newGd) { storage->gd = newGd; },
+						.child{
+							Box{
+								.widget{
+									.width = 10.0f,
+									.height = 32.f,
+									.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
+										auto &data = widget.data();
+										auto &gestureDetector = *storage->gd;
 
-                        const float contentHeight = data.parent->getContentRect().height() - widget.getSize().y;
-						if (gestureDetector.focused && data.visible) {
-							storage->scroll = storage->scrollDragStart + gestureDetector.getDragOffset().y / contentHeight;
-                            storage->scroll = (std::clamp)(storage->scroll, 0.f, 1.0f);
-							if (onScroll) onScroll(storage->scroll * (storage->contentHeight - storage->viewHeight));
-						}
+										const float contentHeight = data.parent->getContentRect().height() - widget.getSize().y;
+										if (gestureDetector.focused && data.visible) {
+											storage->scroll = storage->scrollDragStart + gestureDetector.getDragOffset().y / contentHeight;
+											storage->scroll = (std::clamp)(storage->scroll, 0.f, 1.0f);
+											if (onScroll) onScroll(storage->scroll * (storage->contentHeight - storage->viewHeight));
+										}
 
-						const auto currentTime = std::chrono::steady_clock::now();
-						if (currentTime - storage->lastHoverTime > 1s) {
-							data.sizeMode.width = 2.0f;
-							data.margin.left = 8;
-						} else {
-							data.sizeMode.width = 10.0f;
-							data.margin.left = 0;
-						} },
-							.onLayout = [storage, setScroll = setScroll](Widget &widget, vec2 &maxSize, vec2 &minSize) {
-						auto &data = widget.data();
-						if (!data.parent) return;
-						if (setScroll) {
-							auto [scroll, contentHeight, viewHeight] = setScroll();
-							
-							storage->contentHeight = contentHeight;
-							storage->viewHeight = viewHeight;
-							if (contentHeight <= viewHeight) storage->scroll = 0;
-							else storage->scroll = scroll / (contentHeight - viewHeight);
-							minSize.y = viewHeight / contentHeight * maxSize.y;
-							minSize.y = std::max(minSize.y, 24.0f);
-						} },
-							.onArrange = [storage](Widget &widget, vec2 &pos) {
-						auto &data = widget.data();
-						if (!data.parent) return;
+										const auto currentTime = std::chrono::steady_clock::now();
+										if (currentTime - storage->lastHoverTime > 1s) {
+											data.sizeMode.width = 2.0f;
+											data.margin.left = 8;
+										} else {
+											data.sizeMode.width = 10.0f;
+											data.margin.left = 0;
+										} },
+									.onLayout = [storage, setScroll = setScroll](Widget &widget, vec2 &maxSize, vec2 &minSize) {
+										auto &data = widget.data();
+										if (!data.parent) return;
+										if (setScroll) {
+											auto [scroll, contentHeight, viewHeight] = setScroll();
+											
+											storage->contentHeight = contentHeight;
+											storage->viewHeight = viewHeight;
+											if (contentHeight <= viewHeight) storage->scroll = 0;
+											else storage->scroll = scroll / (contentHeight - viewHeight);
+											minSize.y = viewHeight / contentHeight * maxSize.y;
+											minSize.y = std::max(minSize.y, 24.0f);
+										} },
+									.onArrange = [storage](Widget &widget, vec2 &pos) {
+										auto &data = widget.data();
+										if (!data.parent) return;
 
-						const auto maxOffset = data.parent->getContentSize() - widget.getLayoutSize();
+										const auto maxOffset = data.parent->getContentSize() - widget.getLayoutSize();
 
-						pos.y += maxOffset.y * storage->scroll; },
+										pos.y += maxOffset.y * storage->scroll; },
+								},
+								.color{Color::HEX(0xFFFFFF8B)},
+								.borderRadius = 2,
+							},
 						},
-						.color{Color::HEX(0xFFFFFF8B)},
-						.borderRadius = 2,
 					},
 				},
 			},

@@ -1,5 +1,8 @@
+#define NOMINMAX
 #include "widget.hpp"
+#include "quad.hpp"
 #include "ranges"
+#include "renderer.hpp"
 #include "utility"
 #include <algorithm>
 #include <numeric>
@@ -53,7 +56,7 @@ std::vector<std::shared_ptr<Widget>> &Widget::getChildren() {
 }
 
 std::optional<Rect> Widget::getHitcheckRect() const {
-	if (m_data.isInteractive)
+	if (m_data.isInteractive && m_data.visible)
 		return getRect();
 	else
 		return std::nullopt;
@@ -113,16 +116,16 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		std::min(0.0f, maxSize.y),
 	};
 
-	for (auto &func: m_funcs.onLayout) {
-		if (func) func(*this, maxSize, minSize);
-	}
-	onLayout(maxSize, minSize);
 	if (m_data.sizeMode.width.index() == 1 && std::get<1>(m_data.sizeMode.width) == Size::Shrink) {
 		maxSize.x = std::min(getMinWidth() - m_data.margin.getSizeOffset().x, maxSize.x);
 	}
 	if (m_data.sizeMode.height.index() == 1 && std::get<1>(m_data.sizeMode.height) == Size::Shrink) {
 		maxSize.y = std::min(getMinHeight() - m_data.margin.getSizeOffset().y, maxSize.y);
 	}
+	for (auto &func: m_funcs.onLayout) {
+		if (func) func(*this, maxSize, minSize);
+	}
+	onLayout(maxSize, minSize);
 	if (shouldHandleLayout) {
 		vec2 childMaxSize = maxSize - m_data.padding.getSizeOffset();
 		if (m_data.sizeMode.width.index() == 0) {
@@ -246,6 +249,16 @@ void Widget::arrange(vec2 pos) {
 }
 
 void Widget::draw() {
+	// Quad debugQuad{Quad::Args{
+	// 	.pos = pos + m_data.margin.getPositionOffset(),
+	// 	.size = size,
+	// 	.color = {0.0f, 0.0f, 0.0f, 0.0f},
+	// 	.borderColor = {1.0f, 1.0f, 0.0f, 1.0f},
+	// 	.borderRadius = 1.0f,
+	// 	.borderSize = 1.0f,
+	// }};
+	// auto &renderer = Renderer::getInstance();
+	// renderer.addQuad(debugQuad);
 	for (auto &func: m_funcs.beforeDraw) {
 		if (func) func(*this);
 	}

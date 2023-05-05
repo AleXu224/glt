@@ -30,7 +30,7 @@ void Row::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 		auto &childData = child->data();
 		childData.parent = this;
 
-		if (childData.sizeMode.height.index() == 1 && std::get<1>(childData.sizeMode.height) == Size::Expand) {
+		if (childData.sizeMode.width.index() == 1 && std::get<1>(childData.sizeMode.width) == Size::Expand) {
 			expandedChildren.push_back(child);
 		} else {
 			const auto childSize = child->layout(maxChildSize);

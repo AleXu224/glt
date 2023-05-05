@@ -46,6 +46,13 @@ void Text::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 			}
 		}
 	}
+
+	if (widgetData.sizeMode.width.index() == 0) {
+		maxSize.x = std::get<0>(widgetData.sizeMode.width);
+	}
+	if (widgetData.sizeMode.height.index() == 0) {
+		maxSize.y = std::get<0>(widgetData.sizeMode.height);
+	}
 }
 
 void Text::Impl::onArrange(vec2 &pos) {
