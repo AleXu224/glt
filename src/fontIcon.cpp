@@ -13,10 +13,11 @@ squi::FontIcon::operator Child() const {
 		.widget{
 			.width = size,
 			.height = size,
+			.sizeConstraints{
+				.maxWidth = size,
+				.maxHeight = size,
+			},
 			.margin = margin,
-            .onArrange = [](auto&, auto){
-                1;
-            },
 		},
 		.child{
 			Align{

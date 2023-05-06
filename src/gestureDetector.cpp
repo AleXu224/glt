@@ -12,6 +12,7 @@ std::unordered_map<int, KeyState> GestureDetector::g_keys{};
 unsigned char GestureDetector::g_textInput{0};
 vec2 GestureDetector::g_scrollDelta{0};
 std::vector<Rect> GestureDetector::g_hitCheckRects{};
+std::vector<Rect> GestureDetector::g_activeArea{};
 vec2 GestureDetector::g_dpi{96};
 bool GestureDetector::g_cursorInside{false};
 
@@ -38,7 +39,8 @@ bool GestureDetector::isKeyPressedOrRepeat(int key, int mods) {
 void GestureDetector::Storage::update(Widget &widget) {
 	bool cursorInsideAnotherWidget = false;
 	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
-	if (cursorInsideWidget) {
+	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
+	if (cursorInsideWidget && cursorInsideActiveArea) {
 		for (auto &widgetRect : g_hitCheckRects) {
 			if (widgetRect.contains(g_cursorPos)) {
 				cursorInsideAnotherWidget = true;
@@ -47,7 +49,7 @@ void GestureDetector::Storage::update(Widget &widget) {
 		}
 	}
 
-	if (g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget) {
+	if (g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea) {
 		scrollDelta = g_scrollDelta;
 
 		if (!hovered && onEnter) onEnter(widget, *this);

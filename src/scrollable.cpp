@@ -53,6 +53,12 @@ void Scrollable::Impl::onUpdate() {
 		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
 		if (GestureDetector::g_scrollDelta.y != 0) scrolled = true;
 	}
+
+	GestureDetector::g_activeArea.emplace_back(getRect());
+}
+
+void squi::Scrollable::Impl::afterUpdate() {
+	GestureDetector::g_activeArea.pop_back();
 }
 
 void Scrollable::Impl::onArrange(vec2 &pos) {

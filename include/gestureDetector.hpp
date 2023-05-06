@@ -37,6 +37,7 @@ namespace squi {
 		static unsigned char g_textInput;
 		static vec2 g_scrollDelta;
 		static std::vector<Rect> g_hitCheckRects;
+		static std::vector<Rect> g_activeArea;
 		static vec2 g_dpi;
 		static bool g_cursorInside;
 

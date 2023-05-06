@@ -28,6 +28,7 @@ namespace squi {
             Impl(const Scrollable &args);
 
             void onUpdate() override;
+            void afterUpdate() override;
             void onArrange(vec2 &pos) override;
 
             void onDraw() override;

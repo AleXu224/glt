@@ -169,6 +169,12 @@ void Window::updateAndDraw() {
 		uint32_t hitChecks = 0;
 		layout({static_cast<float>(width), static_cast<float>(height)});
 		arrange({0.0f, 0.0f});
+
+		GestureDetector::g_activeArea.emplace_back(Rect{
+			vec2{0.0f, 0.0f},
+			vec2{static_cast<float>(width), static_cast<float>(height)},
+		});
+		
 		for (auto &overlay: std::views::reverse(overlays)) {
 			overlay->data().parent = this;
 			overlay->update();
@@ -210,6 +216,9 @@ void Window::updateAndDraw() {
 		for (uint32_t i = 0; i < hitChecks; i++) {
 			GestureDetector::g_hitCheckRects.pop_back();
 		}
+
+		GestureDetector::g_activeArea.pop_back();
+		if (!GestureDetector::g_activeArea.empty()) printf("active area not empty\n");
 	}
 	const auto afterUpdateTime = std::chrono::steady_clock::now();
 
@@ -228,7 +237,7 @@ void Window::updateAndDraw() {
 	const auto afterDrawTime = std::chrono::steady_clock::now();
 
 	auto *swapChain = renderer.getSwapChain().get();
-	swapChain->Present(1, 0);
+	swapChain->Present(0, 0);
 	lastTime = currentTime;
 
 	const auto afterPresentTime = std::chrono::steady_clock::now();

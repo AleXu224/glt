@@ -31,8 +31,12 @@ struct TextItems {
 					.widget{
 						.onUpdate = [target = widget](Widget &widget) {
 							auto &w = dynamic_cast<Text::Impl &>(widget);
+							auto oldText = w.getText();
+							auto newText = std::format("x: {}, y: {}", target->getPos().x, target->getPos().y);
+							if (oldText != newText) {
+								w.setText(newText);
+							}
 
-							w.setText(std::format("x: {}, y: {}", target->getPos().x, target->getPos().y));
 						},
 					},
 					.text{std::format("x: {}, y: {}", widget->getPos().x, widget->getPos().y)},
@@ -41,8 +45,11 @@ struct TextItems {
 					.widget{
 						.onUpdate = [target = widget](Widget &widget) {
 							auto &w = dynamic_cast<Text::Impl &>(widget);
-
-							w.setText(std::format("w: {}, h: {}", target->getSize().x, target->getSize().y));
+							auto oldText = w.getText();
+							auto newText = std::format("w: {}, h: {}", target->getSize().x, target->getSize().y);
+							if (oldText != newText) {
+								w.setText(newText);
+							}
 						},
 					},
 					.text{std::format("w: {}, h: {}", widget->getSize().x, widget->getSize().y)},
@@ -51,8 +58,11 @@ struct TextItems {
 					.widget{
 						.onUpdate = [target = widget](Widget &widget) {
 							auto &w = dynamic_cast<Text::Impl &>(widget);
-
-							w.setText(std::format("margin: l:{} t:{} r:{} b:{}", target->data().margin.left, target->data().margin.top, target->data().margin.right, target->data().margin.bottom));
+							auto oldText = w.getText();
+							auto newText = std::format("margin: l:{} t:{} r:{} b:{}", target->data().margin.left, target->data().margin.top, target->data().margin.right, target->data().margin.bottom);
+							if (oldText != newText) {
+								w.setText(newText);
+							}
 						},
 					},
 					.text{std::format("margin: l:{} t:{} r:{} b:{}", widget->data().margin.left, widget->data().margin.top, widget->data().margin.right, widget->data().margin.bottom)},
@@ -61,8 +71,11 @@ struct TextItems {
 					.widget{
 						.onUpdate = [target = widget](Widget &widget) {
 							auto &w = dynamic_cast<Text::Impl &>(widget);
-
-							w.setText(std::format("padding: l:{} t:{} r:{} b:{}", target->data().padding.left, target->data().padding.top, target->data().padding.right, target->data().padding.bottom));
+							auto oldText = w.getText();
+							auto newText = std::format("padding: l:{} t:{} r:{} b:{}", target->data().padding.left, target->data().padding.top, target->data().padding.right, target->data().padding.bottom);
+							if (oldText != newText) {
+								w.setText(newText);
+							}
 						},
 					},
 					.text{std::format("padding: l:{} t:{} r:{} b:{}", widget->data().padding.left, widget->data().padding.top, widget->data().padding.right, widget->data().padding.bottom)},
@@ -203,11 +216,26 @@ LayoutInspector::operator Child() const {
 								Quad previewQuad{Quad::Args{
 									.pos = widget->getPos() + widget->data().margin.getPositionOffset(),
 									.size = widget->getSize(),
-									.color = Color::HEX(0x008AFF40),
+									.color = Color::HEX(0x00008040),
+								}};
+
+								Quad paddingQuad{Quad::Args{
+									.pos = widget->getPos() + widget->data().padding.getPositionOffset() + widget->data().margin.getPositionOffset(),
+									.size = widget->getSize() - widget->data().padding.getSizeOffset(),
+									.color = Color::HEX(0x0008040),
+								}};
+
+								const auto layoutRect = widget->getLayoutRect();
+								Quad layoutQuad{Quad::Args{
+									.pos = widget->getPos(),
+									.size = layoutRect.size(),
+									.color = Color::HEX(0x008A0040),
 								}};
 
 								auto &renderer = Renderer::getInstance();
+								renderer.addQuad(layoutQuad);
 								renderer.addQuad(previewQuad);
+								renderer.addQuad(paddingQuad);
 							}
 						},
 					},

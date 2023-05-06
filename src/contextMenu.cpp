@@ -150,8 +150,8 @@ ContextMenuButton::operator Child() const {
 						.children{
 							FontIcon{
 								.margin{0.f, 14.f, 0.f, 9.f},
-								.icon{"\uE2AB"},
-								.font{R"(C:\Windows\Fonts\seguisym.ttf)"},
+								.icon{"\uF78C"},
+								.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 								.size = 12.f,
 							},
 							Text{
