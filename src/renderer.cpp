@@ -105,7 +105,8 @@ auto fragmentShaderHlsl = R"(
 		}
 
 		float udRoundBox(float2 p, float2 b, float r) {
-			return length(max(abs(p) - b + r, 0.0)) - r;
+			float2 q = abs(p) - b + r;
+			return min(max(q.x,q.y),0.0) + length(max(q, 0.0)) - r;
 		}
 
 		float4 main(PS_INPUT input) : SV_TARGET {

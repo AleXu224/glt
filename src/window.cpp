@@ -6,6 +6,7 @@
 #include "chrono"
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
+#include "layoutInspector.hpp"
 #include "overlay.hpp"
 #include "ranges"
 #include "stdexcept"
@@ -118,6 +119,11 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{
 		else
 			DwmSetWindowAttribute(hwnd, 1029, &micaOld, sizeof(micaOld));
 	}
+
+	content = Child(LayoutInspector{
+		.content = getChildren(),
+		.overlays = overlays,
+	});
 }
 
 Window::~Window() {
@@ -174,19 +180,6 @@ void Window::updateAndDraw() {
 			vec2{0.0f, 0.0f},
 			vec2{static_cast<float>(width), static_cast<float>(height)},
 		});
-		
-		for (auto &overlay: std::views::reverse(overlays)) {
-			overlay->data().parent = this;
-			overlay->update();
-			if (overlay->data().shouldDelete) continue;
-			overlay->layout({static_cast<float>(width), static_cast<float>(height)});
-			overlay->arrange({0.0f, 0.0f});
-			auto hitCheck = overlay->getHitcheckRect();
-			if (hitCheck.has_value()) {
-				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
-				hitChecks++;
-			}
-		}
 
 		overlays.erase(std::remove_if(overlays.begin(), overlays.end(),
 									  [](const auto &overlay) {
@@ -194,24 +187,16 @@ void Window::updateAndDraw() {
 									  }),
 					   overlays.end());
 
-		for (auto &child: std::views::reverse(children)) {
-			child->data().parent = this;
-			child->update();
-			if (child->data().shouldDelete) continue;
-			child->layout({static_cast<float>(width), static_cast<float>(height)});
-			child->arrange({0.0f, 0.0f});
-			auto hitCheck = child->getHitcheckRect();
-			if (hitCheck.has_value()) {
-				GestureDetector::g_hitCheckRects.emplace_back(hitCheck.value());
-				hitChecks++;
-			}
-		}
-
 		children.erase(std::remove_if(children.begin(), children.end(),
 									  [](const auto &child) {
 										  return child->data().shouldDelete;
 									  }),
 					   children.end());
+
+		content->data().parent = this;
+		content->update();
+		content->layout({static_cast<float>(width), static_cast<float>(height)});
+		content->arrange({0.0f, 0.0f});
 
 		for (uint32_t i = 0; i < hitChecks; i++) {
 			GestureDetector::g_hitCheckRects.pop_back();
@@ -224,13 +209,7 @@ void Window::updateAndDraw() {
 
 	renderer.prepare();
 
-	for (auto &child: children) {
-		child->draw();
-	}
-
-	for (auto &overlay: overlays) {
-		overlay->draw();
-	}
+	content->draw();
 
 	renderer.render();
 	renderer.popClipRect();

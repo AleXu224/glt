@@ -628,7 +628,7 @@ int main(int, char **) {
 			},
 		},
 	});
-	window.addChild(LayoutInspector{.window = &window});
+	// window.addChild(LayoutInspector{.window = &window});
 	window.run();
 	return 0;
 }

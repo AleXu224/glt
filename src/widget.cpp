@@ -79,7 +79,7 @@ void Widget::update() {
 	onUpdate();
 
 	// Update the children
-	if (shouldUpdateChildren) {
+	if (shouldUpdateChildren && m_data.visible) {
 		for (auto &child: std::views::reverse(children)) {
 			child->m_data.parent = this;
 			child->update();

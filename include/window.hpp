@@ -21,8 +21,9 @@ namespace squi {
 		static void glfwError(int id, const char *description);
 
 		static std::unordered_map<GLFWwindow *, Window *> windowMap;
+		std::vector<std::shared_ptr<Widget>> overlays{};
 
-		std::vector<std::unique_ptr<Overlay::Impl>> overlays{};
+		std::shared_ptr<Widget> content{};
 
 		void updateAndDraw();
 
@@ -36,8 +37,6 @@ namespace squi {
 		Window &operator=(const Window &) = delete;
 
 		operator GLFWwindow *() const { return window.get(); }
-
-		std::vector<std::unique_ptr<Overlay::Impl>> &getOverlays() { return overlays; }
 	};
 }// namespace squi
 #endif
