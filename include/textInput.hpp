@@ -23,7 +23,6 @@ namespace squi {
             float startToSelection{};
             float scroll{};
             std::optional<uint32_t> selectionStart{};
-			std::shared_ptr<GestureDetector::Storage> gd = GestureDetector{}.initializeFor(*this);
 
 		public:
             explicit Impl(const TextInput &args);

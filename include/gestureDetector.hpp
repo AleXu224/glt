@@ -24,7 +24,6 @@ namespace squi {
 		/**
 		 * @brief Called on initalization. Use this to store the state of the GestureDetector.
 		 */
-		std::function<void(Widget &, std::shared_ptr<Storage>)> getState{};
 		Child child{};
 
 	private:
@@ -83,8 +82,6 @@ namespace squi {
 		};
 	
 		operator Child() const;
-
-		std::shared_ptr<Storage> initializeFor(Widget &widget) const;
 	};
 }// namespace squi
 

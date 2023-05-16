@@ -20,7 +20,6 @@ namespace squi {
         Children children{};
     
         class Impl : public Widget {
-            std::shared_ptr<GestureDetector::Storage> gd = GestureDetector{}.initializeFor(*this);
         public:
             float scroll = 0;
             bool scrolled = false;

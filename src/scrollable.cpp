@@ -1,4 +1,5 @@
 #include "gestureDetector.hpp"
+#include <any>
 #define NOMINMAX
 #include "renderer.hpp"
 #include "scrollable.hpp"
@@ -47,7 +48,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 
 void Scrollable::Impl::onUpdate() {
 	scrolled = false;
-	auto &gd = *this->gd;
+	auto &gd = std::any_cast<GestureDetector::Storage&>(data().properties.at("gestureDetector"));
 
 	if (gd.hovered) {
 		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
@@ -88,5 +89,5 @@ void Scrollable::Impl::onDraw() {
 }
 
 squi::Scrollable::operator Child() const {
-	return {std::make_shared<Impl>(*this)};
+	return GestureDetector{.child = {std::make_shared<Impl>(*this)}};
 }

@@ -53,8 +53,7 @@ TextInput::Impl::Impl(const TextInput &args)
 
 // TODO: Fix the horrible performance of this
 void TextInput::Impl::onUpdate() {
-	if (!gd) return;
-	auto &gd = *this->gd;
+	auto &gd = std::any_cast<GestureDetector::Storage&>(data().properties.at("gestureDetector"));
 	if (!gd.active) return;
 
 	auto &children = getChildren();
@@ -345,7 +344,8 @@ void TextInput::Impl::onArrange(vec2 &pos) {
 		selectionWidget.data().visible = false;
 		selectedTextWidget.data().visible = false;
 	}
-	cursorWidget.data().visible = gd->active;
+	auto &gd = std::any_cast<GestureDetector::Storage &>(data().properties.at("gestureDetector"));
+	cursorWidget.data().visible = gd.active;
 
 	const auto contentPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
 
@@ -373,9 +373,10 @@ void TextInput::Impl::onDraw() {
 	renderer.popClipRect();
 }
 TextInput::operator Child() const {
-	return Child{std::make_shared<Impl>(*this)};
+	return GestureDetector{.child{std::make_shared<Impl>(*this)}};
 }
 
 void squi::TextInput::Impl::setActive(bool active) {
-	gd->active = active;
+	auto &gd = std::any_cast<GestureDetector::Storage &>(data().properties.at("gestureDetector"));
+	gd.active = active;
 }

@@ -20,8 +20,6 @@ namespace squi {
 			float scroll = 0;
 			float scrollDragStart = 0;
 			std::chrono::steady_clock::time_point lastHoverTime = std::chrono::steady_clock::now();
-			std::shared_ptr<GestureDetector::Storage> gd{};
-			std::shared_ptr<GestureDetector::Storage> containerGd{};
 		};
 
 		operator Child() const;

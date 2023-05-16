@@ -14,7 +14,7 @@ Scrollbar::operator Child() const {
 	newWidget.width = 16.0f;
 	newWidget.padding = 3;
 	newWidget.onUpdate = [storage](Widget &widget) {
-		auto &gd = *storage->containerGd;
+		auto &gd = std::any_cast<GestureDetector::Storage &>(widget.data().properties.at("gestureDetector"));
 		const auto currentTime = std::chrono::steady_clock::now();
 		if (gd.hovered || gd.focused) {
 			storage->lastHoverTime = std::chrono::steady_clock::now();
@@ -38,7 +38,6 @@ Scrollbar::operator Child() const {
 	};
 
 	return GestureDetector{
-		.getState = [storage](auto &w, auto newGd) { storage->containerGd = newGd; },
 		.child{
 			Box{
 				.widget{std::move(newWidget)},
@@ -46,7 +45,6 @@ Scrollbar::operator Child() const {
 				.child{
 					GestureDetector{
 						.onPress = [storage](auto &w, auto &gd) { storage->scrollDragStart = storage->scroll; },
-						.getState = [storage](auto &w, auto newGd) { storage->gd = newGd; },
 						.child{
 							Box{
 								.widget{
@@ -54,7 +52,7 @@ Scrollbar::operator Child() const {
 									.height = 32.f,
 									.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
 										auto &data = widget.data();
-										auto &gestureDetector = *storage->gd;
+										auto &gestureDetector = std::any_cast<GestureDetector::Storage &>(data.properties.at("gestureDetector"));
 
 										const float contentHeight = data.parent->getContentRect().height() - widget.getSize().y;
 										if (gestureDetector.focused && data.visible) {

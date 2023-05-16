@@ -39,7 +39,6 @@ namespace squi {
             };
             State state = State::rest;
             bool changed = false;
-            std::shared_ptr<GestureDetector::Storage> gd{};
         };
     
         operator Child() const;

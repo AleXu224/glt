@@ -31,13 +31,8 @@ struct TextItem {
 	std::string_view title;
 	std::function<std::string(Widget &)> getValue{};
 	bool darkenedBackground = false;
-	struct Storage {
-		// Data
-	};
 
 	operator Child() const {
-		auto storage = std::make_shared<Storage>();
-
 		return Box{
 			.widget{
 				.height = Size::Shrink,
@@ -256,8 +251,6 @@ struct LayoutItem {
 								},
 							},
 							.color{Color::HEX(0x00000000)},
-							// .borderColor{Color::HEX(0x0000001A)},
-							// .borderWidth = 1.0f,
 							.borderRadius = 4.0f,
 							.child{
 								Row{

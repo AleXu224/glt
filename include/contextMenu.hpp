@@ -21,7 +21,7 @@ namespace squi {
 			struct Divider{};
 			
 			std::string_view text;
-			std::variant<std::function<void()>, Submenu, Toggle> content;
+			std::variant<std::function<void()>, Submenu, Toggle, Divider> content;
 		};
 
 		// Args
@@ -30,14 +30,11 @@ namespace squi {
 
 		struct Storage {
 			// Data
-			uint32_t id = 0;
-			std::unordered_map<uint32_t, std::shared_ptr<Widget>> menus{};
-			std::unordered_map<uint32_t, bool> locked{};
+			std::unordered_map<uint64_t, bool> locked{};
 			std::vector<Child> menusToAdd{};
 
-			std::optional<std::shared_ptr<Widget>> getMenu(uint32_t id);
-			uint32_t addMenu(const Child &menu);
-			void removeMenu(uint32_t id);
+			uint64_t addMenu(const Child &menu);
+			void removeMenu(uint64_t id);
 		};
 
 		operator Child() const;

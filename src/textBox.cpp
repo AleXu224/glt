@@ -18,9 +18,6 @@ TextBox::operator Child() const {
 	constexpr std::string_view font = R"(C:\Windows\Fonts\segoeui.ttf)";
 
 	return GestureDetector{
-		.getState = [storage](auto &w, auto gd) {
-			storage->gd = gd;
-		},
 		.child{
 			Box{
 				.widget{
@@ -30,7 +27,7 @@ TextBox::operator Child() const {
 					.padding{0, 1, 0, 1},
 					.onUpdate = [&, storage](Widget &w) {
 						auto &box = (Box::Impl &) w;
-						auto &gd = *storage->gd;
+						auto &gd = std::any_cast<GestureDetector::Storage &>(w.data().properties.at("gestureDetector"));
 
 						storage->changed = false;
 						if (gd.active) {

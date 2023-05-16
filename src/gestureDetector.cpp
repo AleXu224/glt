@@ -1,6 +1,7 @@
 #include "gestureDetector.hpp"
 #include "widget.hpp"
 #include "GLFW/glfw3.h"
+#include <any>
 
 using namespace squi;
 
@@ -117,7 +118,7 @@ const vec2 &GestureDetector::Storage::getDragStartPos() const {
 }
 
 squi::GestureDetector::operator Child() const {
-	auto storage = std::make_shared<Storage>(Storage{
+	child->data().properties["gestureDetector"] = Storage {
 		.onEnter = onEnter,
 		.onLeave = onLeave,
 		.onClick = onClick,
@@ -125,33 +126,13 @@ squi::GestureDetector::operator Child() const {
 		.onRelease = onRelease,
 		.onDrag = onDrag,
 		.onUpdate = onUpdate,
-	});
-	if (getState) getState(*static_cast<std::shared_ptr<Widget>>(child), storage);
+	};
 	auto &childFuncs = child->funcs();
-	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [storage](Widget &widget) {
-		storage->update(widget);
-		if (storage->onUpdate) storage->onUpdate(widget, *storage);
+	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [](Widget &widget) {
+		auto &storage = std::any_cast<Storage&>(widget.data().properties.at("gestureDetector"));
+		storage.update(widget);
+		if (storage.onUpdate) storage.onUpdate(widget, storage);
 	});
 	
 	return child;
-}
-
-std::shared_ptr<GestureDetector::Storage> squi::GestureDetector::initializeFor(Widget &widget) const {
-	auto storage = std::make_shared<Storage>(Storage{
-		.onEnter = onEnter,
-		.onLeave = onLeave,
-		.onClick = onClick,
-		.onPress = onPress,
-		.onRelease = onRelease,
-		.onDrag = onDrag,
-		.onUpdate = onUpdate,
-	});
-	if (getState) getState(widget, storage);
-	auto &childFuncs = widget.funcs();
-	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [storage](Widget &widget) {
-		storage->update(widget);
-		if (storage->onUpdate) storage->onUpdate(widget, *storage);
-	});
-
-	return storage;
 }

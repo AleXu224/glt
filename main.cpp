@@ -519,7 +519,7 @@ int main(int, char **) {
 	// 		}(),
 	// 	},
 	// });
-	// window.addChild(PerformanceOverlay{});
+	window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
 	window.addChild(ContextMenu{
 		.position{16},
@@ -532,6 +532,9 @@ int main(int, char **) {
 						printf("Toggle value changed to %s\n", newValue ? "true" : "false");
 					},
 				},
+			},
+			ContextMenu::Item{
+				.content = ContextMenu::Item::Divider{},
 			},
 			ContextMenu::Item{
 				.text{"Item 1"},
