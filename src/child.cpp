@@ -4,7 +4,10 @@
 using namespace squi;
 
 void Child::initializeWidget() {
-	if (widget)	widget->initialize();
+	if (widget)	{
+		widget->initialize();
+		Widget::Store::widgets.insert({widget->id, widget});
+	}
 }
 
 Child::operator std::shared_ptr<Widget>() const {

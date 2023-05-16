@@ -1,3 +1,7 @@
+#include <list>
+#include <memory>
+#include <stdio.h>
+#include <unordered_map>
 #define NOMINMAX
 #include "widget.hpp"
 #include "quad.hpp"
@@ -11,6 +15,8 @@
 
 using namespace squi;
 
+std::unordered_map<uint64_t, std::weak_ptr<Widget>> Widget::Store::widgets{};
+uint64_t Widget::idCounter = 1; // 0 is reserved for exceptions
 uint32_t Widget::widgetCount = 0;
 
 Widget::Widget(const Args &args, const Options &options)
@@ -27,7 +33,8 @@ Widget::Widget(const Args &args, const Options &options)
 		  .margin = args.margin,
 		  .padding = args.padding,
 		  .isInteractive = options.isInteractive,
-	  }) {
+	  }),
+	  id(idCounter++) {
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
 	if (args.onUpdate) m_funcs.onUpdate.push_back(args.onUpdate);
 	if (args.afterUpdate) m_funcs.afterUpdate.push_back(args.afterUpdate);
@@ -41,6 +48,18 @@ Widget::Widget(const Args &args, const Options &options)
 
 Widget::~Widget() {
 	widgetCount--;
+
+	if (auto it = Store::widgets.find(id); it != Store::widgets.end()) {
+		Store::widgets.erase(it);
+	}
+}
+
+std::shared_ptr<Widget> Widget::Store::getWidget(uint64_t id) {
+	if (auto it = widgets.find(id); it != widgets.end()) {
+		return it->second.lock();
+	} else {
+		return {};
+	}
 }
 
 Widget::FunctionArgs &Widget::funcs() {
@@ -198,6 +217,7 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 }
 
 float squi::Widget::getMinWidth() {
+	if (!m_data.visible) return 0.0f;
 	switch (m_data.sizeMode.width.index()) {
 		case 0: {
 			return std::get<0>(m_data.sizeMode.width) + m_data.margin.getSizeOffset().x;
@@ -215,6 +235,7 @@ float squi::Widget::getMinWidth() {
 }
 
 float squi::Widget::getMinHeight() {
+	if (!m_data.visible) return 0.0f;
 	switch (m_data.sizeMode.height.index()) {
 		case 0: {
 			return std::get<0>(m_data.sizeMode.height) + m_data.margin.getSizeOffset().y;

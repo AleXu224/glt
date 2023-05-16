@@ -112,6 +112,7 @@ void Column::Impl::onDraw() {
 float Column::Impl::getMinHeight() {
 	const auto &widgetData = data();
 	const auto &children = getChildren();
+	if (!widgetData.visible) return 0.0f;
 	switch (widgetData.sizeMode.height.index()) {
 		case 0: {
 			return std::get<0>(widgetData.sizeMode.height) + widgetData.margin.getSizeOffset().y;

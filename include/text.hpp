@@ -31,10 +31,10 @@ namespace squi {
 		public:
             Impl(const Text &args);
 
-            void onLayout(vec2 &maxSize, vec2 &minSize) override;
-            void onArrange(vec2 &pos) override;
+            void onLayout(vec2 &maxSize, vec2 &minSize) final;
+            void onArrange(vec2 &pos) final;
 
-            void onDraw () override;
+            void onDraw () final;
 
             void setText(const std::string_view &text);
 

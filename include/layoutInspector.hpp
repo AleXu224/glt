@@ -15,7 +15,9 @@ namespace squi {
             // Data
 			std::vector<std::shared_ptr<Widget>> &content;
 			std::vector<std::shared_ptr<Widget>> &overlays;
-            std::shared_ptr<Widget> selectedWidget{};
+            uint64_t selectedWidgetID = 0;
+            uint64_t activeButtonID = 0;
+            uint64_t hoveredWidgetID = 0;
             bool shouldUpdate = true;
             bool selectedWidgetChanged = false;
 		};

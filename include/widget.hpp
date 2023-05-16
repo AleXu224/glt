@@ -8,8 +8,9 @@
 #include "rect.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include <any>
 #include <optional>
-#include <stdint.h>
+#include <unordered_map>
 #include <variant>
 
 
@@ -30,6 +31,11 @@ namespace squi {
 
 	class Widget {
 	public:
+		struct Store {
+			static std::unordered_map<uint64_t, std::weak_ptr<Widget>> widgets;
+
+			static std::shared_ptr<Widget> getWidget(uint64_t id);
+		};
 		struct Args {
 
 			/**
@@ -121,6 +127,7 @@ namespace squi {
 				std::variant<float, Size> width;
 				std::variant<float, Size> height;
 			};
+			std::unordered_map<std::string_view, std::any> properties{};
 			SizeMode sizeMode;
 			SizeConstraints sizeConstraints;
 			Margin margin;
@@ -140,9 +147,11 @@ namespace squi {
 		};
 		Data m_data;
 		std::vector<std::shared_ptr<Widget>> children{};
+		static uint64_t idCounter;
 		static uint32_t widgetCount;
 
 	public:
+		const uint64_t id;
 		// Disable copy
 		Widget(const Widget &) = delete;
 		Widget &operator=(const Widget &) = delete;

@@ -106,9 +106,9 @@ void Row::Impl::onDraw() {
 }
 
 float squi::Row::Impl::getMinWidth() {
-
 	const auto &widgetData = data();
 	const auto &children = getChildren();
+	if (!widgetData.visible) return 0.0f;
 	switch (widgetData.sizeMode.width.index()) {
 		case 0: {
 			return std::get<0>(widgetData.sizeMode.width) + widgetData.margin.getSizeOffset().x;

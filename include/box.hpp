@@ -27,15 +27,16 @@ namespace squi {
 			// overlapping the border color on top of the background color.
 			Color borderColor;
 			BorderPosition borderPosition;
+			float borderWidth;
 			bool shouldClipContent;
 
 		public:
 			explicit Impl(const Box &args);
 
-			void onDraw() override;
+			void onDraw() final;
 
-			void postLayout(vec2 size) override;
-			void postArrange(vec2 pos) override;
+			void postLayout(vec2 size) final;
+			void postArrange(vec2 pos) final;
 
 			void setColor(const Color &color);
 			void setBorderColor(const Color &color);

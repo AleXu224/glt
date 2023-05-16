@@ -28,6 +28,13 @@ namespace squi {
 		[[nodiscard]] inline bool contains(const vec2 &position) const {
 			return position.x >= left && position.x < right && position.y >= top && position.y < bottom;
 		}
+		Rect& inset(const float &distance) {
+			left += distance;
+			top += distance;
+			right -= distance;
+			bottom -= distance;
+			return *this;
+		}
 		[[nodiscard]] Rect overlap(const Rect &other) const;
 	};
 }// namespace squi

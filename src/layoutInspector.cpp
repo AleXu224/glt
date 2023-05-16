@@ -4,25 +4,30 @@
 #include "button.hpp"
 #include "column.hpp"
 #include "container.hpp"
+#include "fontIcon.hpp"
 #include "gestureDetector.hpp"
 #include "quad.hpp"
+#include "ranges"
 #include "renderer.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include <chrono>
+#include <algorithm>
+#include <chrono>
 #include <format>
 #include <functional>
 #include <memory>
 #include <string_view>
+#include <utility>
+
 
 using namespace squi;
 
-static std::weak_ptr<Widget> activeWidget{};
-
 struct TextItem {
 	// Args
-	std::shared_ptr<Widget> widget{};
+	uint64_t widget;
 	std::string_view title;
 	std::function<std::string(Widget &)> getValue{};
 	bool darkenedBackground = false;
@@ -52,9 +57,11 @@ struct TextItem {
 								.onUpdate = [getValue = getValue, target = widget](Widget &widget) {
 									auto &w = dynamic_cast<Text::Impl &>(widget);
 									auto oldText = w.getText();
-									auto newText = getValue ? getValue(*target) : "";
-									if (oldText != newText) {
-										w.setText(newText);
+									if (auto widget = Widget::Store::getWidget(target); widget) {
+										auto newText = getValue ? getValue(*widget) : "";
+										if (oldText != newText) {
+											w.setText(newText);
+										}
 									}
 								},
 							},
@@ -68,24 +75,35 @@ struct TextItem {
 
 struct TextItems {
 	// Args
-	std::shared_ptr<Widget> widget;
+	uint64_t widgetID;
 
 	operator Child() const {
 		return Column{
 			.widget{
 				.width = Size::Expand,
 				.height = Size::Shrink,
+				.onUpdate = [widgetID = widgetID](Widget &w) {
+					auto widget = Widget::Store::getWidget(widgetID);
+					if (!widget) w.data().shouldDelete = true;
+				},
 			},
 			.children{
 				TextItem{
-					.widget{widget},
+					.widget = widgetID,
+					.title{"ID"},
+					.getValue = [](Widget &widget) {
+						return std::format("{}", widget.id);
+					},
+				},
+				TextItem{
+					.widget = widgetID,
 					.title{"Position"},
 					.getValue = [](Widget &widget) {
 						return std::format("x: {}, y: {}", widget.getPos().x, widget.getPos().y);
 					},
 				},
 				TextItem{
-					.widget{widget},
+					.widget = widgetID,
 					.title{"Size"},
 					.getValue = [](Widget &widget) {
 						return std::format("w: {}, h: {}", widget.getSize().x, widget.getSize().y);
@@ -93,14 +111,14 @@ struct TextItems {
 					.darkenedBackground = true,
 				},
 				TextItem{
-					.widget{widget},
+					.widget = widgetID,
 					.title{"Margin"},
 					.getValue = [](Widget &widget) {
 						return std::format("l: {}, t: {}, r: {}, b: {}", widget.data().margin.left, widget.data().margin.top, widget.data().margin.right, widget.data().margin.bottom);
 					},
 				},
 				TextItem{
-					.widget{widget},
+					.widget = widgetID,
 					.title{"Padding"},
 					.getValue = [](Widget &widget) {
 						return std::format("l: {}, t: {}, r: {}, b: {}", widget.data().padding.left, widget.data().padding.top, widget.data().padding.right, widget.data().padding.bottom);
@@ -108,7 +126,7 @@ struct TextItems {
 					.darkenedBackground = true,
 				},
 				TextItem{
-					.widget{widget},
+					.widget = widgetID,
 					.title{"Should delete"},
 					.getValue = [](Widget &widget) {
 						return std::format("{}", widget.data().shouldDelete);
@@ -121,61 +139,142 @@ struct TextItems {
 
 struct LayoutItem {
 	// Args
-	std::shared_ptr<Widget> widget;
+	uint64_t widgetID;
 	std::shared_ptr<LayoutInspector::Storage> state;
+	float depth = 0;
 
 	struct Storage {
 		// Data
-		std::shared_ptr<Widget> widget;
+		uint64_t widgetID;
+		float depth;
 		std::shared_ptr<LayoutInspector::Storage> state;
+		std::chrono::time_point<std::chrono::steady_clock> timeCreated = std::chrono::steady_clock::now();
+		bool expanded = false;
+		bool hovered = false;
+		bool stateChanged = false;
 	};
+
+	static Child buttonFactory(std::shared_ptr<Storage> &storage) {
+		auto widget = Widget::Store::getWidget(storage->widgetID);
+		if (!widget || widget->getChildren().empty()) return {};
+		return GestureDetector{
+			.onClick = [storage](Widget &, auto) {
+				storage->expanded = !storage->expanded;
+				storage->stateChanged = true;
+			},
+			.child{
+				Container{
+					.widget{
+						.width = Size::Shrink,
+						.height = Size::Expand,
+						.padding{0.f, 14.f, 0.f, 6.f},
+						.onUpdate = [storage](Widget &w) {
+							if (storage->stateChanged) {
+								w.setChildren(Children{
+									Align{
+										.child{
+											FontIcon{
+												.icon{storage->expanded ? "\uE972" : "\uE974"},
+												.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
+												.size = 12.f,
+											},
+										},
+									},
+								});
+								storage->stateChanged = false;
+							}
+						},
+					},
+					.child{
+						Align{
+							.child{
+								FontIcon{
+									.icon{storage->expanded ? "\uE972" : "\uE974"},
+									.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
+									.size = 12.f,
+								},
+							},
+						},
+					},
+				},
+			},
+		};
+	}
 
 	operator Child() const {
 		auto storage = std::make_shared<Storage>(Storage{
-			.widget = widget,
+			.widgetID = widgetID,
+			.depth = depth,
 			.state = state,
 		});
 
 		return Column{
 			.widget{
 				.height = Size::Shrink,
+				.onInit = [storage](Widget &w) {
+					w.data().properties.insert({"layoutItem", storage});
+				},
+				.onUpdate = [storage](Widget &w) {
+					auto widget = Widget::Store::getWidget(storage->widgetID);
+					if (!widget) w.data().shouldDelete = true;
+				},
 			},
 			.children{
 				GestureDetector{
-					.onEnter = [storage](Widget &w, auto &) { 
-						activeWidget = storage->widget; 
-					},
-					.onLeave = [storage](auto &, auto&) {
-						if (activeWidget.lock() == storage->widget) {
-							activeWidget.reset();
-						}
-					},
-					.onClick = [storage](auto &, auto &) {
-						storage->state->selectedWidget = storage->widget;
+					.onEnter = [storage, state = state](Widget &w, auto &) { 
+						state->hoveredWidgetID = storage->widgetID;
+						storage->hovered = true; },
+					.onLeave = [storage, state = state](Widget &w, auto &) {
+						storage->hovered = false;
+						if (state->hoveredWidgetID == storage->widgetID) {
+							state->hoveredWidgetID = 0;
+						} },
+					.onClick = [storage](Widget &w, auto &) {
+						storage->state->selectedWidgetID = storage->widgetID;
 						storage->state->selectedWidgetChanged = true;
-					},
+						storage->state->activeButtonID = w.id; },
 					.child{
 						Box{
 							.widget{
 								.width = Size::Expand,
-								.height = Size::Shrink,
-								.margin{2},
+								.height = 28.f,
+								.margin{4, 2},
+								.padding{0.f, 0.f, 0.f, depth * 16.f},
+								.onUpdate = [storage = storage, state = state](Widget &w) {
+									Color outputColor = [&](){
+										if (storage->hovered || state->activeButtonID == w.id)
+											return Color::HEX(0xFFFFFF0D);
+										else
+											return Color::HEX(0x00000000);
+									}();
+									const auto timeAlive = std::chrono::steady_clock::now() - storage->timeCreated;
+									if (timeAlive < std::chrono::milliseconds(200)) {
+										outputColor = outputColor.transistion(Color::HEX(0x17C55DAA), 1.f - (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(timeAlive).count()) / 200.f));
+									}
+									auto &box = dynamic_cast<Box::Impl &>(w);
+									box.setColor(outputColor);
+								},
 							},
-							.color{Color::HEX(0xFFFFFF0D)},
+							.color{Color::HEX(0x00000000)},
 							// .borderColor{Color::HEX(0x0000001A)},
 							// .borderWidth = 1.0f,
 							.borderRadius = 4.0f,
 							.child{
-								Column{
+								Row{
+									.widget{
+										.padding{8.f, 0},
+									},
+									.alignment = Row::Alignment::center,
 									.children{
+										buttonFactory(storage),
 										Text{
-											.widget{
-												.margin{8.f},
-											},
-											.text{[&]() {
-												auto &w = *widget;
+											.text{[&]() -> std::string {
+												auto wPtr = Widget::Store::getWidget(storage->widgetID);
+												if (!wPtr) return "null";
+												auto &w = *wPtr;
 												return typeid(w).name();
 											}()},
+											.fontSize = 14.f,
 										},
 									},
 								},
@@ -184,48 +283,116 @@ struct LayoutItem {
 					},
 				},
 				[&]() -> Child {
+					auto widget = Widget::Store::getWidget(storage->widgetID);
+					if (!widget) return Child{};
 					auto &children = widget->getChildren();
 
 					if (children.empty()) {
 						return Child{};
 					}
 
-					return Row{
+					return Column{
 						.widget{
-							.width = Size::Expand,
 							.height = Size::Shrink,
+							.onUpdate = [storage](Widget &w) {
+								w.data().visible = storage->expanded;
+								auto widget = Widget::Store::getWidget(storage->widgetID);
+								if (!widget) return;
+								const auto &children = w.getChildren();
+								const auto test = [children](std::shared_ptr<Widget> &child) -> bool {
+									auto result = std::find_if(children.begin(), children.end(), [id = child->id](const auto &w) {
+										return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->data().properties.at("layoutItem"))->widgetID == id;
+									});
+									return result == children.end();
+								};
+								for (auto &child: widget->getChildren()) {
+									if (test(child)) {
+										w.addChild(LayoutItem{child->id, storage->state, storage->depth + 1});
+									}
+								}
+							},
 						},
 						.children{
-							Box{
-								.widget{
-									.width = 2.f,
-									.height = Size::Expand,
-									.margin{0, 0, 0, 4},
-								},
-							},
-							Column{
-								.widget{
-									.height = Size::Shrink,
-									.margin{0, 0, 0, 4},
-								},
-								.children{
-									[&]() {
-										auto &children = widget->getChildren();
+							[&]() {
+								auto &children = widget->getChildren();
 
-										std::vector<Child> result{};
-										result.reserve(children.size());
+								std::vector<Child> result{};
+								result.reserve(children.size());
 
-										for (auto &child: children) {
-											result.push_back(LayoutItem{child, state});
-										}
+								for (auto &child: children) {
+									result.push_back(LayoutItem{child->id, state, depth + 1});
+								}
 
-										return Children(result);
-									}(),
-								},
-							},
+								return Children(result);
+							}(),
 						},
 					};
 				}(),
+			},
+		};
+	}
+};
+
+struct LayoutInspectorContent {
+	// Args
+	std::shared_ptr<LayoutInspector::Storage> storage;
+
+	operator Child() const {
+		return Column{
+			.children{
+				ScrollableFrame{
+					.children{
+						Column{
+							.widget{
+								.width = Size::Expand,
+								.height = Size::Shrink,
+								.onUpdate = [storage = storage](Widget &w) {
+									const auto &children = w.getChildren();
+									const auto test = [children](std::shared_ptr<Widget> &child) -> bool {
+										auto result = std::find_if(children.begin(), children.end(), [id = child->id](const auto &w) {
+											return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->data().properties.at("layoutItem"))->widgetID == id;
+										});
+										return result == children.end();
+									};
+									for (auto &child: storage->content) {
+										if (test(child)) {
+											w.addChild(LayoutItem{child->id, storage});
+										}
+									}
+									for (auto &child: storage->overlays) {
+										if (test(child)) {
+											w.addChild(LayoutItem{child->id, storage});
+										}
+									}
+								},
+							},
+						},
+					},
+				},
+				Box{
+					.widget{
+						.width = Size::Expand,
+						.height = 1.f,
+					},
+					.color{Color::HEX(0x00000033)},
+				},
+				Box{
+					.widget{
+						.height = 256.f,
+						.onUpdate = [storage = storage](Widget &w) {
+							if (storage->selectedWidgetID && storage->selectedWidgetChanged) {
+								w.setChildren(Children{TextItems{storage->selectedWidgetID}});
+								storage->selectedWidgetChanged = false;
+							}
+						},
+					},
+					.color{Color::HEX(0x00000015)},
+					.child{
+						Align{
+							.child{Text{.text{"Select a widget to show info"}}},
+						},
+					},
+				},
 			},
 		};
 	}
@@ -268,8 +435,8 @@ LayoutInspector::operator Child() const {
 				},
 			},
 			GestureDetector{
-				.onLeave = [](Widget &w, auto &) {
-					activeWidget.reset();
+				.onLeave = [storage](Widget &w, auto &) {
+					storage->hoveredWidgetID = 0;
 				},
 				.child{
 					Box{
@@ -278,9 +445,11 @@ LayoutInspector::operator Child() const {
 							.height = Size::Expand,
 							.margin{4.f},
 							.padding{1.f},
-							.afterDraw = [](Widget &w) {
-								auto widget = activeWidget.lock();
-								if (widget) {
+							.afterDraw = [storage](Widget &w) {
+								if (!storage->hoveredWidgetID) return;
+								auto widget = Widget::Store::getWidget(storage->hoveredWidgetID);
+								if (!widget) return;
+								if (widget && widget->data().visible) {
 									Quad previewQuad{Quad::Args{
 										.pos = widget->getPos() + widget->data().margin.getPositionOffset(),
 										.size = widget->getSize(),
@@ -307,75 +476,13 @@ LayoutInspector::operator Child() const {
 								}
 							},
 						},
-						.color{Color::HEX(0x2C2C2CF5)},
+						.color{Color::HEX(0x1C1C1CFF)},
 						.borderColor{Color::HEX(0x00000033)},
 						.borderWidth = 1.f,
 						.borderRadius = 8.f,
 						.borderPosition = squi::Box::BorderPosition::outset,
 						.child{
-							Column{
-								.children{
-									ScrollableFrame{
-										.children{
-											Button{
-												.width = Size::Expand,
-												.margin{4.f},
-												.text{"Update tree"},
-												.onClick = [storage]() {
-													storage->shouldUpdate = true;
-												},
-											},
-											Column{
-												.widget{
-													.width = Size::Expand,
-													.height = Size::Shrink,
-													.onUpdate = [storage](Widget &w) {
-														if (storage->shouldUpdate) {
-															std::vector<Child> result;
-															result.reserve(storage->content.size() + storage->overlays.size());
-
-															for (auto &child: storage->content) {
-																result.push_back(LayoutItem{child, storage});
-															}
-
-															for (auto &overlay: storage->overlays) {
-																result.push_back(LayoutItem{overlay, storage});
-															}
-
-															w.setChildren(Children(result));
-															storage->shouldUpdate = false;
-														}
-													},
-												},
-											},
-										},
-									},
-									Box{
-										.widget{
-											.width = Size::Expand,
-											.height = 1.f,
-										},
-										.color{Color::HEX(0x00000033)},
-									},
-									Box{
-										.widget{
-											.height = 256.f,
-											.onUpdate = [storage](Widget &w) {
-												if (storage->selectedWidget && storage->selectedWidgetChanged) {
-													w.setChildren(Children{TextItems{storage->selectedWidget}});
-													storage->selectedWidgetChanged = false;
-												}
-											},
-										},
-										.color{Color::HEX(0x00000015)},
-										.child{
-											Align{
-												.child{Text{.text{"Select a widget to show info"}}},
-											},
-										},
-									},
-								},
-							},
+							LayoutInspectorContent{storage},
 						},
 					},
 				},

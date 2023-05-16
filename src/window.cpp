@@ -127,7 +127,6 @@ Window::Window() : Widget(Widget::Args{}, Widget::Options{
 }
 
 Window::~Window() {
-	Widget::~Widget();
 	windowMap.erase(window.get());
 }
 

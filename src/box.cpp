@@ -16,7 +16,7 @@ Box::Impl::Impl(const Box &args)
 		  .borderSize = args.borderWidth,
 		  .textureType = TextureType::NoTexture,
 	  }),
-	  borderColor(args.borderColor), borderPosition(args.borderPosition), shouldClipContent(args.shouldClipContent) {
+	  borderColor(args.borderColor), borderPosition(args.borderPosition), borderWidth(args.borderWidth), shouldClipContent(args.shouldClipContent) {
 	addChild(args.child);
 }
 
@@ -24,7 +24,7 @@ void Box::Impl::onDraw() {
 	auto &renderer = Renderer::getInstance();
 	renderer.addQuad(quad);
 	if (shouldClipContent)
-		renderer.addClipRect(getRect(), quad.getData().borderRadius);
+		renderer.addClipRect(getRect().inset(borderWidth), quad.getData().borderRadius);
 
 	auto &children = getChildren();
 	for (auto &child: children) {
