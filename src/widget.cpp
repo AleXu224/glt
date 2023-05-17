@@ -19,12 +19,9 @@ std::unordered_map<uint64_t, std::weak_ptr<Widget>> Widget::Store::widgets{};
 uint64_t Widget::idCounter = 1; // 0 is reserved for exceptions
 uint32_t Widget::widgetCount = 0;
 
-Widget::Widget(const Args &args, const Options &options)
-	: shouldUpdateChildren(options.shouldUpdateChildren),
-	  shouldDrawChildren(options.shouldDrawChildren),
-	  shouldHandleLayout(options.shouldHandleLayout),
-	  shouldArrangeChildren(options.shouldArrangeChildren),
-	  m_data(Widget::Data{
+Widget::Widget(const Args &args, const Flags &flags)
+	: flags(flags),
+	  state(Widget::State{
 		  .sizeMode{
 			  .width = args.width,
 			  .height = args.height,
@@ -32,7 +29,6 @@ Widget::Widget(const Args &args, const Options &options)
 		  .sizeConstraints = args.sizeConstraints,
 		  .margin = args.margin,
 		  .padding = args.padding,
-		  .isInteractive = options.isInteractive,
 	  }),
 	  id(idCounter++) {
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
@@ -75,7 +71,7 @@ std::vector<std::shared_ptr<Widget>> &Widget::getChildren() {
 }
 
 std::optional<Rect> Widget::getHitcheckRect() const {
-	if (m_data.isInteractive && m_data.visible)
+	if (flags.isInteractive && flags.visible)
 		return getRect();
 	else
 		return std::nullopt;
@@ -90,6 +86,13 @@ void Widget::addChild(const Child &child) {
 		children.push_back(child);
 }
 
+void Widget::updateChildren() {
+	for (auto &child: std::views::reverse(children)) {
+		child->state.parent = this;
+		child->update();
+	}
+}
+
 void Widget::update() {
 	// On update
 	for (auto &func: m_funcs.onUpdate) {
@@ -98,14 +101,11 @@ void Widget::update() {
 	onUpdate();
 
 	// Update the children
-	if (shouldUpdateChildren && m_data.visible) {
-		for (auto &child: std::views::reverse(children)) {
-			child->m_data.parent = this;
-			child->update();
-		}
+	if (flags.shouldUpdateChildren && flags.visible) {
+		updateChildren();
 	}
 	children.erase(std::remove_if(children.begin(), children.end(), [](const auto &child) {
-					   return child->m_data.shouldDelete;
+					   return child->shouldDelete;
 				   }),
 				   children.end());
 
@@ -116,10 +116,31 @@ void Widget::update() {
 	afterUpdate();
 }
 
-vec2 squi::Widget::layout(vec2 maxSize) {
-	const auto &constraints = m_data.sizeConstraints;
+void Widget::layoutChildren(vec2 &maxSize, vec2 &minSize) {
+	vec2 childMaxSize = maxSize - state.padding.getSizeOffset();
+	if (state.sizeMode.width.index() == 0) {
+		childMaxSize.x = std::min(childMaxSize.x, std::get<0>(state.sizeMode.width));
+	}
+	if (state.sizeMode.height.index() == 0) {
+		childMaxSize.y = std::min(childMaxSize.y, std::get<0>(state.sizeMode.height));
+	}
 
-	maxSize -= m_data.margin.getSizeOffset();
+	for (auto &child: children) {
+		const auto size = child->layout(childMaxSize);
+		minSize.x = std::clamp(size.x, minSize.x, maxSize.x);
+		minSize.y = std::clamp(size.y, minSize.y, maxSize.y);
+	}
+
+	minSize += state.padding.getSizeOffset();
+}
+
+vec2 squi::Widget::layout(vec2 maxSize) {
+	// An invisible widget has no size
+	if (!flags.visible) return {0, 0};
+
+	const auto &constraints = state.sizeConstraints;
+
+	maxSize -= state.margin.getSizeOffset();
 
 	// Handle the max size constraints
 	if (constraints.maxWidth.has_value()) {
@@ -129,38 +150,25 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		maxSize.y = *constraints.maxHeight;
 	}
 
-
 	vec2 minSize{
 		std::min(0.0f, maxSize.x),
 		std::min(0.0f, maxSize.y),
 	};
 
-	if (m_data.sizeMode.width.index() == 1 && std::get<1>(m_data.sizeMode.width) == Size::Shrink) {
-		maxSize.x = std::min(getMinWidth() - m_data.margin.getSizeOffset().x, maxSize.x);
+	if (state.sizeMode.width.index() == 1 && std::get<1>(state.sizeMode.width) == Size::Shrink) {
+		maxSize.x = std::min(getMinWidth() - state.margin.getSizeOffset().x, maxSize.x);
 	}
-	if (m_data.sizeMode.height.index() == 1 && std::get<1>(m_data.sizeMode.height) == Size::Shrink) {
-		maxSize.y = std::min(getMinHeight() - m_data.margin.getSizeOffset().y, maxSize.y);
+	if (state.sizeMode.height.index() == 1 && std::get<1>(state.sizeMode.height) == Size::Shrink) {
+		maxSize.y = std::min(getMinHeight() - state.margin.getSizeOffset().y, maxSize.y);
 	}
+
 	for (auto &func: m_funcs.onLayout) {
 		if (func) func(*this, maxSize, minSize);
 	}
 	onLayout(maxSize, minSize);
-	if (shouldHandleLayout) {
-		vec2 childMaxSize = maxSize - m_data.padding.getSizeOffset();
-		if (m_data.sizeMode.width.index() == 0) {
-			childMaxSize.x = std::min(childMaxSize.x, std::get<0>(m_data.sizeMode.width));
-		}
-		if (m_data.sizeMode.height.index() == 0) {
-			childMaxSize.y = std::min(childMaxSize.y, std::get<0>(m_data.sizeMode.height));
-		}
 
-		for (auto &child: children) {
-			const auto size = child->layout(childMaxSize);
-			minSize.x = std::clamp(size.x, minSize.x, maxSize.x);
-			minSize.y = std::clamp(size.y, minSize.y, maxSize.y);
-		}
-
-		minSize += m_data.padding.getSizeOffset();
+	if (flags.shouldLayoutChildren) {
+		layoutChildren(maxSize, minSize);
 	}
 
 	minSize.x = std::min(minSize.x, maxSize.x);
@@ -174,13 +182,13 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		minSize.y = std::max(minSize.y, *constraints.minHeight);
 	}
 
-	switch (m_data.sizeMode.width.index()) {
+	switch (state.sizeMode.width.index()) {
 		case 0: {
-			size.x = std::clamp(std::get<0>(m_data.sizeMode.width), minSize.x, maxSize.x);
+			size.x = std::clamp(std::get<0>(state.sizeMode.width), minSize.x, maxSize.x);
 			break;
 		}
 		case 1: {
-			switch (std::get<1>(m_data.sizeMode.width)) {
+			switch (std::get<1>(state.sizeMode.width)) {
 				case Size::Expand: {
 					size.x = maxSize.x;
 					break;
@@ -192,13 +200,13 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 			}
 		}
 	}
-	switch (m_data.sizeMode.height.index()) {
+	switch (state.sizeMode.height.index()) {
 		case 0: {
-			size.y = std::clamp(std::get<0>(m_data.sizeMode.height), minSize.y, maxSize.y);
+			size.y = std::clamp(std::get<0>(state.sizeMode.height), minSize.y, maxSize.y);
 			break;
 		}
 		case 1: {
-			switch (std::get<1>(m_data.sizeMode.height)) {
+			switch (std::get<1>(state.sizeMode.height)) {
 				case Size::Expand: {
 					size.y = maxSize.y;
 					break;
@@ -213,17 +221,17 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 
 	postLayout(size);
 
-	return size + m_data.margin.getSizeOffset();
+	return size + state.margin.getSizeOffset();
 }
 
 float squi::Widget::getMinWidth() {
-	if (!m_data.visible) return 0.0f;
-	switch (m_data.sizeMode.width.index()) {
+	if (!flags.visible) return 0.0f;
+	switch (state.sizeMode.width.index()) {
 		case 0: {
-			return std::get<0>(m_data.sizeMode.width) + m_data.margin.getSizeOffset().x;
+			return std::get<0>(state.sizeMode.width) + state.margin.getSizeOffset().x;
 		}
 		case 1: {
-			return m_data.margin.getSizeOffset().x + m_data.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
 					   return std::max(acc, child->getMinWidth());
 				   });
 		}
@@ -235,13 +243,13 @@ float squi::Widget::getMinWidth() {
 }
 
 float squi::Widget::getMinHeight() {
-	if (!m_data.visible) return 0.0f;
-	switch (m_data.sizeMode.height.index()) {
+	if (!flags.visible) return 0.0f;
+	switch (state.sizeMode.height.index()) {
 		case 0: {
-			return std::get<0>(m_data.sizeMode.height) + m_data.margin.getSizeOffset().y;
+			return std::get<0>(state.sizeMode.height) + state.margin.getSizeOffset().y;
 		}
 		case 1: {
-			return m_data.margin.getSizeOffset().y + m_data.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+			return state.margin.getSizeOffset().y + state.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
 					   return std::max(acc, child->getMinHeight());
 				   });
 		}
@@ -252,47 +260,45 @@ float squi::Widget::getMinHeight() {
 	}
 }
 
+void Widget::arrangeChildren(vec2 &pos) {
+	const auto childPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	for (auto &child: children) {
+		child->arrange(childPos);
+	}
+}
+
 void Widget::arrange(vec2 pos) {
-	if (!m_data.visible) return;
+	if (!flags.visible) return;
 	for (auto &onArrange: m_funcs.onArrange) {
 		if (onArrange) onArrange(*this, pos);
 	}
 	onArrange(pos);
 	this->pos = pos;
 
-	if (shouldArrangeChildren) {
-		const auto childPos = pos + m_data.margin.getPositionOffset() + m_data.padding.getPositionOffset();
-		for (auto &child: children) {
-			child->arrange(childPos);
-		}
+	if (flags.shouldArrangeChildren) {
+		arrangeChildren(pos);
 	}
 	postArrange(pos);
 }
 
+void Widget::drawChildren() {
+	for (auto &child: children) {
+		child->draw();
+	}
+}
+
 void Widget::draw() {
-	// Quad debugQuad{Quad::Args{
-	// 	.pos = pos + m_data.margin.getPositionOffset(),
-	// 	.size = size,
-	// 	.color = {0.0f, 0.0f, 0.0f, 0.0f},
-	// 	.borderColor = {1.0f, 1.0f, 0.0f, 1.0f},
-	// 	.borderRadius = 1.0f,
-	// 	.borderSize = 1.0f,
-	// }};
-	// auto &renderer = Renderer::getInstance();
-	// renderer.addQuad(debugQuad);
 	for (auto &func: m_funcs.beforeDraw) {
 		if (func) func(*this);
 	}
-	if (!m_data.visible) return;
+	if (!flags.visible) return;
 	for (auto &func: m_funcs.onDraw) {
 		if (func) func(*this);
 	}
 	onDraw();
 
-	if (shouldDrawChildren) {
-		for (auto &child: children) {
-			child->draw();
-		}
+	if (flags.shouldDrawChildren) {
+		drawChildren();
 	}
 
 	for (auto &func: m_funcs.afterDraw) {

@@ -8,10 +8,7 @@
 using namespace squi;
 
 Scrollable::Impl::Impl(const Scrollable &args)
-	: Widget(args.widget, Widget::Options{
-							  .shouldDrawChildren = false,
-							  .shouldArrangeChildren = false,
-						  }) {
+	: Widget(args.widget, Widget::Flags::Default()) {
 	addChild(Column{
 		.widget{
 			.width = Size::Expand,
@@ -48,7 +45,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 
 void Scrollable::Impl::onUpdate() {
 	scrolled = false;
-	auto &gd = std::any_cast<GestureDetector::Storage&>(data().properties.at("gestureDetector"));
+	auto &gd = std::any_cast<GestureDetector::Storage&>(state.properties.at("gestureDetector"));
 
 	if (gd.hovered) {
 		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
@@ -62,19 +59,17 @@ void squi::Scrollable::Impl::afterUpdate() {
 	GestureDetector::g_activeArea.pop_back();
 }
 
-void Scrollable::Impl::onArrange(vec2 &pos) {
+void Scrollable::Impl::arrangeChildren(vec2 &pos) {
 	auto &children = getChildren();
 	if (children.empty()) return;
 	auto &child = children[0];
 	if (!child) return;
 
-	auto &widgetData = this->data();
-
-	const auto childPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
+	const auto childPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 	child->arrange(childPos.withYOffset(-scroll));
 }
 
-void Scrollable::Impl::onDraw() {
+void Scrollable::Impl::drawChildren() {
 	auto &children = getChildren();
 	if (children.empty()) return;
 	auto &child = children[0];

@@ -20,6 +20,8 @@ namespace squi {
             uint64_t hoveredWidgetID = 0;
             bool shouldUpdate = true;
             bool selectedWidgetChanged = false;
+            bool pauseUpdates = false;
+            bool pauseUpdatesChanged = false;
 		};
     
         operator Child() const;

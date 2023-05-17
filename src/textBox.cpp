@@ -27,7 +27,7 @@ TextBox::operator Child() const {
 					.padding{0, 1, 0, 1},
 					.onUpdate = [&, storage](Widget &w) {
 						auto &box = (Box::Impl &) w;
-						auto &gd = std::any_cast<GestureDetector::Storage &>(w.data().properties.at("gestureDetector"));
+						auto &gd = std::any_cast<GestureDetector::Storage &>(w.state.properties.at("gestureDetector"));
 
 						storage->changed = false;
 						if (gd.active) {
@@ -78,29 +78,29 @@ TextBox::operator Child() const {
 											.width = Size::Expand,
 											.padding{0, 11, 0, 11},
 											.onInit = [font = font](Widget &w) {
-											auto &data = w.data();
-											data.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14)); },
-											// TODO: Add support for text color change
-											.onUpdate = [&, storage](Widget &w) {
-											// auto &text = (Text::Impl &)w;
+												w.state.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14)); },
+												// TODO: Add support for text color change
+												.onUpdate = [&, storage](Widget &w) {
+												// auto &text = (Text::Impl &)w;
 
-											if (storage->changed) {
-												switch (storage->state) {
-													case Storage::State::rest:
-														// text.setColor(theme.text);
-														break;
-													case Storage::State::hover:
-														// text.setColor(theme.text);
-														break;
-													case Storage::State::active:
-														// text.setColor(theme.text);
-														((TextInput::Impl &)w).setActive(true);
-														break;
-													case Storage::State::disabled:
-														// text.setColor(theme.textDisabled);
-														break;
-												}
-											} },
+												if (storage->changed) {
+													switch (storage->state) {
+														case Storage::State::rest:
+															// text.setColor(theme.text);
+															break;
+														case Storage::State::hover:
+															// text.setColor(theme.text);
+															break;
+														case Storage::State::active:
+															// text.setColor(theme.text);
+															((TextInput::Impl &)w).setActive(true);
+															break;
+														case Storage::State::disabled:
+															// text.setColor(theme.textDisabled);
+															break;
+													}
+												} 
+											},
 										},
 										.fontSize = 14.0f,
 										.font{font},
@@ -117,24 +117,23 @@ TextBox::operator Child() const {
 											.height = 1.f,
 											.onUpdate = [&, storage](Widget &w) {
 												auto &box = (Box::Impl &) w;
-												auto &widgetData = w.data();
 
 												if (storage->changed) {
 													switch (storage->state) {
 														case Storage::State::rest:
-															widgetData.sizeMode.height = 1.0f;
+															w.state.sizeMode.height = 1.0f;
 															box.setColor(theme.bottomBorder);
 															break;
 														case Storage::State::hover:
-															widgetData.sizeMode.height = 1.0f;
+															w.state.sizeMode.height = 1.0f;
 															box.setColor(theme.bottomBorder);
 															break;
 														case Storage::State::active:
-															widgetData.sizeMode.height = 2.0f;
+															w.state.sizeMode.height = 2.0f;
 															box.setColor(theme.bottomBorderActive);
 															break;
 														case Storage::State::disabled:
-															widgetData.sizeMode.height = 0.0f;
+															w.state.sizeMode.height = 0.0f;
 															box.setColor(theme.bottomBorder);
 															break;
 													}

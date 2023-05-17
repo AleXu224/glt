@@ -11,7 +11,7 @@ namespace squi {
 
 		class Impl : public Widget {
 		public:
-			Impl(const Container &args) : Widget(args.widget, Widget::Options::Default()){
+			Impl(const Container &args) : Widget(args.widget, Widget::Flags::Default()){
                 addChild(args.child);
             }
 		};

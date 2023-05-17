@@ -26,12 +26,12 @@ namespace squi {
         public:
             explicit Impl(const Column &args);
 
-            void onLayout(vec2 &maxSize, vec2 &minSize) override;
-            void onArrange(vec2 &pos) override;
+            void layoutChildren(vec2 &maxSize, vec2 &minSize) final;
+            void arrangeChildren(vec2 &pos) final;
 
-            float getMinHeight() override;
+            float getMinHeight() final;
 
-            void onDraw() override;
+            void drawChildren() final;
         };
     
         operator Child() const {

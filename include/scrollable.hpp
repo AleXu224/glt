@@ -26,11 +26,11 @@ namespace squi {
 
             Impl(const Scrollable &args);
 
-            void onUpdate() override;
-            void afterUpdate() override;
-            void onArrange(vec2 &pos) override;
+            void onUpdate() final;
+            void afterUpdate() final;
+            void arrangeChildren(vec2 &pos) final;
 
-            void onDraw() override;
+            void drawChildren() final;
         };
     
         operator Child() const;

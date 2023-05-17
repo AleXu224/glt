@@ -118,7 +118,7 @@ const vec2 &GestureDetector::Storage::getDragStartPos() const {
 }
 
 squi::GestureDetector::operator Child() const {
-	child->data().properties["gestureDetector"] = Storage {
+	child->state.properties["gestureDetector"] = Storage {
 		.onEnter = onEnter,
 		.onLeave = onLeave,
 		.onClick = onClick,
@@ -129,7 +129,7 @@ squi::GestureDetector::operator Child() const {
 	};
 	auto &childFuncs = child->funcs();
 	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [](Widget &widget) {
-		auto &storage = std::any_cast<Storage&>(widget.data().properties.at("gestureDetector"));
+		auto &storage = std::any_cast<Storage&>(widget.state.properties.at("gestureDetector"));
 		storage.update(widget);
 		if (storage.onUpdate) storage.onUpdate(widget, storage);
 	});

@@ -13,18 +13,11 @@
 #include <algorithm>
 #include <limits>
 #include <optional>
-#include <stdint.h>
-
-
 
 using namespace squi;
 
 TextInput::Impl::Impl(const TextInput &args)
-	: Widget(args.widget, Widget::Options{
-							  .shouldDrawChildren = false,
-							  .shouldHandleLayout = false,
-							  .shouldArrangeChildren = false,
-						  }) {
+	: Widget(args.widget, Widget::Flags::Default()) {
 	addChild(Text{
 		.text{""},
 		.fontSize = args.fontSize,
@@ -53,7 +46,7 @@ TextInput::Impl::Impl(const TextInput &args)
 
 // TODO: Fix the horrible performance of this
 void TextInput::Impl::onUpdate() {
-	auto &gd = std::any_cast<GestureDetector::Storage&>(data().properties.at("gestureDetector"));
+	auto &gd = std::any_cast<GestureDetector::Storage&>(state.properties.at("gestureDetector"));
 	if (!gd.active) return;
 
 	auto &children = getChildren();
@@ -316,20 +309,19 @@ void TextInput::Impl::onUpdate() {
 
 			// Update selection size
 			auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
-			selectionWidget.data().sizeMode.width = static_cast<float>(width2);
+			selectionWidget.state.sizeMode.width = static_cast<float>(width2);
 		}
 	}
 }
 
-void TextInput::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
+void TextInput::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 	auto &children = getChildren();
 	for (auto &child: children) {
 		child->layout(maxSize.withX(std::numeric_limits<float>::max()));
 	}
 }
 
-void TextInput::Impl::onArrange(vec2 &pos) {
-	auto &widgetData = data();
+void TextInput::Impl::arrangeChildren(vec2 &pos) {
 	auto &children = getChildren();
 	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
 	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
@@ -338,16 +330,16 @@ void TextInput::Impl::onArrange(vec2 &pos) {
 
 
 	if (selectionStart.has_value()) {
-		selectionWidget.data().visible = true;
-		selectedTextWidget.data().visible = true;
+		selectionWidget.flags.visible = true;
+		selectedTextWidget.flags.visible = true;
 	} else {
-		selectionWidget.data().visible = false;
-		selectedTextWidget.data().visible = false;
+		selectionWidget.flags.visible = false;
+		selectedTextWidget.flags.visible = false;
 	}
-	auto &gd = std::any_cast<GestureDetector::Storage &>(data().properties.at("gestureDetector"));
-	cursorWidget.data().visible = gd.active;
+	auto &gd = std::any_cast<GestureDetector::Storage &>(state.properties.at("gestureDetector"));
+	cursorWidget.flags.visible = gd.active;
 
-	const auto contentPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset() - vec2{scroll, 0};
+	const auto contentPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset() - vec2{scroll, 0};
 
 	textWidget.arrange(contentPos);
 	selectionWidget.arrange(contentPos.withXOffset(startToSelection));
@@ -355,7 +347,7 @@ void TextInput::Impl::onArrange(vec2 &pos) {
 	cursorWidget.arrange(contentPos.withXOffset(startToCursor));
 }
 
-void TextInput::Impl::onDraw() {
+void TextInput::Impl::drawChildren() {
 	auto &children = getChildren();
 	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
 	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
@@ -377,6 +369,6 @@ TextInput::operator Child() const {
 }
 
 void squi::TextInput::Impl::setActive(bool active) {
-	auto &gd = std::any_cast<GestureDetector::Storage &>(data().properties.at("gestureDetector"));
+	auto &gd = std::any_cast<GestureDetector::Storage &>(state.properties.at("gestureDetector"));
 	gd.active = active;
 }

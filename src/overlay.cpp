@@ -4,7 +4,7 @@
 using namespace squi;
 
 Overlay::Impl::Impl(const Overlay &args)
-	: Widget(args.widget, Widget::Options::Default()) {
+	: Widget(args.widget, Widget::Flags::Default()) {
 	addChild(args.child);
 }
 

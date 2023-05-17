@@ -14,7 +14,7 @@ Scrollbar::operator Child() const {
 	newWidget.width = 16.0f;
 	newWidget.padding = 3;
 	newWidget.onUpdate = [storage](Widget &widget) {
-		auto &gd = std::any_cast<GestureDetector::Storage &>(widget.data().properties.at("gestureDetector"));
+		auto &gd = std::any_cast<GestureDetector::Storage &>(widget.state.properties.at("gestureDetector"));
 		const auto currentTime = std::chrono::steady_clock::now();
 		if (gd.hovered || gd.focused) {
 			storage->lastHoverTime = std::chrono::steady_clock::now();
@@ -31,10 +31,9 @@ Scrollbar::operator Child() const {
 	newWidget.onLayout = [storage, setScroll = setScroll, oldOnLayout = newWidget.onLayout](Widget &widget, vec2 &maxSize, vec2 &minSize) {
 		if (oldOnLayout) oldOnLayout(widget, maxSize, minSize);
 		if (!setScroll) return;
-		auto &data = widget.data();
 		auto [scroll, contentHeight, viewHeight] = setScroll();
 
-		data.visible = contentHeight > viewHeight;
+		widget.flags.visible = contentHeight > viewHeight;
 	};
 
 	return GestureDetector{
@@ -51,11 +50,10 @@ Scrollbar::operator Child() const {
 									.width = 10.0f,
 									.height = 32.f,
 									.onUpdate = [storage, onScroll = onScroll, setScroll = setScroll](Widget &widget) {
-										auto &data = widget.data();
-										auto &gestureDetector = std::any_cast<GestureDetector::Storage &>(data.properties.at("gestureDetector"));
+										auto &gestureDetector = std::any_cast<GestureDetector::Storage &>(widget.state.properties.at("gestureDetector"));
 
-										const float contentHeight = data.parent->getContentRect().height() - widget.getSize().y;
-										if (gestureDetector.focused && data.visible) {
+										const float contentHeight = widget.state.parent->getContentRect().height() - widget.getSize().y;
+										if (gestureDetector.focused && widget.flags.visible) {
 											storage->scroll = storage->scrollDragStart + gestureDetector.getDragOffset().y / contentHeight;
 											storage->scroll = (std::clamp)(storage->scroll, 0.f, 1.0f);
 											if (onScroll) onScroll(storage->scroll * (storage->contentHeight - storage->viewHeight));
@@ -63,15 +61,14 @@ Scrollbar::operator Child() const {
 
 										const auto currentTime = std::chrono::steady_clock::now();
 										if (currentTime - storage->lastHoverTime > 1s) {
-											data.sizeMode.width = 2.0f;
-											data.margin.left = 8;
+											widget.state.sizeMode.width = 2.0f;
+											widget.state.margin.left = 8;
 										} else {
-											data.sizeMode.width = 10.0f;
-											data.margin.left = 0;
+											widget.state.sizeMode.width = 10.0f;
+											widget.state.margin.left = 0;
 										} },
 									.onLayout = [storage, setScroll = setScroll](Widget &widget, vec2 &maxSize, vec2 &minSize) {
-										auto &data = widget.data();
-										if (!data.parent) return;
+										if (!widget.state.parent) return;
 										if (setScroll) {
 											auto [scroll, contentHeight, viewHeight] = setScroll();
 											
@@ -83,10 +80,9 @@ Scrollbar::operator Child() const {
 											minSize.y = std::max(minSize.y, 24.0f);
 										} },
 									.onArrange = [storage](Widget &widget, vec2 &pos) {
-										auto &data = widget.data();
-										if (!data.parent) return;
+										if (!widget.state.parent) return;
 
-										const auto maxOffset = data.parent->getContentSize() - widget.getLayoutSize();
+										const auto maxOffset = widget.state.parent->getContentSize() - widget.getLayoutSize();
 
 										pos.y += maxOffset.y * storage->scroll; },
 								},

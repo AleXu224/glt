@@ -75,13 +75,13 @@ ContextMenuButton::operator Child() const {
 			if (!root) return;
 			switch(storage->content.index()) {
 				case 0: {
-					root->data().shouldDelete = true;
+					root->deleteLater();
 					auto &f = std::get<0>(storage->content);
 					if (f) f();
 					break;
 				}
 				case 2: {
-					root->data().shouldDelete = true;
+					root->deleteLater();
 					auto &t = std::get<2>(storage->content);
 					t.value = !t.value;
 					if (t.callback) t.callback(t.value);
@@ -90,7 +90,7 @@ ContextMenuButton::operator Child() const {
 		.onUpdate = [storage = storage, rootID = rootID](Widget &w, auto) {
 			auto root = Widget::Store::getWidget(rootID);
 			if (!root) return;
-			auto &rootState = std::any_cast<ContextMenu::Storage&>(root->data().properties.at("state"));
+			auto &rootState = std::any_cast<ContextMenu::Storage&>(root->state.properties.at("state"));
 			if (storage->content.index() == 1 && storage->submenuOpened) {
 				if (rootState.locked.contains(storage->menuId) && rootState.locked.at(storage->menuId)) {
 					return;
@@ -266,14 +266,14 @@ ContextMenuFrame::operator Child() const {
 ContextMenu::operator Child() const {
 	Child stack = GestureDetector{
 		.onClick = [](Widget &w, auto &) {
-			w.data().shouldDelete = true;
+			w.deleteLater();
 		},
 		.child{
 			Stack{
 				.widget{
-					.onInit = [](Widget &w) { w.data().properties.insert({"state", Storage{}}); },
+					.onInit = [](Widget &w) { w.state.properties.insert({"state", Storage{}}); },
 					.onUpdate = [](Widget &w) {
-						auto &state = std::any_cast<Storage&>(w.data().properties.at("state"));
+						auto &state = std::any_cast<Storage&>(w.state.properties.at("state"));
 						for (auto &menu: state.menusToAdd) {
 							w.addChild(menu);
 						}
@@ -302,7 +302,7 @@ uint64_t squi::ContextMenu::Storage::addMenu(const Child &menu) {
 void squi::ContextMenu::Storage::removeMenu(uint64_t id) {
 	auto widget = Widget::Store::getWidget(id);
 	if (widget) {
-		widget->data().shouldDelete = true;
+		widget->deleteLater();
 	}
 	if (locked.contains(id)) {
 		locked.erase(id);

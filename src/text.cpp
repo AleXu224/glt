@@ -9,27 +9,24 @@
 using namespace squi;
 
 Text::Impl::Impl(const Text &args)
-	: Widget(args.widget, Widget::Options{
+	: Widget(args.widget, Widget::Flags{
 							  .shouldDrawChildren = false,
 						  }),
 	  text(args.text), fontSize(args.fontSize), lineWrap(args.lineWrap), fontPath(args.fontPath), color(args.color) {
 	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, 0, color);
 	quads = std::move(quadsVec);
-	auto &widgetData = data();
-	const auto padding = widgetData.padding.getSizeOffset();
-	widgetData.sizeMode.width = width + padding.x;
-	widgetData.sizeMode.height = height + padding.y;
+	const auto padding = state.padding.getSizeOffset();
+	state.sizeMode.width = width + padding.x;
+	state.sizeMode.height = height + padding.y;
 }
 
 void Text::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
-	auto &widgetData = data();
-
 	if (lineWrap) {
 		if (maxSize.x != lastAvailableSpace) {
 			lastAvailableSpace = maxSize.x;
 			const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
 			const auto rect = getRect();
-			const auto padding = widgetData.padding.getSizeOffset();
+			const auto padding = state.padding.getSizeOffset();
 			// Only update the text layout if the text is wider than the available space
 			if (rect.width() > maxSize.x || rect.height() != (static_cast<float>(lineHeight) + padding.y)) {
 				auto [quadsVec, width, height] = FontStore::generateQuads(
@@ -39,25 +36,24 @@ void Text::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 					{lastX, lastY},
 					color,
 					maxSize.x - padding.x);
-				widgetData.sizeMode.width = width + padding.x;
-				widgetData.sizeMode.height = height + padding.y;
+				state.sizeMode.width = width + padding.x;
+				state.sizeMode.height = height + padding.y;
 				// minSize = {width + padding.x, height + padding.y};
 				quads = std::move(quadsVec);
 			}
 		}
 	}
 
-	if (widgetData.sizeMode.width.index() == 0) {
-		maxSize.x = std::get<0>(widgetData.sizeMode.width);
+	if (state.sizeMode.width.index() == 0) {
+		maxSize.x = std::get<0>(state.sizeMode.width);
 	}
-	if (widgetData.sizeMode.height.index() == 0) {
-		maxSize.y = std::get<0>(widgetData.sizeMode.height);
+	if (state.sizeMode.height.index() == 0) {
+		maxSize.y = std::get<0>(state.sizeMode.height);
 	}
 }
 
 void Text::Impl::onArrange(vec2 &pos) {
-	auto &widgetData = data();
-	const auto textPos = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
+	const auto textPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 	if (textPos.x != lastX || textPos.y != lastY) {
 		const vec2 roundedPos = textPos.rounded();
 		for (auto &quadVec: quads) {
@@ -102,13 +98,12 @@ void Text::Impl::onDraw() {
 }
 
 void Text::Impl::setText(const std::string_view &text) {
-	auto &widgetData = data();
 	this->text = text;
 	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, getPos().rounded(), color);
 	quads = std::move(quadsVec);
-	const auto padding = widgetData.padding.getSizeOffset();
-	widgetData.sizeMode.width = width + padding.x;
-	widgetData.sizeMode.height = height + padding.y;
+	const auto padding = state.padding.getSizeOffset();
+	state.sizeMode.width = width + padding.x;
+	state.sizeMode.height = height + padding.y;
 }
 
 std::string_view Text::Impl::getText() const {

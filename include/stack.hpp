@@ -15,7 +15,7 @@ namespace squi {
         public:
             Impl(const Stack &args);
 
-            void onUpdate() override;
+            void updateChildren() final;
         };
     
         operator Child() const {

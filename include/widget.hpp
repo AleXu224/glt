@@ -76,39 +76,38 @@ namespace squi {
 			std::function<void(Widget &)> afterDraw{};
 		};
 
-		struct Options {
+		struct Flags {
 			/**
-			 * Set to false to manually update the children
+			 * Set to false to disable updating the children
 			 */
 			bool shouldUpdateChildren = true;
 			/**
-			 * Set to false to manually draw the children
+			 * Set to false to disable drawing the children
 			 */
 			bool shouldDrawChildren = true;
 			/**
-			 * Set to false to manually handle the size behavior
+			 * Set to false to disable sizing the children
 			 */
-			bool shouldHandleLayout = true;
+			bool shouldLayoutChildren = true;
 			/**
-			 * Set to false to manually position the children
+			 * Set to false to disable positioning the children
 			 */
 			bool shouldArrangeChildren = true;
 			/**
 			 * Whether hit testing should be performed on this widget
 			 */
 			bool isInteractive = false;
+			bool visible = true;
 
-			static Options Default() {
+			static Flags Default() {
 				return {};
 			}
 		};
 
+		Flags flags;
 	private:
 		bool isInitialized = false;
-		bool shouldUpdateChildren;
-		bool shouldDrawChildren;
-		bool shouldHandleLayout;
-		bool shouldArrangeChildren;
+		bool shouldDelete = false;
 		struct FunctionArgs {
 			std::vector<std::function<void(Widget &)>> onInit{};
 			std::vector<std::function<void(Widget &)>> onUpdate{};
@@ -122,7 +121,12 @@ namespace squi {
 		FunctionArgs m_funcs{};
 		vec2 size{};
 		vec2 pos{};
-		struct Data {
+		std::vector<std::shared_ptr<Widget>> children{};
+		static uint64_t idCounter;
+		static uint32_t widgetCount;
+
+	public:
+		struct State {
 			struct SizeMode {
 				std::variant<float, Size> width;
 				std::variant<float, Size> height;
@@ -133,24 +137,8 @@ namespace squi {
 			Margin margin;
 			Margin padding;
 			Widget *parent = nullptr;
-			bool visible = true;
-			bool isInteractive;
-			bool shouldDelete = false;
-
-			void print() const {
-				printf("Margin: %f, %f, %f, %f\n", margin.left, margin.top, margin.right, margin.bottom);
-				printf("Padding: %f, %f, %f, %f\n", padding.left, padding.top, padding.right, padding.bottom);
-				printf("Parent: %p\n", parent);
-				printf("Visible: %d\n", visible);
-				printf("Is Interactive: %d\n", isInteractive);
-			}
 		};
-		Data m_data;
-		std::vector<std::shared_ptr<Widget>> children{};
-		static uint64_t idCounter;
-		static uint32_t widgetCount;
-
-	public:
+		State state;
 		const uint64_t id;
 		// Disable copy
 		Widget(const Widget &) = delete;
@@ -159,48 +147,43 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(const Args &args, const Options &options);
+		explicit Widget(const Args &args, const Flags &options);
 		virtual ~Widget();
-
-		// Getters
-		[[nodiscard]] inline Data &data() {
-			return m_data;
-		}
-		[[nodiscard]] inline const Data &data() const {
-			return m_data;
-		}
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
 		[[nodiscard]] inline Rect getRect() const {
-			return Rect::fromPosSize(pos + m_data.margin.getPositionOffset(), size);
+			return Rect::fromPosSize(pos + state.margin.getPositionOffset(), size);
 		}
 		[[nodiscard]] inline Rect getContentRect() const {
 			return Rect::fromPosSize(
-				pos + m_data.margin.getPositionOffset() + m_data.padding.getPositionOffset(),
-				size - m_data.padding.getSizeOffset());
+				pos + state.margin.getPositionOffset() + state.padding.getPositionOffset(),
+				size - state.padding.getSizeOffset());
 		}
 		[[nodiscard]] inline Rect getLayoutRect() const {
 			return Rect::fromPosSize(
 				pos,
-				size + m_data.margin.getSizeOffset());
+				size + state.margin.getSizeOffset());
 		}
 		[[nodiscard]] inline vec2 getSize() const {
 			return size;
 		}
 		[[nodiscard]] inline vec2 getContentSize() const {
-			return size - m_data.padding.getSizeOffset();
+			return size - state.padding.getSizeOffset();
 		}
 		[[nodiscard]] inline vec2 getLayoutSize() const {
-			return size + m_data.margin.getSizeOffset();
+			return size + state.margin.getSizeOffset();
 		}
 		[[nodiscard]] inline vec2 getPos() const {
 			return pos;
 		}
 		[[nodiscard]] inline vec2 getContentPos() {
-			return pos + m_data.margin.getPositionOffset() + m_data.padding.getPositionOffset();
+			return pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 		}
 		[[nodiscard]] virtual std::optional<Rect> getHitcheckRect() const;
+		[[nodiscard]] inline bool isMarkedForDeletion() const {
+			return shouldDelete;
+		}
 
 		// Setters
 		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);
@@ -223,18 +206,32 @@ namespace squi {
 		void arrange(vec2 pos);
 		void draw();
 		void initialize();
+		/**
+		 * @brief Mark the widget for deletion
+		 */
+		inline void deleteLater() {
+			shouldDelete = true;
+		}
 
 		// Virtual methods
 		virtual void init(){};
 		virtual void onUpdate(){};
+		virtual void updateChildren();
 		virtual void afterUpdate(){};
+
 		virtual float getMinWidth();
 		virtual float getMinHeight();
+
 		virtual void onLayout(vec2 &maxSize, vec2 &minSize){};
-		virtual void postLayout(vec2 size){};
+		virtual void layoutChildren(vec2& maxSize, vec2& minSize);
+		virtual void postLayout(vec2 &size){};
+
 		virtual void onArrange(vec2 &pos){};
-		virtual void postArrange(vec2 pos){};
+		virtual void arrangeChildren(vec2 &pos);
+		virtual void postArrange(vec2 &pos){};
+
 		virtual void onDraw(){};
+		virtual void drawChildren();
 	};
 }// namespace squi
 

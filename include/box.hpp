@@ -34,9 +34,10 @@ namespace squi {
 			explicit Impl(const Box &args);
 
 			void onDraw() final;
+			void drawChildren() final;
 
-			void postLayout(vec2 size) final;
-			void postArrange(vec2 pos) final;
+			void postLayout(vec2 &size) final;
+			void postArrange(vec2 &pos) final;
 
 			void setColor(const Color &color);
 			void setBorderColor(const Color &color);

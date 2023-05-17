@@ -5,16 +5,12 @@
 using namespace squi;
 
 Row::Impl::Impl(const Row &args)
-	: Widget(args.widget, Widget::Options{
-							  .shouldDrawChildren = false,
-							  .shouldHandleLayout = false,
-							  .shouldArrangeChildren = false,
-						  }),
+	: Widget(args.widget, Widget::Flags::Default()),
 	  alignment(args.alignment), spacing(args.spacing) {
 	setChildren(args.children);
 }
 
-void Row::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
+void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 	auto &children = getChildren();
 
 	float totalWidth = 0.0f;
@@ -22,53 +18,50 @@ void Row::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 
 	std::vector<std::shared_ptr<Widget>> expandedChildren{};
 
-	const vec2 maxChildSize = maxSize + data().padding.getSizeOffset();
+	const vec2 maxChildSize = maxSize + state.padding.getSizeOffset();
 
 	for (auto &child: children) {
 		if (!child) continue;
 
-		auto &childData = child->data();
-		childData.parent = this;
+		auto &childState = child->state;
+		childState.parent = this;
 
-		if (childData.sizeMode.width.index() == 1 && std::get<1>(childData.sizeMode.width) == Size::Expand) {
+		if (childState.sizeMode.width.index() == 1 && std::get<1>(childState.sizeMode.width) == Size::Expand) {
 			expandedChildren.push_back(child);
 		} else {
 			const auto childSize = child->layout(maxChildSize);
 			totalWidth += childSize.x;
-			if (childData.sizeMode.height.index() != 1 || std::get<1>(childData.sizeMode.height) != Size::Expand) {
+			if (childState.sizeMode.height.index() != 1 || std::get<1>(childState.sizeMode.height) != Size::Expand) {
 				maxHeight = (std::max)(maxHeight, childSize.y);
 			}
 		}
 	}
-
-	auto &widgetData = data();
 
 	float spacingOffset = spacing * static_cast<float>(children.size() - 1);
 	spacingOffset = (std::max)(0.0f, spacingOffset);
 
 	if (!expandedChildren.empty()) {
 		const vec2 maxChildSize = {
-			(maxSize.x - widgetData.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
-			maxSize.y - widgetData.padding.getSizeOffset().y,
+			(maxSize.x - state.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
+			maxSize.y - state.padding.getSizeOffset().y,
 		};
 		for (auto &child: expandedChildren) {
-			auto &childData = child->data();
+			auto &childState = child->state;
 			const auto childSize = child->layout(maxChildSize);
-			if (childData.sizeMode.height.index() != 1 || std::get<1>(childData.sizeMode.height) != Size::Expand) {
+			if (childState.sizeMode.height.index() != 1 || std::get<1>(childState.sizeMode.height) != Size::Expand) {
 				maxHeight = (std::max)(maxHeight, childSize.y);
 			}
 		}
 	}
 
-	minSize.x = totalWidth + spacingOffset + widgetData.padding.getSizeOffset().x;
-	minSize.y = maxHeight + widgetData.padding.getSizeOffset().y;
+	minSize.x = totalWidth + spacingOffset + state.padding.getSizeOffset().x;
+	minSize.y = maxHeight + state.padding.getSizeOffset().y;
 }
 
-void Row::Impl::onArrange(vec2 &pos) {
-	auto &widgetData = data();
+void Row::Impl::arrangeChildren(vec2 &pos) {
 	auto &children = getChildren();
 	const auto height = getContentRect().height();
-	auto cursor = pos + widgetData.margin.getPositionOffset() + widgetData.padding.getPositionOffset();
+	auto cursor = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 	const auto initialY = cursor.y;
 
 	for (auto &child: children) {
@@ -91,7 +84,7 @@ void Row::Impl::onArrange(vec2 &pos) {
 	}
 }
 
-void Row::Impl::onDraw() {
+void Row::Impl::drawChildren() {
 	auto &children = getChildren();
 	const Rect &clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
@@ -106,15 +99,14 @@ void Row::Impl::onDraw() {
 }
 
 float squi::Row::Impl::getMinWidth() {
-	const auto &widgetData = data();
 	const auto &children = getChildren();
-	if (!widgetData.visible) return 0.0f;
-	switch (widgetData.sizeMode.width.index()) {
+	if (!flags.visible) return 0.0f;
+	switch (state.sizeMode.width.index()) {
 		case 0: {
-			return std::get<0>(widgetData.sizeMode.width) + widgetData.margin.getSizeOffset().x;
+			return std::get<0>(state.sizeMode.width) + state.margin.getSizeOffset().x;
 		}
 		case 1: {
-			return widgetData.margin.getSizeOffset().x + widgetData.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
+			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
 					   return acc + child->getMinWidth();
 				   });
 		}

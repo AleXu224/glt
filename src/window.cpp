@@ -25,8 +25,8 @@ void Window::glfwError(int id, const char *description) {
 
 std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
 
-Window::Window() : Widget(Widget::Args{}, Widget::Options{
-											  .shouldHandleLayout = false,
+Window::Window() : Widget(Widget::Args{}, Widget::Flags{
+											  .shouldLayoutChildren = false,
 											  .shouldArrangeChildren = false,
 											  .isInteractive = false,
 										  }) {
@@ -162,8 +162,7 @@ void Window::updateAndDraw() {
 	auto &children = getChildren();
 	int width, height;
 	glfwGetWindowSize(window.get(), &width, &height);
-	auto &widgetData = data();
-	widgetData.sizeMode = {static_cast<float>(width), static_cast<float>(height)};
+	state.sizeMode = {static_cast<float>(width), static_cast<float>(height)};
 
 	auto currentTime = std::chrono::steady_clock::now();
 	auto deltaTime = currentTime - lastTime;
@@ -182,17 +181,17 @@ void Window::updateAndDraw() {
 
 		overlays.erase(std::remove_if(overlays.begin(), overlays.end(),
 									  [](const auto &overlay) {
-										  return overlay->data().shouldDelete;
+										  return overlay->isMarkedForDeletion();
 									  }),
 					   overlays.end());
 
 		children.erase(std::remove_if(children.begin(), children.end(),
 									  [](const auto &child) {
-										  return child->data().shouldDelete;
+										  return child->isMarkedForDeletion();
 									  }),
 					   children.end());
 
-		content->data().parent = this;
+		content->state.parent = this;
 		content->update();
 		content->layout({static_cast<float>(width), static_cast<float>(height)});
 		content->arrange({0.0f, 0.0f});

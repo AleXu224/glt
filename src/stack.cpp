@@ -8,20 +8,18 @@
 using namespace squi;
 
 Stack::Impl::Impl(const Stack &args)
-	: Widget(args.widget, Widget::Options{
-							  .shouldUpdateChildren = false,
-						  }) {
+	: Widget(args.widget, Widget::Flags::Default()) {
 	setChildren(args.children);
 }
 
-void Stack::Impl::onUpdate() {
+void Stack::Impl::updateChildren() {
 	auto &children = getChildren();
 
 	GestureDetector::g_hitCheckRects.reserve(GestureDetector::g_hitCheckRects.size() + children.size());
 	uint32_t addedRects = 0;
 
 	for (auto &child: std::views::reverse(children)) {
-		child->data().parent = this;
+		child->state.parent = this;
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
 		if (childHitcheckRect.has_value()) {
