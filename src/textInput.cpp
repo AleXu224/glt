@@ -1,4 +1,5 @@
 #include "gestureDetector.hpp"
+#include <memory>
 #define NOMINMAX
 #include "box.hpp"
 #include "cstdint"
@@ -365,7 +366,7 @@ void TextInput::Impl::drawChildren() {
 	renderer.popClipRect();
 }
 TextInput::operator Child() const {
-	return GestureDetector{.child{std::make_shared<Impl>(*this)}};
+	return GestureDetector{.child{std::make_unique<Impl>(*this)}};
 }
 
 void squi::TextInput::Impl::setActive(bool active) {

@@ -2,6 +2,7 @@
 #define SQUI_STACK_HPP
 
 #include "widget.hpp"
+#include <memory>
 
 namespace squi {
     struct Stack {

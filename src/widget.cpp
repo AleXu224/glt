@@ -1,22 +1,24 @@
 #include <list>
 #include <memory>
-#include <stdio.h>
 #include <unordered_map>
 #define NOMINMAX
-#include "widget.hpp"
 #include "quad.hpp"
 #include "ranges"
 #include "renderer.hpp"
 #include "utility"
+#include "widget.hpp"
 #include <algorithm>
 #include <numeric>
 #include <optional>
 
 
+
 using namespace squi;
 
-std::unordered_map<uint64_t, std::weak_ptr<Widget>> Widget::Store::widgets{};
-uint64_t Widget::idCounter = 1; // 0 is reserved for exceptions
+// std::unordered_map<uint64_t, Widget *> Widget::Store::widgets{
+// 	{0, nullptr},
+// };
+uint64_t Widget::idCounter = 1;// 0 is reserved for exceptions
 uint32_t Widget::widgetCount = 0;
 
 Widget::Widget(const Args &args, const Flags &flags)
@@ -40,23 +42,24 @@ Widget::Widget(const Args &args, const Flags &flags)
 	if (args.onDraw) m_funcs.onDraw.push_back(args.onDraw);
 	if (args.afterDraw) m_funcs.afterDraw.push_back(args.afterDraw);
 	widgetCount++;
+	initialize();
 }
 
 Widget::~Widget() {
 	widgetCount--;
 
-	if (auto it = Store::widgets.find(id); it != Store::widgets.end()) {
-		Store::widgets.erase(it);
-	}
+	// if (auto it = Store::widgets.find(id); it != Store::widgets.end()) {
+	// 	Store::widgets.erase(it);
+	// }
 }
 
-std::shared_ptr<Widget> Widget::Store::getWidget(uint64_t id) {
-	if (auto it = widgets.find(id); it != widgets.end()) {
-		return it->second.lock();
-	} else {
-		return {};
-	}
-}
+// Widget *Widget::Store::getWidget(uint64_t id) {
+// 	if (auto it = widgets.find(id); it != widgets.end()) {
+// 		return it->second;
+// 	} else {
+// 		return widgets[0];
+// 	}
+// }
 
 Widget::FunctionArgs &Widget::funcs() {
 	return m_funcs;
@@ -66,7 +69,7 @@ const Widget::FunctionArgs &Widget::funcs() const {
 	return m_funcs;
 }
 
-std::vector<std::shared_ptr<Widget>> &Widget::getChildren() {
+std::vector<Child> &Widget::getChildren() {
 	return children;
 }
 
@@ -77,12 +80,12 @@ std::optional<Rect> Widget::getHitcheckRect() const {
 		return std::nullopt;
 }
 
-void Widget::setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren) {
+void Widget::setChildren(const Children &newChildren) {
 	children = newChildren;
 }
 
 void Widget::addChild(const Child &child) {
-	if (child.hasChild())
+	if (child)
 		children.push_back(child);
 }
 
@@ -104,10 +107,11 @@ void Widget::update() {
 	if (flags.shouldUpdateChildren && flags.visible) {
 		updateChildren();
 	}
-	children.erase(std::remove_if(children.begin(), children.end(), [](const auto &child) {
-					   return child->shouldDelete;
-				   }),
-				   children.end());
+	children.erase(
+		std::remove_if(children.begin(), children.end(), [](const Child &child) -> bool {
+			return child->shouldDelete;
+		}),
+		children.end());
 
 	// After update
 	for (auto &func: m_funcs.afterUpdate) {
@@ -307,9 +311,6 @@ void Widget::draw() {
 }
 
 void Widget::initialize() {
-	if (isInitialized) return;
-	isInitialized = true;
-	init();
 	for (auto &func: m_funcs.onInit) {
 		if (func) func(*this);
 	}

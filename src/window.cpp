@@ -7,7 +7,6 @@
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
-#include "overlay.hpp"
 #include "ranges"
 #include "stdexcept"
 #define GLFW_INCLUDE_NONE

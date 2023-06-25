@@ -1,24 +1,44 @@
 #include "child.hpp"
 #include "widget.hpp"
+#include <algorithm>
+#include <memory>
+#include <utility>
 
 using namespace squi;
 
-void Child::initializeWidget() {
-	if (widget)	{
-		widget->initialize();
-		Widget::Store::widgets.insert({widget->id, widget});
-	}
+Children::Children(const std::vector<Child> &children) : children(children) {
+	filter();
 }
 
-Child::operator std::shared_ptr<Widget>() const {
-	return widget;
+Children::Children(std::vector<Child> &&children) : children(std::move(children)) {
+	filter();
 }
 
-Children::operator std::vector<std::shared_ptr<Widget>>() const {
-	std::vector<std::shared_ptr<Widget>> widgets{};
-	widgets.reserve(children.size());
-	for (auto &child: children) {
-		widgets.push_back(child);
-	}
-	return widgets;
+Children::Children(const std::initializer_list<Child> &args) : children(args) {
+	filter();
+}
+
+Children &Children::operator=(const std::vector<Child> &children) {
+	this->children = children;
+	return *this;
+}
+
+Children::operator std::vector<Child> &() {
+	return children;
+}
+
+Children::operator std::vector<Child>() const {
+	return children;
+}
+
+Children::operator bool() const {
+	return !children.empty();
+}
+
+void squi::Children::filter() {
+	children.erase(
+		std::remove_if(children.begin(), children.end(), [](const Child &child) {
+			return !child;
+		}),
+		children.end());
 }

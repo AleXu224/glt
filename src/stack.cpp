@@ -1,9 +1,8 @@
 #include "stack.hpp"
 #include "gestureDetector.hpp"
-#include <iterator>
-#include <stdint.h>
-#include <vector>
 #include "ranges"
+#include <iterator>
+#include <vector>
 
 using namespace squi;
 

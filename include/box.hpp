@@ -4,6 +4,7 @@
 #include "color.hpp"
 #include "quad.hpp"
 #include "widget.hpp"
+#include <memory>
 
 namespace squi {
 	struct Box {

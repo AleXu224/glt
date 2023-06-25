@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include <d3d11.h>
 
 using namespace squi;
 

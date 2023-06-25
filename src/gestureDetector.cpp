@@ -117,7 +117,7 @@ const vec2 &GestureDetector::Storage::getDragStartPos() const {
 	return dragStart;
 }
 
-squi::GestureDetector::operator Child() const {
+GestureDetector::operator Child() const {
 	child->state.properties["gestureDetector"] = Storage {
 		.onEnter = onEnter,
 		.onLeave = onLeave,

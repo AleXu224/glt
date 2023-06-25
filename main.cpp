@@ -65,8 +65,8 @@ int main(int, char **) {
 	// 	},
 	// });
 
-	std::mt19937 rng{1337};
-	std::uniform_real_distribution<float> color{0.25, 0.75};
+	// std::mt19937 rng{1337};
+	// std::uniform_real_distribution<float> color{0.25, 0.75};
 
 	// window.addChild(Column{
 	// 	.widget{

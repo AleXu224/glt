@@ -2,6 +2,7 @@
 #define SQUI_CONTAINER_HPP
 
 #include "widget.hpp"
+#include <memory>
 
 namespace squi {
 	struct Container {

@@ -4,6 +4,7 @@
 #include "widget.hpp"
 #include "color.hpp"
 #include "quad.hpp"
+#include <memory>
 #include <string_view>
 
 namespace squi {
@@ -44,7 +45,7 @@ namespace squi {
         };
     
         operator Child() const {
-            return {std::make_shared<Impl>(*this)};
+            return {std::make_unique<Impl>(*this)};
         }
     };
 }

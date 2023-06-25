@@ -1,8 +1,8 @@
 #ifndef SQUI_VEC2_HPP
 #define SQUI_VEC2_HPP
 
-#include "AnimatedFloat.hpp"
 #include "DirectXMath.h"
+#include "cmath"
 
 namespace squi {
 	struct vec2 {
@@ -62,7 +62,7 @@ namespace squi {
 		}
 
 		[[nodiscard]] inline vec2 rounded() const {
-			return {std::round(x), std::round(y)};
+			return {std::roundf(x), std::roundf(y)};
 		}
 
 		[[nodiscard]] inline operator DirectX::XMFLOAT2() const {

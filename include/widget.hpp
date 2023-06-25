@@ -12,7 +12,7 @@
 #include <optional>
 #include <unordered_map>
 #include <variant>
-
+#include "string"
 
 namespace squi {
 	enum class Size {
@@ -29,13 +29,13 @@ namespace squi {
 		std::optional<float> maxHeight = std::nullopt;
 	};
 
-	class Widget {
+	class Widget : public std::enable_shared_from_this<Widget> {
 	public:
-		struct Store {
-			static std::unordered_map<uint64_t, std::weak_ptr<Widget>> widgets;
+		// struct Store {
+		// 	static std::unordered_map<uint64_t, ChildRef> widgets;
 
-			static std::shared_ptr<Widget> getWidget(uint64_t id);
-		};
+		// 	static Child getWidget(uint64_t id);
+		// };
 		struct Args {
 
 			/**
@@ -106,7 +106,6 @@ namespace squi {
 
 		Flags flags;
 	private:
-		bool isInitialized = false;
 		bool shouldDelete = false;
 		struct FunctionArgs {
 			std::vector<std::function<void(Widget &)>> onInit{};
@@ -121,7 +120,7 @@ namespace squi {
 		FunctionArgs m_funcs{};
 		vec2 size{};
 		vec2 pos{};
-		std::vector<std::shared_ptr<Widget>> children{};
+		std::vector<Child> children{};
 		static uint64_t idCounter;
 		static uint32_t widgetCount;
 
@@ -151,7 +150,7 @@ namespace squi {
 		virtual ~Widget();
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
-		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
+		[[nodiscard]] std::vector<Child> &getChildren();
 		[[nodiscard]] inline Rect getRect() const {
 			return Rect::fromPosSize(pos + state.margin.getPositionOffset(), size);
 		}
@@ -186,7 +185,7 @@ namespace squi {
 		}
 
 		// Setters
-		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);
+		void setChildren(const Children &newChildren);
 
 		// Methods
 		void addChild(const Child &child);
@@ -214,7 +213,6 @@ namespace squi {
 		}
 
 		// Virtual methods
-		virtual void init(){};
 		virtual void onUpdate(){};
 		virtual void updateChildren();
 		virtual void afterUpdate(){};

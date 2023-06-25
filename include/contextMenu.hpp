@@ -30,11 +30,11 @@ namespace squi {
 
 		struct Storage {
 			// Data
-			std::unordered_map<uint64_t, bool> locked{};
+			ChildRef stack{};
 			std::vector<Child> menusToAdd{};
-
-			uint64_t addMenu(const Child &menu);
-			void removeMenu(uint64_t id);
+			
+			[[nodiscard]] ChildRef addMenu(const Child &menu);
+			static void removeMenu(const ChildRef &menu);
 		};
 
 		operator Child() const;

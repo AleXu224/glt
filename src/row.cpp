@@ -16,7 +16,7 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 	float totalWidth = 0.0f;
 	float maxHeight = 0.0f;
 
-	std::vector<std::shared_ptr<Widget>> expandedChildren{};
+	std::vector<Child> expandedChildren{};
 
 	const vec2 maxChildSize = maxSize + state.padding.getSizeOffset();
 
@@ -27,7 +27,7 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 		childState.parent = this;
 
 		if (childState.sizeMode.width.index() == 1 && std::get<1>(childState.sizeMode.width) == Size::Expand) {
-			expandedChildren.push_back(child);
+			expandedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxChildSize);
 			totalWidth += childSize.x;

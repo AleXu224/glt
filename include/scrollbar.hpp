@@ -4,21 +4,21 @@
 #include "box.hpp"
 #include "gestureDetector.hpp"
 #include "memory"
+#include "scrollable.hpp"
 #include "widget.hpp"
+#include "chrono"
 
 namespace squi {
 	struct Scrollbar {
 		// Args
 		Widget::Args widget;
-		std::function<void(const float &scroll)> onScroll{};
-		std::function<std::tuple<float, float, float>()> setScroll{};
+		std::shared_ptr<Scrollable::Controller> controller{std::make_shared<Scrollable::Controller>()};
 
 		struct Storage {
 			// Data
-            float contentHeight = 200;
-            float viewHeight = 100;
 			float scroll = 0;
 			float scrollDragStart = 0;
+			std::shared_ptr<Scrollable::Controller> controller;
 			std::chrono::steady_clock::time_point lastHoverTime = std::chrono::steady_clock::now();
 		};
 

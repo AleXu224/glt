@@ -8,16 +8,16 @@
 namespace squi {
     struct LayoutInspector {
         // Args
-        std::vector<std::shared_ptr<Widget>> &content;
-        std::vector<std::shared_ptr<Widget>> &overlays;
+        std::vector<Child> &content;
+        std::vector<Child> &overlays;
         
         struct Storage {
             // Data
-			std::vector<std::shared_ptr<Widget>> &content;
-			std::vector<std::shared_ptr<Widget>> &overlays;
-            uint64_t selectedWidgetID = 0;
-            uint64_t activeButtonID = 0;
-            uint64_t hoveredWidgetID = 0;
+			std::vector<Child> &content;
+			std::vector<Child> &overlays;
+            ChildRef selectedWidget{};
+            ChildRef activeButton{};
+            ChildRef hoveredWidget{};
             bool shouldUpdate = true;
             bool selectedWidgetChanged = false;
             bool pauseUpdates = false;

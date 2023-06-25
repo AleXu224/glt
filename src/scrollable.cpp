@@ -1,5 +1,6 @@
 #include "gestureDetector.hpp"
 #include <any>
+#include <memory>
 #define NOMINMAX
 #include "renderer.hpp"
 #include "scrollable.hpp"
@@ -8,7 +9,7 @@
 using namespace squi;
 
 Scrollable::Impl::Impl(const Scrollable &args)
-	: Widget(args.widget, Widget::Flags::Default()) {
+	: Widget(args.widget, Widget::Flags::Default()), controller(args.controller) {
 	addChild(Column{
 		.widget{
 			.width = Size::Expand,
@@ -16,25 +17,29 @@ Scrollable::Impl::Impl(const Scrollable &args)
 			.sizeConstraints{
 				.maxHeight = std::numeric_limits<float>::max(),
 			},
-			.afterUpdate = [&, onScroll = args.onScroll, setScroll = args.setScroll](Widget &widget) {
+			.afterUpdate = [this, onScroll = args.onScroll](Widget &widget) {
+				const float beforeScroll = scroll;
+				
 				const auto viewHeight = getContentRect().height();
 				const auto contentHeight = widget.getLayoutRect().height();
 				const auto maxScroll = contentHeight - viewHeight;
 
-				if (setScroll) {
-					const float newScroll = setScroll();
-					if (!scrolled && newScroll != scroll) {
-						scroll = newScroll;
-						if (onScroll) onScroll(scroll, contentHeight, viewHeight);
-						return;
-					}
-				};
+				if (controller->scroll != scroll) {
+					scroll = controller->scroll;
+					if (onScroll) onScroll(scroll, contentHeight, viewHeight);
+				}
+
+				controller->viewHeight = viewHeight;
+				controller->contentHeight = contentHeight;
 
 				if (viewHeight > contentHeight) scroll = 0;
 				scroll = (std::min)(scroll, maxScroll);
 				scroll = (std::max)(0.0f, scroll);
 
-				if (onScroll) onScroll(scroll, contentHeight, viewHeight);
+				controller->scroll = scroll;
+
+				if (beforeScroll != scroll && onScroll) 
+					onScroll(scroll, contentHeight, viewHeight);
 			},
 		},
 		.alignment = args.alignment,
@@ -50,6 +55,7 @@ void Scrollable::Impl::onUpdate() {
 	if (gd.hovered) {
 		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
 		if (GestureDetector::g_scrollDelta.y != 0) scrolled = true;
+		controller->scroll = scroll;
 	}
 
 	GestureDetector::g_activeArea.emplace_back(getRect());

@@ -8,6 +8,7 @@ using namespace squi;
 
 ScrollableFrame::operator squi::Child() const {
     auto storage = std::make_shared<Storage>();
+    auto controller = std::make_shared<Scrollable::Controller>();
 
     return Stack{
         .widget{widget},
@@ -22,9 +23,7 @@ ScrollableFrame::operator squi::Child() const {
                     storage->contentHeight = contentHeight;
                     storage->viewHeight = viewHeight;
                 },
-                .setScroll = [storage]() {
-                    return storage->scroll;
-                },
+                .controller = controller,
                 .children{children},
             },
             Align{
@@ -35,12 +34,7 @@ ScrollableFrame::operator squi::Child() const {
                         .widget{
                             .height = Size::Expand,
                         },
-                        .onScroll = [storage](const float &scroll) {
-                            storage->scroll = scroll;
-                        },
-                        .setScroll = [storage]() {
-                            return std::make_tuple(storage->scroll, storage->contentHeight, storage->viewHeight);
-                        },
+                        .controller = controller,
                     },
                 },
             },

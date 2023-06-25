@@ -1,4 +1,5 @@
 #include "column.hpp"
+#include "child.hpp"
 #include "renderer.hpp"
 #include "widget.hpp"
 #include <iterator>
@@ -19,7 +20,7 @@ void Column::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 	float totalHeight = 0.0f;
 	float maxWidth = 0.0f;
 
-	std::vector<std::shared_ptr<Widget>> expandedChildren{};
+	std::vector<Child> expandedChildren{};
 
 	const vec2 maxChildSize = maxSize + state.padding.getSizeOffset();
 
@@ -30,7 +31,7 @@ void Column::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 		childState.parent = this;
 
 		if (childState.sizeMode.height.index() == 1 && std::get<1>(childState.sizeMode.height) == Size::Expand) {
-			expandedChildren.push_back(child);
+			expandedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxChildSize);
 			totalHeight += childSize.y;

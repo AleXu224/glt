@@ -2,7 +2,7 @@
 
 using namespace squi;
 
-Align::operator Child() const {
+Align::operator Child() {
 	auto storage = std::make_shared<Storage>(Storage{
 		.xAlign = xAlign,
 		.yAlign = yAlign,

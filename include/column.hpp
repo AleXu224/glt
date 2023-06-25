@@ -2,6 +2,7 @@
 #define SQUI_COLUMN_HPP
 
 #include "widget.hpp"
+#include <memory>
 
 namespace squi {
     struct Column {
@@ -35,7 +36,7 @@ namespace squi {
         };
     
         operator Child() const {
-            return {std::make_shared<Impl>(*this)};
+            return {std::make_unique<Impl>(*this)};
         }
     };
 }

@@ -24,7 +24,7 @@ namespace squi {
             float yAlign;
         };
     
-        operator Child() const;
+        operator Child();
     };
 }
 
