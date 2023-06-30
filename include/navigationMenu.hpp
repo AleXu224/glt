@@ -4,7 +4,7 @@
 #include "widget.hpp"
 
 namespace squi {
-    struct WidgetName {
+    struct NavigationMenu {
         // Args
         Widget::Args widget;
     
@@ -12,11 +12,7 @@ namespace squi {
             // Data
         };
     
-        // operator Child() const {
-        //     auto storage = std::make_shared<Storage>();
-    
-        //     return Child(std::make_shared<Widget>(this->widget));
-        // }
+        operator Child() const;
     };
 }
 

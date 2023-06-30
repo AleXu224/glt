@@ -146,7 +146,7 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(const Args &args, const Flags &options);
+		explicit Widget(const Args &args, const Flags &flags);
 		virtual ~Widget();
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;

@@ -11,8 +11,6 @@
 #include <numeric>
 #include <optional>
 
-
-
 using namespace squi;
 
 // std::unordered_map<uint64_t, Widget *> Widget::Store::widgets{
@@ -159,11 +157,31 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		std::min(0.0f, maxSize.y),
 	};
 
-	if (state.sizeMode.width.index() == 1 && std::get<1>(state.sizeMode.width) == Size::Shrink) {
-		maxSize.x = std::min(getMinWidth() - state.margin.getSizeOffset().x, maxSize.x);
+	// Handle the size mode constraints
+	switch (state.sizeMode.width.index()) {
+		case 0: {
+			maxSize.x = std::get<0>(state.sizeMode.width);
+			break;
+		}
+		case 1: {
+			const auto &size = std::get<1>(state.sizeMode.width);
+			if (size == Size::Shrink) {
+				maxSize.x = std::min(getMinWidth() - state.margin.getSizeOffset().x, maxSize.x);
+			}
+		}
 	}
-	if (state.sizeMode.height.index() == 1 && std::get<1>(state.sizeMode.height) == Size::Shrink) {
-		maxSize.y = std::min(getMinHeight() - state.margin.getSizeOffset().y, maxSize.y);
+
+	switch (state.sizeMode.height.index()) {
+		case 0: {
+			maxSize.y = std::get<0>(state.sizeMode.height);
+			break;
+		}
+		case 1: {
+			const auto &size = std::get<1>(state.sizeMode.height);
+			if (size == Size::Shrink) {
+				maxSize.y = std::min(getMinHeight() - state.margin.getSizeOffset().y, maxSize.y);
+			}
+		}
 	}
 
 	for (auto &func: m_funcs.onLayout) {

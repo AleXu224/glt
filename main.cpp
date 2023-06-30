@@ -8,6 +8,7 @@
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
+#include "navigationView.hpp"
 #include "performanceOverlay.hpp"
 #include "random"
 #include "row.hpp"
@@ -521,117 +522,118 @@ int main(int, char **) {
 	// });
 	window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
-	window.addChild(ContextMenu{
-		.position{16},
-		.items{
-			ContextMenu::Item{
-				.text{"Toggle"},
-				.content = ContextMenu::Item::Toggle{
-					.value = true,
-					.callback = [](bool newValue) {
-						printf("Toggle value changed to %s\n", newValue ? "true" : "false");
-					},
-				},
-			},
-			ContextMenu::Item{
-				.content = ContextMenu::Item::Divider{},
-			},
-			ContextMenu::Item{
-				.text{"Item 1"},
-			},
-			ContextMenu::Item{
-				.text{"Item 2"},
-			},
-			ContextMenu::Item{
-				.text{"Item 3"},
-				.content = ContextMenu::Item::Submenu{
-					.items{
-						ContextMenu::Item{
-							.text{"Item 31"},
-						},
-						ContextMenu::Item{
-							.text{"Item 32"},
-						},
-						ContextMenu::Item{
-							.text{"Item 33"},
-						},
-					},
-				},
-			},
-			ContextMenu::Item{
-				.text{"Item 4"},
-				.content = ContextMenu::Item::Submenu{
-					.items{
-						ContextMenu::Item{
-							.text{"Item 41"},
-						},
-						ContextMenu::Item{
-							.text{"Item 42"},
-						},
-						ContextMenu::Item{
-							.text{"Item 43"},
-						},
-					},
-				},
-			},
-			ContextMenu::Item{
-				.text{"Item 5"},
-				.content = ContextMenu::Item::Submenu{
-					.items{
-						ContextMenu::Item{
-							.text{"Item 51"},
-						},
-						ContextMenu::Item{
-							.text{"Item 52"},
-						},
-						ContextMenu::Item{
-							.text{"Item 53"},
-							.content = ContextMenu::Item::Submenu{
-								.items{
-									ContextMenu::Item{
-										.text{"Item 531"},
-									},
-									ContextMenu::Item{
-										.text{"Item 532"},
-									},
-									ContextMenu::Item{
-										.text{"Item 533"},
-										.content = ContextMenu::Item::Submenu{
-											.items{
-												ContextMenu::Item{
-													.text{"Item 5331"},
-												},
-												ContextMenu::Item{
-													.text{"Item 5332"},
-												},
-												ContextMenu::Item{
-													.text{"Item 5333"},
-													.content = ContextMenu::Item::Submenu{
-														.items{
-															ContextMenu::Item{
-																.text{"Item 53331"},
-															},
-															ContextMenu::Item{
-																.text{"Item 53332"},
-															},
-															ContextMenu::Item{
-																.text{"Item 53333"},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	});
+	// window.addChild(ContextMenu{
+	// 	.position{16},
+	// 	.items{
+	// 		ContextMenu::Item{
+	// 			.text{"Toggle"},
+	// 			.content = ContextMenu::Item::Toggle{
+	// 				.value = true,
+	// 				.callback = [](bool newValue) {
+	// 					printf("Toggle value changed to %s\n", newValue ? "true" : "false");
+	// 				},
+	// 			},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.content = ContextMenu::Item::Divider{},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.text{"Item 1"},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.text{"Item 2"},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.text{"Item 3"},
+	// 			.content = ContextMenu::Item::Submenu{
+	// 				.items{
+	// 					ContextMenu::Item{
+	// 						.text{"Item 31"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 32"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 33"},
+	// 					},
+	// 				},
+	// 			},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.text{"Item 4"},
+	// 			.content = ContextMenu::Item::Submenu{
+	// 				.items{
+	// 					ContextMenu::Item{
+	// 						.text{"Item 41"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 42"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 43"},
+	// 					},
+	// 				},
+	// 			},
+	// 		},
+	// 		ContextMenu::Item{
+	// 			.text{"Item 5"},
+	// 			.content = ContextMenu::Item::Submenu{
+	// 				.items{
+	// 					ContextMenu::Item{
+	// 						.text{"Item 51"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 52"},
+	// 					},
+	// 					ContextMenu::Item{
+	// 						.text{"Item 53"},
+	// 						.content = ContextMenu::Item::Submenu{
+	// 							.items{
+	// 								ContextMenu::Item{
+	// 									.text{"Item 531"},
+	// 								},
+	// 								ContextMenu::Item{
+	// 									.text{"Item 532"},
+	// 								},
+	// 								ContextMenu::Item{
+	// 									.text{"Item 533"},
+	// 									.content = ContextMenu::Item::Submenu{
+	// 										.items{
+	// 											ContextMenu::Item{
+	// 												.text{"Item 5331"},
+	// 											},
+	// 											ContextMenu::Item{
+	// 												.text{"Item 5332"},
+	// 											},
+	// 											ContextMenu::Item{
+	// 												.text{"Item 5333"},
+	// 												.content = ContextMenu::Item::Submenu{
+	// 													.items{
+	// 														ContextMenu::Item{
+	// 															.text{"Item 53331"},
+	// 														},
+	// 														ContextMenu::Item{
+	// 															.text{"Item 53332"},
+	// 														},
+	// 														ContextMenu::Item{
+	// 															.text{"Item 53333"},
+	// 														},
+	// 													},
+	// 												},
+	// 											},
+	// 										},
+	// 									},
+	// 								},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// });
 	// window.addChild(LayoutInspector{.window = &window});
+	window.addChild(NavigationView{});
 	window.run();
 	return 0;
 }

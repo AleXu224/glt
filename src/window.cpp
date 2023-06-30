@@ -213,7 +213,7 @@ void Window::updateAndDraw() {
 	const auto afterDrawTime = std::chrono::steady_clock::now();
 
 	auto *swapChain = renderer.getSwapChain().get();
-	swapChain->Present(0, 0);
+	swapChain->Present(1, 0);
 	lastTime = currentTime;
 
 	const auto afterPresentTime = std::chrono::steady_clock::now();

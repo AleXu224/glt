@@ -40,6 +40,17 @@ namespace squi {
 				.textColor{Color::HEX(0xFFFFFFFF)},
 			};
 		}
+
+		static ButtonStyle Subtle() {
+			return ButtonStyle{
+				.color{Color::HEX(0xFFFFFF00)},
+				.colorHover{Color::HEX(0xFFFFFF0F)},
+				.colorActive{Color::HEX(0xFFFFFF0B)},
+				.colorDisabled{Color::HEX(0xFFFFFF00)},
+				.borderWidth = 0.0f,
+				.textColor{Color::HEX(0xFFFFFFFF)},
+			};
+		}
 	};
 
 	struct Button {
