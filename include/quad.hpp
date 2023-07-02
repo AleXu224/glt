@@ -16,16 +16,16 @@ namespace squi {
 
 	public:
 		struct Args {
-			DirectX::XMFLOAT2 pos;
-			DirectX::XMFLOAT2 size;
-			DirectX::XMFLOAT2 offset;
+			DirectX::XMFLOAT2 pos{0.0f, 0.0f};
+			DirectX::XMFLOAT2 size{0.0f, 0.0f};
+			DirectX::XMFLOAT2 offset{0.0f, 0.0f};
 			DirectX::XMFLOAT4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 			DirectX::XMFLOAT4 borderColor = {0.0f, 0.0f, 0.0f, 1.0f};
-			float borderRadius;
-			float borderSize;
+			float borderRadius{0.0f};
+			float borderSize{0.0f};
 			std::shared_ptr<ID3D11ShaderResourceView> texture;
 			TextureType textureType = TextureType::NoTexture;
-			DirectX::XMFLOAT4 textureUv;
+			DirectX::XMFLOAT4 textureUv{0.0f, 0.0f, 1.0f, 1.0f};
 		};
 
 		Quad(const Args &args);

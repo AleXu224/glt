@@ -18,6 +18,8 @@ Texture::Impl::Impl(const Texture &args) {
         case 2:
             format = DXGI_FORMAT_R8G8_UNORM;
             break;
+        case 3:
+            throw std::runtime_error("3 channel textures are not supported");
         case 4:
             format = DXGI_FORMAT_R8G8B8A8_UNORM;
             break;
@@ -26,16 +28,14 @@ Texture::Impl::Impl(const Texture &args) {
     }
     textureDesc.Format = format;
     textureDesc.SampleDesc.Count = 1;
-    textureDesc.SampleDesc.Quality = 0;
     textureDesc.Usage = args.dynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
     textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     textureDesc.CPUAccessFlags = args.dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
     textureDesc.MiscFlags = 0;
 
     D3D11_SUBRESOURCE_DATA subresourceData{};
-    subresourceData.pSysMem = args.data.get();
+    subresourceData.pSysMem = args.data;
     subresourceData.SysMemPitch = args.width * args.channels;
-    subresourceData.SysMemSlicePitch = 0;
 
     auto device = Renderer::getInstance().getDevice();
 	ID3D11Texture2D *texturePtr;

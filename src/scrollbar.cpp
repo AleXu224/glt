@@ -1,4 +1,5 @@
 #include "gestureDetector.hpp"
+#include <stdio.h>
 #define NOMINMAX
 #include "scrollbar.hpp"
 #include <algorithm>
@@ -47,7 +48,7 @@ Scrollbar::operator Child() const {
 							Box{
 								.widget{
 									.width = 10.0f,
-									.height = 32.f,
+									.height = Size::Expand,
 									.onUpdate = [storage](Widget &widget) {
 										auto &gestureDetector = std::any_cast<GestureDetector::Storage &>(widget.state.properties.at("gestureDetector"));
 
@@ -74,8 +75,8 @@ Scrollbar::operator Child() const {
 
 										if (controller.contentHeight <= controller.viewHeight) storage->scroll = 0;
 										else storage->scroll = controller.scroll / (controller.contentHeight - controller.viewHeight);
-										minSize.y = controller.viewHeight / controller.contentHeight * maxSize.y;
-										minSize.y = std::max(minSize.y, 24.0f);
+										maxSize.y = controller.viewHeight / controller.contentHeight * maxSize.y;
+										maxSize.y = std::max(maxSize.y, 24.0f);
 									},
 									.onArrange = [storage](Widget &widget, vec2 &pos) {
 										if (!widget.state.parent) return;

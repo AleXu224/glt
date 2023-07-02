@@ -52,7 +52,7 @@ void Scrollable::Impl::onUpdate() {
 	scrolled = false;
 	auto &gd = std::any_cast<GestureDetector::Storage&>(state.properties.at("gestureDetector"));
 
-	if (gd.hovered) {
+	if (gd.hovered && GestureDetector::g_scrollDelta.y != 0) {
 		scroll += GestureDetector::g_scrollDelta.y * -40.0f;
 		if (GestureDetector::g_scrollDelta.y != 0) scrolled = true;
 		controller->scroll = scroll;

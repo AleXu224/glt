@@ -14,15 +14,15 @@
 #include "stack.hpp"
 #include "text.hpp"
 #include <GLFW/glfw3.h>
-#include <any>
-#include <chrono>
 #include <algorithm>
+#include <any>
 #include <chrono>
 #include <format>
 #include <functional>
 #include <memory>
 #include <string_view>
 #include <utility>
+
 
 
 using namespace squi;
@@ -152,7 +152,7 @@ struct LayoutItem {
 	};
 
 	static Child buttonFactory(std::shared_ptr<Storage> &storage) {
-		if (Child widget = storage->widget.lock(); !widget || widget->getChildren().empty()) {	
+		if (Child widget = storage->widget.lock(); !widget || widget->getChildren().empty()) {
 			return Container{
 				.widget{
 					.width = 32.f,
@@ -214,12 +214,9 @@ struct LayoutItem {
 		return Column{
 			.widget{
 				.height = Size::Shrink,
-				.onInit = [storage](Widget &w) {
-					w.state.properties.insert({"layoutItem", storage});
-				},
+				.onInit = [storage](Widget &w) { w.state.properties.insert({"layoutItem", storage}); },
 				.onUpdate = [storage](Widget &w) {
-					if (storage->widget.expired()) w.deleteLater();
-				},
+					if (storage->widget.expired()) w.deleteLater(); },
 			},
 			.children{
 				GestureDetector{
@@ -243,7 +240,7 @@ struct LayoutItem {
 								.margin{4, 2},
 								.padding{0.f, 0.f, 0.f, depth * 16.f},
 								.onUpdate = [storage = storage, state = state](Widget &w) {
-									Color outputColor = [&](){
+									Color outputColor = [&]() {
 										if (storage->hovered || state->activeButton.lock() == w.shared_from_this())
 											return Color::HEX(0xFFFFFF0D);
 										else
@@ -339,7 +336,7 @@ struct LayoutInspectorActionButton {
 	// Args
 	operator Child() const {
 		return GestureDetector{
-			.onClick = [storage = storage](Widget &w, auto){
+			.onClick = [storage = storage](Widget &w, auto) {
 				storage->pauseUpdates = !storage->pauseUpdates;
 				storage->pauseUpdatesChanged = true;
 			},
@@ -351,7 +348,7 @@ struct LayoutInspectorActionButton {
 						.margin = 2.f,
 						.onUpdate = [storage = storage](Widget &w) {
 							auto &box = dynamic_cast<Box::Impl &>(w);
-							auto &gd = std::any_cast<GestureDetector::Storage&>(w.state.properties.at("gestureDetector"));
+							auto &gd = std::any_cast<GestureDetector::Storage &>(w.state.properties.at("gestureDetector"));
 							if (gd.hovered || gd.focused)
 								box.setColor(Color::HEX(0xFFFFFF0D));
 							else
@@ -524,6 +521,9 @@ LayoutInspector::operator Child() const {
 					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F5)) {
 						storage->pauseUpdates = !storage->pauseUpdates;
 						storage->pauseUpdatesChanged = true;
+					}
+					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F12)) {
+						w.flags.visible = !w.flags.visible;
 					} },
 				.child{
 					Box{

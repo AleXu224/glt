@@ -83,24 +83,24 @@ auto fragmentShaderHlsl = R"(
 		Texture2D uTexture[16] : register(t0);
 		SamplerState samp1 : register(s0);
 
-		float textureByIndex(uint index, float2 uv) {
+		float4 textureByIndex(uint index, float2 uv) {
 			[call] switch (index) {
-				case 0: return uTexture[0].Sample(samp1, uv).r;
-				case 1: return uTexture[1].Sample(samp1, uv).r;
-				case 2: return uTexture[2].Sample(samp1, uv).r;
-				case 3: return uTexture[3].Sample(samp1, uv).r;
-				case 4: return uTexture[4].Sample(samp1, uv).r;
-				case 5: return uTexture[5].Sample(samp1, uv).r;
-				case 6: return uTexture[6].Sample(samp1, uv).r;
-				case 7: return uTexture[7].Sample(samp1, uv).r;
-				case 8: return uTexture[8].Sample(samp1, uv).r;
-				case 9: return uTexture[9].Sample(samp1, uv).r;
-				case 10: return uTexture[10].Sample(samp1, uv).r;
-				case 11: return uTexture[11].Sample(samp1, uv).r;
-				case 12: return uTexture[12].Sample(samp1, uv).r;
-				case 13: return uTexture[13].Sample(samp1, uv).r;
-				case 14: return uTexture[14].Sample(samp1, uv).r;
-				case 15: return uTexture[15].Sample(samp1, uv).r;
+				case 0: return uTexture[0].Sample(samp1, uv);
+				case 1: return uTexture[1].Sample(samp1, uv);
+				case 2: return uTexture[2].Sample(samp1, uv);
+				case 3: return uTexture[3].Sample(samp1, uv);
+				case 4: return uTexture[4].Sample(samp1, uv);
+				case 5: return uTexture[5].Sample(samp1, uv);
+				case 6: return uTexture[6].Sample(samp1, uv);
+				case 7: return uTexture[7].Sample(samp1, uv);
+				case 8: return uTexture[8].Sample(samp1, uv);
+				case 9: return uTexture[9].Sample(samp1, uv);
+				case 10: return uTexture[10].Sample(samp1, uv);
+				case 11: return uTexture[11].Sample(samp1, uv);
+				case 12: return uTexture[12].Sample(samp1, uv);
+				case 13: return uTexture[13].Sample(samp1, uv);
+				case 14: return uTexture[14].Sample(samp1, uv);
+				case 15: return uTexture[15].Sample(samp1, uv);
 				default: return 0.0;
 			}
 		}
@@ -127,8 +127,13 @@ auto fragmentShaderHlsl = R"(
 				borderColor.xyz *= input.borderColor.a;
 				outColor = lerp(outColor, borderColor, smoothstep(0.0, 1.0, b + bSize));
 			}
+			if (input.textureType == 1) {
+				float4 texColor = textureByIndex(input.textureId, input.texUV);
+				float3 color = texColor.rgb * texColor.a;
+				return float4(color, texColor.a);
+			}
 			if (input.textureType == 2) {
-				float alpha = textureByIndex(input.textureId, input.texUV) * input.color.a;
+				float alpha = textureByIndex(input.textureId, input.texUV).r * input.color.a;
 				float3 color = input.color.rgb * alpha;
 				return float4(color.r, color.g, color.b, alpha);
 			}

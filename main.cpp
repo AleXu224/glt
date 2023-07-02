@@ -1,3 +1,4 @@
+#include "networking.hpp"
 #include "align.hpp"
 #include "box.hpp"
 #include "button.hpp"
@@ -7,6 +8,7 @@
 #include "contextMenu.hpp"
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
+#include "image.hpp"
 #include "layoutInspector.hpp"
 #include "navigationView.hpp"
 #include "performanceOverlay.hpp"
@@ -22,7 +24,9 @@
 #include "widget.hpp"
 #include "window.hpp"
 #include <cstdio>
+#include <iostream>
 #include <vector>
+
 
 
 int main(int, char **) {
@@ -520,7 +524,6 @@ int main(int, char **) {
 	// 		}(),
 	// 	},
 	// });
-	window.addChild(PerformanceOverlay{});
 	// window.addChild(LayoutInspector{.window = &window});
 	// window.addChild(ContextMenu{
 	// 	.position{16},
@@ -633,7 +636,87 @@ int main(int, char **) {
 	// 	},
 	// });
 	// window.addChild(LayoutInspector{.window = &window});
-	window.addChild(NavigationView{});
+	// window.addChild(NavigationView{});
+	// auto response = Networking::get("https://cdn.discordapp.com/attachments/332819331991732225/1124408784756944906/00396-3240290935-Cute_fox_girl_exercise_pool_one-piece_swimsuit_well-defined-fingers_well-defined-hands_fingernails_masterpiece_high_q.jpg");
+	// if (!response.success) printf("%s\n", response.error.c_str());
+
+	// Image::Data img{reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t)response.body.size()};
+	{
+		Image::Data img = Image::Data::fromUrlAsync("https://cdn.discordapp.com/attachments/301985131676303362/1125143910969262080/image.png");
+		window.addChild(ScrollableFrame{
+			.children{
+				Text{
+					.text{"Fit: none"},
+				},
+				Box{
+					.widget{
+						.width = 400.f,
+						.height = 400.f,
+						.margin{8.f},
+					},
+					.color{0xFFFFFF22},
+					.child{
+						Image{
+							.fit = Image::Fit::none,
+							.image{img},
+						},
+					},
+				},
+				  Text{
+					  .text{"Fit: fill"},
+				  },
+				  Box{
+					  .widget{
+						  .width = 400.f,
+						  .height = 400.f,
+						  .margin{8.f},
+					  },
+					  .color{0xFFFFFF22},
+					  .child{
+						  Image{
+							  .fit = Image::Fit::fill,
+							  .image{img},
+						  },
+					  },
+				  },
+				  Text{
+					  .text{"Fit: cover"},
+				  },
+				  Box{
+					  .widget{
+						  .width = 400.f,
+						  .height = 400.f,
+						  .margin{8.f},
+					  },
+					  .color{0xFFFFFF22},
+					  .child{
+						  Image{
+							  .fit = Image::Fit::cover,
+							  .image{img},
+						  },
+					  },
+				  },
+				  Text{
+					  .text{"Fit: contain"},
+				  },
+				  Box{
+					  .widget{
+						  .width = 400.f,
+						  .height = 400.f,
+						  .margin{8.f},
+					  },
+					  .color{0xFFFFFF22},
+					  .child{
+						  Image{
+							  .fit = Image::Fit::contain,
+							  .image{img},
+						  },
+					  },
+				  },
+			},
+		});
+	}
+	window.addChild(PerformanceOverlay{});
 	window.run();
 	return 0;
 }
