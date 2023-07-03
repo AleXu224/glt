@@ -2,7 +2,9 @@
 #include <asio/error_code.hpp>
 #include <asio/ssl/verify_mode.hpp>
 #include <charconv>
+#include <iostream>
 #include <skyr/v1/url.hpp>
+#include <sstream>
 #include <string>
 #include "asio/ssl.hpp"
 #include "skyr/url.hpp"
@@ -44,9 +46,10 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 
 Networking::Response Networking::get(std::string_view url) {
     const auto parsedUrl = skyr::url{url};
+    bool isHttps = parsedUrl.protocol().starts_with("https");
     asio::ip::tcp::resolver resolver(ioContext);
     asio::ip::tcp::socket socket(ioContext);
-    asio::ssl::context context(asio::ssl::context::tlsv12_client);
+    asio::ssl::context context(asio::ssl::context::method::tls_client);
     asio::ssl::stream<asio::ip::tcp::socket&> stream(socket, context);
     asio::error_code ec;
     const auto protocol = parsedUrl.protocol().substr();
@@ -59,6 +62,10 @@ Networking::Response Networking::get(std::string_view url) {
         };
     }
 
+    if (isHttps) {
+        context.set_verify_mode(asio::ssl::verify_peer);
+        context.set_default_verify_paths();
+    }
     stream.lowest_layer().connect(endpoint->endpoint(), ec);
     if (ec) {
         return Response{
@@ -67,6 +74,8 @@ Networking::Response Networking::get(std::string_view url) {
             .error = std::format("Failed to connect to {}: {}", parsedUrl.host(), ec.message()),
         };
     }
+
+    SSL_set_tlsext_host_name(stream.native_handle(), parsedUrl.host().data());
 
     stream.handshake(asio::ssl::stream_base::client, ec);
     if (ec) {
@@ -77,7 +86,11 @@ Networking::Response Networking::get(std::string_view url) {
         };
     }
 
-	stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nAccept: Accept: */*\r\nConnection: close\r\n\r\n", parsedUrl.pathname(), parsedUrl.host())), ec);
+	std::stringstream ss;
+    ss << parsedUrl.pathname();
+    if (!parsedUrl.search_parameters().empty()) ss << "?" << parsedUrl.search_parameters().to_string();
+
+    stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nAccept: Accept: */*\r\nConnection: close\r\n\r\n", ss.str(), parsedUrl.host())), ec);
 	if (ec) {
         return Response{
             .body = "",
