@@ -3,15 +3,15 @@
 
 #include "array"
 #include "batch.hpp"
+#include "chrono"
 #include "list"
+#include "memory"
 #include "shader.hpp"
 #include "vertex.hpp"
-#include "memory"
-#include "chrono"
+
 
 namespace squi {
 	class Renderer {
-		static std::unique_ptr<Renderer> instance;
 		std::unique_ptr<Batch> batch{};
 		std::unique_ptr<Shader> shader{};
 		DirectX::XMFLOAT4X4 projectionMatrix{};
@@ -37,7 +37,10 @@ namespace squi {
 		std::vector<ClipRect> clipRects{};
 
 	public:
-		static Renderer &getInstance();
+		static Renderer &getInstance() {
+			static Renderer instance;
+			return instance;
+		}
 
 		void addClipRect(const Rect &rect, float clipBorderRadius = 0.0f);
 		[[nodiscard]] const ClipRect &getCurrentClipRect() const;
@@ -70,8 +73,8 @@ namespace squi {
 		[[nodiscard]] std::shared_ptr<IDXGISwapChain> getSwapChain() const;
 		[[nodiscard]] std::shared_ptr<ID3D11RenderTargetView> getRenderTargetView() const;
 
-		Renderer(HWND hwnd, int width, int height);
-		static void initialize(HWND hwnd, int width, int height);
+		Renderer() = default;
+		void initialize(HWND hwnd, int width, int height);
 	};
 }// namespace squi
 

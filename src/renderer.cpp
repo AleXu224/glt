@@ -3,7 +3,6 @@
 
 using namespace squi;
 
-std::unique_ptr<Renderer> Renderer::instance = nullptr;
 auto vertexShaderHlsl = R"(
 		struct VertexData {
 			float4 color;
@@ -142,125 +141,6 @@ auto fragmentShaderHlsl = R"(
 		}
 	)";
 
-Renderer::Renderer(HWND hwnd, int width, int height) {
-	// Viewport
-	viewport.Width = static_cast<float>(width);
-	viewport.Height = static_cast<float>(height);
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-
-	// Swap Chain
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	swapChainDesc.BufferDesc.Width = width;
-	swapChainDesc.BufferDesc.Height = height;
-	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapChainDesc.SampleDesc.Count = 1;
-	swapChainDesc.SampleDesc.Quality = 0;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = 3;
-	swapChainDesc.OutputWindow = hwnd;
-	swapChainDesc.Windowed = TRUE;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-	ID3D11Device *devicePtr = nullptr;
-	ID3D11DeviceContext *contextPtr = nullptr;
-	IDXGISwapChain *swapChainPtr = nullptr;
-	ID3D11RenderTargetView *renderTargetViewPtr = nullptr;
-	ID3D11Resource *backBufferPtr = nullptr;
-	auto res = D3D11CreateDeviceAndSwapChain(
-		nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
-		nullptr,
-		0,
-		nullptr,
-		0,
-		D3D11_SDK_VERSION,
-		&swapChainDesc,
-		&swapChainPtr,
-		&devicePtr,
-		nullptr,
-		&contextPtr);
-
-	if (res != S_OK) {
-		res = D3D11CreateDeviceAndSwapChain(
-			nullptr,
-			D3D_DRIVER_TYPE_WARP,
-			nullptr,
-			0,
-			nullptr,
-			0,
-			D3D11_SDK_VERSION,
-			&swapChainDesc,
-			&swapChainPtr,
-			&devicePtr,
-			nullptr,
-			&contextPtr);
-		if (res != S_OK) {
-			printf("Failed to create device and swap chain (%#08x)\n", (unsigned int) res);
-			exit(1);
-		}
-		printf("Hardware acceleration not available, using WARP\n");
-	}
-	swapChainPtr->GetBuffer(0, __uuidof(ID3D11Resource), (void **) &backBufferPtr);
-	devicePtr->CreateRenderTargetView(backBufferPtr, nullptr, &renderTargetViewPtr);
-
-	device.reset(devicePtr, [](ID3D11Device *devicePtr) { devicePtr->Release(); });
-	deviceContext.reset(contextPtr, [](ID3D11DeviceContext *context) { context->Release(); });
-	swapChain.reset(swapChainPtr, [](IDXGISwapChain *swapChainPtr) { swapChainPtr->Release(); });
-	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) { renderTargetViewPtr->Release(); });
-	backBuffer.reset(backBufferPtr, [](ID3D11Resource *backBufferPtr) { backBufferPtr->Release(); });
-
-	// Enable alpha blending
-	D3D11_BLEND_DESC blendDesc = {};
-	blendDesc.AlphaToCoverageEnable = FALSE;
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	ID3D11BlendState *blendStatePtr = nullptr;
-	device->CreateBlendState(&blendDesc, &blendStatePtr);
-	blendState.reset(blendStatePtr, [](ID3D11BlendState *blendStatePtr) { blendStatePtr->Release(); });
-	deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
-
-	shader = std::make_unique<Shader>(vertexShaderHlsl, fragmentShaderHlsl, device);
-	batch = std::make_unique<Batch>(device);
-
-	// projection matrix to identity
-	DirectX::XMStoreFloat4x4(&this->projectionMatrix, DirectX::XMMatrixIdentity());
-	// Scale to 800x600 and flip y axis
-	projectionMatrix._11 = 2.0f / static_cast<float>(width);
-	projectionMatrix._22 = -2.0f / static_cast<float>(height);
-	// Translate to topleft corner
-	projectionMatrix._41 = -1.0f;
-	projectionMatrix._42 = 1.0f;
-
-	D3D11_BUFFER_DESC bufferDesc = {};
-	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bufferDesc.ByteWidth = sizeof(DirectX::XMFLOAT4X4);
-	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-
-	D3D11_SUBRESOURCE_DATA subresourceData = {};
-	subresourceData.pSysMem = &projectionMatrix;
-
-	ID3D11Buffer *projectionMatrixBufferPtr;
-	device->CreateBuffer(&bufferDesc, &subresourceData, &projectionMatrixBufferPtr);
-	projectionMatrixBuffer.reset(projectionMatrixBufferPtr, [](ID3D11Buffer *buffer) { buffer->Release(); });
-}
-
-Renderer &Renderer::getInstance() {
-	return *instance;
-}
-
 void Renderer::addClipRect(const Rect &clipRect, float clipBorderRadius) {
 	if (!clipRects.empty())
 		clipRects.push_back({clipRects.back().rect.overlap(clipRect), clipBorderRadius});
@@ -378,9 +258,118 @@ std::chrono::time_point<std::chrono::steady_clock> Renderer::getCurrentFrameTime
 }
 
 void Renderer::initialize(HWND hwnd, int width, int height) {
-	if (!instance) {
-		instance = std::make_unique<Renderer>(hwnd, width, height);
+	// Viewport
+	viewport.Width = static_cast<float>(width);
+	viewport.Height = static_cast<float>(height);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	// Swap Chain
+	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+	swapChainDesc.BufferDesc.Width = width;
+	swapChainDesc.BufferDesc.Height = height;
+	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.SampleDesc.Count = 1;
+	swapChainDesc.SampleDesc.Quality = 0;
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = 3;
+	swapChainDesc.OutputWindow = hwnd;
+	swapChainDesc.Windowed = TRUE;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+	ID3D11Device *devicePtr = nullptr;
+	ID3D11DeviceContext *contextPtr = nullptr;
+	IDXGISwapChain *swapChainPtr = nullptr;
+	ID3D11RenderTargetView *renderTargetViewPtr = nullptr;
+	ID3D11Resource *backBufferPtr = nullptr;
+	auto res = D3D11CreateDeviceAndSwapChain(
+		nullptr,
+		D3D_DRIVER_TYPE_HARDWARE,
+		nullptr,
+		0,
+		nullptr,
+		0,
+		D3D11_SDK_VERSION,
+		&swapChainDesc,
+		&swapChainPtr,
+		&devicePtr,
+		nullptr,
+		&contextPtr);
+
+	if (res != S_OK) {
+		res = D3D11CreateDeviceAndSwapChain(
+			nullptr,
+			D3D_DRIVER_TYPE_WARP,
+			nullptr,
+			0,
+			nullptr,
+			0,
+			D3D11_SDK_VERSION,
+			&swapChainDesc,
+			&swapChainPtr,
+			&devicePtr,
+			nullptr,
+			&contextPtr);
+		if (res != S_OK) {
+			printf("Failed to create device and swap chain (%#08x)\n", (unsigned int) res);
+			exit(1);
+		}
+		printf("Hardware acceleration not available, using WARP\n");
 	}
+	swapChainPtr->GetBuffer(0, __uuidof(ID3D11Resource), (void **) &backBufferPtr);
+	devicePtr->CreateRenderTargetView(backBufferPtr, nullptr, &renderTargetViewPtr);
+
+	device.reset(devicePtr, [](ID3D11Device *devicePtr) { devicePtr->Release(); });
+	deviceContext.reset(contextPtr, [](ID3D11DeviceContext *context) { context->Release(); });
+	swapChain.reset(swapChainPtr, [](IDXGISwapChain *swapChainPtr) { swapChainPtr->Release(); });
+	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) { renderTargetViewPtr->Release(); });
+	backBuffer.reset(backBufferPtr, [](ID3D11Resource *backBufferPtr) { backBufferPtr->Release(); });
+
+	// Enable alpha blending
+	D3D11_BLEND_DESC blendDesc = {};
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	ID3D11BlendState *blendStatePtr = nullptr;
+	device->CreateBlendState(&blendDesc, &blendStatePtr);
+	blendState.reset(blendStatePtr, [](ID3D11BlendState *blendStatePtr) { blendStatePtr->Release(); });
+	deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
+
+	shader = std::make_unique<Shader>(vertexShaderHlsl, fragmentShaderHlsl, device);
+	batch = std::make_unique<Batch>(device);
+
+	// projection matrix to identity
+	DirectX::XMStoreFloat4x4(&this->projectionMatrix, DirectX::XMMatrixIdentity());
+	// Scale to 800x600 and flip y axis
+	projectionMatrix._11 = 2.0f / static_cast<float>(width);
+	projectionMatrix._22 = -2.0f / static_cast<float>(height);
+	// Translate to topleft corner
+	projectionMatrix._41 = -1.0f;
+	projectionMatrix._42 = 1.0f;
+
+	D3D11_BUFFER_DESC bufferDesc = {};
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bufferDesc.ByteWidth = sizeof(DirectX::XMFLOAT4X4);
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	D3D11_SUBRESOURCE_DATA subresourceData = {};
+	subresourceData.pSysMem = &projectionMatrix;
+
+	ID3D11Buffer *projectionMatrixBufferPtr;
+	device->CreateBuffer(&bufferDesc, &subresourceData, &projectionMatrixBufferPtr);
+	projectionMatrixBuffer.reset(projectionMatrixBufferPtr, [](ID3D11Buffer *buffer) { buffer->Release(); });
 }
 
 const D3D11_VIEWPORT &Renderer::getViewport() const {
