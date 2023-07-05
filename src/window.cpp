@@ -106,7 +106,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 	}
 
 	HWND hwnd = glfwGetWin32Window(window.get());
-	Renderer::initialize(hwnd, 800, 600);
+	Renderer::getInstance().initialize(hwnd, 800, 600);
 
 	int darkMode = 1;
 	int mica = 2;
@@ -213,7 +213,7 @@ void Window::updateAndDraw() {
 	const auto afterDrawTime = std::chrono::steady_clock::now();
 
 	auto *swapChain = renderer.getSwapChain().get();
-	swapChain->Present(1, 0);
+	swapChain->Present(0, 0);
 	lastTime = currentTime;
 
 	const auto afterPresentTime = std::chrono::steady_clock::now();
