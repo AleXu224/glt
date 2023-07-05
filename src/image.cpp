@@ -1,12 +1,15 @@
 #include "networking.hpp"
+
 #include "image.hpp"
+#include "fstream"
 #include "renderer.hpp"
 #include "vertex.hpp"
 #include "widget.hpp"
+#include <future>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <thread>
-#include "fstream"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image_ext.h"
@@ -17,7 +20,7 @@ using namespace squi;
 
 Image::Data::Data(unsigned char *bytes, uint32_t length) {
 	int width, height, channels;
-	stbi_uc *data = stbi_load_from_memory(bytes, (int)length, &width, &height, &channels, 0);
+	stbi_uc *data = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 0);
 	if (data == nullptr) {
 		throw std::runtime_error("Failed to load image");
 	}
@@ -34,12 +37,11 @@ Image::Data::Data(unsigned char *bytes, uint32_t length) {
 		this->data.resize(width * height * channels);
 		std::memcpy(this->data.data(), data, this->data.size());
 	} else {
-		throw std::runtime_error(std::format("Unsupported number of channels: {}", channels));
+		throw std::runtime_error("Unsupported number of channels");
 	}
 	this->width = width;
 	this->height = height;
 	this->channels = channels;
-	this->ready = true;
 	stbi_image_free(data);
 }
 
@@ -48,7 +50,7 @@ Image::Data Image::Data::fromUrl(std::string_view url) {
 	if (!response.success) {
 		throw std::runtime_error(std::format("Failed to load image: {}", response.error));
 	}
-	return {reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t)response.body.size()};
+	return {reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t) response.body.size()};
 }
 
 Image::Data Image::Data::fromFile(std::string_view path) {
@@ -65,31 +67,22 @@ Image::Data Image::Data::fromFile(std::string_view path) {
 	std::vector<unsigned char> bytes(length);
 	s.read(reinterpret_cast<char *>(bytes.data()), length);
 
-	return {bytes.data(), (uint32_t)length};
+	return {bytes.data(), (uint32_t) length};
 }
 
-Image::Data Image::Data::fromUrlAsync(std::string_view url) {
-	Data data{};
+std::future<Image::Data> Image::Data::fromUrlAsync(std::string_view url) {
+	return std::async(std::launch::async, [url]() {
+		return Data::fromUrl(url);
+	});
+}
 
-	data.loaderData = std::make_shared<Data>();
-	std::thread([url, loaderData = data.loaderData](){
-		*loaderData = Data::fromUrl(url);
-		loaderData->ready = true;
-	}).detach();
-
-	return data;
+std::future<Image::Data> Image::Data::fromFileAsync(std::string_view path) {
+	return std::async(std::launch::async, [path]() {
+		return Data::fromFile(path);
+	});
 }
 
 Texture::Impl Image::Data::createTexture() const {
-	if (!this->ready) {
-		constexpr uint8_t data[4] = {1, 1, 1, 1};
-		return {Texture{
-			.width = 1,
-			.height = 1,
-			.channels = 4,
-			.data = data,
-		}};
-	}
 	return {Texture{
 		.width = static_cast<uint16_t>(this->width),
 		.height = static_cast<uint16_t>(this->height),
@@ -99,63 +92,96 @@ Texture::Impl Image::Data::createTexture() const {
 	}};
 }
 
+struct ImageState {
+	bool valid = true;
+	bool ready = false;
+};
+
 Image::Impl::Impl(const Image &args)
 	: Widget(args.widget, Widget::Flags::Default()),
-	  texture(args.image.createTexture()),
+	  texture(Texture::Empty()),
 	  fit(args.fit),
-	  aspectRatio(static_cast<float>(args.image.width) / static_cast<float>(args.image.height)),
-      width(args.image.width),
-      height(args.image.height),
-      quad(Quad::Args{
-        .size = {0, 0},
-        .texture = this->texture.getTextureView(),
-        .textureType = TextureType::Texture,
-      }) {
+	  quad(Quad::Args{
+		  .size = {0, 0},
+		  .texture = this->texture.getTextureView(),
+		  .textureType = TextureType::Texture,
+	  }) {
 
-	if (!args.image.ready) {
-		this->tempData = args.image.loaderData; 
+	ImageState imageState{};
+	switch (args.image.index()) {
+		case 0: {
+			imageState.ready = false;
+			auto data = std::get<0>(args.image);
+			std::future<Texture::Impl> texFuture = std::async(std::launch::async, [data = data]() {
+				return data.createTexture();
+			});
+			state.properties.insert({"imageFuture", texFuture.share()});
+			break;
+		}
+		case 1: {
+			auto &future = std::get<1>(args.image);
+			imageState.ready = false;
+			if (!future.valid()) {
+#ifdef _DEBUG
+				printf("Warning: Image future is not valid\n");
+#endif
+				imageState.valid = false;
+			}
+			std::future<Texture::Impl> texFuture = std::async(std::launch::async, [future = future]() {
+				future.wait();
+				return future.get().createTexture();
+			});
+			state.properties.insert({"imageFuture", texFuture.share()});
+		}
 	}
+	state.properties.insert({"imageState", imageState});
 }
 
 void Image::Impl::onUpdate() {
-	if (!tempData) return;
-	if (tempData->ready) {
-		texture = tempData->createTexture();
-		width = tempData->width;
-		height = tempData->height;
-		aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+	auto &imageState = std::any_cast<ImageState &>(state.properties.at("imageState"));
+	if (imageState.ready || !imageState.valid) return;
+	auto &future = std::any_cast<std::shared_future<Texture::Impl> &>(state.properties.at("imageFuture"));
+	const auto status = future.wait_for(std::chrono::seconds(0));
+	if (status == std::future_status::ready) {
+		texture = future.get();
 		quad = Quad::Args{
 			.size = {0, 0},
 			.texture = this->texture.getTextureView(),
 			.textureType = TextureType::Texture,
 		};
-		tempData.reset();
+		imageState.ready = true;
+		auto iter = state.properties.find("imageFuture");
+		if (iter != state.properties.end()) {
+			state.properties.erase(iter);
+		}
 	}
 }
 
 void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
+	const auto &properties = texture.getProperties();
+	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 	switch (this->fit) {
 		case Fit::none: {
-			maxSize = {static_cast<float>(this->width), static_cast<float>(this->height)};
-			minSize = {static_cast<float>(this->width), static_cast<float>(this->height)};
+			maxSize = {static_cast<float>(properties.width), static_cast<float>(properties.height)};
+			// minSize = {static_cast<float>(this->width), static_cast<float>(this->height)};
 			break;
 		}
 		case Fit::fill: {
 			break;
 		}
 		case Fit::cover: {
-			if (maxSize.x / maxSize.y > this->aspectRatio) {
-				maxSize.x = maxSize.y * this->aspectRatio;
+			if (maxSize.x / maxSize.y > aspectRatio) {
+				maxSize.x = maxSize.y * aspectRatio;
 			} else {
-				maxSize.y = maxSize.x / this->aspectRatio;
+				maxSize.y = maxSize.x / aspectRatio;
 			}
 			break;
 		}
 		case Fit::contain: {
-			if (maxSize.x / maxSize.y > this->aspectRatio) {
-				maxSize.y = maxSize.x / this->aspectRatio;
+			if (maxSize.x / maxSize.y > aspectRatio) {
+				maxSize.y = maxSize.x / aspectRatio;
 			} else {
-				maxSize.x = maxSize.y * this->aspectRatio;
+				maxSize.x = maxSize.y * aspectRatio;
 			}
 			break;
 		}
@@ -167,9 +193,9 @@ void Image::Impl::postLayout(vec2 &size) {
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
-    this->quad.setPos(pos);
+	this->quad.setPos(pos);
 }
 
 void Image::Impl::onDraw() {
-    Renderer::getInstance().addQuad(quad);
+	Renderer::getInstance().addQuad(quad);
 }

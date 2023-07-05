@@ -4,12 +4,13 @@
 #include "texture.hpp"
 #include "widget.hpp"
 #include "vector"
+#include <future>
 #include <memory>
 #include <optional>
-#include <stdio.h>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <variant>
 
 namespace squi {
     struct Image {
@@ -18,16 +19,12 @@ namespace squi {
 			uint32_t width;
 			uint32_t height;
 			uint32_t channels;
-            bool ready = false;
 
-            Data() : width(0), height(0), channels(0) {}
             Data(unsigned char *bytes, uint32_t length);
             static Data fromUrl(std::string_view url);
 			static Data fromFile(std::string_view path);
-			static Data fromUrlAsync(std::string_view url);
-			// static std::thread fromFileAsync(std::string_view path, std::function<void(Data)>);
-
-            std::shared_ptr<Data> loaderData;
+			static std::future<Data> fromUrlAsync(std::string_view url);
+			static std::future<Data> fromFileAsync(std::string_view path);
 
 			[[nodiscard]] Texture::Impl createTexture() const;
 		};
@@ -46,16 +43,12 @@ namespace squi {
 		// Args
         Widget::Args widget;
         Fit fit = Fit::none;
-        Data image;
+        std::variant<Data, std::shared_future<Data>> image;
     
         class Impl : public Widget {
             // Data
             Texture::Impl texture;
 			Fit fit;
-			float aspectRatio;
-			uint32_t width;
-			uint32_t height;
-            std::shared_ptr<Data> tempData{};
             Quad quad;
     
         public:
