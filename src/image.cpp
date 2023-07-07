@@ -1,15 +1,17 @@
 #include "networking.hpp"
 
-#include "image.hpp"
 #include "fstream"
+#include "image.hpp"
 #include "renderer.hpp"
 #include "vertex.hpp"
 #include "widget.hpp"
 #include <future>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string_view>
 #include <thread>
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image_ext.h"
@@ -57,7 +59,8 @@ Image::Data Image::Data::fromFile(std::string_view path) {
 	std::fstream s{path.data(), std::ios::binary | std::ios::in};
 
 	if (!s.is_open()) {
-		throw std::runtime_error(std::format("Failed to load image: {}", path));
+		std::cout << "Failed to open file " << path << std::endl;
+		return {{0, 0, 0, 0}, 1, 1, 4};
 	}
 
 	s.seekg(0, std::ios::end);
@@ -77,7 +80,8 @@ std::future<Image::Data> Image::Data::fromUrlAsync(std::string_view url) {
 }
 
 std::future<Image::Data> Image::Data::fromFileAsync(std::string_view path) {
-	return std::async(std::launch::async, [path]() {
+	std::string pathStr{path};
+	return std::async(std::launch::async, [path = pathStr]() {
 		return Data::fromFile(path);
 	});
 }
@@ -92,11 +96,6 @@ Texture::Impl Image::Data::createTexture() const {
 	}};
 }
 
-struct ImageState {
-	bool valid = true;
-	bool ready = false;
-};
-
 Image::Impl::Impl(const Image &args)
 	: Widget(args.widget, Widget::Flags::Default()),
 	  texture(Texture::Empty()),
@@ -107,7 +106,6 @@ Image::Impl::Impl(const Image &args)
 		  .textureType = TextureType::Texture,
 	  }) {
 
-	ImageState imageState{};
 	switch (args.image.index()) {
 		case 0: {
 			imageState.ready = false;
@@ -134,15 +132,13 @@ Image::Impl::Impl(const Image &args)
 			state.properties.insert({"imageFuture", texFuture.share()});
 		}
 	}
-	state.properties.insert({"imageState", imageState});
 }
 
 void Image::Impl::onUpdate() {
-	auto &imageState = std::any_cast<ImageState &>(state.properties.at("imageState"));
 	if (imageState.ready || !imageState.valid) return;
 	auto &future = std::any_cast<std::shared_future<Texture::Impl> &>(state.properties.at("imageFuture"));
-	const auto status = future.wait_for(std::chrono::seconds(0));
-	if (status == std::future_status::ready) {
+	// const auto status = future.wait_for(std::chrono::seconds(0));
+	if (future._Is_ready()) {
 		texture = future.get();
 		quad = Quad::Args{
 			.size = {0, 0},
