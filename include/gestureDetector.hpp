@@ -33,7 +33,7 @@ namespace squi {
 	public:
 		static vec2 g_cursorPos;
 		static std::unordered_map<int, KeyState> g_keys;
-		static unsigned char g_textInput;
+		static std::string g_textInput;
 		static vec2 g_scrollDelta;
 		static std::vector<Rect> g_hitCheckRects;
 		static std::vector<Rect> g_activeArea;
@@ -41,6 +41,7 @@ namespace squi {
 		static bool g_cursorInside;
 
 		static void setCursorPos(const vec2 &pos);
+		static void frameEnd();
 		[[nodiscard]] static const vec2 &getMousePos();
 		// Get how much the cursor has moved since the last frame
 		[[nodiscard]] static vec2 getMouseDelta();
@@ -60,7 +61,7 @@ namespace squi {
 			bool focusedOutside = false;
 			// Indicates if the widget has been activated by a click and no other widget has been focused since
 			bool active = false;
-			unsigned int charInput = 0;
+			std::string textInput{};
 			std::function<void(Widget &, Storage &)> onEnter{};
 			std::function<void(Widget &, Storage &)> onLeave{};
 			std::function<void(Widget &, Storage &)> onClick{};
@@ -80,7 +81,7 @@ namespace squi {
 			// Get the location of where the drag began
 			[[nodiscard]] const vec2 &getDragStartPos() const;
 		};
-	
+
 		operator Child() const;
 	};
 }// namespace squi

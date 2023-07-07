@@ -47,7 +47,7 @@ TextInput::Impl::Impl(const TextInput &args)
 
 // TODO: Fix the horrible performance of this
 void TextInput::Impl::onUpdate() {
-	auto &gd = std::any_cast<GestureDetector::Storage&>(state.properties.at("gestureDetector"));
+	auto &gd = std::any_cast<GestureDetector::Storage &>(state.properties.at("gestureDetector"));
 	if (!gd.active) return;
 
 	auto &children = getChildren();
@@ -72,10 +72,10 @@ void TextInput::Impl::onUpdate() {
 		selectionStart = std::nullopt;
 		cursor = selectStartPos > static_cast<uint32_t>(newValue.size()) ? static_cast<int>(newValue.size()) : selectStartPos;
 	};
-	if (gd.charInput) {
+	if (!gd.textInput.empty()) {
 		if (selectionStart.has_value()) removeSelectedRegion();
-		newValue.insert(cursor, std::string{static_cast<char>(gd.charInput)});
-		++cursor;
+		newValue.insert(cursor, gd.textInput);
+		cursor += static_cast<uint32_t>(gd.textInput.size());
 	}
 	// TODO: add more keybinds
 	// https://www.howtogeek.com/115664/42-text-editing-keyboard-shortcuts-that-work-almost-everywhere/

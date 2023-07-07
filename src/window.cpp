@@ -61,7 +61,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 		GestureDetector::setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
 	});
 	glfwSetCharCallback(window.get(), [](GLFWwindow *m_window, unsigned int codepoint) {
-		GestureDetector::g_textInput = static_cast<unsigned char>(codepoint);
+		GestureDetector::g_textInput.append(1, static_cast<char>(codepoint));
 	});
 	glfwSetScrollCallback(window.get(), [](GLFWwindow *m_window, double xoffset, double yoffset) {
 		GestureDetector::g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
@@ -224,9 +224,6 @@ void Window::updateAndDraw() {
 	renderer.updatePresentTime(afterPresentTime - afterDrawTime);
 
 	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
-		GestureDetector::g_keys.clear();
-		GestureDetector::g_textInput = 0;
-		GestureDetector::g_scrollDelta = 0;
-		GestureDetector::setCursorPos(GestureDetector::g_cursorPos);
+		GestureDetector::frameEnd();
 	}
 }

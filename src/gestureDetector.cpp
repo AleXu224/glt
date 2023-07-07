@@ -1,6 +1,6 @@
 #include "gestureDetector.hpp"
-#include "widget.hpp"
 #include "GLFW/glfw3.h"
+#include "widget.hpp"
 #include <any>
 
 using namespace squi;
@@ -10,7 +10,7 @@ vec2 GestureDetector::mouseDelta{0};
 
 vec2 GestureDetector::g_cursorPos{0};
 std::unordered_map<int, KeyState> GestureDetector::g_keys{};
-unsigned char GestureDetector::g_textInput{0};
+std::string GestureDetector::g_textInput{};
 vec2 GestureDetector::g_scrollDelta{0};
 std::vector<Rect> GestureDetector::g_hitCheckRects{};
 std::vector<Rect> GestureDetector::g_activeArea{};
@@ -20,7 +20,15 @@ bool GestureDetector::g_cursorInside{false};
 void GestureDetector::setCursorPos(const vec2 &pos) {
 	lastCursorPos = g_cursorPos;
 	g_cursorPos = pos;
-	mouseDelta = g_cursorPos - lastCursorPos;
+	mouseDelta += g_cursorPos - lastCursorPos;
+}
+
+void GestureDetector::frameEnd() {
+	lastCursorPos = g_cursorPos;
+	mouseDelta = vec2{0};
+	g_scrollDelta = vec2{0};
+	g_textInput.clear();
+	g_keys.clear();
 }
 
 bool GestureDetector::isKey(int key, int action, int mods) {
@@ -42,7 +50,7 @@ void GestureDetector::Storage::update(Widget &widget) {
 	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
 	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
 	if (cursorInsideWidget && cursorInsideActiveArea) {
-		for (auto &widgetRect : g_hitCheckRects) {
+		for (auto &widgetRect: g_hitCheckRects) {
 			if (widgetRect.contains(g_cursorPos)) {
 				cursorInsideAnotherWidget = true;
 				break;
@@ -87,8 +95,9 @@ void GestureDetector::Storage::update(Widget &widget) {
 	}
 
 	if (active && onDrag) onDrag(widget, *this);
-	if (active) charInput = g_textInput;
-	else charInput = 0;
+	if (active) textInput = g_textInput;
+	else
+		textInput.clear();
 }
 
 const vec2 &GestureDetector::getMousePos() {
@@ -118,7 +127,7 @@ const vec2 &GestureDetector::Storage::getDragStartPos() const {
 }
 
 GestureDetector::operator Child() const {
-	child->state.properties["gestureDetector"] = Storage {
+	child->state.properties["gestureDetector"] = Storage{
 		.onEnter = onEnter,
 		.onLeave = onLeave,
 		.onClick = onClick,
@@ -129,10 +138,10 @@ GestureDetector::operator Child() const {
 	};
 	auto &childFuncs = child->funcs();
 	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [](Widget &widget) {
-		auto &storage = std::any_cast<Storage&>(widget.state.properties.at("gestureDetector"));
+		auto &storage = std::any_cast<Storage &>(widget.state.properties.at("gestureDetector"));
 		storage.update(widget);
 		if (storage.onUpdate) storage.onUpdate(widget, storage);
 	});
-	
+
 	return child;
 }
