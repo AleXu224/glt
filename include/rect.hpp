@@ -25,10 +25,26 @@ namespace squi {
 			return {width(), height()};
 		}
 
+		[[nodiscard]] inline vec2 getTopLeft() const {
+			return {left, top};
+		}
+
+		inline void offset(vec2 offset) {
+			left += offset.x;
+			right += offset.x;
+			top += offset.y;
+			bottom += offset.y;
+		}
+
 		[[nodiscard]] inline bool contains(const vec2 &position) const {
 			return position.x >= left && position.x < right && position.y >= top && position.y < bottom;
 		}
-		Rect& inset(const float &distance) {
+
+		[[nodiscard]] inline bool intersects(const Rect &other) const {
+			return !(left > other.right || right < other.left || top > other.bottom || bottom < other.top);
+		}
+
+		Rect &inset(const float &distance) {
 			left += distance;
 			top += distance;
 			right -= distance;

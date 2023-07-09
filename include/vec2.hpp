@@ -26,6 +26,10 @@ namespace squi {
 			return {x / other.x, y / other.y};
 		}
 
+		[[nodiscard]] inline vec2 operator-() const {
+			return {-x, -y};
+		}
+
 		inline void operator+=(const vec2 &other) {
 			x += other.x;
 			y += other.y;
