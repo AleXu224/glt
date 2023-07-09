@@ -1,8 +1,9 @@
 #include "batch.hpp"
+#include <d3d11.h>
 
 using namespace squi;
 
-Batch::Batch(const std::shared_ptr<ID3D11Device>& device) {
+Batch::Batch(const std::shared_ptr<ID3D11Device> &device) {
 	// Vertex array
 	D3D11_BUFFER_DESC VBufferDesc = {};
 	VBufferDesc.ByteWidth = sizeof(vertices);
@@ -76,9 +77,9 @@ Batch::Batch(const std::shared_ptr<ID3D11Device>& device) {
 	// Sampler state for a alpha only texture
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
@@ -147,7 +148,7 @@ void Batch::render(Shader &shader,
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	auto res = context->Map(vertexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(res)) {
-		printf("Failed to map vertex buffer (%#08x)", (unsigned int)res);
+		printf("Failed to map vertex buffer (%#08x)", (unsigned int) res);
 		exit(1);
 	}
 	memcpy(mappedResource.pData, vertices.data(), sizeof(Vertex) * cursor * 4);
