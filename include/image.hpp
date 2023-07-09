@@ -67,6 +67,10 @@ namespace squi {
 			void postLayout(vec2 &size) override;
 			void postArrange(vec2 &pos) override;
 			void onDraw() override;
+
+			[[nodiscard]] Quad &getQuad() {
+				return quad;
+			}
 		};
 
 		operator Child() const {
