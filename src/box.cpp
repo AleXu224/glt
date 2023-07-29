@@ -8,7 +8,7 @@ Box::Impl::Impl(const Box &args)
 							  .isInteractive = true,
 						  }),
 	  quad(Quad::Args{
-		  .size = vec2(args.widget.width.index() == 0 ? std::get<float>(args.widget.width) : 0, args.widget.height.index() == 0 ? std::get<float>(args.widget.height) : 0),
+		  .size = vec2(0, 0),
 		  .color = args.color,
 		  .borderColor = args.borderPosition == BorderPosition::inset ? args.borderColor.mix(args.color) : args.borderColor,
 		  .borderRadius = args.borderRadius,

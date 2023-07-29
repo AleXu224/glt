@@ -24,7 +24,6 @@
 #include <utility>
 
 
-
 using namespace squi;
 
 struct TextItem {
@@ -152,14 +151,14 @@ struct LayoutItem {
 	};
 
 	static Child buttonFactory(std::shared_ptr<Storage> &storage) {
-		if (Child widget = storage->widget.lock(); !widget || widget->getChildren().empty()) {
-			return Container{
-				.widget{
-					.width = 32.f,
-					.height = Size::Expand,
-				},
-			};
-		}
+		// if (Child widget = storage->widget.lock(); !widget || widget->getChildren().empty()) {
+		// 	return Container{
+		// 		.widget{
+		// 			.width = 32.f,
+		// 			.height = Size::Expand,
+		// 		},
+		// 	};
+		// }
 		return GestureDetector{
 			.onClick = [storage](Widget &, auto) {
 				storage->expanded = !storage->expanded;
@@ -168,9 +167,9 @@ struct LayoutItem {
 			.child{
 				Container{
 					.widget{
-						.width = Size::Shrink,
+						.width = 32.f,
 						.height = Size::Expand,
-						.padding{0.f, 14.f, 0.f, 6.f},
+						.padding = Padding{0.f, 14.f, 0.f, 6.f},
 						.onUpdate = [storage](Widget &w) {
 							if (storage->stateChanged) {
 								w.setChildren(Children{
@@ -185,6 +184,13 @@ struct LayoutItem {
 									},
 								});
 								storage->stateChanged = false;
+							}
+
+							auto widget = storage->widget.lock();
+							if (widget && !widget->getChildren().empty()) {
+								w.getChildren().front()->flags.visible = true;
+							} else {
+								w.getChildren().front()->flags.visible = false;
 							}
 						},
 					},
@@ -237,8 +243,8 @@ struct LayoutItem {
 							.widget{
 								.width = Size::Expand,
 								.height = 28.f,
-								.margin{4, 2},
-								.padding{0.f, 0.f, 0.f, depth * 16.f},
+								.margin = Margin{4, 2},
+								.padding = Padding{0.f, 0.f, 0.f, depth * 16.f},
 								.onUpdate = [storage = storage, state = state](Widget &w) {
 									Color outputColor = [&]() {
 										if (storage->hovered || state->activeButton.lock() == w.shared_from_this())
@@ -259,7 +265,7 @@ struct LayoutItem {
 							.child{
 								Row{
 									.widget{
-										.padding{8.f, 0},
+										.padding = Padding{8.f, 0},
 									},
 									.alignment = Row::Alignment::center,
 									.children{
@@ -279,53 +285,45 @@ struct LayoutItem {
 						},
 					},
 				},
-				[&]() -> Child {
-					Child widget = storage->widget.lock();
-					if (!widget) return Child{};
-					auto &children = widget->getChildren();
-
-					if (children.empty()) {
-						return Child{};
-					}
-
-					return Column{
-						.widget{
-							.height = Size::Shrink,
-							.onUpdate = [storage](Widget &w) {
-								w.flags.visible = storage->expanded;
-								if (!storage->expanded) return;
-								Child widget = storage->widget.lock();
-								if (!widget) return;
-								const auto &children = w.getChildren();
-								const auto test = [&children](Child &child) -> bool {
-									auto result = std::find_if(children.begin(), children.end(), [child = child](const auto &w) {
-										return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->state.properties.at("layoutItem"))->widget.lock() == child->shared_from_this();
-									});
-									return result == children.end();
-								};
-								for (auto &child: widget->getChildren()) {
-									if (test(child)) {
-										w.addChild(LayoutItem{child->shared_from_this(), storage->state, storage->depth + 1});
-									}
+				Column{
+					.widget{
+						.height = Size::Shrink,
+						.onUpdate = [storage](Widget &w) {
+							w.flags.visible = storage->expanded;
+							if (!storage->expanded) return;
+							Child widget = storage->widget.lock();
+							if (!widget) return;
+							const auto &children = w.getChildren();
+							const auto test = [&children](Child &child) -> bool {
+								auto result = std::find_if(children.begin(), children.end(), [child = child](const auto &w) {
+									return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->state.properties.at("layoutItem"))->widget.lock() == child->shared_from_this();
+								});
+								return result == children.end();
+							};
+							for (auto &child: widget->getChildren()) {
+								if (test(child)) {
+									w.addChild(LayoutItem{child->shared_from_this(), storage->state, storage->depth + 1});
 								}
-							},
+							}
 						},
-						.children{
-							[&]() {
-								auto &children = widget->getChildren();
+					},
+					.children{
+						[&]() {
+							auto w = widget.lock();
+							if (!w) return Children{};
+							auto &children = w->getChildren();
 
-								std::vector<Child> result{};
-								result.reserve(children.size());
+							std::vector<Child> result{};
+							result.reserve(children.size());
 
-								for (auto &child: children) {
-									result.push_back(LayoutItem{child->shared_from_this(), state, depth + 1});
-								}
+							for (auto &child: children) {
+								result.push_back(LayoutItem{child->shared_from_this(), state, depth + 1});
+							}
 
-								return Children(std::move(result));
-							}(),
-						},
-					};
-				}(),
+							return Children(std::move(result));
+						}(),
+					},
+				},
 			},
 		};
 	}
@@ -406,7 +404,7 @@ struct LayoutInspectorContent {
 				Box{
 					.widget{
 						.height = 1.f,
-						.margin = {1, 0, 2, 0},
+						.margin = Margin{1, 0, 2, 0},
 					},
 					.color{Color::HEX(0xFFFFFF15)},
 				},

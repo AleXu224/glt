@@ -29,6 +29,7 @@ void Column::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 
 		auto &childState = child->state;
 		childState.parent = this;
+		childState.root = state.root;
 
 		if (childState.sizeMode.height.index() == 1 && std::get<1>(childState.sizeMode.height) == Size::Expand) {
 			expandedChildren.emplace_back(child);
@@ -47,7 +48,7 @@ void Column::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 	if (!expandedChildren.empty()) {
 		const vec2 maxChildSize = {
 			maxSize.x - state.padding.getSizeOffset().x,
-			(maxSize.y - state.padding.getSizeOffset().y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size()),
+			(std::max)(0.f, maxSize.y - state.padding.getSizeOffset().y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size()),
 		};
 		for (auto &child: expandedChildren) {
 			auto &childState = child->state;
@@ -103,7 +104,7 @@ void Column::Impl::drawChildren() {
 	}
 }
 
-float Column::Impl::getMinHeight() {
+float Column::Impl::getMinHeight(const vec2 &maxSize) {
 	const auto &children = getChildren();
 	if (!flags.visible) return 0.0f;
 	switch (state.sizeMode.height.index()) {
@@ -111,8 +112,9 @@ float Column::Impl::getMinHeight() {
 			return std::get<0>(state.sizeMode.height) + state.margin.getSizeOffset().y;
 		}
 		case 1: {
-			return state.margin.getSizeOffset().y + state.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-					   return acc + child->getMinHeight();
+			const auto spacingOffset = spacing * static_cast<float>((std::max)(children.size(), 1ull) - 1);
+			return state.margin.getSizeOffset().y + spacingOffset + state.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [&](float acc, const auto &child) {
+					   return acc + child->getMinHeight(maxSize);
 				   });
 		}
 		default: {

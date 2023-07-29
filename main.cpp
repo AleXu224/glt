@@ -637,12 +637,8 @@ int main(int, char **) {
 	// });
 	// window.addChild(LayoutInspector{.window = &window});
 	// window.addChild(NavigationView{});
-	// auto response = Networking::get("https://cdn.discordapp.com/attachments/332819331991732225/1124408784756944906/00396-3240290935-Cute_fox_girl_exercise_pool_one-piece_swimsuit_well-defined-fingers_well-defined-hands_fingernails_masterpiece_high_q.jpg");
-	// if (!response.success) printf("%s\n", response.error.c_str());
-
-	// Image::Data img{reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t)response.body.size()};
 	{
-		Image::Data img = Image::Data::fromUrlAsync("https://cdn.discordapp.com/attachments/301985131676303362/1125143910969262080/image.png");
+		Image::Data img = Image::Data::fromUrl("https://interactive-examples.mdn.mozilla.net/media/examples/plumeria-146x200.jpg");
 		window.addChild(ScrollableFrame{
 			.children{
 				Text{

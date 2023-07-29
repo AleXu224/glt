@@ -6,13 +6,14 @@
 #include <tuple>
 #include FT_FREETYPE_H
 #include "DirectXMath.h"
-#include "memory"
-#include "unordered_map"
-#include "unordered_set"
-#include "quad.hpp"
-#include "string"
 #include "atlas.hpp"
 #include "color.hpp"
+#include "memory"
+#include "quad.hpp"
+#include "string"
+#include "unordered_map"
+#include "unordered_set"
+
 
 namespace squi {
 	class FontStore {
@@ -39,16 +40,16 @@ namespace squi {
 					return kerning.x >> 6;
 				}
 			};
-		private:
 
+		private:
 			Atlas atlas{};
 			//
-            std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
+			std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
 
 		public:
 			bool loaded{true};
 			FT_Face face{};
-            explicit Font(std::string_view fontPath);
+			explicit Font(std::string_view fontPath);
 
 			/**
 			 * @brief Generates the texture for a character and adds it to the atlas. 
@@ -79,12 +80,12 @@ namespace squi {
 			void updateTexture();
 		};
 
-        // TODO: refcount fonts and delete when no longer used
+		// TODO: refcount fonts and delete when no longer used
 
 		static FT_Library ftLibrary;
 		static std::unordered_map<std::string_view, Font> fonts;
 
-    public:
+	public:
 		/**
 		 * @brief Get the Height of a font at a given size.
 		 * 
@@ -93,7 +94,7 @@ namespace squi {
 		 * @return uint32_t 
 		 */
 		static uint32_t getLineHeight(std::string_view fontPath, float size);
-	
+
 		/**
 		 * @brief Get the Width and Height of a string of text.
 		 * 
@@ -104,7 +105,8 @@ namespace squi {
 		 */
 		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, std::string_view fontPath, float size);
 		static std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, std::string_view fontPath, float size);
-	
+		static std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, std::string_view fontPath, float size, const float &maxWidth);
+
 		/**
 		 * @brief Generates a 2d vector of quads for a string of text.
 		 * 
@@ -118,7 +120,7 @@ namespace squi {
 		 * @param maxWidth The max width of the text before wrapping. A value of -1 means no wrapping.
 		 * @return std::tuple<std::vector<std::vector<Quad>> quads, float width, float height> 
 		 */
-        static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
+		static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
 	};
 }// namespace squi
 

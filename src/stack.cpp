@@ -19,15 +19,27 @@ void Stack::Impl::updateChildren() {
 
 	for (auto &child: std::views::reverse(children)) {
 		child->state.parent = this;
+		child->state.root = state.root;
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
-		if (childHitcheckRect.has_value()) {
-			GestureDetector::g_hitCheckRects.emplace_back(childHitcheckRect.value());
-			++addedRects;
-		}
+		GestureDetector::g_hitCheckRects.insert(GestureDetector::g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());
+		addedRects += childHitcheckRect.size();
 	}
 
 	for ([[maybe_unused]] uint32_t i = 0; i < addedRects; ++i) {
 		GestureDetector::g_hitCheckRects.pop_back();
+	}
+}
+
+std::vector<Rect> Stack::Impl::getHitcheckRect() const {
+	if (flags.isInteractive) {
+		std::vector<Rect> ret{};
+		for (auto &child: getChildren()) {
+			const auto childHitcheckRect = child->getHitcheckRect();
+			ret.insert(ret.end(), childHitcheckRect.begin(), childHitcheckRect.end());
+		}
+		return ret;
+	} else {
+		return {};
 	}
 }

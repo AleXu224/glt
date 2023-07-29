@@ -10,6 +10,7 @@
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "vec2.hpp"
 #include <algorithm>
 #include <any>
 #include <memory>
@@ -86,8 +87,7 @@ ContextMenuButton::operator Child() const {
 						if (t.callback) t.callback(t.value);
 					}
 				} 
-			}
-		},
+			} },
 		.onUpdate = [storage = storage, root = root](Widget &w, auto) {
 			Child rootWidget = root.lock();
 			if (!rootWidget) return;
@@ -147,8 +147,8 @@ ContextMenuButton::operator Child() const {
 			Box{
 				.widget{
 					.height = 28.f,
-					.margin{5.f, 2.f},
-					.padding{4.f, 0.f},
+					.margin = Margin{5.f, 2.f},
+					.padding = Padding{4.f, 0.f},
 				},
 				.color{Color::HEX(0)},
 				.borderRadius = 4.f,
@@ -223,11 +223,9 @@ ContextMenuFrame::operator Child() const {
 		.widget{
 			.width = Size::Shrink,
 			.height = Size::Shrink,
-			.margin{vec2{position.x, position.y}, vec2{0}},
-			.padding{1.f, 4.f},
-			.onInit = [](Widget &w) {
-				w.state.properties["locked"] = false;
-			},
+			.padding = Padding{1.f, 4.f},
+			.onInit = [](Widget &w) { w.state.properties["locked"] = false; },
+			.onArrange = [position = position](auto &, vec2 &pos) { pos = position; },
 		},
 		.color{Color::HEX(0x2C2C2CF5)},
 		.borderColor{Color::HEX(0x00000033)},
@@ -250,7 +248,7 @@ ContextMenuFrame::operator Child() const {
 							children.emplace_back(Box{
 								.widget{
 									.height = 1.f,
-									.margin{1, 1, 2, 1},
+									.margin = Margin{1, 1, 2, 1},
 								},
 								.color{Color::HEX(0xFFFFFF15)},
 							});
@@ -282,16 +280,16 @@ ContextMenu::operator Child() const {
 		.child{
 			Stack{
 				.widget{
-					// .onInit = [](Widget &w) { 
+					// .onInit = [](Widget &w) {
 					// 	w.state.properties["state"] = Storage{.stack = w.shared_from_this()};
-					// 	// w.state.properties.insert({"state", Storage{}}); 
+					// 	// w.state.properties.insert({"state", Storage{}});
 					// },
 					.onUpdate = [](Widget &w) {
-						auto &state = std::any_cast<Storage&>(w.state.properties.at("state"));
+						auto &state = std::any_cast<Storage &>(w.state.properties.at("state"));
 						for (auto &menu: state.menusToAdd) {
 							w.addChild(menu);
 						}
-						state.menusToAdd.clear(); 
+						state.menusToAdd.clear();
 					},
 				},
 			},
@@ -299,6 +297,7 @@ ContextMenu::operator Child() const {
 	};
 	stack->state.properties["state"] = Storage{.stack = stack};
 	stack->setChildren(Children{
+		Container{},
 		ContextMenuFrame{
 			.position = position,
 			.items = items,
@@ -311,7 +310,7 @@ ContextMenu::operator Child() const {
 
 ChildRef ContextMenu::Storage::addMenu(const Child &menu) {
 	// menusToAdd.emplace_back(menu.forward());
-	
+
 	// if (Child stackWidget = stack.lock()) {
 	// 	stackWidget->addChild(menu);
 	// }

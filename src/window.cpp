@@ -191,6 +191,7 @@ void Window::updateAndDraw() {
 					   children.end());
 
 		content->state.parent = this;
+		content->state.root = this;
 		content->update();
 		content->layout({static_cast<float>(width), static_cast<float>(height)});
 		content->arrange({0.0f, 0.0f});

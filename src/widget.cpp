@@ -23,12 +23,12 @@ Widget::Widget(const Args &args, const Flags &flags)
 	: flags(flags),
 	  state(Widget::State{
 		  .sizeMode{
-			  .width = args.width,
-			  .height = args.height,
+			  .width = args.width.value_or(Size::Expand),
+			  .height = args.height.value_or(Size::Expand),
 		  },
 		  .sizeConstraints = args.sizeConstraints,
-		  .margin = args.margin,
-		  .padding = args.padding,
+		  .margin = args.margin.value_or(Margin{}),
+		  .padding = args.padding.value_or(Margin{}),
 	  }),
 	  id(idCounter++) {
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
@@ -71,11 +71,15 @@ std::vector<Child> &Widget::getChildren() {
 	return children;
 }
 
-std::optional<Rect> Widget::getHitcheckRect() const {
+const std::vector<Child> &Widget::getChildren() const {
+	return children;
+}
+
+std::vector<Rect> Widget::getHitcheckRect() const {
 	if (flags.isInteractive && flags.visible)
-		return getRect();
+		return {getRect()};
 	else
-		return std::nullopt;
+		return {};
 }
 
 void Widget::setChildren(const Children &newChildren) {
@@ -90,6 +94,7 @@ void Widget::addChild(const Child &child) {
 void Widget::updateChildren() {
 	for (auto &child: std::views::reverse(children)) {
 		child->state.parent = this;
+		child->state.root = state.root;
 		child->update();
 	}
 }
@@ -119,21 +124,30 @@ void Widget::update() {
 }
 
 void Widget::layoutChildren(vec2 &maxSize, vec2 &minSize) {
-	vec2 childMaxSize = maxSize - state.padding.getSizeOffset();
+	const auto padding = state.padding.getSizeOffset();
+	vec2 childMaxSize = maxSize - padding;
 	if (state.sizeMode.width.index() == 0) {
 		childMaxSize.x = std::min(childMaxSize.x, std::get<0>(state.sizeMode.width));
+	} else {
+		auto val = std::get<1>(state.sizeMode.width);
+		if (val == Size::Shrink) {
+			childMaxSize.x = minSize.x - padding.x;
+		}
 	}
 	if (state.sizeMode.height.index() == 0) {
 		childMaxSize.y = std::min(childMaxSize.y, std::get<0>(state.sizeMode.height));
+	} else {
+		auto val = std::get<1>(state.sizeMode.height);
+		if (val == Size::Shrink) {
+			childMaxSize.y = minSize.y - padding.y;
+		}
 	}
 
 	for (auto &child: children) {
-		const auto size = child->layout(childMaxSize);
+		const auto size = child->layout(childMaxSize) + padding;
 		minSize.x = std::clamp(size.x, minSize.x, maxSize.x);
 		minSize.y = std::clamp(size.y, minSize.y, maxSize.y);
 	}
-
-	minSize += state.padding.getSizeOffset();
 }
 
 vec2 squi::Widget::layout(vec2 maxSize) {
@@ -166,7 +180,7 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		case 1: {
 			const auto &size = std::get<1>(state.sizeMode.width);
 			if (size == Size::Shrink) {
-				maxSize.x = std::min(getMinWidth() - state.margin.getSizeOffset().x, maxSize.x);
+				minSize.x = std::min(getMinWidth(maxSize) - state.margin.getSizeOffset().x, maxSize.x);
 			}
 		}
 	}
@@ -179,7 +193,7 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 		case 1: {
 			const auto &size = std::get<1>(state.sizeMode.height);
 			if (size == Size::Shrink) {
-				maxSize.y = std::min(getMinHeight() - state.margin.getSizeOffset().y, maxSize.y);
+				minSize.y = std::min(getMinHeight(maxSize) - state.margin.getSizeOffset().y, maxSize.y);
 			}
 		}
 	}
@@ -246,15 +260,15 @@ vec2 squi::Widget::layout(vec2 maxSize) {
 	return size + state.margin.getSizeOffset();
 }
 
-float squi::Widget::getMinWidth() {
+float squi::Widget::getMinWidth(const vec2 &maxSize) {
 	if (!flags.visible) return 0.0f;
 	switch (state.sizeMode.width.index()) {
 		case 0: {
 			return std::get<0>(state.sizeMode.width) + state.margin.getSizeOffset().x;
 		}
 		case 1: {
-			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-					   return std::max(acc, child->getMinWidth());
+			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [&](float acc, const auto &child) {
+					   return std::max(acc, child->getMinWidth(maxSize));
 				   });
 		}
 		default: {
@@ -264,15 +278,15 @@ float squi::Widget::getMinWidth() {
 	}
 }
 
-float squi::Widget::getMinHeight() {
+float squi::Widget::getMinHeight(const vec2 &maxSize) {
 	if (!flags.visible) return 0.0f;
 	switch (state.sizeMode.height.index()) {
 		case 0: {
 			return std::get<0>(state.sizeMode.height) + state.margin.getSizeOffset().y;
 		}
 		case 1: {
-			return state.margin.getSizeOffset().y + state.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-					   return std::max(acc, child->getMinHeight());
+			return state.margin.getSizeOffset().y + state.padding.getSizeOffset().y + std::accumulate(children.begin(), children.end(), 0.0f, [&](float acc, const auto &child) {
+					   return std::max(acc, child->getMinHeight(maxSize));
 				   });
 		}
 		default: {

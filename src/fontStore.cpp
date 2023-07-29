@@ -178,6 +178,67 @@ std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text,
 	return getTextSize(text, fontPath, size);
 }
 
+std::tuple<uint32_t, uint32_t> FontStore::getTextSizeSafe(std::string_view text, std::string_view fontPath, float size, const float &maxWidth) {
+	if (!fonts.contains(fontPath)) {
+		fonts.insert({fontPath, Font(fontPath)});
+	}
+	auto &font = fonts.at(fontPath);
+	FT_Set_Pixel_Sizes(font.face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
+
+	auto &sizeMap = font.getSizeMap(size);
+	uint32_t prevCharIndex = 0;
+	const uint32_t lineHeight = (font.face->size->metrics.ascender >> 6) - (font.face->size->metrics.descender >> 6);
+
+	uint8_t skip = 0;
+	uint32_t widestLine = 0;
+	uint32_t currentLineWidth = 0;
+	uint32_t currentWordWidth = 0;
+	uint32_t lineCount = 1;
+
+	for (char character: text) {
+		if (skip) {
+			skip--;
+			continue;
+		}
+		auto &charInfo = font.getCharInfo((unsigned char *) &character, sizeMap);
+
+		if (currentLineWidth != 0 || currentWordWidth != 0) {
+			// Check if the current word would overflow the line
+			if ((currentLineWidth + currentWordWidth) > static_cast<uint32_t>(maxWidth)) {
+				if (character == ' ') {
+					continue;
+				}
+				widestLine = std::max(currentLineWidth, widestLine);
+				currentLineWidth = 0;
+				++lineCount;
+			} else {
+				currentWordWidth += charInfo.getKerning(font.face, prevCharIndex);
+
+				if (character == ' ') {
+					currentLineWidth += currentWordWidth;
+					currentWordWidth = 0;
+				}
+			}
+		}
+
+		currentWordWidth += static_cast<uint32_t>(charInfo.advance);
+
+		if ((unsigned char) character >= 0b11110000) {
+			skip = 3;
+		} else if ((unsigned char) character >= 0b11100000) {
+			skip = 2;
+		} else if ((unsigned char) character >= 0b11000000) {
+			skip = 1;
+		}
+
+		prevCharIndex = charInfo.index;
+	}
+
+	widestLine = std::max(currentLineWidth + currentWordWidth, widestLine);
+
+	return {widestLine, lineCount * lineHeight};
+}
+
 std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth) {
 	[[__maybe_unused__]] static auto _ = []() {
 		if (FT_Init_FreeType(&ftLibrary)) {

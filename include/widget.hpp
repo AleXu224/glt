@@ -6,13 +6,14 @@
 #include "margin.hpp"
 #include "memory"
 #include "rect.hpp"
+#include "string"
 #include "vec2.hpp"
 #include "vector"
 #include <any>
 #include <optional>
 #include <unordered_map>
 #include <variant>
-#include "string"
+
 
 namespace squi {
 	enum class Size {
@@ -45,7 +46,8 @@ namespace squi {
 			 * The width can be either a float or a Size. If it is a float then the width of
 			 * the widget will be considered fixed. Otherwise it will match the selected option.
 			 */
-			std::variant<float, Size> width = Size::Expand;
+			using Width = std::variant<float, Size>;
+			std::optional<Width> width{};
 			/**
 			 * @description:
 			 * The height of the widget
@@ -53,7 +55,8 @@ namespace squi {
 			 * The height can be either a float or a Size. If it is a float then the height of
 			 * the widget will be considered fixed. Otherwise it will match the selected option.
 			 */
-			std::variant<float, Size> height = Size::Expand;
+			using Height = std::variant<float, Size>;
+			std::optional<Height> height{};
 			/**
 			 * @brief The maximum and minimum size limits of the widget.
 			 */
@@ -61,11 +64,11 @@ namespace squi {
 			/**
 			 * The space around the widget. Does not affect the size.
 			 */
-			Margin margin;
+			std::optional<Margin> margin{};
 			/**
 			 * The space inside the widget. Does not affect the size.
 			 */
-			Margin padding;
+			std::optional<Margin> padding{};
 			std::function<void(Widget &)> onInit{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
@@ -74,6 +77,30 @@ namespace squi {
 			std::function<void(Widget &)> beforeDraw{};
 			std::function<void(Widget &)> onDraw{};
 			std::function<void(Widget &)> afterDraw{};
+
+			[[nodiscard]] inline Args withWidth(const Width &width) const {
+				Args args = *this;
+				args.width = this->width.value_or(width);
+				return args;
+			}
+
+			[[nodiscard]] inline Args withHeight(const Height &height) const {
+				Args args = *this;
+				args.height = this->height.value_or(height);
+				return args;
+			}
+
+			[[nodiscard]] inline Args withMargin(const Margin &margin) const {
+				Args args = *this;
+				args.margin = this->margin.value_or(margin);
+				return args;
+			}
+
+			[[nodiscard]] inline Args withPadding(const Padding &padding) const {
+				Args args = *this;
+				args.padding = this->padding.value_or(padding);
+				return args;
+			}
 		};
 
 		struct Flags {
@@ -96,7 +123,7 @@ namespace squi {
 			/**
 			 * Whether hit testing should be performed on this widget
 			 */
-			bool isInteractive = false;
+			bool isInteractive = true;
 			bool visible = true;
 
 			static Flags Default() {
@@ -105,6 +132,7 @@ namespace squi {
 		};
 
 		Flags flags;
+
 	private:
 		bool shouldDelete = false;
 		struct FunctionArgs {
@@ -136,6 +164,7 @@ namespace squi {
 			Margin margin;
 			Margin padding;
 			Widget *parent = nullptr;
+			Widget *root = nullptr;
 		};
 		State state;
 		const uint64_t id;
@@ -151,6 +180,7 @@ namespace squi {
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] std::vector<Child> &getChildren();
+		[[nodiscard]] const std::vector<Child> &getChildren() const;
 		[[nodiscard]] inline Rect getRect() const {
 			return Rect::fromPosSize(pos + state.margin.getPositionOffset(), size);
 		}
@@ -179,7 +209,7 @@ namespace squi {
 		[[nodiscard]] inline vec2 getContentPos() {
 			return pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 		}
-		[[nodiscard]] virtual std::optional<Rect> getHitcheckRect() const;
+		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
 		[[nodiscard]] inline bool isMarkedForDeletion() const {
 			return shouldDelete;
 		}
@@ -217,11 +247,11 @@ namespace squi {
 		virtual void updateChildren();
 		virtual void afterUpdate(){};
 
-		virtual float getMinWidth();
-		virtual float getMinHeight();
+		virtual float getMinWidth(const vec2 &maxSize);
+		virtual float getMinHeight(const vec2 &maxSize);
 
 		virtual void onLayout(vec2 &maxSize, vec2 &minSize){};
-		virtual void layoutChildren(vec2& maxSize, vec2& minSize);
+		virtual void layoutChildren(vec2 &maxSize, vec2 &minSize);
 		virtual void postLayout(vec2 &size){};
 
 		virtual void onArrange(vec2 &pos){};

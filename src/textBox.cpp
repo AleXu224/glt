@@ -24,7 +24,7 @@ TextBox::operator Child() const {
 					.width = 160.f,
 					.height = 32.f,
 					.margin{4},
-					.padding{0, 1, 0, 1},
+					.padding = Padding{0, 1, 0, 1},
 					.onUpdate = [&, storage](Widget &w) {
 						auto &box = (Box::Impl &) w;
 						auto &gd = std::any_cast<GestureDetector::Storage &>(w.state.properties.at("gestureDetector"));
@@ -76,11 +76,10 @@ TextBox::operator Child() const {
 									TextInput{
 										.widget{
 											.width = Size::Expand,
-											.padding{0, 11, 0, 11},
-											.onInit = [font = font](Widget &w) {
-												w.state.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14)); },
-												// TODO: Add support for text color change
-												.onUpdate = [&, storage](Widget &w) {
+											.padding = Padding{0, 11, 0, 11},
+											.onInit = [font = font](Widget &w) { w.state.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14)); },
+											// TODO: Add support for text color change
+											.onUpdate = [&, storage](Widget &w) {
 												// auto &text = (Text::Impl &)w;
 
 												if (storage->changed) {
@@ -99,8 +98,7 @@ TextBox::operator Child() const {
 															// text.setColor(theme.textDisabled);
 															break;
 													}
-												} 
-											},
+												} },
 										},
 										.fontSize = 14.0f,
 										.font{font},

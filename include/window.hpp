@@ -1,8 +1,9 @@
 #ifndef SQUI_WINDOW_HPP
 #define SQUI_WINDOW_HPP
+#include "chrono"
 #include <memory>
 #include <vector>
-#include "chrono"
+
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 #include "widget.hpp"
@@ -10,7 +11,7 @@
 using namespace std::chrono_literals;
 
 namespace squi {
-	class Window : public Widget{
+	class Window : public Widget {
 		std::shared_ptr<GLFWwindow> window;
 		std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
 		std::chrono::steady_clock::time_point lastFpsTime = std::chrono::steady_clock::now();
@@ -36,6 +37,10 @@ namespace squi {
 		Window &operator=(const Window &) = delete;
 
 		operator GLFWwindow *() const { return window.get(); }
+
+		void addOverlay(Child &&overlay) {
+			overlays.push_back(std::move(overlay));
+		}
 	};
 }// namespace squi
 #endif

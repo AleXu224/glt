@@ -25,6 +25,7 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 
 		auto &childState = child->state;
 		childState.parent = this;
+		childState.root = state.root;
 
 		if (childState.sizeMode.width.index() == 1 && std::get<1>(childState.sizeMode.width) == Size::Expand) {
 			expandedChildren.emplace_back(child);
@@ -42,7 +43,7 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 
 	if (!expandedChildren.empty()) {
 		const vec2 maxChildSize = {
-			(maxSize.x - state.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
+			(std::max)(0.f, maxSize.x - state.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
 			maxSize.y - state.padding.getSizeOffset().y,
 		};
 		for (auto &child: expandedChildren) {
@@ -98,7 +99,7 @@ void Row::Impl::drawChildren() {
 	}
 }
 
-float squi::Row::Impl::getMinWidth() {
+float squi::Row::Impl::getMinWidth(const vec2 &maxSize) {
 	const auto &children = getChildren();
 	if (!flags.visible) return 0.0f;
 	switch (state.sizeMode.width.index()) {
@@ -106,8 +107,9 @@ float squi::Row::Impl::getMinWidth() {
 			return std::get<0>(state.sizeMode.width) + state.margin.getSizeOffset().x;
 		}
 		case 1: {
-			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + std::accumulate(children.begin(), children.end(), 0.0f, [](float acc, const auto &child) {
-					   return acc + child->getMinWidth();
+			const auto spacingOffset = spacing * static_cast<float>((std::max)(children.size(), 1ull) - 1);
+			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + spacingOffset + std::accumulate(children.begin(), children.end(), 0.0f, [&](float acc, const auto &child) {
+					   return acc + child->getMinWidth(maxSize);
 				   });
 		}
 		default: {
