@@ -1,6 +1,8 @@
-// #ifdef NDEBUG
-// #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-// #endif
+#ifdef NDEBUG
+#ifdef _WIN32
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#endif
+#endif
 
 #include "window.hpp"
 #include "chrono"
