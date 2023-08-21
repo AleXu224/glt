@@ -1,5 +1,4 @@
-#ifndef SQUI_ROW_HPP
-#define SQUI_ROW_HPP
+#pragma once
 
 #include "widget.hpp"
 #include <memory>
@@ -27,18 +26,14 @@ namespace squi {
 		public:
 			Impl(const Row &args);
 
-			void layoutChildren(vec2 &maxSize, vec2 &minSize) final;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
 			void arrangeChildren(vec2 &pos) final;
-
-			float getMinWidth(const vec2 &maxSize) final;
 
 			void drawChildren() final;
 		};
 
 		operator Child() const {
-			return {std::make_unique<Impl>(*this)};
+			return std::make_unique<Impl>(*this);
 		}
 	};
 };// namespace squi
-
-#endif

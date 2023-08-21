@@ -1,6 +1,6 @@
 #include "row.hpp"
 #include "renderer.hpp"
-#include <numeric>
+#include <algorithm>
 
 using namespace squi;
 
@@ -10,7 +10,7 @@ Row::Impl::Impl(const Row &args)
 	setChildren(args.children);
 }
 
-void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
+vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
 	auto &children = getChildren();
 
 	float totalWidth = 0.0f;
@@ -18,7 +18,17 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 
 	std::vector<Child> expandedChildren{};
 
-	const vec2 maxChildSize = maxSize + state.padding.getSizeOffset();
+	static bool ignoreHeight = false;
+	if (!ignoreHeight && shouldShrink.height) {
+		ignoreHeight = true;
+		const auto size = layoutChildren(maxSize, minSize, shouldShrink).y;
+		maxSize.y = std::clamp(size, minSize.y, maxSize.y);
+		ignoreHeight = false;
+		shouldShrink.height = false;
+	}
+
+	float spacingOffset = spacing * (static_cast<float>(children.size()) - 1.f);
+	spacingOffset = (std::max)(0.0f, spacingOffset);
 
 	for (auto &child: children) {
 		if (!child) continue;
@@ -27,36 +37,31 @@ void Row::Impl::layoutChildren(vec2 &maxSize, vec2 &minSize) {
 		childState.parent = this;
 		childState.root = state.root;
 
-		if (childState.sizeMode.width.index() == 1 && std::get<1>(childState.sizeMode.width) == Size::Expand) {
+		if (shouldShrink.width == false && childState.width.index() == 1 && std::get<1>(childState.width) == Size::Expand) {
 			expandedChildren.emplace_back(child);
 		} else {
-			const auto childSize = child->layout(maxChildSize);
+			const auto childSize = child->layout(maxSize.withXOffset(-spacingOffset), {0, minSize.y}, shouldShrink);
 			totalWidth += childSize.x;
-			if (childState.sizeMode.height.index() != 1 || std::get<1>(childState.sizeMode.height) != Size::Expand) {
-				maxHeight = (std::max)(maxHeight, childSize.y);
-			}
+			maxHeight = std::max(maxHeight, childSize.y);
 		}
 	}
 
-	float spacingOffset = spacing * static_cast<float>(children.size() - 1);
-	spacingOffset = (std::max)(0.0f, spacingOffset);
-
-	if (!expandedChildren.empty()) {
+	if (!expandedChildren.empty() && maxSize.x > totalWidth + spacingOffset) {
 		const vec2 maxChildSize = {
-			(std::max)(0.f, maxSize.x - state.padding.getSizeOffset().x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
-			maxSize.y - state.padding.getSizeOffset().y,
+			std::max(0.f, maxSize.x - spacingOffset - totalWidth) / static_cast<float>(expandedChildren.size()),
+			maxSize.y,
 		};
 		for (auto &child: expandedChildren) {
-			auto &childState = child->state;
-			const auto childSize = child->layout(maxChildSize);
-			if (childState.sizeMode.height.index() != 1 || std::get<1>(childState.sizeMode.height) != Size::Expand) {
-				maxHeight = (std::max)(maxHeight, childSize.y);
-			}
+			const auto childSize = child->layout(maxChildSize, {0, minSize.y}, shouldShrink);
+			totalWidth += childSize.x;
+			maxHeight = std::max(maxHeight, childSize.y);
 		}
 	}
 
-	minSize.x = totalWidth + spacingOffset + state.padding.getSizeOffset().x;
-	minSize.y = maxHeight + state.padding.getSizeOffset().y;
+	minSize.x = std::clamp(totalWidth + spacingOffset, minSize.x, maxSize.x);
+	minSize.y = std::clamp(maxHeight, minSize.y, maxSize.y);
+
+	return minSize;
 }
 
 void Row::Impl::arrangeChildren(vec2 &pos) {
@@ -87,7 +92,8 @@ void Row::Impl::arrangeChildren(vec2 &pos) {
 
 void Row::Impl::drawChildren() {
 	auto &children = getChildren();
-	const Rect &clipRect = Renderer::getInstance().getCurrentClipRect().rect;
+
+	const Rect clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
 	for (auto &child: children) {
 		if (!child) continue;
@@ -96,25 +102,5 @@ void Row::Impl::drawChildren() {
 		const float childWidth = child->getLayoutSize().x;
 		if (child->getPos().x + childWidth < clipRect.left) continue;
 		child->draw();
-	}
-}
-
-float squi::Row::Impl::getMinWidth(const vec2 &maxSize) {
-	const auto &children = getChildren();
-	if (!flags.visible) return 0.0f;
-	switch (state.sizeMode.width.index()) {
-		case 0: {
-			return std::get<0>(state.sizeMode.width) + state.margin.getSizeOffset().x;
-		}
-		case 1: {
-			const auto spacingOffset = spacing * static_cast<float>((std::max)(children.size(), 1ull) - 1);
-			return state.margin.getSizeOffset().x + state.padding.getSizeOffset().x + spacingOffset + std::accumulate(children.begin(), children.end(), 0.0f, [&](float acc, const auto &child) {
-					   return acc + child->getMinWidth(maxSize);
-				   });
-		}
-		default: {
-			std::unreachable();
-			return 0.0f;
-		}
 	}
 }

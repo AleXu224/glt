@@ -1,5 +1,4 @@
-#ifndef SQUI_RECT_HPP
-#define SQUI_RECT_HPP
+#pragma once
 
 #include "vec2.hpp"
 
@@ -54,5 +53,3 @@ namespace squi {
 		[[nodiscard]] Rect overlap(const Rect &other) const;
 	};
 }// namespace squi
-
-#endif//SQUI_RECT_HPP

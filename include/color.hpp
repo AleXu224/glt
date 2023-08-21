@@ -1,8 +1,13 @@
-#ifndef SQUI_COLOR_HPP
-#define SQUI_COLOR_HPP
+#pragma once
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 
 #include "DirectXMath.h"
-#include "stdint.h"
 #include "string_view"
 
 namespace squi {
@@ -26,8 +31,8 @@ namespace squi {
 
 		[[nodiscard]] Color mix(const Color &other) const;
 
+		[[nodiscard]] bool operator==(const Color &other) const;
+
 		[[nodiscard]] Color operator*(const float &multiplier) const;
 	};
 }// namespace squi
-
-#endif//SQUI_COLOR_HPP

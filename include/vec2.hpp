@@ -1,8 +1,8 @@
-#ifndef SQUI_VEC2_HPP
-#define SQUI_VEC2_HPP
+#pragma once
 
 #include "DirectXMath.h"
 #include "cmath"
+#include <ostream>
 
 namespace squi {
 	struct vec2 {
@@ -72,7 +72,11 @@ namespace squi {
 		[[nodiscard]] inline operator DirectX::XMFLOAT2() const {
 			return {x, y};
 		}
+
+		// Print
+		friend std::ostream &operator<<(std::ostream &os, const vec2 &vec) {
+			os << "vec2(" << vec.x << ", " << vec.y << ")";
+			return os;
+		}
 	};
 }// namespace squi
-
-#endif

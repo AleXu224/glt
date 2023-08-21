@@ -1,18 +1,15 @@
-#ifndef SQUI_PERFORMANCEOVERLAY_HPP
-#define SQUI_PERFORMANCEOVERLAY_HPP
+#pragma once
 
 #include "widget.hpp"
 
 namespace squi {
-    struct PerformanceOverlay {
-        // Args
-    
-        struct Storage {
-            // Data
-        };
-    
-        operator Child() const;
-    };
-}
+	struct PerformanceOverlay {
+		// Args
 
-#endif
+		struct Storage {
+			// Data
+		};
+
+		operator Child() const;
+	};
+}// namespace squi

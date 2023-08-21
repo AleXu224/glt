@@ -1,5 +1,4 @@
 #include "quad.hpp"
-#include "renderer.hpp"
 
 using namespace squi;
 

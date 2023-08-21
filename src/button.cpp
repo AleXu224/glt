@@ -1,11 +1,8 @@
 #include "button.hpp"
-#include "align.hpp"
 #include "box.hpp"
 #include "gestureDetector.hpp"
 #include "memory"
-#include "text.hpp"
 #include <debugapi.h>
-#include <iterator>
 
 using namespace squi;
 
@@ -23,50 +20,37 @@ Button::operator squi::Child() const {
 	});
 
 	return GestureDetector{
-		.onClick = [storage, onClick = onClick](Widget &w, auto &gd) {
+		.onClick = [storage, onClick = onClick](GestureDetector::Event event) {
 			if (!storage->disabled && onClick) {
-				onClick();
-			} },
-		.onUpdate = [storage](Widget &widget, GestureDetector::Storage &gd) {
-			auto &box = reinterpret_cast<Box::Impl &>(widget);
+				onClick(event);
+			}
+		},
+		.onUpdate = [storage](GestureDetector::Event event) {
+			auto &box = reinterpret_cast<Box::Impl &>(event.widget);
 
 			if (storage->disabled) {
 				box.setColor(storage->colorDisabled);
 				box.setBorderColor(storage->borderColorDisabled);
-			} else if (gd.focused) {
+			} else if (event.state.focused) {
 				box.setColor(storage->colorActive);
 				box.setBorderColor(storage->borderColorActive);
-			} else if (gd.hovered) {
+			} else if (event.state.hovered) {
 				box.setColor(storage->colorHover);
 				box.setBorderColor(storage->borderColorHover);
 			} else {
 				box.setColor(storage->color);
 				box.setBorderColor(storage->borderColor);
-			} },
+			}
+		},
 		.child{
 			Box{
-				.widget{
-					.width = width,
-					.height = height,
-					.sizeConstraints = sizeConstraints,
-					.margin = margin,
-					.padding = padding,
-				},
+				.widget = widget.withDefaultWidth(Size::Shrink).withDefaultHeight(Size::Shrink).withDefaultPadding(Padding{6, 12, 6, 12}).withSizeConstraints(widget.sizeConstraints.withDefaultMinWidth(32.f).withDefaultMinHeight(32.f)),
 				.color{style.color},
 				.borderColor{style.borderColor},
 				.borderWidth = style.borderWidth,
 				.borderRadius = style.borderRadius,
 				.borderPosition = style.borderPosition,
-				.child = Align{
-					.child{
-						Text{
-							.text{std::string(text)},
-							// TODO: Make this work
-							.lineWrap = true,
-							.color{style.textColor},
-						},
-					},
-				},
+				.child = child,
 			},
 		},
 	};

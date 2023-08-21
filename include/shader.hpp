@@ -1,10 +1,6 @@
-#ifndef SQUI_SHADER_HPP
-#define SQUI_SHADER_HPP
+#pragma once
 
 #include "d3d11.h"
-#include "d3dcompiler.h"
-#include "DirectXMath.h"
-#include "vector"
 #include "memory"
 
 namespace squi {
@@ -21,5 +17,3 @@ namespace squi {
 		void use(std::shared_ptr<ID3D11DeviceContext> &context);
 	};
 }// namespace squi
-
-#endif

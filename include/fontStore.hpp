@@ -1,24 +1,18 @@
-#ifndef SQUI_FONTSTORE_HPP
-#define SQUI_FONTSTORE_HPP
+#pragma once
 
-#include "ft2build.h"
 #include <freetype/fttypes.h>
+#include <optional>
 #include <tuple>
 #include FT_FREETYPE_H
-#include "DirectXMath.h"
 #include "atlas.hpp"
 #include "color.hpp"
-#include "memory"
 #include "quad.hpp"
-#include "string"
 #include "unordered_map"
-#include "unordered_set"
-
 
 namespace squi {
 	class FontStore {
-		class Font {
-		public:
+	public:
+		struct Font {
 			struct CharInfo {
 				vec2 uvTopLeft{};
 				vec2 uvBottomRight{};
@@ -46,10 +40,8 @@ namespace squi {
 			//
 			std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
 
-		public:
 			bool loaded{true};
 			FT_Face face{};
-			explicit Font(std::string_view fontPath);
 
 			/**
 			 * @brief Generates the texture for a character and adds it to the atlas. 
@@ -60,8 +52,8 @@ namespace squi {
 			 * @return true 
 			 * @return false 
 			 */
-			bool generateTexture(unsigned char *character, float size);
-			bool generateTexture(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
+			bool generateTexture(char32_t character, float size);
+			bool generateTexture(char32_t character, std::unordered_map<char32_t, CharInfo> &sizeMap);
 
 			/**
 			 * @brief Gets the CharInfo for a character.
@@ -70,59 +62,23 @@ namespace squi {
 			 * @param size The size of the font
 			 * @return CharInfo& 
 			 */
-			CharInfo &getCharInfo(unsigned char *character, float size);
-			CharInfo &getCharInfo(unsigned char *character, std::unordered_map<char32_t, CharInfo> &sizeMap);
-
-			Atlas &getAtlas();
+			CharInfo &getCharInfo(char32_t character, float size);
+			CharInfo &getCharInfo(char32_t character, std::unordered_map<char32_t, CharInfo> &sizeMap);
 
 			std::unordered_map<char32_t, CharInfo> &getSizeMap(float size);
 
-			void updateTexture();
+		public:
+			explicit Font(std::string_view fontPath);
+
+			uint32_t getLineHeight(float size);
+			std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
+			std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
 		};
 
-		// TODO: refcount fonts and delete when no longer used
+		static std::shared_ptr<Font> getFont(std::string_view fontPath);
 
+		static bool init;
 		static FT_Library ftLibrary;
-		static std::unordered_map<std::string_view, Font> fonts;
-
-	public:
-		/**
-		 * @brief Get the Height of a font at a given size.
-		 * 
-		 * @param fontPath 
-		 * @param size 
-		 * @return uint32_t 
-		 */
-		static uint32_t getLineHeight(std::string_view fontPath, float size);
-
-		/**
-		 * @brief Get the Width and Height of a string of text.
-		 * 
-		 * @param text 
-		 * @param fontPath 
-		 * @param size 
-		 * @return std::tuple<uint32_t, uint32_t> 
-		 */
-		static std::tuple<uint32_t, uint32_t> getTextSize(std::string_view text, std::string_view fontPath, float size);
-		static std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, std::string_view fontPath, float size);
-		static std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, std::string_view fontPath, float size, const float &maxWidth);
-
-		/**
-		 * @brief Generates a 2d vector of quads for a string of text.
-		 * 
-		 * Each row in the vector represents a line of text.
-		 * 
-		 * @param text 
-		 * @param fontPath 
-		 * @param size 
-		 * @param pos 
-		 * @param color 
-		 * @param maxWidth The max width of the text before wrapping. A value of -1 means no wrapping.
-		 * @return std::tuple<std::vector<std::vector<Quad>> quads, float width, float height> 
-		 */
-		static std::tuple<std::vector<std::vector<Quad>>, float, float> generateQuads(std::string_view text, std::string_view fontPath, float size, const vec2 &pos, const Color &color, const float &maxWidth = -1.0f);
+		static std::unordered_map<std::string, std::weak_ptr<Font>> fonts;
 	};
 }// namespace squi
-
-
-#endif

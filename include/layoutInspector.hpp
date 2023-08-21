@@ -1,31 +1,35 @@
-#ifndef SQUI_LAYOUTINSPECTOR_HPP
-#define SQUI_LAYOUTINSPECTOR_HPP
+#pragma once
 
+#include "observer.hpp"
 #include "widget.hpp"
-#include <functional>
-#include <memory>
 
 namespace squi {
-    struct LayoutInspector {
-        // Args
-        std::vector<Child> &content;
-        std::vector<Child> &overlays;
-        
-        struct Storage {
-            // Data
-			std::vector<Child> &content;
-			std::vector<Child> &overlays;
-            ChildRef selectedWidget{};
-            ChildRef activeButton{};
-            ChildRef hoveredWidget{};
-            bool shouldUpdate = true;
-            bool selectedWidgetChanged = false;
-            bool pauseUpdates = false;
-            bool pauseUpdatesChanged = false;
-		};
-    
-        operator Child() const;
-    };
-}
+	struct LayoutInspector {
+		// Args
+		// Children &content;
+		// Children &overlays;
+		Observable<Child> &addedChildren;
+		Observable<Child> &addedOverlays;
 
-#endif
+		struct Storage {
+			// Data
+			std::shared_ptr<Observable<Child>::Observer> addedChildrenObserver{};
+			std::shared_ptr<Observable<Child>::Observer> addedOverlaysObserver{};
+
+			ChildRef activeButton{};
+			ChildRef selectedWidget{};
+			ChildRef hoveredWidget{};
+
+			ChildRef contentStack{};
+			ChildRef overlayStack{};
+			bool shouldUpdate = true;
+			bool selectedWidgetChanged = false;
+			bool pauseUpdates = false;
+			bool pauseUpdatesChanged = false;
+			bool pauseLayout = false;
+			bool pauseLayoutChanged = false;
+		};
+
+		operator Child() const;
+	};
+}// namespace squi

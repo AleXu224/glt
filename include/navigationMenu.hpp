@@ -1,19 +1,16 @@
-#ifndef SQUI_NAVIGATIONMENU_HPP
-#define SQUI_NAVIGATIONMENU_HPP
+#pragma once
 
 #include "widget.hpp"
 
 namespace squi {
-    struct NavigationMenu {
-        // Args
-        Widget::Args widget;
-    
-        struct Storage {
-            // Data
-        };
-    
-        operator Child() const;
-    };
-}
+	struct NavigationMenu {
+		// Args
+		Widget::Args widget;
 
-#endif
+		struct Storage {
+			// Data
+		};
+
+		operator Child() const;
+	};
+}// namespace squi

@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 #include <d3d11.h>
+#include <print>
 
 using namespace squi;
 
@@ -196,11 +197,15 @@ void Renderer::updateScreenSize(int width, int height) {
 
 	ID3D11Texture2D *backBufferPtr = nullptr;
 	swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *) &backBufferPtr);
-	backBuffer.reset(backBufferPtr, [](ID3D11Texture2D *backBufferPtr) { backBufferPtr->Release(); });
+	backBuffer.reset(backBufferPtr, [](ID3D11Texture2D *backBufferPtr) {
+		backBufferPtr->Release();
+	});
 
 	ID3D11RenderTargetView *renderTargetViewPtr = nullptr;
 	device->CreateRenderTargetView(backBuffer.get(), nullptr, &renderTargetViewPtr);
-	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) { renderTargetViewPtr->Release(); });
+	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) {
+		renderTargetViewPtr->Release();
+	});
 
 	deviceContext->OMSetRenderTargets(1, &renderTargetViewPtr, nullptr);
 
@@ -315,19 +320,29 @@ void Renderer::initialize(HWND hwnd, int width, int height) {
 			nullptr,
 			&contextPtr);
 		if (res != S_OK) {
-			printf("Failed to create device and swap chain (%#08x)\n", (unsigned int) res);
+			std::println("Failed to create device and swap chain ({:#08x})", (unsigned int) res);
 			exit(1);
 		}
-		printf("Hardware acceleration not available, using WARP\n");
+		std::println("Hardware acceleration not available, using WARP");
 	}
 	swapChainPtr->GetBuffer(0, __uuidof(ID3D11Resource), (void **) &backBufferPtr);
 	devicePtr->CreateRenderTargetView(backBufferPtr, nullptr, &renderTargetViewPtr);
 
-	device.reset(devicePtr, [](ID3D11Device *devicePtr) { devicePtr->Release(); });
-	deviceContext.reset(contextPtr, [](ID3D11DeviceContext *context) { context->Release(); });
-	swapChain.reset(swapChainPtr, [](IDXGISwapChain *swapChainPtr) { swapChainPtr->Release(); });
-	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) { renderTargetViewPtr->Release(); });
-	backBuffer.reset(backBufferPtr, [](ID3D11Resource *backBufferPtr) { backBufferPtr->Release(); });
+	device.reset(devicePtr, [](ID3D11Device *devicePtr) {
+		devicePtr->Release();
+	});
+	deviceContext.reset(contextPtr, [](ID3D11DeviceContext *context) {
+		context->Release();
+	});
+	swapChain.reset(swapChainPtr, [](IDXGISwapChain *swapChainPtr) {
+		swapChainPtr->Release();
+	});
+	renderTargetView.reset(renderTargetViewPtr, [](ID3D11RenderTargetView *renderTargetViewPtr) {
+		renderTargetViewPtr->Release();
+	});
+	backBuffer.reset(backBufferPtr, [](ID3D11Resource *backBufferPtr) {
+		backBufferPtr->Release();
+	});
 
 	// Enable alpha blending
 	D3D11_BLEND_DESC blendDesc = {};
@@ -343,7 +358,9 @@ void Renderer::initialize(HWND hwnd, int width, int height) {
 
 	ID3D11BlendState *blendStatePtr = nullptr;
 	device->CreateBlendState(&blendDesc, &blendStatePtr);
-	blendState.reset(blendStatePtr, [](ID3D11BlendState *blendStatePtr) { blendStatePtr->Release(); });
+	blendState.reset(blendStatePtr, [](ID3D11BlendState *blendStatePtr) {
+		blendStatePtr->Release();
+	});
 	deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
 
 	shader = std::make_unique<Shader>(vertexShaderHlsl, fragmentShaderHlsl, device);
@@ -369,7 +386,9 @@ void Renderer::initialize(HWND hwnd, int width, int height) {
 
 	ID3D11Buffer *projectionMatrixBufferPtr;
 	device->CreateBuffer(&bufferDesc, &subresourceData, &projectionMatrixBufferPtr);
-	projectionMatrixBuffer.reset(projectionMatrixBufferPtr, [](ID3D11Buffer *buffer) { buffer->Release(); });
+	projectionMatrixBuffer.reset(projectionMatrixBufferPtr, [](ID3D11Buffer *buffer) {
+		buffer->Release();
+	});
 }
 
 const D3D11_VIEWPORT &Renderer::getViewport() const {

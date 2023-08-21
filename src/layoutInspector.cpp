@@ -7,7 +7,6 @@
 #include "fontIcon.hpp"
 #include "gestureDetector.hpp"
 #include "quad.hpp"
-#include "ranges"
 #include "renderer.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
@@ -20,6 +19,7 @@
 #include <format>
 #include <functional>
 #include <memory>
+#include <print>
 #include <string_view>
 #include <utility>
 
@@ -160,7 +160,7 @@ struct LayoutItem {
 		// 	};
 		// }
 		return GestureDetector{
-			.onClick = [storage](Widget &, auto) {
+			.onClick = [storage](auto) {
 				storage->expanded = !storage->expanded;
 				storage->stateChanged = true;
 			},
@@ -176,7 +176,7 @@ struct LayoutItem {
 									Align{
 										.child{
 											FontIcon{
-												.icon{storage->expanded ? "\uE972" : "\uE974"},
+												.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
 												.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 												.size = 12.f,
 											},
@@ -188,9 +188,9 @@ struct LayoutItem {
 
 							auto widget = storage->widget.lock();
 							if (widget && !widget->getChildren().empty()) {
-								w.getChildren().front()->flags.visible = true;
+								w.getChildren().front()->setVisible(true);
 							} else {
-								w.getChildren().front()->flags.visible = false;
+								w.getChildren().front()->setVisible(false);
 							}
 						},
 					},
@@ -198,7 +198,7 @@ struct LayoutItem {
 						Align{
 							.child{
 								FontIcon{
-									.icon{storage->expanded ? "\uE972" : "\uE974"},
+									.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
 									.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 									.size = 12.f,
 								},
@@ -220,24 +220,32 @@ struct LayoutItem {
 		return Column{
 			.widget{
 				.height = Size::Shrink,
-				.onInit = [storage](Widget &w) { w.state.properties.insert({"layoutItem", storage}); },
+				.onInit = [storage](Widget &w) {
+					w.state.properties.insert({"layoutItem", storage});
+				},
 				.onUpdate = [storage](Widget &w) {
-					if (storage->widget.expired()) w.deleteLater(); },
+					if (storage->widget.expired()) w.deleteLater();
+				},
 			},
 			.children{
 				GestureDetector{
-					.onEnter = [storage, state = state](Widget &w, auto &) { 
+					.onEnter = [storage, state = state](GestureDetector::Event event) {
 						state->hoveredWidget = storage->widget;
-						storage->hovered = true; },
-					.onLeave = [storage, state = state](Widget &w, auto &) {
+						storage->hovered = true;
+						event.widget.reDraw();
+					},
+					.onLeave = [storage, state = state](GestureDetector::Event event) {
 						storage->hovered = false;
 						if (state->hoveredWidget.lock() == storage->widget.lock()) {
 							state->hoveredWidget.reset();
-						} },
-					.onClick = [storage](Widget &w, auto &) {
+						}
+						event.widget.reDraw();
+					},
+					.onClick = [storage](auto event) {
 						storage->state->selectedWidget = storage->widget;
 						storage->state->selectedWidgetChanged = true;
-						storage->state->activeButton = w.shared_from_this(); },
+						storage->state->activeButton = event.widget.shared_from_this();
+					},
 					.child{
 						Box{
 							.widget{
@@ -289,7 +297,7 @@ struct LayoutItem {
 					.widget{
 						.height = Size::Shrink,
 						.onUpdate = [storage](Widget &w) {
-							w.flags.visible = storage->expanded;
+							w.setVisible(storage->expanded);
 							if (!storage->expanded) return;
 							Child widget = storage->widget.lock();
 							if (!widget) return;
@@ -334,9 +342,17 @@ struct LayoutInspectorActionButton {
 	// Args
 	operator Child() const {
 		return GestureDetector{
-			.onClick = [storage = storage](Widget &w, auto) {
+			.onClick = [storage = storage](auto) {
 				storage->pauseUpdates = !storage->pauseUpdates;
 				storage->pauseUpdatesChanged = true;
+			},
+			.onUpdate = [](auto event) {
+				auto &box = dynamic_cast<Box::Impl &>(event.widget);
+
+				if (event.state.hovered || event.state.focused)
+					box.setColor(Color::HEX(0xFFFFFF0D));
+				else
+					box.setColor(Color::HEX(0x00000000));
 			},
 			.child{
 				Box{
@@ -345,19 +361,12 @@ struct LayoutInspectorActionButton {
 						.height = 36.f,
 						.margin = 2.f,
 						.onUpdate = [storage = storage](Widget &w) {
-							auto &box = dynamic_cast<Box::Impl &>(w);
-							auto &gd = std::any_cast<GestureDetector::Storage &>(w.state.properties.at("gestureDetector"));
-							if (gd.hovered || gd.focused)
-								box.setColor(Color::HEX(0xFFFFFF0D));
-							else
-								box.setColor(Color::HEX(0x00000000));
-
 							if (storage->pauseUpdatesChanged) {
 								w.setChildren(Children{
 									Align{
 										.child{
 											FontIcon{
-												.icon{storage->pauseUpdates ? "\uE768" : "\uE769"},
+												.icon = storage->pauseUpdates ? char32_t{0xE768} : char32_t{0xE769},
 												.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 												.size = 16.f,
 											},
@@ -373,7 +382,7 @@ struct LayoutInspectorActionButton {
 					.child = Align{
 						.child{
 							FontIcon{
-								.icon{"\uE769"},
+								.icon = 0xE769,
 								.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 								.size = 16.f,
 							},
@@ -397,8 +406,17 @@ struct LayoutInspectorContent {
 						.height = 48.f,
 						.padding = 4.f,
 					},
+					.alignment = Row::Alignment::center,
 					.children{
 						LayoutInspectorActionButton{storage},
+						Button{
+							.text{"Pause Layout"},
+							.style = ButtonStyle::Standard(),
+							.onClick = [storage = storage](auto) {
+								storage->pauseLayout = !storage->pauseLayout;
+								storage->pauseLayoutChanged = true;
+							},
+						},
 					},
 				},
 				Box{
@@ -422,14 +440,18 @@ struct LayoutInspectorContent {
 										});
 										return result == children.end();
 									};
-									for (auto &child: storage->content) {
-										if (test(child)) {
-											w.addChild(LayoutItem{child->shared_from_this(), storage});
+									if (auto content = storage->contentStack.lock()) {
+										for (auto &child: content->getChildren()) {
+											if (test(child)) {
+												w.addChild(LayoutItem{child->shared_from_this(), storage});
+											}
 										}
 									}
-									for (auto &child: storage->overlays) {
-										if (test(child)) {
-											w.addChild(LayoutItem{child->shared_from_this(), storage});
+									if (auto overlays = storage->overlayStack.lock()) {
+										for (auto &child: overlays->getChildren()) {
+											if (test(child)) {
+												w.addChild(LayoutItem{child->shared_from_this(), storage});
+											}
 										}
 									}
 								},
@@ -467,10 +489,7 @@ struct LayoutInspectorContent {
 };
 
 LayoutInspector::operator Child() const {
-	auto storage = std::make_shared<Storage>(Storage{
-		.content = content,
-		.overlays = overlays,
-	});
+	auto storage = std::make_shared<Storage>();
 
 	return Row{
 		.children{
@@ -479,7 +498,9 @@ LayoutInspector::operator Child() const {
 					.width = Size::Expand,
 					.height = Size::Expand,
 					.onUpdate = [storage](Widget &w) {
-						w.flags.shouldUpdateChildren = !storage->pauseUpdates;
+						w.setShouldUpdateChildren(!storage->pauseUpdates || GestureDetector::isKey(GLFW_KEY_F10, GLFW_PRESS));
+						w.setShouldLayoutChildren(!storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS));
+						w.setShouldArrangeChildren(!storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS));
 					},
 				},
 				.children{
@@ -488,12 +509,17 @@ LayoutInspector::operator Child() const {
 						.widget{
 							.width = Size::Expand,
 							.height = Size::Expand,
+							.onInit = [&, storage](Widget &w) {
+								auto shared = w.weak_from_this();
+								storage->contentStack = shared;
+								storage->addedChildrenObserver = addedChildren.observe([w = shared](const Child &child) {
+									if (auto widget = w.lock()) {
+										widget->addChild(child);
+									}
+								});
+							},
 							.onUpdate = [storage](Widget &w) {
-								if (storage->content.empty()) return;
-								for (auto &child: storage->content) {
-									w.addChild(child);
-								}
-								storage->content.clear();
+								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {});
 							},
 						},
 					},
@@ -502,27 +528,39 @@ LayoutInspector::operator Child() const {
 						.widget{
 							.width = Size::Expand,
 							.height = Size::Expand,
-							.onUpdate = [storage](Widget &w) {
-								if (storage->overlays.empty()) return;
-								for (auto &child: storage->overlays) {
-									w.addChild(child);
-								}
-								storage->overlays.clear();
+							.onInit = [&, storage](Widget &w) {
+								auto shared = w.weak_from_this();
+								storage->overlayStack = shared;
+								storage->addedOverlaysObserver = addedOverlays.observe([w = shared](const Child &child) {
+									if (auto widget = w.lock()) {
+										widget->addChild(child);
+									}
+								});
 							},
 						},
 					},
 				},
 			},
 			GestureDetector{
-				.onLeave = [storage](Widget &w, auto &) { storage->hoveredWidget.reset(); },
-				.onUpdate = [storage](Widget &w, auto &gd) { 
+				.onLeave = [storage](GestureDetector::Event event) {
+					storage->hoveredWidget.reset();
+					event.widget.reDraw();
+				},
+				.onUpdate = [storage](auto event) {
 					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F5)) {
 						storage->pauseUpdates = !storage->pauseUpdates;
 						storage->pauseUpdatesChanged = true;
 					}
+					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F6)) {
+						storage->pauseLayout = !storage->pauseLayout;
+					}
 					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F12)) {
-						w.flags.visible = !w.flags.visible;
-					} },
+						event.widget.setVisible(!event.widget.flags.visible);
+					}
+					if (GestureDetector::isKey(GLFW_KEY_I, GLFW_PRESS, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
+						event.widget.setVisible(!event.widget.flags.visible);
+					}
+				},
 				.child{
 					Box{
 						.widget{
@@ -530,6 +568,9 @@ LayoutInspector::operator Child() const {
 							.height = Size::Expand,
 							.margin{4.f},
 							.padding{1.f},
+							.onInit = [](Widget &w) {
+								w.setVisible(false);
+							},
 							.afterDraw = [storage](Widget &w) {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;

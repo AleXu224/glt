@@ -1,7 +1,8 @@
 #include "gestureDetector.hpp"
 #include "GLFW/glfw3.h"
 #include "widget.hpp"
-#include <any>
+#include <memory>
+#include <optional>
 
 using namespace squi;
 
@@ -29,6 +30,21 @@ void GestureDetector::frameEnd() {
 	g_scrollDelta = vec2{0};
 	g_textInput.clear();
 	g_keys.clear();
+}
+
+std::optional<KeyState> GestureDetector::getKey(int key) {
+	if (!g_keys.contains(key)) return std::nullopt;
+
+	return g_keys.at(key);
+}
+
+std::optional<KeyState> GestureDetector::getKeyPressedOrRepeat(int key) {
+	if (!g_keys.contains(key)) return std::nullopt;
+
+	auto &keyInput = g_keys.at(key);
+	if (keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) return keyInput;
+
+	return std::nullopt;
 }
 
 bool GestureDetector::isKey(int key, int action, int mods) {
@@ -59,45 +75,45 @@ void GestureDetector::Storage::update(Widget &widget) {
 	}
 
 	if (g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea) {
-		scrollDelta = g_scrollDelta;
+		state.scrollDelta = g_scrollDelta;
 
-		if (!hovered && onEnter) onEnter(widget, *this);
-		hovered = true;
+		if (!state.hovered && onEnter) onEnter(Event{widget, state});
+		state.hovered = true;
 
-		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !focusedOutside) {
-			if (!focused) {
-				dragStart = g_cursorPos;
-				if (onPress) onPress(widget, *this);
+		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focusedOutside) {
+			if (!state.focused) {
+				state.dragStart = g_cursorPos;
+				if (onPress) onPress({widget, state});
 			}
-			focused = true;
-			active = true;
+			state.focused = true;
+			state.active = true;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
-			if (focused && !focusedOutside) {
-				if (onClick) onClick(widget, *this);
-				if (onRelease) onRelease(widget, *this);
+			if (state.focused && !state.focusedOutside) {
+				if (onClick) onClick({widget, state});
+				if (onRelease) onRelease({widget, state});
 			}
-			focused = false;
-			focusedOutside = false;
+			state.focused = false;
+			state.focusedOutside = false;
 		}
 	} else {
-		scrollDelta = vec2{0};
+		state.scrollDelta = vec2{0};
 
-		if (hovered && onLeave) onLeave(widget, *this);
-		hovered = false;
+		if (state.hovered && onLeave) onLeave({widget, state});
+		state.hovered = false;
 
-		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !focused) {
-			focusedOutside = true;
-			active = false;
+		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focused) {
+			state.focusedOutside = true;
+			state.active = false;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
-			focused = false;
-			focusedOutside = false;
+			state.focused = false;
+			state.focusedOutside = false;
 		}
 	}
 
-	if (active && onDrag) onDrag(widget, *this);
-	if (active) textInput = g_textInput;
+	if (state.active && onDrag) onDrag({widget, state});
+	if (state.active) state.textInput = g_textInput;
 	else
-		textInput.clear();
+		state.textInput.clear();
 }
 
 const vec2 &GestureDetector::getMousePos() {
@@ -108,26 +124,34 @@ vec2 GestureDetector::getMouseDelta() {
 	return g_cursorPos - lastCursorPos;
 }
 
-const vec2 &GestureDetector::Storage::getScroll() const {
+const vec2 &GestureDetector::State::getScroll() const {
 	return scrollDelta;
 }
 
-vec2 GestureDetector::Storage::getDragDelta() const {
+vec2 GestureDetector::State::getDragDelta() const {
 	if (!focused || g_cursorPos == dragStart) return vec2{0};
 	return mouseDelta;
 }
 
-vec2 GestureDetector::Storage::getDragOffset() const {
+vec2 GestureDetector::State::getDragOffset() const {
 	if (!focused) return vec2{0};
 	return g_cursorPos - dragStart;
 }
 
-const vec2 &GestureDetector::Storage::getDragStartPos() const {
+const vec2 &GestureDetector::State::getDragStartPos() const {
 	return dragStart;
 }
 
 GestureDetector::operator Child() const {
-	child->state.properties["gestureDetector"] = Storage{
+	if (!child) return nullptr;
+
+	mount(*child);
+
+	return child;
+}
+
+GestureDetector::State &GestureDetector::mount(Widget &widget) const {
+	auto storage = std::make_shared<Storage>(Storage{
 		.onEnter = onEnter,
 		.onLeave = onLeave,
 		.onClick = onClick,
@@ -135,13 +159,10 @@ GestureDetector::operator Child() const {
 		.onRelease = onRelease,
 		.onDrag = onDrag,
 		.onUpdate = onUpdate,
-	};
-	auto &childFuncs = child->funcs();
-	childFuncs.onUpdate.emplace(childFuncs.onUpdate.begin(), [](Widget &widget) {
-		auto &storage = std::any_cast<Storage &>(widget.state.properties.at("gestureDetector"));
-		storage.update(widget);
-		if (storage.onUpdate) storage.onUpdate(widget, storage);
 	});
-
-	return child;
+	widget.funcs().onUpdate.emplace(widget.funcs().onUpdate.begin(), [storage](Widget &widget) mutable {
+		storage->update(widget);
+		if (storage->onUpdate) storage->onUpdate({widget, storage->state});
+	});
+	return storage->state;
 }

@@ -1,9 +1,11 @@
-#ifndef SQUI_BUTTON_HPP
-#define SQUI_BUTTON_HPP
+#pragma once
 
-#include "color.hpp"
-#include "widget.hpp"
+#include "align.hpp"
 #include "box.hpp"
+#include "color.hpp"
+#include "gestureDetector.hpp"
+#include "text.hpp"
+#include "widget.hpp"
 #include <functional>
 
 namespace squi {
@@ -55,6 +57,7 @@ namespace squi {
 
 	struct Button {
 		// Args
+		Widget::Args widget;
 		std::variant<float, Size> width = Size::Shrink;
 		std::variant<float, Size> height = Size::Shrink;
 		Margin margin{};
@@ -66,7 +69,8 @@ namespace squi {
 		std::string_view text{"Button"};
 		ButtonStyle style{};
 		bool disabled = false;
-		std::function<void()> onClick{};
+		std::function<void(GestureDetector::Event)> onClick{};
+		Child child = Align{.child = Text{.text = text}};
 
 		struct Storage {
 			// Data
@@ -84,5 +88,3 @@ namespace squi {
 		operator Child() const;
 	};
 }// namespace squi
-
-#endif

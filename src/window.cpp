@@ -4,22 +4,21 @@
 
 #include "window.hpp"
 #include "chrono"
-#include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
-#include "ranges"
-#include "stdexcept"
+#include "widget.hpp"
+#include <GLFW/glfw3.h>
+#include <print>
 #define GLFW_INCLUDE_NONE
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
-#include "VersionHelpers.h"
 #include "dwmapi.h"
 #include "renderer.hpp"
 
 using namespace squi;
 
 void Window::glfwError(int id, const char *description) {
-	printf("GLFW Error %d: %s\n", id, description);
+	std::print("GLFW Error {}: {}\n", id, description);
 }
 
 std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
@@ -31,7 +30,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 										  }) {
 	glfwSetErrorCallback(&glfwError);
 	if (!glfwInit()) {
-		printf("Failed to initialize GLFW\n");
+		std::println("Failed to initialize GLFW");
 		exit(1);
 	}
 
@@ -44,7 +43,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 	});
 
 	if (!window) {
-		printf("Failed to create GLFW window\n");
+		std::println("Failed to create GLFW window");
 		exit(1);
 	}
 
@@ -54,6 +53,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 		auto &renderer = Renderer::getInstance();
 		renderer.updateScreenSize(width, height);
 		auto *window = windowMap[windowPtr];
+		window->shouldRelayout();
 		window->updateAndDraw();
 	});
 	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
@@ -120,8 +120,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 	}
 
 	content = Child(LayoutInspector{
-		.content = getChildren(),
-		.overlays = overlays,
+		.addedChildren = addedChildren,
+		.addedOverlays = addedOverlays,
 	});
 }
 
@@ -147,7 +147,12 @@ void Window::updateAndDraw() {
 	fps++;
 	auto context = renderer.getDeviceContext();
 	const auto beforePoll = std::chrono::steady_clock::now();
-	glfwPollEvents();
+	// glfwPollEvents();
+	if (drewLastFrame) glfwPollEvents();
+	else
+		glfwWaitEventsTimeout(1.0 / 10.0);// Run at 10 fps
+	drewLastFrame = false;
+
 	const auto afterPoll = std::chrono::steady_clock::now();
 
 	const auto color = [isWin11 = isWin11]() -> std::array<float, 4> {
@@ -161,61 +166,78 @@ void Window::updateAndDraw() {
 	auto &children = getChildren();
 	int width, height;
 	glfwGetWindowSize(window.get(), &width, &height);
-	state.sizeMode = {static_cast<float>(width), static_cast<float>(height)};
+	setWidth(static_cast<float>(width));
+	setHeight(static_cast<float>(height));
+	state.root = this;
 
 	auto currentTime = std::chrono::steady_clock::now();
 	auto deltaTime = currentTime - lastTime;
-	constexpr bool UPDATE_DEBUG_STEP = false;
-	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
-		renderer.updateDeltaTime(deltaTime);
-		renderer.updateCurrentFrameTime(currentTime);
-		uint32_t hitChecks = 0;
-		layout({static_cast<float>(width), static_cast<float>(height)});
-		arrange({0.0f, 0.0f});
 
-		GestureDetector::g_activeArea.emplace_back(Rect{
-			vec2{0.0f, 0.0f},
-			vec2{static_cast<float>(width), static_cast<float>(height)},
-		});
+	renderer.updateDeltaTime(deltaTime);
+	renderer.updateCurrentFrameTime(currentTime);
 
-		overlays.erase(std::remove_if(overlays.begin(), overlays.end(),
-									  [](const auto &overlay) {
-										  return overlay->isMarkedForDeletion();
-									  }),
-					   overlays.end());
+	for (auto &child: children) {
+		addedChildren.notify(child);
+	}
+	children.clear();
 
-		children.erase(std::remove_if(children.begin(), children.end(),
-									  [](const auto &child) {
-										  return child->isMarkedForDeletion();
-									  }),
-					   children.end());
+	uint32_t hitChecks = 0;
 
-		content->state.parent = this;
-		content->state.root = this;
-		content->update();
-		content->layout({static_cast<float>(width), static_cast<float>(height)});
+	GestureDetector::g_activeArea.emplace_back(
+		vec2{0.0f, 0.0f},
+		vec2{static_cast<float>(width), static_cast<float>(height)});
+
+
+	content->state.parent = this;
+	content->state.root = this;
+	content->update();
+
+	if (needsRelayout)
+		content->layout({static_cast<float>(width), static_cast<float>(height)}, {});
+
+	if (needsRelayout || needsReposition)
 		content->arrange({0.0f, 0.0f});
 
-		for (uint32_t i = 0; i < hitChecks; i++) {
-			GestureDetector::g_hitCheckRects.pop_back();
-		}
-
-		GestureDetector::g_activeArea.pop_back();
-		if (!GestureDetector::g_activeArea.empty()) printf("active area not empty\n");
+	for (uint32_t i = 0; i < hitChecks; i++) {
+		GestureDetector::g_hitCheckRects.pop_back();
 	}
+
+	GestureDetector::g_activeArea.pop_back();
+	if (!GestureDetector::g_activeArea.empty()) printf("active area not empty\n");
+
 	const auto afterUpdateTime = std::chrono::steady_clock::now();
 
 	renderer.prepare();
 
-	content->draw();
+	if (needsRedraw || needsRelayout || needsReposition) {
+		content->draw();
+		renderer.render();
+	}
 
-	renderer.render();
 	renderer.popClipRect();
 	const auto afterDrawTime = std::chrono::steady_clock::now();
 
 	auto *swapChain = renderer.getSwapChain().get();
-	swapChain->Present(1, 0);
+	if (needsRedraw || needsRelayout || needsReposition) {
+		swapChain->Present(1, 0);
+		drewLastFrame = true;
+	}
 	lastTime = currentTime;
+
+	static uint32_t relayoutCount = 0;
+	static uint32_t repositionCount = 0;
+	static uint32_t redrawCount = 0;
+
+	if (needsRelayout)
+		std::print("needsRelayout ({})\n", relayoutCount++);
+	else if (needsReposition)
+		std::print("needsReposition ({})\n", repositionCount++);
+	else if (needsRedraw)
+		std::print("needsRedraw ({})\n", redrawCount++);
+
+	needsRedraw = false;
+	needsRelayout = false;
+	needsReposition = false;
 
 	const auto afterPresentTime = std::chrono::steady_clock::now();
 
@@ -224,7 +246,5 @@ void Window::updateAndDraw() {
 	renderer.updateDrawTime(afterDrawTime - afterUpdateTime);
 	renderer.updatePresentTime(afterPresentTime - afterDrawTime);
 
-	if (!UPDATE_DEBUG_STEP || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_W)) {
-		GestureDetector::frameEnd();
-	}
+	GestureDetector::frameEnd();
 }

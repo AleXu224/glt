@@ -6,12 +6,8 @@
 #include "widget.hpp"
 #include <future>
 #include <memory>
-#include <optional>
 #include <string_view>
-#include <thread>
-#include <unordered_map>
 #include <variant>
-
 
 namespace squi {
 	struct Image {

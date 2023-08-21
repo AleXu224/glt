@@ -1,5 +1,4 @@
-#ifndef SQUI_TEXTURE_HPP
-#define SQUI_TEXTURE_HPP
+#pragma once
 
 #include "d3d11.h"
 #include "memory"
@@ -36,5 +35,3 @@ namespace squi {
 		operator Impl() const;
 	};
 }// namespace squi
-
-#endif

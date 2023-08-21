@@ -46,7 +46,7 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.text = "FPS: ",
 									.fontSize = 16,
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -58,7 +58,7 @@ PerformanceOverlay::operator squi::Child() const {
 									},
 									.text = "60",
 									.fontSize = 16,
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},
@@ -70,7 +70,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Frame time: ",
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -81,7 +81,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "16.6ms",
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},
@@ -93,7 +93,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Poll time: ",
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -104,7 +104,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "100",
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},
@@ -116,7 +116,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Update time: ",
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -127,7 +127,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "100",
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},
@@ -139,7 +139,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Draw time: ",
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -150,7 +150,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "10000",
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},
@@ -162,7 +162,7 @@ PerformanceOverlay::operator squi::Child() const {
 							.children = {
 								Text{
 									.text = "Present time: ",
-									.fontPath{font},
+									.font{font},
 								},
 								Text{
 									.widget{
@@ -173,7 +173,7 @@ PerformanceOverlay::operator squi::Child() const {
 										},
 									},
 									.text = "10000",
-									.fontPath{font},
+									.font{font},
 								},
 							},
 						},

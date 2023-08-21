@@ -2,50 +2,6 @@
 
 using namespace squi;
 
-// Margin Margin::operator+(const Margin &other) const {
-// 	return {top + other.top, right + other.right, bottom + other.bottom, left + other.left};
-// }
-
-// Margin Margin::operator-(const Margin &other) const {
-// 	return {top - other.top, right - other.right, bottom - other.bottom, left - other.left};
-// }
-
-// Margin Margin::operator*(const Margin &other) const {
-// 	return {top * other.top, right * other.right, bottom * other.bottom, left * other.left};
-// }
-
-// Margin Margin::operator/(const Margin &other) const {
-// 	return {top / other.top, right / other.right, bottom / other.bottom, left / other.left};
-// }
-
-// void Margin::operator+=(const Margin &other) {
-// 	top += other.top;
-// 	right += other.right;
-// 	bottom += other.bottom;
-// 	left += other.left;
-// }
-
-// void Margin::operator-=(const Margin &other) {
-// 	top -= other.top;
-// 	right -= other.right;
-// 	bottom -= other.bottom;
-// 	left -= other.left;
-// }
-
-// void Margin::operator*=(const Margin &other) {
-// 	top *= other.top;
-// 	right *= other.right;
-// 	bottom *= other.bottom;
-// 	left *= other.left;
-// }
-
-// void Margin::operator/=(const Margin &other) {
-// 	top /= other.top;
-// 	right /= other.right;
-// 	bottom /= other.bottom;
-// 	left /= other.left;
-// }
-
 Margin Margin::withTop(const float &newTop) const {
 	return {newTop, right, bottom, left};
 }
@@ -93,11 +49,3 @@ Margin Margin::withHorizontalOffset(const float &offset) const {
 Margin Margin::withVerticalOffset(const float &offset) const {
 	return {top + offset, right, bottom + offset, left};
 }
-
-// vec2 Margin::getPositionOffset() const {
-// 	return {left, top};
-// }
-
-// vec2 Margin::getSizeOffset() const {
-// 	return {left + right, top + bottom};
-// }

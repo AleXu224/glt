@@ -1,13 +1,9 @@
-#ifndef SQUI_RENDERER_HPP
-#define SQUI_RENDERER_HPP
+#pragma once
 
-#include "array"
 #include "batch.hpp"
 #include "chrono"
-#include "list"
 #include "memory"
 #include "shader.hpp"
-#include "vertex.hpp"
 
 
 namespace squi {
@@ -77,5 +73,3 @@ namespace squi {
 		void initialize(HWND hwnd, int width, int height);
 	};
 }// namespace squi
-
-#endif

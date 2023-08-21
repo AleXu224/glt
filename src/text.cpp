@@ -1,7 +1,16 @@
-#include "text.hpp"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#include <variant>
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "fontStore.hpp"
 #include "ranges"
 #include "renderer.hpp"
+#include "text.hpp"
+#include "widget.hpp"
 #include <algorithm>
 #include <string_view>
 
@@ -9,50 +18,44 @@
 using namespace squi;
 
 Text::Impl::Impl(const Text &args)
-	: Widget(args.widget.withWidth(Size::Shrink).withHeight(Size::Shrink), Widget::Flags{
-																			   .shouldDrawChildren = false,
-																		   }),
-	  text(args.text), fontSize(args.fontSize), lineWrap(args.lineWrap), fontPath(args.fontPath), color(args.color) {
-	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, 0, color);
+	: Widget(args.widget.withDefaultWidth(Size::Shrink).withDefaultHeight(Size::Shrink), Widget::Flags{
+																							 .shouldDrawChildren = false,
+																						 }),
+	  text(args.text), fontSize(args.fontSize), lineWrap(args.lineWrap), font([&]() {
+		  if (std::holds_alternative<std::string_view>(args.font)) {
+			  return FontStore::getFont(std::get<std::string_view>(args.font));
+		  } else {
+			  return std::get<std::shared_ptr<FontStore::Font>>(args.font);
+		  }
+	  }()),
+	  color(args.color) {
+	auto [quadsVec, width, height] = font->generateQuads(text, fontSize, 0, color);
 	quads = std::move(quadsVec);
 	textSize = {width, height};
 	updateSize();
 }
 
-void Text::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
-	if (lineWrap) {
-		if (maxSize.x != lastAvailableSpace) {
-			lastAvailableSpace = maxSize.x;
-			const auto lineHeight = FontStore::getLineHeight(fontPath, fontSize);
-			const auto rect = getRect();
-			const auto padding = state.padding.getSizeOffset();
-			// Only update the text layout if the text is wider than the available space
-			if (rect.width() > maxSize.x || rect.height() != (static_cast<float>(lineHeight) + padding.y)) {
-				auto [quadsVec, width, height] = FontStore::generateQuads(
-					text,
-					fontPath,
-					fontSize,
-					{lastX, lastY},
-					color,
-					maxSize.x - padding.x);
-				textSize = {width, height};
-				// minSize = {width + padding.x, height + padding.y};
-				quads = std::move(quadsVec);
-			}
+// The text characters are considered to be the children of the text widget
+vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+	if (shouldShrink.width && lineWrap) maxSize.x = 0;
+	if (lineWrap && maxSize.x != lastAvailableSpace) {
+		lastAvailableSpace = maxSize.x;
+		const auto lineHeight = font->getLineHeight(fontSize);
+
+		// Will only recalculate the text layout under the following circumstances:
+		// 1. The available width is smaller than the cached text width
+		// 2. The cached text is wrapping (the text is occupying more than one line)
+		// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
+		if (maxSize.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight) {
+			auto [quadsVec, width, height] = font->generateQuads(text, fontSize, {lastX, lastY}, color, maxSize.x);
+			textSize = {width, height};
+			quads = std::move(quadsVec);
 
 			updateSize();
 		}
 	}
 
-	// if (state.sizeMode.width.index() == 0) {
-	// 	maxSize.x = std::get<0>(state.sizeMode.width);
-	// }
-	// if (state.sizeMode.height.index() == 0) {
-	// 	maxSize.y = std::get<0>(state.sizeMode.height);
-	// }
-	minSize.y = textSize.y + state.padding.getSizeOffset().y;
-	if (!lineWrap)
-		maxSize = textSize + state.padding.getSizeOffset();
+	return textSize;
 }
 
 void Text::Impl::onArrange(vec2 &pos) {
@@ -71,20 +74,21 @@ void Text::Impl::onArrange(vec2 &pos) {
 
 void Text::Impl::updateSize() {
 	if (lineWrap) {
-		state.sizeMode.width = Size::Expand;
-		state.sizeMode.height = Size::Shrink;
+		setWidth(Size::Expand);
+		setHeight(Size::Shrink);
 	} else {
-		const auto padding = state.padding.getSizeOffset();
-		state.sizeMode.width = textSize.x + padding.x;
-		state.sizeMode.height = textSize.y + padding.y;
+		const auto newSize = textSize + state.padding.getSizeOffset();
+		setWidth(newSize.x);
+		setHeight(newSize.y);
 	}
+	reLayout();
 }
 
 void Text::Impl::onDraw() {
 	const auto pos = getPos() + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 
 	auto &renderer = Renderer::getInstance();
-	const auto &clipRect = renderer.getCurrentClipRect().rect;
+	const auto clipRect = renderer.getCurrentClipRect().rect;
 	const auto minOffsetX = clipRect.left - pos.x;
 	// const auto minOffsetY = clipRect.top - pos.y;
 	const auto maxOffsetX = clipRect.right - pos.x;
@@ -112,9 +116,11 @@ void Text::Impl::onDraw() {
 }
 
 void Text::Impl::setText(const std::string_view &text) {
+	if (this->text == text) return;
 	this->text = text;
-	auto [quadsVec, width, height] = FontStore::generateQuads(text, fontPath, fontSize, getPos().rounded(), color);
+	auto [quadsVec, width, height] = font->generateQuads(text, fontSize, getPos().rounded(), color);
 	quads = std::move(quadsVec);
+	if (textSize == vec2{width, height}) return;
 	textSize = {width, height};
 	updateSize();
 }
@@ -124,21 +130,5 @@ std::string_view Text::Impl::getText() const {
 }
 
 std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
-	return FontStore::getTextSizeSafe(text, fontPath, fontSize);
-}
-
-float Text::Impl::getMinWidth(const vec2 &maxSize) {
-	if (lineWrap) {
-		const auto [width, height] = FontStore::getTextSizeSafe(text, fontPath, fontSize, maxSize.x);
-		return static_cast<float>(width) + state.margin.getSizeOffset().x + state.padding.getSizeOffset().x;
-	}
-	return textSize.x + state.margin.getSizeOffset().x + state.padding.getSizeOffset().x;
-}
-
-float Text::Impl::getMinHeight(const vec2 &maxSize) {
-	if (lineWrap) {
-		const auto [width, height] = FontStore::getTextSizeSafe(text, fontPath, fontSize, maxSize.x);
-		return static_cast<float>(height) + state.margin.getSizeOffset().y + state.padding.getSizeOffset().y;
-	}
-	return textSize.y + state.margin.getSizeOffset().y + state.padding.getSizeOffset().y;
+	return font->getTextSizeSafe(text, fontSize);
 }

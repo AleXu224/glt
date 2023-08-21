@@ -1,31 +1,25 @@
+#include <utf8/cpp17.h>
 #define NOMINMAX
-#include "fontIcon.hpp"
 #include "align.hpp"
 #include "container.hpp"
+#include "fontIcon.hpp"
 #include "text.hpp"
-#include "vec2.hpp"
-#include <limits>
+
 
 using namespace squi;
 
 squi::FontIcon::operator Child() const {
 	return Container{
-		.widget{
-			.width = size,
-			.height = size,
-			.sizeConstraints{
-				.maxWidth = size,
-				.maxHeight = size,
-			},
-			.margin = margin,
-		},
+		.widget = widget
+					  .withDefaultWidth(size)
+					  .withDefaultHeight(size),
 		.child{
 			Align{
 				.child{
 					Text{
-						.text{icon},
+						.text{utf8::utf32to8(std::u32string{icon})},
 						.fontSize = size,
-						.fontPath{font},
+						.font{font},
 						.color{color},
 					},
 				},

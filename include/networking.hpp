@@ -1,10 +1,15 @@
 #pragma once
 
-#include <unordered_map>
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef ASIO_STANDALONE
 #define ASIO_STANDALONE
-#include "asio.hpp"
+#endif
+#include "asio/io_context.hpp"
 #include "vector"
+#include <unordered_map>
+
 
 namespace squi {
 	class Networking {

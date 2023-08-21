@@ -1,5 +1,4 @@
-#ifndef SQUI_MARGIN_HPP
-#define SQUI_MARGIN_HPP
+#pragma once
 
 #include "vec2.hpp"
 
@@ -61,6 +60,10 @@ namespace squi {
 			left /= other.left;
 		}
 
+		inline bool operator==(const Margin &other) const {
+			return top == other.top && right == other.right && bottom == other.bottom && left == other.left;
+		}
+
 		[[nodiscard]] Margin withTop(const float &newTop) const;
 		[[nodiscard]] Margin withRight(const float &newRight) const;
 		[[nodiscard]] Margin withBottom(const float &newBottom) const;
@@ -87,5 +90,3 @@ namespace squi {
 
 	using Padding = Margin;
 }// namespace squi
-
-#endif

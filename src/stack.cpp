@@ -1,7 +1,7 @@
 #include "stack.hpp"
 #include "gestureDetector.hpp"
 #include "ranges"
-#include <iterator>
+#include <algorithm>
 #include <vector>
 
 using namespace squi;
@@ -29,6 +29,40 @@ void Stack::Impl::updateChildren() {
 	for ([[maybe_unused]] uint32_t i = 0; i < addedRects; ++i) {
 		GestureDetector::g_hitCheckRects.pop_back();
 	}
+}
+
+vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+	auto &children = getChildren();
+
+
+	if (shouldShrink.width || shouldShrink.height) {
+		vec2 childrenMaxSize{};
+		for (auto &child: children) {
+			if (!child) continue;
+
+			const auto size = child->layout(maxSize, minSize, shouldShrink);
+			childrenMaxSize.x = std::max(size.x, childrenMaxSize.x);
+			childrenMaxSize.y = std::max(size.y, childrenMaxSize.y);
+		}
+
+		if (shouldShrink.width)
+			maxSize.x = std::clamp(childrenMaxSize.x, minSize.x, maxSize.x);
+		if (shouldShrink.height)
+			maxSize.y = std::clamp(childrenMaxSize.y, minSize.y, maxSize.y);
+	}
+
+	for (auto &child: children) {
+		if (!child) continue;
+
+		// No shouldShrink provided since the widgets inside might want to expand
+		// and we already calculated the max size they would be allowed to expand to
+		const auto childSize = child->layout(maxSize, minSize);
+
+		minSize.x = std::clamp(childSize.x, minSize.x, maxSize.x);
+		minSize.y = std::clamp(childSize.y, minSize.y, maxSize.y);
+	}
+
+	return minSize;
 }
 
 std::vector<Rect> Stack::Impl::getHitcheckRect() const {

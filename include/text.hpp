@@ -1,7 +1,7 @@
-#ifndef SQUI_TEXT_HPP
-#define SQUI_TEXT_HPP
+#pragma once
 
 #include "color.hpp"
+#include "fontStore.hpp"
 #include "quad.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
@@ -13,10 +13,10 @@ namespace squi {
 	struct Text {
 		// Args
 		Widget::Args widget;
-		std::string text;
+		std::string_view text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
-		std::string fontPath{R"(C:\Windows\Fonts\arial.ttf)"};
+		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = R"(C:\Windows\Fonts\arial.ttf)";
 		Color color{Color::HEX(0xFFFFFFFF)};
 
 		class Impl : public Widget {
@@ -27,7 +27,7 @@ namespace squi {
 			std::string text;
 			float fontSize;
 			bool lineWrap;
-			std::string fontPath;
+			std::shared_ptr<FontStore::Font> font;
 			Color color;
 			vec2 textSize;
 			std::vector<std::vector<Quad>> quads{};
@@ -35,7 +35,7 @@ namespace squi {
 		public:
 			Impl(const Text &args);
 
-			void onLayout(vec2 &maxSize, vec2 &minSize) final;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
 			void onArrange(vec2 &pos) final;
 
 			void updateSize();
@@ -47,15 +47,10 @@ namespace squi {
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSize(const std::string_view &text) const;
 
 			[[nodiscard]] std::string_view getText() const;
-
-			float getMinWidth(const vec2 &maxSize) final;
-			float getMinHeight(const vec2 &maxSize) final;
 		};
 
 		operator Child() const {
-			return {std::make_unique<Impl>(*this)};
+			return std::make_unique<Impl>(*this);
 		}
 	};
 }// namespace squi
-
-#endif

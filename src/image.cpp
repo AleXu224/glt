@@ -7,10 +7,7 @@
 #include "widget.hpp"
 #include <future>
 #include <iostream>
-#include <memory>
-#include <optional>
 #include <string_view>
-#include <thread>
 
 
 #define STB_IMAGE_IMPLEMENTATION

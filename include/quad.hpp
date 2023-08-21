@@ -1,10 +1,8 @@
-#ifndef SQUI_SQUARE_HPP
-#define SQUI_SQUARE_HPP
+#pragma once
 #include "array"
 #include "d3d11.h"
 #include "memory"
 #include "rect.hpp"
-#include "span"
 #include "vertex.hpp"
 
 namespace squi {
@@ -49,5 +47,3 @@ namespace squi {
 		void setClipRect(const Rect &clipRect, float clipBorderRadius);
 	};
 }// namespace squi
-
-#endif

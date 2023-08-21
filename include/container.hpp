@@ -1,5 +1,4 @@
-#ifndef SQUI_CONTAINER_HPP
-#define SQUI_CONTAINER_HPP
+#pragma once
 
 #include "widget.hpp"
 #include <memory>
@@ -12,9 +11,9 @@ namespace squi {
 
 		class Impl : public Widget {
 		public:
-			Impl(const Container &args) : Widget(args.widget, Widget::Flags::Default()){
-                addChild(args.child);
-            }
+			Impl(const Container &args) : Widget(args.widget, Widget::Flags::Default()) {
+				addChild(args.child);
+			}
 		};
 
 		operator Child() const {
@@ -22,5 +21,3 @@ namespace squi {
 		}
 	};
 }// namespace squi
-
-#endif

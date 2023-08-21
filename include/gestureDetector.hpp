@@ -1,10 +1,9 @@
-#ifndef SQUI_GESTUREDETECTOR_HPP
-#define SQUI_GESTUREDETECTOR_HPP
+#pragma once
 
 #include "rect.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
-#include <memory>
+#include <optional>
 
 namespace squi {
 	struct KeyState {
@@ -14,13 +13,43 @@ namespace squi {
 	struct GestureDetector {
 		// Args
 		struct Storage;
-		std::function<void(Widget &, Storage &)> onEnter{};
-		std::function<void(Widget &, Storage &)> onLeave{};
-		std::function<void(Widget &, Storage &)> onClick{};
-		std::function<void(Widget &, Storage &)> onPress{};
-		std::function<void(Widget &, Storage &)> onRelease{};
-		std::function<void(Widget &, Storage &)> onDrag{};
-		std::function<void(Widget &, Storage &)> onUpdate{};
+		struct State {
+			// Data
+			friend Storage;
+			// Wether the cursor is directly above the widget, without a stacked widget being on top
+			bool hovered = false;
+			// Wether the left mouse button is currently being held on top of the widget
+			bool focused = false;
+			// Wether the left mouse button started being held outside of the widget
+			bool focusedOutside = false;
+			// Indicates if the widget has been activated by a click and no other widget has been focused since
+			bool active = false;
+			std::string textInput{};
+
+			// Get how much the scroll has moved in the last frame
+			[[nodiscard]] const vec2 &getScroll() const;
+			// Get how much the cursor has moved since last update
+			[[nodiscard]] vec2 getDragDelta() const;
+			// Get how much the cursor has moved since it began dragging
+			[[nodiscard]] vec2 getDragOffset() const;
+			// Get the location of where the drag began
+			[[nodiscard]] const vec2 &getDragStartPos() const;
+
+		private:
+			vec2 scrollDelta{};
+			vec2 dragStart{};
+		};
+		struct Event {
+			Widget &widget;
+			State &state;
+		};
+		std::function<void(Event)> onEnter{};
+		std::function<void(Event)> onLeave{};
+		std::function<void(Event)> onClick{};
+		std::function<void(Event)> onPress{};
+		std::function<void(Event)> onRelease{};
+		std::function<void(Event)> onDrag{};
+		std::function<void(Event)> onUpdate{};
 		/**
 		 * @brief Called on initalization. Use this to store the state of the GestureDetector.
 		 */
@@ -46,44 +75,27 @@ namespace squi {
 		// Get how much the cursor has moved since the last frame
 		[[nodiscard]] static vec2 getMouseDelta();
 
+		[[nodiscard]] static std::optional<KeyState> getKey(int key);
+		[[nodiscard]] static std::optional<KeyState> getKeyPressedOrRepeat(int key);
 		[[nodiscard]] static bool isKey(int key, int action, int mods = 0);
 		[[nodiscard]] static bool isKeyPressedOrRepeat(int key, int mods = 0);
 
 		struct Storage {
 			// Data
-			vec2 scrollDelta{};
-			vec2 dragStart{};
-			// Wether the cursor is directly above the widget, without a stacked widget being on top
-			bool hovered = false;
-			// Wether the left mouse button is currently being held on top of the widget
-			bool focused = false;
-			// Wether the left mouse button started being held outside of the widget
-			bool focusedOutside = false;
-			// Indicates if the widget has been activated by a click and no other widget has been focused since
-			bool active = false;
-			std::string textInput{};
-			std::function<void(Widget &, Storage &)> onEnter{};
-			std::function<void(Widget &, Storage &)> onLeave{};
-			std::function<void(Widget &, Storage &)> onClick{};
-			std::function<void(Widget &, Storage &)> onPress{};
-			std::function<void(Widget &, Storage &)> onRelease{};
-			std::function<void(Widget &, Storage &)> onDrag{};
-			std::function<void(Widget &, Storage &)> onUpdate{};
+			State state;
+			std::function<void(Event)> onEnter{};
+			std::function<void(Event)> onLeave{};
+			std::function<void(Event)> onClick{};
+			std::function<void(Event)> onPress{};
+			std::function<void(Event)> onRelease{};
+			std::function<void(Event)> onDrag{};
+			std::function<void(Event)> onUpdate{};
 
 			void update(Widget &widget);
-
-			// Get how much the scroll has moved in the last frame
-			[[nodiscard]] const vec2 &getScroll() const;
-			// Get how much the cursor has moved since last update
-			[[nodiscard]] vec2 getDragDelta() const;
-			// Get how much the cursor has moved since it began dragging
-			[[nodiscard]] vec2 getDragOffset() const;
-			// Get the location of where the drag began
-			[[nodiscard]] const vec2 &getDragStartPos() const;
 		};
 
 		operator Child() const;
+
+		[[maybe_unused]] State &mount(Widget &widget) const;
 	};
 }// namespace squi
-
-#endif

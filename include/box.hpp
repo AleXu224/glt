@@ -1,5 +1,4 @@
-#ifndef SQUI_BOX_HPP
-#define SQUI_BOX_HPP
+#pragma once
 
 #include "color.hpp"
 #include "quad.hpp"
@@ -12,7 +11,7 @@ namespace squi {
 			inset,
 			outset,
 		};
-		
+
 		Widget::Args widget;
 		Color color{Color::HEX(0xFFFFFFFF)};
 		Color borderColor{Color::HEX(0x000000FF)};
@@ -26,9 +25,7 @@ namespace squi {
 			Quad quad;
 			// This is stored as a hack to get around the fact the renderer doesn't support
 			// overlapping the border color on top of the background color.
-			Color borderColor;
 			BorderPosition borderPosition;
-			float borderWidth;
 			bool shouldClipContent;
 
 		public:
@@ -57,5 +54,3 @@ namespace squi {
 		}
 	};
 }// namespace squi
-
-#endif//SQUI_BOX_HPP

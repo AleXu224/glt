@@ -1,5 +1,4 @@
-#ifndef SQUI_COLUMN_HPP
-#define SQUI_COLUMN_HPP
+#pragma once
 
 #include "widget.hpp"
 #include <memory>
@@ -27,10 +26,8 @@ namespace squi {
 		public:
 			explicit Impl(const Column &args);
 
-			void layoutChildren(vec2 &maxSize, vec2 &minSize) final;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
 			void arrangeChildren(vec2 &pos) final;
-
-			float getMinHeight(const vec2 &maxSize) final;
 
 			void drawChildren() final;
 		};
@@ -40,5 +37,3 @@ namespace squi {
 		}
 	};
 }// namespace squi
-
-#endif

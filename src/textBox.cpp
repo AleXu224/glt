@@ -4,7 +4,6 @@
 #include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "stack.hpp"
-#include "text.hpp"
 #include "textInput.hpp"
 #include <debugapi.h>
 
@@ -15,53 +14,50 @@ TextBox::Theme TextBox::theme{};
 
 TextBox::operator Child() const {
 	auto storage = std::make_shared<Storage>();
-	constexpr std::string_view font = R"(C:\Windows\Fonts\segoeui.ttf)";
+	auto font = FontStore::getFont(R"(C:\Windows\Fonts\segoeui.ttf)");
 
 	return GestureDetector{
+		.onUpdate = [&, storage](GestureDetector::Event event) {
+			auto &box = (Box::Impl &) event.widget;
+
+			storage->changed = false;
+			if (event.state.active) {
+				if (storage->state != Storage::State::active) storage->changed = true;
+				storage->state = Storage::State::active;
+			} else if (event.state.hovered) {
+				if (storage->state != Storage::State::hover) storage->changed = true;
+				storage->state = Storage::State::hover;
+			} else {
+				if (storage->state != Storage::State::rest) storage->changed = true;
+				storage->state = Storage::State::rest;
+			}
+
+			if (storage->changed) {
+				switch (storage->state) {
+					case Storage::State::rest:
+						box.setColor(theme.rest);
+						box.setBorderColor(theme.border);
+						break;
+					case Storage::State::hover:
+						box.setColor(theme.hover);
+						box.setBorderColor(theme.border);
+						break;
+					case Storage::State::active:
+						box.setColor(theme.active);
+						box.setBorderColor(theme.borderActive);
+						break;
+					case Storage::State::disabled:
+						box.setColor(theme.disabled);
+						box.setBorderColor(theme.border);
+						break;
+				}
+			}
+		},
 		.child{
 			Box{
 				.widget{
 					.width = 160.f,
 					.height = 32.f,
-					.margin{4},
-					.padding = Padding{0, 1, 0, 1},
-					.onUpdate = [&, storage](Widget &w) {
-						auto &box = (Box::Impl &) w;
-						auto &gd = std::any_cast<GestureDetector::Storage &>(w.state.properties.at("gestureDetector"));
-
-						storage->changed = false;
-						if (gd.active) {
-							if (storage->state != Storage::State::active) storage->changed = true;
-							storage->state = Storage::State::active;
-						} else if (gd.hovered) {
-							if (storage->state != Storage::State::hover) storage->changed = true;
-							storage->state = Storage::State::hover;
-						} else {
-							if (storage->state != Storage::State::rest) storage->changed = true;
-							storage->state = Storage::State::rest;
-						}
-
-						if (storage->changed) {
-							switch (storage->state) {
-								case Storage::State::rest:
-									box.setColor(theme.rest);
-									box.setBorderColor(theme.border);
-									break;
-								case Storage::State::hover:
-									box.setColor(theme.hover);
-									box.setBorderColor(theme.border);
-									break;
-								case Storage::State::active:
-									box.setColor(theme.active);
-									box.setBorderColor(theme.borderActive);
-									break;
-								case Storage::State::disabled:
-									box.setColor(theme.disabled);
-									box.setBorderColor(theme.border);
-									break;
-							}
-						}
-					},
 				},
 				.color{theme.rest},
 				.borderColor{theme.border},
@@ -77,7 +73,9 @@ TextBox::operator Child() const {
 										.widget{
 											.width = Size::Expand,
 											.padding = Padding{0, 11, 0, 11},
-											.onInit = [font = font](Widget &w) { w.state.sizeMode.height = static_cast<float>(FontStore::getLineHeight(font, 14)); },
+											.onInit = [font = font](Widget &w) {
+												w.setHeight(static_cast<float>(font->getLineHeight(14)));
+											},
 											// TODO: Add support for text color change
 											.onUpdate = [&, storage](Widget &w) {
 												// auto &text = (Text::Impl &)w;
@@ -86,19 +84,20 @@ TextBox::operator Child() const {
 													switch (storage->state) {
 														case Storage::State::rest:
 															// text.setColor(theme.text);
-															break;
+															// break;
 														case Storage::State::hover:
 															// text.setColor(theme.text);
 															break;
 														case Storage::State::active:
 															// text.setColor(theme.text);
-															((TextInput::Impl &)w).setActive(true);
+															((TextInput::Impl &) w).setActive(true);
 															break;
 														case Storage::State::disabled:
 															// text.setColor(theme.textDisabled);
 															break;
 													}
-												} },
+												}
+											},
 										},
 										.fontSize = 14.0f,
 										.font{font},
@@ -119,19 +118,19 @@ TextBox::operator Child() const {
 												if (storage->changed) {
 													switch (storage->state) {
 														case Storage::State::rest:
-															w.state.sizeMode.height = 1.0f;
-															box.setColor(theme.bottomBorder);
-															break;
+															// w.state.setHeight(1.0f);
+															// box.setColor(theme.bottomBorder);
+															// break;
 														case Storage::State::hover:
-															w.state.sizeMode.height = 1.0f;
+															w.setHeight(1.0f);
 															box.setColor(theme.bottomBorder);
 															break;
 														case Storage::State::active:
-															w.state.sizeMode.height = 2.0f;
+															w.setHeight(2.0f);
 															box.setColor(theme.bottomBorderActive);
 															break;
 														case Storage::State::disabled:
-															w.state.sizeMode.height = 0.0f;
+															w.setHeight(0.f);
 															box.setColor(theme.bottomBorder);
 															break;
 													}

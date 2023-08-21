@@ -1,5 +1,4 @@
-#ifndef SQUI_NAVIGATIONVIEW_HPP
-#define SQUI_NAVIGATIONVIEW_HPP
+#pragma once
 
 #include "widget.hpp"
 
@@ -15,5 +14,3 @@ namespace squi {
 		operator Child() const;
 	};
 }// namespace squi
-
-#endif

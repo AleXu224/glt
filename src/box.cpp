@@ -1,5 +1,6 @@
 #include "box.hpp"
 #include "renderer.hpp"
+#include "widget.hpp"
 
 using namespace squi;
 
@@ -15,7 +16,7 @@ Box::Impl::Impl(const Box &args)
 		  .borderSize = args.borderWidth,
 		  .textureType = TextureType::NoTexture,
 	  }),
-	  borderColor(args.borderColor), borderPosition(args.borderPosition), borderWidth(args.borderWidth), shouldClipContent(args.shouldClipContent) {
+	  borderPosition(args.borderPosition), shouldClipContent(args.shouldClipContent) {
 	addChild(args.child);
 }
 
@@ -26,8 +27,9 @@ void Box::Impl::onDraw() {
 
 void Box::Impl::drawChildren() {
 	auto &renderer = Renderer::getInstance();
+	const auto &quadData = quad.getData();
 	if (shouldClipContent)
-		renderer.addClipRect(getRect().inset(borderWidth), quad.getData().borderRadius);
+		renderer.addClipRect(getRect().inset(quadData.borderSize), quadData.borderRadius);
 
 	auto &children = getChildren();
 	for (auto &child: children) {
@@ -47,27 +49,36 @@ void Box::Impl::postArrange(vec2 &pos) {
 }
 
 void Box::Impl::setColor(const Color &color) {
+	if (color == Color::VEC4(quad.getData().color)) return;
 	quad.setColor(color);
 	if (borderPosition == BorderPosition::inset) {
-		quad.setBorderColor(borderColor.mix(color));
+		quad.setBorderColor(Color::VEC4(quad.getData().borderColor).mix(color));
 	}
+	reDraw();
 }
 
 void Box::Impl::setBorderColor(const Color &color) {
 	if (borderPosition == BorderPosition::inset) {
-		const auto quadColor = quad.getData().color;
-		quad.setBorderColor(color.mix(Color::RGBA(quadColor.x, quadColor.y, quadColor.z, quadColor.w)));
+		const Color newColor = color.mix(Color::VEC4(quad.getData().color));
+		if (newColor == Color::VEC4(quad.getData().borderColor)) return;
+		quad.setBorderColor(newColor);
 	} else {
+		if (color == Color::VEC4(quad.getData().borderColor)) return;
 		quad.setBorderColor(color);
 	}
+	reDraw();
 }
 
 void Box::Impl::setBorderWidth(float width) {
+	if (width == quad.getData().borderSize) return;
 	quad.setBorderSize(width);
+	reDraw();
 }
 
 void Box::Impl::setBorderRadius(float radius) {
+	if (radius == quad.getData().borderRadius) return;
 	quad.setBorderRadius(radius);
+	reDraw();
 }
 
 Color Box::Impl::getColor() const {

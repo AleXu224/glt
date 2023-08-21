@@ -1,5 +1,4 @@
-#ifndef SQUI_ATLAS_HPP
-#define SQUI_ATLAS_HPP
+#pragma once
 
 #include "array"
 #include "d3d11.h"
@@ -38,12 +37,10 @@ namespace squi {
 		Atlas();
 
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
-		add(const uint16_t &width, const uint16_t& height, unsigned char *data);
+		add(const uint16_t &width, const uint16_t &height, unsigned char *data);
 
 		std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE> &getAtlasData();
-		
+
 		void updateTexture();
 	};
 }// namespace squi
-
-#endif// SQUI_ATLAS_HPP

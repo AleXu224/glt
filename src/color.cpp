@@ -47,7 +47,7 @@ Color Color::RGBA(float r, float g, float b, float a) {
 }
 
 Color Color::VEC4(const DirectX::XMFLOAT4 &vec) {
-	return RGBA(vec.z, vec.y, vec.z, vec.w);
+	return RGBA(vec.x, vec.y, vec.z, vec.w);
 }
 
 uint8_t Color::r() const {
@@ -110,6 +110,10 @@ Color Color::mix(const Color &other) const {
 	const float g = ((1 - color1.w) * color2.w * color2.y + color1.w * color1.y) / alpha;
 	const float b = ((1 - color1.w) * color2.w * color2.z + color1.w * color1.z) / alpha;
 	return RGBA(r, g, b, alpha);
+}
+
+bool Color::operator==(const Color &other) const {
+	return value == other.value;
 }
 
 Color Color::operator*(const float &multiplier) const {

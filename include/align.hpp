@@ -1,11 +1,10 @@
-#ifndef SQUI_ALIGN_HPP
-#define SQUI_ALIGN_HPP
+#pragma once
 
 #include "widget.hpp"
 
 namespace squi {
-    struct Align {
-        // Args
+	struct Align {
+		// Args
 		/**
          * The x alignment of the child.
          * 0.0f is left, 1.0f is right, 0.5f is center.
@@ -19,13 +18,11 @@ namespace squi {
 		Child child{};
 
 		struct Storage {
-            // Data
-            float xAlign;
-            float yAlign;
-        };
-    
-        operator Child();
-    };
-}
+			// Data
+			float xAlign;
+			float yAlign;
+		};
 
-#endif
+		operator Child();
+	};
+}// namespace squi

@@ -22,7 +22,9 @@ Atlas::Atlas() {
 
 	auto device = Renderer::getInstance().getDevice();
 	device->CreateTexture2D(&desc, &data, &tex);
-	texture = std::shared_ptr<ID3D11Texture2D>(tex, [](ID3D11Texture2D *tex) { tex->Release(); });
+	texture = std::shared_ptr<ID3D11Texture2D>(tex, [](ID3D11Texture2D *tex) {
+		tex->Release();
+	});
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 	srvDesc.Format = DXGI_FORMAT_R8_UNORM;
@@ -31,10 +33,12 @@ Atlas::Atlas() {
 
 	ID3D11ShaderResourceView *srv;
 	device->CreateShaderResourceView(texture.get(), &srvDesc, &srv);
-	textureView = std::shared_ptr<ID3D11ShaderResourceView>(srv, [](ID3D11ShaderResourceView *srv) { srv->Release(); });
+	textureView = std::shared_ptr<ID3D11ShaderResourceView>(srv, [](ID3D11ShaderResourceView *srv) {
+		srv->Release();
+	});
 }
 
-std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& height, unsigned char *data) {
+std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &height, unsigned char *data) {
 	AtlasRow *usedRow = nullptr;
 	for (auto &row: rows) {
 		if (row.availableWidth >= width) {
@@ -51,7 +55,6 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& h
 		}
 
 		usedRow = &row;
-
 	}
 	if (usedRow == nullptr) {
 		if (availableHeight < height) return {vec2(0, 0), vec2(0, 0), false};
@@ -62,8 +65,7 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& h
 			.yOffset = static_cast<uint16_t>(ATLAS_SIZE - availableHeight),
 			.height = static_cast<uint16_t>(height),
 			.availableWidth = static_cast<uint16_t>(ATLAS_SIZE),
-			.canBeMadeTaller = true
-		};
+			.canBeMadeTaller = true};
 		rows.emplace_back(std::move(newRow));
 
 		usedRow = &rows.back();
@@ -73,8 +75,7 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& h
 	usedRow->elements.emplace_back(AtlasElement{
 		.xOffset = static_cast<uint16_t>(ATLAS_SIZE - usedRow->availableWidth),
 		.width = static_cast<uint16_t>(width),
-		.height = static_cast<uint16_t>(height)
-	});
+		.height = static_cast<uint16_t>(height)});
 
 	// Copy data to atlas
 	for (int y = 0; y < height; y++) {
@@ -82,27 +83,25 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t& width, const uint16_t& h
 	}
 
 	auto context = Renderer::getInstance().getDeviceContext();
-//	D3D11_BOX region = {
-//		.left = static_cast<UINT>(ATLAS_SIZE - usedRow->availableWidth),
-//		.top = static_cast<UINT>(usedRow->yOffset),
-//		.front = 0,
-//		.right = static_cast<UINT>(ATLAS_SIZE - usedRow->availableWidth + width),
-//		.bottom = static_cast<UINT>(usedRow->yOffset + height),
-//		.back = 1,
-//	};
-//	context->UpdateSubresource(texture.get(), 0, &region, data, width, 0);
+	//	D3D11_BOX region = {
+	//		.left = static_cast<UINT>(ATLAS_SIZE - usedRow->availableWidth),
+	//		.top = static_cast<UINT>(usedRow->yOffset),
+	//		.front = 0,
+	//		.right = static_cast<UINT>(ATLAS_SIZE - usedRow->availableWidth + width),
+	//		.bottom = static_cast<UINT>(usedRow->yOffset + height),
+	//		.back = 1,
+	//	};
+	//	context->UpdateSubresource(texture.get(), 0, &region, data, width, 0);
 	// The above code should be better but doesn't seem to work on older OSes
 	textureDirty = true;
 
 	// Prepare return values
 	vec2 uvTopLeft{
 		static_cast<float>(ATLAS_SIZE - usedRow->availableWidth) / static_cast<float>(ATLAS_SIZE),
-		static_cast<float>(usedRow->yOffset) / static_cast<float>(ATLAS_SIZE)
-	};
+		static_cast<float>(usedRow->yOffset) / static_cast<float>(ATLAS_SIZE)};
 	vec2 uvBottomRight{
 		static_cast<float>(ATLAS_SIZE - usedRow->availableWidth + width) / static_cast<float>(ATLAS_SIZE),
-		static_cast<float>(usedRow->yOffset + height) / static_cast<float>(ATLAS_SIZE)
-	};
+		static_cast<float>(usedRow->yOffset + height) / static_cast<float>(ATLAS_SIZE)};
 
 	usedRow->availableWidth -= width;
 
@@ -117,10 +116,10 @@ void Atlas::updateTexture() {
 	if (!textureDirty) return;
 	textureDirty = false;
 	auto context = Renderer::getInstance().getDeviceContext();
-//	context->UpdateSubresource(texture.get(), 0, nullptr, atlas->data(), ATLAS_SIZE, 0);
+	//	context->UpdateSubresource(texture.get(), 0, nullptr, atlas->data(), ATLAS_SIZE, 0);
 	// Again, the above should be better but doesn't work on older OSes
 	D3D11_MAPPED_SUBRESOURCE mapped{};
 	context->Map(texture.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-	memcpy((unsigned char *)mapped.pData, atlas->data(), ATLAS_SIZE * ATLAS_SIZE);
+	memcpy((unsigned char *) mapped.pData, atlas->data(), ATLAS_SIZE * ATLAS_SIZE);
 	context->Unmap(texture.get(), 0);
 }

@@ -1,12 +1,16 @@
-#ifndef SQUI_WIDGEt_HPP
-#define SQUI_WIDGEt_HPP
+#pragma once
 
-#include "child.hpp"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "functional"
 #include "margin.hpp"
 #include "memory"
 #include "rect.hpp"
-#include "string"
 #include "vec2.hpp"
 #include "vector"
 #include <any>
@@ -28,15 +32,34 @@ namespace squi {
 		std::optional<float> minHeight = std::nullopt;
 		std::optional<float> maxWidth = std::nullopt;
 		std::optional<float> maxHeight = std::nullopt;
+
+		[[nodiscard]] inline SizeConstraints withDefaultMinWidth(float value) const {
+			auto copy = *this;
+			copy.minWidth = value;
+			return copy;
+		}
+
+		[[nodiscard]] inline SizeConstraints withDefaultMinHeight(float value) const {
+			auto copy = *this;
+			copy.minHeight = value;
+			return copy;
+		}
+
+		[[nodiscard]] inline SizeConstraints withDefaultMaxWidth(float value) const {
+			auto copy = *this;
+			copy.maxWidth = value;
+			return copy;
+		}
+
+		[[nodiscard]] inline SizeConstraints withDefaultMaxHeight(float value) const {
+			auto copy = *this;
+			copy.maxHeight = value;
+			return copy;
+		}
 	};
 
 	class Widget : public std::enable_shared_from_this<Widget> {
 	public:
-		// struct Store {
-		// 	static std::unordered_map<uint64_t, ChildRef> widgets;
-
-		// 	static Child getWidget(uint64_t id);
-		// };
 		struct Args {
 
 			/**
@@ -72,33 +95,49 @@ namespace squi {
 			std::function<void(Widget &)> onInit{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
+			std::function<void(Widget &, vec2 &, vec2 &)> beforeLayout{};
 			std::function<void(Widget &, vec2 &, vec2 &)> onLayout{};
+			std::function<void(Widget &, vec2 &, vec2 &)> afterLayout{};
 			std::function<void(Widget &, vec2 &)> onArrange{};
 			std::function<void(Widget &)> beforeDraw{};
 			std::function<void(Widget &)> onDraw{};
 			std::function<void(Widget &)> afterDraw{};
+			std::function<void(Widget &, std::shared_ptr<Widget>)> onChildAdded{};
+			std::function<void(Widget &, std::shared_ptr<Widget>)> onChildRemoved{};
+#ifndef NDEBUG
+			std::function<void()> onDebugUpdate{};
+			std::function<void()> onDebugLayout{};
+			std::function<void()> onDebugArrange{};
+			std::function<void()> onDebugDraw{};
+#endif
 
-			[[nodiscard]] inline Args withWidth(const Width &width) const {
+			[[nodiscard]] inline Args withDefaultWidth(const Width &width) const {
 				Args args = *this;
 				args.width = this->width.value_or(width);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withHeight(const Height &height) const {
+			[[nodiscard]] inline Args withDefaultHeight(const Height &height) const {
 				Args args = *this;
 				args.height = this->height.value_or(height);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withMargin(const Margin &margin) const {
+			[[nodiscard]] inline Args withDefaultMargin(const Margin &margin) const {
 				Args args = *this;
 				args.margin = this->margin.value_or(margin);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withPadding(const Padding &padding) const {
+			[[nodiscard]] inline Args withDefaultPadding(const Padding &padding) const {
 				Args args = *this;
 				args.padding = this->padding.value_or(padding);
+				return args;
+			}
+
+			[[nodiscard]] inline Args withSizeConstraints(const SizeConstraints &sizeConstraints) const {
+				Args args = *this;
+				args.sizeConstraints = sizeConstraints;
 				return args;
 			}
 		};
@@ -107,19 +146,19 @@ namespace squi {
 			/**
 			 * Set to false to disable updating the children
 			 */
-			bool shouldUpdateChildren = true;
+			const bool shouldUpdateChildren = true;
 			/**
 			 * Set to false to disable drawing the children
 			 */
-			bool shouldDrawChildren = true;
+			const bool shouldDrawChildren = true;
 			/**
 			 * Set to false to disable sizing the children
 			 */
-			bool shouldLayoutChildren = true;
+			const bool shouldLayoutChildren = true;
 			/**
 			 * Set to false to disable positioning the children
 			 */
-			bool shouldArrangeChildren = true;
+			const bool shouldArrangeChildren = true;
 			/**
 			 * Whether hit testing should be performed on this widget
 			 */
@@ -130,39 +169,47 @@ namespace squi {
 				return {};
 			}
 		};
-
 		Flags flags;
 
 	private:
 		bool shouldDelete = false;
+		bool initialized = false;
 		struct FunctionArgs {
 			std::vector<std::function<void(Widget &)>> onInit{};
 			std::vector<std::function<void(Widget &)>> onUpdate{};
 			std::vector<std::function<void(Widget &)>> afterUpdate{};
+			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> beforeLayout{};
 			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> onLayout{};
+			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> afterLayout{};
 			std::vector<std::function<void(Widget &, vec2 &)>> onArrange{};
 			std::vector<std::function<void(Widget &)>> beforeDraw{};
 			std::vector<std::function<void(Widget &)>> onDraw{};
 			std::vector<std::function<void(Widget &)>> afterDraw{};
+			std::vector<std::function<void(Widget &, std::shared_ptr<Widget>)>> onChildAdded{};
+			std::vector<std::function<void(Widget &, std::shared_ptr<Widget>)>> onChildRemoved{};
+#ifndef NDEBUG
+			std::vector<std::function<void()>> onDebugUpdate{};
+			std::vector<std::function<void()>> onDebugLayout{};
+			std::vector<std::function<void()>> onDebugArrange{};
+			std::vector<std::function<void()>> onDebugDraw{};
+#endif
 		};
 		FunctionArgs m_funcs{};
 		vec2 size{};
 		vec2 pos{};
-		std::vector<Child> children{};
+		std::vector<std::shared_ptr<Widget>> children{};
 		static uint64_t idCounter;
 		static uint32_t widgetCount;
 
 	public:
 		struct State {
-			struct SizeMode {
-				std::variant<float, Size> width;
-				std::variant<float, Size> height;
-			};
 			std::unordered_map<std::string_view, std::any> properties{};
-			SizeMode sizeMode;
+			const std::variant<float, Size> width;
+			const std::variant<float, Size> height;
+			// FIXME: Also make this const and add a setter
 			SizeConstraints sizeConstraints;
-			Margin margin;
-			Margin padding;
+			const Margin margin;
+			const Margin padding;
 			Widget *parent = nullptr;
 			Widget *root = nullptr;
 		};
@@ -177,10 +224,62 @@ namespace squi {
 
 		explicit Widget(const Args &args, const Flags &flags);
 		virtual ~Widget();
+
+
+		inline void setWidth(const std::variant<float, Size> &width) {
+			if (this->state.width == width) return;
+			const_cast<std::variant<float, Size> &>(this->state.width) = width;
+			reLayout();
+		}
+		inline void setHeight(const std::variant<float, Size> &height) {
+			if (this->state.height == height) return;
+			const_cast<std::variant<float, Size> &>(this->state.height) = height;
+			reLayout();
+		}
+		inline void setMargin(const Margin &margin) {
+			if (this->state.margin == margin) return;
+			const_cast<Margin &>(this->state.margin) = margin;
+			reLayout();
+		}
+		inline void setPadding(const Margin &padding) {
+			if (this->state.padding == padding) return;
+			const_cast<Margin &>(this->state.padding) = padding;
+			reLayout();
+		}
+
+		inline void setShouldUpdateChildren(bool value) {
+			if (value == flags.shouldUpdateChildren) return;
+			const_cast<bool &>(flags.shouldUpdateChildren) = value;
+		}
+		inline void setShouldDrawChildren(bool value) {
+			if (value == flags.shouldDrawChildren) return;
+			const_cast<bool &>(flags.shouldDrawChildren) = value;
+			reLayout();
+		}
+		inline void setShouldLayoutChildren(bool value) {
+			if (value == flags.shouldLayoutChildren) return;
+			const_cast<bool &>(flags.shouldLayoutChildren) = value;
+			reLayout();
+		}
+		inline void setShouldArrangeChildren(bool value) {
+			if (value == flags.shouldArrangeChildren) return;
+			const_cast<bool &>(flags.shouldArrangeChildren) = value;
+			reLayout();
+		}
+		inline void setIsInteractive(bool value) {
+			if (value == flags.isInteractive) return;
+			const_cast<bool &>(flags.isInteractive) = value;
+		}
+		inline void setVisible(bool value) {
+			if (value == flags.visible) return;
+			const_cast<bool &>(flags.visible) = value;
+			reLayout();
+		}
+
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
-		[[nodiscard]] std::vector<Child> &getChildren();
-		[[nodiscard]] const std::vector<Child> &getChildren() const;
+		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
+		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
 		[[nodiscard]] inline Rect getRect() const {
 			return Rect::fromPosSize(pos + state.margin.getPositionOffset(), size);
 		}
@@ -206,7 +305,7 @@ namespace squi {
 		[[nodiscard]] inline vec2 getPos() const {
 			return pos;
 		}
-		[[nodiscard]] inline vec2 getContentPos() {
+		[[nodiscard]] inline vec2 getContentPos() const {
 			return pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 		}
 		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
@@ -215,18 +314,22 @@ namespace squi {
 		}
 
 		// Setters
-		void setChildren(const Children &newChildren);
+		void setChildren(const std::vector<std::shared_ptr<Widget>> &newChildren);
 
 		// Methods
-		void addChild(const Child &child);
+		void addChild(const std::shared_ptr<Widget> &child);
 		void update();
+		struct ShouldShrink {
+			bool width = false;
+			bool height = false;
+		};
 		/**
 		 * @brief Layout the widget
 		 * 
 		 * @param maxSize The maximum size the total size of the widget can be
 		 * @return vec2 The minimum size the content of the widget needs to be
 		 */
-		vec2 layout(vec2 maxSize);
+		vec2 layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink = {false, false});
 		/**
 		 * @brief Arrange the widget
 		 * 
@@ -247,11 +350,8 @@ namespace squi {
 		virtual void updateChildren();
 		virtual void afterUpdate(){};
 
-		virtual float getMinWidth(const vec2 &maxSize);
-		virtual float getMinHeight(const vec2 &maxSize);
-
 		virtual void onLayout(vec2 &maxSize, vec2 &minSize){};
-		virtual void layoutChildren(vec2 &maxSize, vec2 &minSize);
+		virtual vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink);
 		virtual void postLayout(vec2 &size){};
 
 		virtual void onArrange(vec2 &pos){};
@@ -260,7 +360,13 @@ namespace squi {
 
 		virtual void onDraw(){};
 		virtual void drawChildren();
-	};
-}// namespace squi
 
-#endif
+		void reDraw() const;
+		void reLayout() const;
+		void reArrange() const;
+	};
+
+	using Child = std::shared_ptr<Widget>;
+	using ChildRef = std::weak_ptr<Widget>;
+	using Children = std::vector<Child>;
+}// namespace squi

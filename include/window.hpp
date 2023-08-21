@@ -1,8 +1,8 @@
-#ifndef SQUI_WINDOW_HPP
-#define SQUI_WINDOW_HPP
+#pragma once
+
 #include "chrono"
+#include "observer.hpp"
 #include <memory>
-#include <vector>
 
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
@@ -17,15 +17,21 @@ namespace squi {
 		std::chrono::steady_clock::time_point lastFpsTime = std::chrono::steady_clock::now();
 		uint32_t fps = 0;
 		bool isWin11 = false;
+		bool needsRedraw = true;
+		bool needsRelayout = true;
+		bool needsReposition = true;
+		bool drewLastFrame = false;
+		Observable<Child> addedChildren{};
+		Observable<Child> addedOverlays{};
 
 		static void glfwError(int id, const char *description);
 
 		static std::unordered_map<GLFWwindow *, Window *> windowMap;
-		std::vector<Child> overlays{};
 
 		Child content{};
 
 		void updateAndDraw();
+
 
 	public:
 		Window();
@@ -39,8 +45,19 @@ namespace squi {
 		operator GLFWwindow *() const { return window.get(); }
 
 		void addOverlay(Child &&overlay) {
-			overlays.push_back(std::move(overlay));
+			addedOverlays.notify(overlay);
+		}
+
+		void shouldRedraw() {
+			needsRedraw = true;
+		}
+
+		void shouldRelayout() {
+			needsRelayout = true;
+		}
+
+		void shouldReposition() {
+			needsReposition = true;
 		}
 	};
 }// namespace squi
-#endif

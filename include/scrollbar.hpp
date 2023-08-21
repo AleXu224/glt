@@ -1,12 +1,10 @@
-#ifndef SQUI_SCROLLBAR_HPP
-#define SQUI_SCROLLBAR_HPP
+#pragma once
 
-#include "box.hpp"
-#include "gestureDetector.hpp"
+#include "chrono"
 #include "memory"
 #include "scrollable.hpp"
 #include "widget.hpp"
-#include "chrono"
+
 
 namespace squi {
 	struct Scrollbar {
@@ -19,11 +17,9 @@ namespace squi {
 			float scroll = 0;
 			float scrollDragStart = 0;
 			std::shared_ptr<Scrollable::Controller> controller;
-			std::chrono::steady_clock::time_point lastHoverTime = std::chrono::steady_clock::now();
+			std::chrono::steady_clock::time_point lastHoverTime{};
 		};
 
 		operator Child() const;
 	};
 }// namespace squi
-
-#endif

@@ -49,7 +49,9 @@ Texture::Impl::Impl(const Texture &args) : properties(Properties{
 	auto device = instance.getDevice();
 	ID3D11Texture2D *texturePtr;
 	device->CreateTexture2D(&textureDesc, &subresourceData, &texturePtr);
-	texture = std::shared_ptr<ID3D11Texture2D>(texturePtr, [](ID3D11Texture2D *tex) { tex->Release(); });
+	texture = std::shared_ptr<ID3D11Texture2D>(texturePtr, [](ID3D11Texture2D *tex) {
+		tex->Release();
+	});
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc{};
 	shaderResourceViewDesc.Format = textureDesc.Format;
@@ -59,7 +61,9 @@ Texture::Impl::Impl(const Texture &args) : properties(Properties{
 
 	ID3D11ShaderResourceView *textureViewPtr;
 	device->CreateShaderResourceView(texturePtr, &shaderResourceViewDesc, &textureViewPtr);
-	textureView = std::shared_ptr<ID3D11ShaderResourceView>(textureViewPtr, [](ID3D11ShaderResourceView *srv) { srv->Release(); });
+	textureView = std::shared_ptr<ID3D11ShaderResourceView>(textureViewPtr, [](ID3D11ShaderResourceView *srv) {
+		srv->Release();
+	});
 }
 
 const Texture::Properties &Texture::Impl::getProperties() const {

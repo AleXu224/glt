@@ -1,5 +1,6 @@
 #include "batch.hpp"
 #include <d3d11.h>
+#include <print>
 
 using namespace squi;
 
@@ -148,7 +149,7 @@ void Batch::render(Shader &shader,
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
 	auto res = context->Map(vertexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(res)) {
-		printf("Failed to map vertex buffer (%#08x)", (unsigned int) res);
+		std::print("Failed to map vertex buffer ({:#08x})\n", res);
 		exit(1);
 	}
 	memcpy(mappedResource.pData, vertices.data(), sizeof(Vertex) * cursor * 4);

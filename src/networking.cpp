@@ -1,6 +1,8 @@
 #include "networking.hpp"
-#include "asio/ssl.hpp"
-#include "skyr/url.hpp"
+// #include "asio/ssl.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/ssl/context.hpp"
+#include "asio/ssl/stream.hpp"
 #include <asio/error_code.hpp>
 #include <asio/ssl/verify_mode.hpp>
 #include <charconv>
@@ -8,6 +10,7 @@
 #include <skyr/v1/url.hpp>
 #include <sstream>
 #include <string>
+
 
 using namespace squi;
 
@@ -60,7 +63,7 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 				size_t chunkSize;
 				std::from_chars(chunkSizeStr.data(), chunkSizeStr.data() + chunkSizeStr.size(), chunkSize, 16);
 				if (chunkSize == 0) break;
-				const auto chunkEnd = chunkSizeEnd + 2 + chunkSize;
+				const auto chunkEnd = chunkSizeEnd + 2 + static_cast<std::ptrdiff_t>(chunkSize);
 				ss << body.substr(chunkSizeEnd - body.begin() + 2, chunkSize);
 				chunkStart = chunkEnd + 2;
 			}
@@ -95,7 +98,7 @@ Networking::Response Networking::get(std::string_view url) {
 		context.set_verify_mode(asio::ssl::verify_peer);
 		context.set_default_verify_paths();
 	}
-	stream.lowest_layer().connect(endpoint->endpoint(), ec);
+	ec = stream.lowest_layer().connect(endpoint->endpoint(), ec);
 	if (ec) {
 		return Response{
 			.body = "",
@@ -106,7 +109,7 @@ Networking::Response Networking::get(std::string_view url) {
 
 	SSL_set_tlsext_host_name(stream.native_handle(), parsedUrl.host().data());
 
-	stream.handshake(asio::ssl::stream_base::client, ec);
+	ec = stream.handshake(asio::ssl::stream_base::client, ec);
 	if (ec) {
 		return Response{
 			.body = "",

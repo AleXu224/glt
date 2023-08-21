@@ -15,10 +15,7 @@ ScrollableFrame::operator squi::Child() const {
 		.widget{widget},
 		.children{
 			Scrollable{
-				.widget{
-					.width = Size::Expand,
-					.height = Size::Expand,
-				},
+				.widget{scrollableWidget},
 				.alignment = alignment,
 				.spacing = spacing,
 				.onScroll = [storage](auto scroll, auto contentHeight, auto viewHeight) {

@@ -1,7 +1,6 @@
-#ifndef SQUI_VERTEX_HPP
-#define SQUI_VERTEX_HPP
+#pragma once
+
 #include "DirectXMath.h"
-#include "tuple"
 
 namespace squi {
 	struct Vertex {
@@ -66,6 +65,3 @@ namespace squi {
 		float clipBorderRadius;
 	};
 }// namespace squi
-
-
-#endif

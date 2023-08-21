@@ -1,5 +1,4 @@
-#ifndef SQUI_STACK_HPP
-#define SQUI_STACK_HPP
+#pragma once
 
 #include "widget.hpp"
 #include <memory>
@@ -18,13 +17,13 @@ namespace squi {
 
 			void updateChildren() final;
 
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
+
 			std::vector<Rect> getHitcheckRect() const final;
 		};
 
 		operator Child() const {
-			return {std::make_shared<Impl>(*this)};
+			return std::make_shared<Impl>(*this);
 		}
 	};
 }// namespace squi
-
-#endif

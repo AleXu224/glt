@@ -1,10 +1,9 @@
-#ifndef SQUI_CONTEXTMENU_HPP
-#define SQUI_CONTEXTMENU_HPP
+#pragma once
 
+#include "vec2.hpp"
 #include "widget.hpp"
-#include <memory>
+#include <functional>
 #include <string_view>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -18,8 +17,8 @@ namespace squi {
 				bool value;
 				std::function<void(bool)> callback;
 			};
-			struct Divider{};
-			
+			struct Divider {};
+
 			std::string_view text;
 			std::variant<std::function<void()>, Submenu, Toggle, Divider> content;
 		};
@@ -32,7 +31,7 @@ namespace squi {
 			// Data
 			ChildRef stack{};
 			std::vector<Child> menusToAdd{};
-			
+
 			[[nodiscard]] ChildRef addMenu(const Child &menu);
 			static void removeMenu(const ChildRef &menu);
 		};
@@ -40,5 +39,3 @@ namespace squi {
 		operator Child() const;
 	};
 }// namespace squi
-
-#endif
