@@ -1,6 +1,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <cstdint>
+#include <freetype/fttypes.h>
 #include <memory>
 #include <print>
 #endif
@@ -33,6 +34,13 @@ FontStore::Font::Font(std::string_view fontPath) {
 	const std::string fontPathStr(fontPath);
 	if (FT_New_Face(ftLibrary, fontPathStr.c_str(), 0, &face)) {
 		std::println("Failed to load font: {}", fontPathStr);
+		loaded = false;
+	}
+}
+
+FontStore::Font::Font(std::span<char> fontData) {
+	if (FT_New_Memory_Face(ftLibrary, reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
+		std::println("Failed to load font from memory");
 		loaded = false;
 	}
 }

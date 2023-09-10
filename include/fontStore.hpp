@@ -2,6 +2,7 @@
 
 #include <freetype/fttypes.h>
 #include <optional>
+#include <span>
 #include <tuple>
 #include FT_FREETYPE_H
 #include "atlas.hpp"
@@ -69,6 +70,7 @@ namespace squi {
 
 		public:
 			explicit Font(std::string_view fontPath);
+			explicit Font(std::span<char> fontData);
 
 			uint32_t getLineHeight(float size);
 			std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
