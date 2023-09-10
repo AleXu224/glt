@@ -147,6 +147,7 @@ void Image::Impl::onUpdate() {
 		if (iter != state.properties.end()) {
 			state.properties.erase(iter);
 		}
+		reLayout();
 	}
 }
 
