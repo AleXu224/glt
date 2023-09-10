@@ -3,6 +3,7 @@
 #include "asio/ip/tcp.hpp"
 #include "asio/ssl/context.hpp"
 #include "asio/ssl/stream.hpp"
+#include <algorithm>
 #include <asio/error_code.hpp>
 #include <asio/ssl/verify_mode.hpp>
 #include <charconv>
@@ -16,6 +17,15 @@ using namespace squi;
 
 asio::io_context Networking::ioContext;
 std::vector<std::thread> Networking::threads;
+
+std::string toLowerCase(std::string_view str) {
+	std::string ret;
+	ret.reserve(str.size());
+	for (const auto c: str) {
+		ret.push_back(static_cast<char>(std::tolower(c)));
+	}
+	return ret;
+}
 
 Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 	ResponseBody ret;
@@ -33,7 +43,7 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 			ret.statusCode = std::stoi(std::string{statusCode});
 		} else {
 			const auto colon = line.find(':');
-			const auto key = line.substr(0, colon);
+			const auto key = toLowerCase(line.substr(0, colon));
 			// An empty key means we've reached the body
 			if (key.empty()) {
 				cursor = lineEnd + 2;
@@ -47,13 +57,14 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 	} while (cursor != response.end());
 
 	const auto body = response.substr(cursor - response.begin());
+	;
 
-	if (ret.headers.contains("Content-Length")) {
-		const auto contentLength = ret.headers["Content-Length"];
+	if (ret.headers.contains("content-length")) {
+		const auto contentLength = ret.headers.at("content-length");
 		const auto length = std::stoi(std::string{contentLength});
 		ret.body = body.substr(0, length);
-	} else if (ret.headers.contains("Transfer-Encoding")) {
-		const auto encoding = ret.headers["Transfer-Encoding"];
+	} else if (ret.headers.contains("transfer-encoding")) {
+		const auto encoding = ret.headers.at("transfer-encoding");
 		if (encoding == "chunked") {
 			std::stringstream ss;
 			auto chunkStart = body.begin();
