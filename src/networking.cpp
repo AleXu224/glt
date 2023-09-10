@@ -133,7 +133,7 @@ Networking::Response Networking::get(std::string_view url) {
 	ss << parsedUrl.pathname();
 	if (!parsedUrl.search_parameters().empty()) ss << "?" << parsedUrl.search_parameters().to_string();
 
-	stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nAccept: Accept: */*\r\nConnection: close\r\n\r\n", ss.str(), parsedUrl.host())), ec);
+	stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nAccept: Accept: */*\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n", ss.str(), parsedUrl.host())), ec);
 	if (ec) {
 		return Response{
 			.body = "",
