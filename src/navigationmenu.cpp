@@ -4,24 +4,41 @@
 #include "button.hpp"
 #include "column.hpp"
 #include "fontIcon.hpp"
+#include "observer.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include <functional>
+#include <memory>
 
 using namespace squi;
 
 struct MenuItem {
 	// Args
 	Widget::Args widget;
+	std::string_view name = "Menu Item";
+	char32_t icon;
+	std::weak_ptr<Observable<bool>> isExpandedEvent;
+	std::weak_ptr<VoidObservable> selectionEvent;
+	std::function<void()> onClick;
+	bool isActive = false;
 
 	struct Storage {
 		// Data
-		bool isActive = true;
+		bool isActive = false;
+		std::shared_ptr<Observable<bool>::Observer> expandedObserver;
+		std::shared_ptr<VoidObservable::Observer> selectionObserver;
 	};
 
 	operator Child() const {
 		auto storage = std::make_shared<Storage>();
+
+		if (auto event = selectionEvent.lock()) {
+			storage->selectionObserver = event->observe([storage]() {
+				storage->isActive = false;
+			});
+		}
 
 		return Button{
 			.widget{
@@ -32,8 +49,12 @@ struct MenuItem {
 					.withDefaultPadding(0.f),
 			},
 			.style = ButtonStyle::Subtle(),
-			.onClick = [storage](auto) {
-				storage->isActive = !storage->isActive;
+			.onClick = [storage, onClick = onClick, selectionEvent = selectionEvent](auto) {
+				if (storage->isActive) return;
+				if (auto event = selectionEvent.lock())
+					event->notify();
+				storage->isActive = true;
+				if (onClick) onClick();
 			},
 			.child = Stack{
 				.children{
@@ -58,11 +79,21 @@ struct MenuItem {
 						.spacing = 16.f,
 						.children{
 							FontIcon{
-								.icon = 0xEA3A,
+								.icon = icon,
 								.size = 16.f,
 							},
 							Text{
-								.text = "Menu Item",
+								.widget{
+									.onInit = [storage, isExpandedEvent = isExpandedEvent](Widget &widget) {
+										if (auto event = isExpandedEvent.lock()) {
+											storage->expandedObserver = event->observe([w = widget.weak_from_this()](bool isExpanded) {
+												if (auto widget = w.lock())
+													widget->setVisible(isExpanded);
+											});
+										}
+									},
+								},
+								.text = name,
 							},
 						},
 					},
@@ -76,7 +107,14 @@ NavigationMenu::operator Child() const {
 	auto storage = std::make_shared<Storage>();
 
 	return Column{
-		.widget{widget.withDefaultWidth(320.f).withDefaultHeight(Size::Expand)},
+		.widget{
+			.width = 320.f,
+			.onInit = [storage](Widget &w) {
+				storage->expandedObserver = storage->isExpandedEvent->observe([&w](bool isExpanded) {
+					w.setWidth(isExpanded ? 320.f : 48.f);
+				});
+			},
+		},
 		.children{
 			Button{
 				.widget{
@@ -86,15 +124,27 @@ NavigationMenu::operator Child() const {
 					.padding = Padding{12.f, 10.f},
 				},
 				.style = ButtonStyle::Subtle(),
+				.onClick = [storage](auto) {
+					storage->isExpandedEvent->notify(storage->isExpanded = !storage->isExpanded);
+				},
 				.child = FontIcon{
 					.icon = 0xE700,
 					.size = 16.f,
 				},
 			},
 			ScrollableFrame{
-				.children{
-					MenuItem{},
-				},
+				.children = std::invoke([&]() -> Children {
+					Children children{};
+					for (auto &item: items)
+						children.emplace_back(MenuItem{
+							.name = item.name,
+							.icon = item.icon,
+							.isExpandedEvent = storage->isExpandedEvent,
+							.selectionEvent = storage->selectionEvent,
+							.onClick = item.onClick,
+						});
+					return children;
+				}),
 			},
 		},
 	};
