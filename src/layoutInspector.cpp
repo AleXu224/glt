@@ -509,14 +509,16 @@ LayoutInspector::operator Child() const {
 						.widget{
 							.width = Size::Expand,
 							.height = Size::Expand,
-							.onInit = [&, storage](Widget &w) {
+							.onInit = [addedChildren = addedChildren, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->contentStack = shared;
-								storage->addedChildrenObserver = addedChildren.observe([w = shared](const Child &child) {
-									if (auto widget = w.lock()) {
-										widget->addChild(child);
-									}
-								});
+								if (auto addedChildrenEvent = addedChildren.lock()) {
+									storage->addedChildrenObserver = addedChildrenEvent->observe([w = shared](const Child &child) {
+										if (auto widget = w.lock()) {
+											widget->addChild(child);
+										}
+									});
+								}
 							},
 							.onUpdate = [storage](Widget &w) {
 								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {});
@@ -528,14 +530,16 @@ LayoutInspector::operator Child() const {
 						.widget{
 							.width = Size::Expand,
 							.height = Size::Expand,
-							.onInit = [&, storage](Widget &w) {
+							.onInit = [addedOverlays = addedOverlays, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->overlayStack = shared;
-								storage->addedOverlaysObserver = addedOverlays.observe([w = shared](const Child &child) {
-									if (auto widget = w.lock()) {
-										widget->addChild(child);
-									}
-								});
+								if (auto addedOverlaysEvent = addedOverlays.lock()) {
+									storage->addedOverlaysObserver = addedOverlaysEvent->observe([w = shared](const Child &child) {
+										if (auto widget = w.lock()) {
+											widget->addChild(child);
+										}
+									});
+								}
 							},
 						},
 					},

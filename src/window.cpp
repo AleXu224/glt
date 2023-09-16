@@ -179,7 +179,7 @@ void Window::updateAndDraw() {
 	renderer.updateCurrentFrameTime(currentTime);
 
 	for (auto &child: children) {
-		addedChildren.notify(child);
+		addedChildren->notify(child);
 	}
 	children.clear();
 

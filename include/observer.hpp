@@ -7,12 +7,14 @@
 
 namespace squi {
 	template<typename T>
-	struct Observable {
+	struct Observable : std::enable_shared_from_this<Observable<T>> {
 		struct Observer {
 			std::function<void(const T &)> update;
 		};
 
+		// FIXME: old observers are never removed
 		std::vector<std::weak_ptr<Observer>> observers{};
+
 		void notify(const T &t) {
 			for (auto &observer: observers) {
 				if (auto o = observer.lock())
@@ -20,30 +22,51 @@ namespace squi {
 			}
 		}
 
-		std::shared_ptr<Observer> observe(std::function<void(const T &)> update) {
+		[[nodiscard]] std::shared_ptr<Observer> observe(std::function<void(const T &)> update) {
 			std::shared_ptr<Observer> observer = std::make_shared<Observer>(std::move(update));
 			observers.emplace_back(observer);
 			return observer;
 		}
+
+		[[nodiscard]] static std::shared_ptr<Observable<T>> create() {
+			return std::make_shared<Observable<T>>(Observable<T>{});
+		}
+
+	private:
+		Observable() = default;
 	};
 
-	struct VoidObservable {
+	struct VoidObservable : std::enable_shared_from_this<VoidObservable> {
 		struct Observer {
-			VoidObservable &observable;
+			std::weak_ptr<VoidObservable> observable;
 			std::function<void()> update;
+
+			void notifyObserver() const {
+				if (auto o = observable.lock())
+					o->notify();
+			}
 		};
 
-		std::vector<Observer> observers{};
+		std::vector<std::weak_ptr<Observer>> observers{};
 
 		void notify() {
 			for (auto &observer: observers) {
-				observer.update();
+				if (auto o = observer.lock())
+					o->update();
 			}
 		}
 
-		Observer observe(std::function<void()> update) {
-			observers.emplace_back(Observer{*this, std::move(update)});
-			return observers.back();
+		[[nodiscard]] std::shared_ptr<Observer> observe(std::function<void()> update) {
+			std::shared_ptr<Observer> observer = std::make_shared<Observer>(weak_from_this(), std::move(update));
+			observers.emplace_back(observer);
+			return observer;
 		}
+
+		[[nodiscard]] static std::shared_ptr<VoidObservable> create() {
+			return std::make_shared<VoidObservable>(VoidObservable{});
+		}
+
+	private:
+		VoidObservable() = default;
 	};
 }// namespace squi

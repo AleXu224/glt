@@ -21,8 +21,8 @@ namespace squi {
 		bool needsRelayout = true;
 		bool needsReposition = true;
 		bool drewLastFrame = false;
-		Observable<Child> addedChildren{};
-		Observable<Child> addedOverlays{};
+		std::shared_ptr<Observable<Child>> addedChildren = Observable<Child>::create();
+		std::shared_ptr<Observable<Child>> addedOverlays = Observable<Child>::create();
 
 		static void glfwError(int id, const char *description);
 
@@ -45,7 +45,7 @@ namespace squi {
 		operator GLFWwindow *() const { return window.get(); }
 
 		void addOverlay(Child &&overlay) {
-			addedOverlays.notify(overlay);
+			addedOverlays->notify(overlay);
 		}
 
 		void shouldRedraw() {

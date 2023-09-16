@@ -2,14 +2,13 @@
 
 #include "observer.hpp"
 #include "widget.hpp"
+#include <memory>
 
 namespace squi {
 	struct LayoutInspector {
 		// Args
-		// Children &content;
-		// Children &overlays;
-		Observable<Child> &addedChildren;
-		Observable<Child> &addedOverlays;
+		std::weak_ptr<Observable<Child>> addedChildren;
+		std::weak_ptr<Observable<Child>> addedOverlays;
 
 		struct Storage {
 			// Data
