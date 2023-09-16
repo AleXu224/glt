@@ -16,7 +16,7 @@ int main(int, char **) {
 			},
 			NavigationView::Page{
 				.name = "Red page",
-				.icon = 0xEC46,
+				.icon = 0xEC4A,
 				.content = Box{
 					.color = Color::RGBA(1, 0, 0, 0.5),
 				},
