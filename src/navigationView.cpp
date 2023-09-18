@@ -17,6 +17,7 @@ NavigationView::operator Child() const {
 		.widget = widget,
 		.children{
 			NavigationMenu{
+				.expanded = expanded,
 				.backAction = backAction,
 				.items = std::invoke([&]() -> std::vector<NavigationMenu::Item> {
 					std::vector<NavigationMenu::Item> items{};

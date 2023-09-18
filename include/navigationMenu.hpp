@@ -15,6 +15,7 @@ namespace squi {
 
 		// Args
 		Widget::Args widget;
+		bool expanded = true;
 		std::function<void()> backAction{};
 		std::vector<Item> items{};
 

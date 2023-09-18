@@ -23,6 +23,7 @@ struct MenuItem {
 	std::weak_ptr<VoidObservable> selectionEvent;
 	std::function<void()> onClick;
 	bool isActive = false;
+	bool isExpanded = true;
 
 	struct Storage {
 		// Data
@@ -85,7 +86,8 @@ struct MenuItem {
 							},
 							Text{
 								.widget{
-									.onInit = [storage, isExpandedEvent = isExpandedEvent](Widget &widget) {
+									.onInit = [storage, isExpandedEvent = isExpandedEvent, isExpanded = isExpanded](Widget &widget) {
+										widget.setVisible(isExpanded);
 										if (auto event = isExpandedEvent.lock()) {
 											storage->expandedObserver = event->observe([w = widget.weak_from_this()](bool isExpanded) {
 												if (auto widget = w.lock())
@@ -105,11 +107,11 @@ struct MenuItem {
 };
 
 NavigationMenu::operator Child() const {
-	auto storage = std::make_shared<Storage>();
+	auto storage = std::make_shared<Storage>(expanded);
 
 	return Column{
 		.widget{
-			.width = 320.f,
+			.width = storage->isExpanded ? 320.f : 48.f,
 			.onInit = [storage](Widget &w) {
 				storage->expandedObserver = storage->isExpandedEvent->observe([&w](bool isExpanded) {
 					w.setWidth(isExpanded ? 320.f : 48.f);
@@ -164,6 +166,7 @@ NavigationMenu::operator Child() const {
 							.selectionEvent = storage->selectionEvent,
 							.onClick = item.onClick,
 							.isActive = first,
+							.isExpanded = storage->isExpanded,
 						});
 						first = false;
 					}
