@@ -14,6 +14,7 @@ namespace squi {
 
 		// Args
 		Widget::Args widget;
+		std::function<void()> backAction{};
 		std::vector<Page> pages{};
 
 		struct Storage {

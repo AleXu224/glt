@@ -14,8 +14,10 @@ NavigationView::operator Child() const {
 	auto storage = std::make_shared<Storage>();
 
 	return Row{
+		.widget = widget,
 		.children{
 			NavigationMenu{
+				.backAction = backAction,
 				.items = std::invoke([&]() -> std::vector<NavigationMenu::Item> {
 					std::vector<NavigationMenu::Item> items{};
 					items.reserve(pages.size());
@@ -40,6 +42,7 @@ NavigationView::operator Child() const {
 						});
 					},
 				},
+				.child = pages.empty() ? Child{} : pages.front().content,
 			},
 		},
 	};

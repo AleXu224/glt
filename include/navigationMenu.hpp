@@ -2,6 +2,7 @@
 
 #include "observer.hpp"
 #include "widget.hpp"
+#include <functional>
 #include <vector>
 
 namespace squi {
@@ -14,6 +15,7 @@ namespace squi {
 
 		// Args
 		Widget::Args widget;
+		std::function<void()> backAction{};
 		std::vector<Item> items{};
 
 		struct Storage {

@@ -29,10 +29,11 @@ struct MenuItem {
 		bool isActive = false;
 		std::shared_ptr<Observable<bool>::Observer> expandedObserver;
 		std::shared_ptr<VoidObservable::Observer> selectionObserver;
+		std::shared_ptr<Observable<bool>> selectionChangeEvent = Observable<bool>::create();
 	};
 
 	operator Child() const {
-		auto storage = std::make_shared<Storage>();
+		auto storage = std::make_shared<Storage>(isActive);
 
 		if (auto event = selectionEvent.lock()) {
 			storage->selectionObserver = event->observe([storage]() {
@@ -40,13 +41,13 @@ struct MenuItem {
 			});
 		}
 
+		const auto indicatorUpdate = [storage](Widget &widget) {
+			dynamic_cast<Box::Impl &>(widget).setColor(storage->isActive ? Color{0x60CDFFFF} : Color{0x00000000});
+		};
+
 		return Button{
 			.widget{
-				widget
-					.withDefaultWidth(Size::Expand)
-					.withDefaultHeight(36.f)
-					.withDefaultMargin({4.f, 2.f})
-					.withDefaultPadding(0.f),
+				widget.withDefaultWidth(Size::Expand).withDefaultHeight(36.f).withDefaultMargin({4.f, 2.f}).withDefaultPadding(0.f),
 			},
 			.style = ButtonStyle::Subtle(),
 			.onClick = [storage, onClick = onClick, selectionEvent = selectionEvent](auto) {
@@ -54,6 +55,7 @@ struct MenuItem {
 				if (auto event = selectionEvent.lock())
 					event->notify();
 				storage->isActive = true;
+				storage->selectionChangeEvent->notify(true);
 				if (onClick) onClick();
 			},
 			.child = Stack{
@@ -64,9 +66,8 @@ struct MenuItem {
 							.widget{
 								.width = 3.f,
 								.height = 16.f,
-								.onUpdate = [storage](Widget &widget) {
-									dynamic_cast<Box::Impl &>(widget).setColor(storage->isActive ? Color{0x60CDFFFF} : Color{0x00000000});
-								},
+								.onInit = indicatorUpdate,
+								.onUpdate = indicatorUpdate,
 							},
 							.borderRadius = 1.5f,
 						},
@@ -116,6 +117,25 @@ NavigationMenu::operator Child() const {
 			},
 		},
 		.children{
+			backAction ? Button{
+							 .widget{
+								 .width = 40.f,
+								 .height = 36.f,
+								 .margin = Margin{4.f, 2.f},
+								 .padding = Padding{12.f, 10.f},
+							 },
+							 .style = ButtonStyle::Subtle(),
+							 .onClick = [backAction = backAction](auto) {
+								 backAction();
+							 },
+							 .child = Align{
+								 .child = FontIcon{
+									 .icon = 0xE830,
+									 .size = 12.f,
+								 },
+							 },
+						 }
+					   : Child{},
 			Button{
 				.widget{
 					.width = 40.f,
@@ -135,14 +155,18 @@ NavigationMenu::operator Child() const {
 			ScrollableFrame{
 				.children = std::invoke([&]() -> Children {
 					Children children{};
-					for (auto &item: items)
+					bool first = true;
+					for (auto &item: items) {
 						children.emplace_back(MenuItem{
 							.name = item.name,
 							.icon = item.icon,
 							.isExpandedEvent = storage->isExpandedEvent,
 							.selectionEvent = storage->selectionEvent,
 							.onClick = item.onClick,
+							.isActive = first,
 						});
+						first = false;
+					}
 					return children;
 				}),
 			},
