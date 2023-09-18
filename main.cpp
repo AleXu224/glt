@@ -1,26 +1,24 @@
 #include "box.hpp"
-#include "navigationView.hpp"
+#include "expander.hpp"
 #include "window.hpp"
 #include <print>
 
 int main(int, char **) {
 	using namespace squi;
 	squi::Window window;
-	window.addChild(NavigationView{
-		.pages{
-			NavigationView::Page{
-				.name = "Blue page",
-				.content = Box{
-					.color = Color::RGBA(0, 0, 1, 0.5),
-				},
+	window.addChild(Expander{
+		.widget{
+			.margin = 8.f,
+		},
+		.icon = 0xE82F,
+		.heading = "This is a heading",
+		.caption = "This is a caption",
+		.child = Box{
+			.widget{
+				.width = 16.f,
+				.height = 16.f,
 			},
-			NavigationView::Page{
-				.name = "Red page",
-				.icon = 0xEC4A,
-				.content = Box{
-					.color = Color::RGBA(1, 0, 0, 0.5),
-				},
-			},
+			.color = Color::HEX(0xFF0000FF),
 		},
 	});
 	window.run();
