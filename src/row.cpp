@@ -1,6 +1,8 @@
 #include "row.hpp"
+#include "ranges"
 #include "renderer.hpp"
 #include <algorithm>
+
 
 using namespace squi;
 
@@ -11,7 +13,12 @@ Row::Impl::Impl(const Row &args)
 }
 
 vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
-	auto &children = getChildren();
+	auto children = getChildren() | std::views::filter([](const Child &child) {
+						return child->flags.visible;
+					});
+	const auto childCount = std::ranges::count_if(children, [](auto) {
+		return true;
+	});
 
 	float totalWidth = 0.0f;
 	float maxHeight = 0.0f;
@@ -27,7 +34,7 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 		shouldShrink.height = false;
 	}
 
-	float spacingOffset = spacing * (static_cast<float>(children.size()) - 1.f);
+	float spacingOffset = spacing * (static_cast<float>(childCount) - 1.f);
 	spacingOffset = (std::max)(0.0f, spacingOffset);
 
 	for (auto &child: children) {
@@ -65,7 +72,9 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 }
 
 void Row::Impl::arrangeChildren(vec2 &pos) {
-	auto &children = getChildren();
+	auto children = getChildren() | std::views::filter([](const Child &child) {
+						return child->flags.visible;
+					});
 	const auto height = getContentRect().height();
 	auto cursor = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
 	const auto initialY = cursor.y;
@@ -91,7 +100,9 @@ void Row::Impl::arrangeChildren(vec2 &pos) {
 }
 
 void Row::Impl::drawChildren() {
-	auto &children = getChildren();
+	auto children = getChildren() | std::views::filter([](const Child &child) {
+						return child->flags.visible;
+					});
 
 	const Rect clipRect = Renderer::getInstance().getCurrentClipRect().rect;
 
