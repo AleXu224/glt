@@ -12,6 +12,7 @@ namespace squi {
 		constexpr vec2() noexcept : x(0), y(0) {}
 		vec2(float x, float y) noexcept : x(x), y(y) {}
 		vec2(float xy) noexcept : x(xy), y(xy) {}
+		vec2(const DirectX::XMFLOAT2 &vec) noexcept : x(vec.x), y(vec.y) {}
 
 		[[nodiscard]] inline vec2 operator+(const vec2 &other) const {
 			return {x + other.x, y + other.y};
