@@ -94,7 +94,9 @@ Texture::Impl Image::Data::createTexture() const {
 }
 
 Image::Impl::Impl(const Image &args)
-	: Widget(args.widget, Widget::Flags::Default()),
+	: Widget(args.widget, Widget::Flags{
+		.shouldLayoutChildren = false,
+	}),
 	  texture(Texture::Empty()),
 	  fit(args.fit),
 	  quad(Quad::Args{
@@ -156,26 +158,21 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 	switch (this->fit) {
 		case Fit::none: {
-			maxSize = {static_cast<float>(properties.width), static_cast<float>(properties.height)};
-			// minSize = {static_cast<float>(this->width), static_cast<float>(this->height)};
+			maxSize.x = std::min(maxSize.x, static_cast<float>(properties.width));
+			maxSize.y = std::min(maxSize.y, static_cast<float>(properties.height));
 			break;
 		}
 		case Fit::fill: {
 			break;
 		}
 		case Fit::cover: {
-			if (maxSize.x / maxSize.y > aspectRatio) {
-				maxSize.x = maxSize.y * aspectRatio;
-			} else {
-				maxSize.y = maxSize.x / aspectRatio;
-			}
 			break;
 		}
 		case Fit::contain: {
 			if (maxSize.x / maxSize.y > aspectRatio) {
-				maxSize.y = maxSize.x / aspectRatio;
-			} else {
 				maxSize.x = maxSize.y * aspectRatio;
+			} else {
+				maxSize.y = maxSize.x / aspectRatio;
 			}
 			break;
 		}
@@ -183,13 +180,60 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 }
 
 void Image::Impl::postLayout(vec2 &size) {
-	quad.setSize(getSize());
+	const auto &properties = texture.getProperties();
+
+	switch (this->fit) {
+		case Fit::none: {
+			quad.setSize(vec2{
+				static_cast<float>(properties.width),
+				static_cast<float>(properties.height),
+			});
+			break;
+		}
+		case Fit::fill:
+		case Fit::contain: {
+			quad.setSize(size);
+			break;
+		}
+		case Fit::cover: {
+			const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
+			if (size.x / size.y > aspectRatio) {
+				quad.setSize(vec2{
+					size.x,
+					size.x / aspectRatio,
+				});
+			} else {
+				quad.setSize(vec2{
+					size.y * aspectRatio,
+					size.y,
+				});
+			}
+			break;
+		}
+	}
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
-	this->quad.setPos(pos);
+	const auto &widgetSize = getSize();
+	const vec2 quadSize = quad.getData().size;
+
+	switch (this->fit) {
+		case Fit::fill:
+		case Fit::contain: {
+			this->quad.setPos(pos);
+			break;
+		}
+		case Fit::none:
+		case Fit::cover: {
+			this->quad.setPos(pos.withXOffset(-(quadSize.x - widgetSize.x) / 2.0f)
+								  .withYOffset(-(quadSize.y - widgetSize.y) / 2.0f));
+			break;
+		}
+	}
 }
 
 void Image::Impl::onDraw() {
+	Renderer::getInstance().addClipRect(getContentRect());
 	Renderer::getInstance().addQuad(quad);
+	Renderer::getInstance().popClipRect();
 }
