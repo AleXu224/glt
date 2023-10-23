@@ -196,8 +196,8 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 	// Handle the size mode constraints
 	switch (state.width.index()) {
 		case 0: {
-			maxSize.x = std::clamp(std::get<0>(state.width), minSize.x, maxSize.x);
 			minSize.x = padding.x;
+			maxSize.x = std::clamp(std::get<0>(state.width), minSize.x, maxSize.x);
 			shouldShrink.width = false;
 			break;
 		}
@@ -214,8 +214,8 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 
 	switch (state.height.index()) {
 		case 0: {
-			maxSize.y = std::clamp(std::get<0>(state.height), minSize.y, maxSize.y);
 			minSize.y = padding.y;
+			maxSize.y = std::clamp(std::get<0>(state.height), minSize.y, maxSize.y);
 			shouldShrink.height = false;
 			break;
 		}
