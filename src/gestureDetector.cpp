@@ -121,7 +121,7 @@ const vec2 &GestureDetector::getMousePos() {
 }
 
 vec2 GestureDetector::getMouseDelta() {
-	return g_cursorPos - lastCursorPos;
+	return mouseDelta;
 }
 
 const vec2 &GestureDetector::State::getScroll() const {
