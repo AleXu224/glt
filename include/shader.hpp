@@ -2,6 +2,8 @@
 
 #include "d3d11.h"
 #include "memory"
+#include <string_view>
+#include <vector>
 
 namespace squi {
 	class Shader {
@@ -10,8 +12,9 @@ namespace squi {
 		std::shared_ptr<ID3D11InputLayout> inputLayout;
 
 	public:
-		Shader(const char *vertexShaderSource,
-			   const char *fragmentShaderSource,
+		Shader(std::string_view vertexShaderSource,
+			   std::string_view fragmentShaderSource,
+			   const std::vector<D3D11_INPUT_ELEMENT_DESC>& inputLayoutDesc,
 			   const std::shared_ptr<ID3D11Device> &device);
 
 		void use(std::shared_ptr<ID3D11DeviceContext> &context);

@@ -1,10 +1,11 @@
 #include "renderer.hpp"
 #include <d3d11.h>
 #include <print>
+#include <string_view>
 
 using namespace squi;
 
-auto vertexShaderHlsl = R"(
+constexpr std::string_view vertexShaderHlsl = R"(
 		struct VertexData {
 			float4 color;
 			float4 borderColor;
@@ -17,6 +18,7 @@ auto vertexShaderHlsl = R"(
 			uint textureType;
 			float4 clipRect;
 			float clipBorderRadius;
+			float sdfWidth;
 		};
 
 		StructuredBuffer<VertexData> data : register(t0);
@@ -63,7 +65,7 @@ auto vertexShaderHlsl = R"(
 		}
 	)";
 // TODO: Borders do not work with border radius = 0
-auto fragmentShaderHlsl = R"(
+constexpr std::string_view fragmentShaderHlsl = R"(
 		struct PS_INPUT {
 			float4 color : COLOR;
 			float2 uv : TEXCOORD0;
@@ -134,6 +136,13 @@ auto fragmentShaderHlsl = R"(
 			}
 			if (input.textureType == 2) {
 				float alpha = textureByIndex(input.textureId, input.texUV).r * input.color.a;
+				float3 color = input.color.rgb * alpha;
+				return float4(color.r, color.g, color.b, alpha);
+			}
+			if (input.textureType == 3) {
+				float width = 0.75;
+				float smoothness = 0.05;
+				float alpha = smoothstep(width - smoothness, width + smoothness, textureByIndex(input.textureId, input.texUV).r);
 				float3 color = input.color.rgb * alpha;
 				return float4(color.r, color.g, color.b, alpha);
 			}
@@ -363,7 +372,13 @@ void Renderer::initialize(HWND hwnd, int width, int height) {
 	});
 	deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
 
-	shader = std::make_unique<Shader>(vertexShaderHlsl, fragmentShaderHlsl, device);
+	std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayout = {
+		{"UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXUV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"ID", 0, DXGI_FORMAT_R32_UINT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	shader = std::make_unique<Shader>(vertexShaderHlsl, fragmentShaderHlsl, inputLayout, device);
 	batch = std::make_unique<Batch>(device);
 
 	// projection matrix to identity
