@@ -22,7 +22,8 @@ namespace squi {
 	enum class TextureType : uint32_t {
 		NoTexture = 0,
 		Texture = 1,
-		Text = 2
+		Text = 2,
+		Sdf = 3,
 	};
 
 	// TODO: switch to 16 bit floats
@@ -63,5 +64,6 @@ namespace squi {
 		TextureType textureType;
 		DirectX::XMFLOAT4 clipRect;
 		float clipBorderRadius;
+		float sdfWidth;
 	};
 }// namespace squi

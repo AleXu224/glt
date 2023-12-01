@@ -43,15 +43,22 @@ namespace squi {
 			bool ready = false;
 		};
 
+		enum class Type {
+			normal = 0,
+			signedDistanceField = 1,
+		};
+
 		// Args
 		Widget::Args widget;
 		Fit fit = Fit::none;
+		Type type = Type::normal;
 		std::variant<Data, std::shared_future<Data>> image;
 
 		class Impl : public Widget {
 			// Data
 			Texture::Impl texture;
 			Fit fit;
+			Type type = Type::normal;
 			Quad quad;
 			Image::State imageState{};
 

@@ -99,10 +99,11 @@ Image::Impl::Impl(const Image &args)
 	}),
 	  texture(Texture::Empty()),
 	  fit(args.fit),
+	  type(args.type),
 	  quad(Quad::Args{
 		  .size = {0, 0},
 		  .texture = this->texture.getTextureView(),
-		  .textureType = TextureType::Texture,
+		  .textureType = (args.type == Type::normal ? TextureType::Texture : TextureType::Sdf),
 	  }) {
 
 	switch (args.image.index()) {
@@ -142,7 +143,7 @@ void Image::Impl::onUpdate() {
 		quad = Quad::Args{
 			.size = {0, 0},
 			.texture = this->texture.getTextureView(),
-			.textureType = TextureType::Texture,
+			.textureType = (type == Type::normal ? TextureType::Texture : TextureType::Sdf),
 		};
 		imageState.ready = true;
 		auto iter = state.properties.find("imageFuture");
