@@ -14,7 +14,7 @@ struct InvTextLikeWidget {
 		// Data
 
 	public:
-		Impl(const InvTextLikeWidget &args) : Widget(args.widget, Widget::Flags::Default()) {}
+		Impl(const InvTextLikeWidget &args) : Widget(args.widget, Widget::FlagsArgs::Default()) {}
 
 		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
 			if (shouldShrink.height) {

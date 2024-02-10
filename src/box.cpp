@@ -14,7 +14,7 @@ using namespace squi;
 Box::BoxPipeline *Box::Impl::pipeline = nullptr;
 
 Box::Impl::Impl(const Box &args)
-	: Widget(args.widget, Widget::Flags{
+	: Widget(args.widget, Widget::FlagsArgs{
 							  .isInteractive = true,
 						  }),
 	  quad(Engine::Quad::Args{
@@ -70,7 +70,7 @@ void Box::Impl::postLayout(vec2 &size) {
 }
 
 void Box::Impl::postArrange(vec2 &pos) {
-	quad.position = pos + state.margin.getPositionOffset();
+	quad.position = pos + state.margin->getPositionOffset();
 }
 
 void Box::Impl::setColor(const Color &color) {

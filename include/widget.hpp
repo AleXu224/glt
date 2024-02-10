@@ -7,7 +7,10 @@
 #include "vec2.hpp"
 #include "vector"
 #include <any>
+#include <functional>
+#include <memory>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 
@@ -135,34 +138,106 @@ namespace squi {
 			}
 		};
 
-		struct Flags {
+		enum class StateImpact {
+			None,            // By itself may not change anything but the callback could
+			RedrawNeeded,    // Eg: changing the color of a box
+			RepositionNeeded,// Changing the scroll on a scrollable
+			RelayoutNeeded,  // Size change
+		};
+
+		template<class T, StateImpact stateImpact>
+		struct Stateful {
+			template<class... Args>
+			Stateful(Widget *parent, const Args &...args) : item(args...), parent(parent) {}
+			template<class... Args>
+			Stateful(Widget *parent, std::function<void(const T &)> callback, const Args &...args) : item(args...), parent(parent), callback(callback) {}
+
+			Stateful(const Stateful &) = delete;
+			Stateful(Stateful &) = delete;
+			Stateful(const Stateful &&) = delete;
+			Stateful(Stateful &&) = delete;
+
+			inline operator const Stateful &() const {
+				return item;
+			}
+
+			inline Stateful &operator=(const T &other) {
+				if (item != other) {
+					item = other;
+					if constexpr (stateImpact == StateImpact::RedrawNeeded) {
+						parent->reDraw();
+					} else if constexpr (stateImpact == StateImpact::RepositionNeeded) {
+						parent->reArrange();
+					} else if constexpr (stateImpact == StateImpact::RelayoutNeeded) {
+						parent->reLayout();
+					}
+				}
+				return *this;
+			}
+
+			// template<class Q = T, std::enable_if_t<std::is_pointer<Q>::value, bool> = true>
+			inline const T &operator->() const requires(std::is_pointer_v<T>) {
+				return item;
+			}
+
+			// template<class Q = T, std::enable_if_t<!std::is_pointer<Q>::value, bool> = true>
+			inline const T *operator->() const requires(!std::is_pointer_v<T>) {
+				return std::addressof(item);
+			}
+
+			inline const T &operator*() const {
+				return item;
+			}
+
+		private:
+			T item;
+			Widget *parent;
+			std::function<void(const T&)> callback{};
+		};
+
+		struct FlagsArgs {
 			/**
 			 * Set to false to disable updating the children
 			 */
-			const bool shouldUpdateChildren = true;
+			bool shouldUpdateChildren = true;
 			/**
 			 * Set to false to disable drawing the children
 			 */
-			const bool shouldDrawChildren = true;
+			bool shouldDrawChildren = true;
 			/**
 			 * Set to false to disable sizing the children
 			 */
-			const bool shouldLayoutChildren = true;
+			bool shouldLayoutChildren = true;
 			/**
 			 * Set to false to disable positioning the children
 			 */
-			const bool shouldArrangeChildren = true;
+			bool shouldArrangeChildren = true;
 			/**
 			 * Whether hit testing should be performed on this widget
 			 */
 			bool isInteractive = true;
 			bool visible = true;
 
-			static Flags Default() {
+			static FlagsArgs Default() {
 				return {};
 			}
 		};
-		Flags flags;
+		struct Flags {
+			bool shouldUpdateChildren;
+			Stateful<bool, StateImpact::RedrawNeeded> shouldDrawChildren;
+			bool shouldLayoutChildren;
+			bool shouldArrangeChildren;
+			bool isInteractive;
+			Stateful<bool, StateImpact::RelayoutNeeded> visible;
+
+			Flags(Widget *w, const FlagsArgs &args)
+				: shouldUpdateChildren(args.shouldUpdateChildren),
+				  shouldDrawChildren(w, args.shouldDrawChildren),
+				  shouldLayoutChildren(args.shouldLayoutChildren),
+				  shouldArrangeChildren(args.shouldArrangeChildren),
+				  isInteractive(args.isInteractive),
+				  visible(w, args.visible) {}
+		} flags;
 
 	private:
 		bool shouldDelete = false;
@@ -195,51 +270,16 @@ namespace squi {
 		static uint32_t widgetCount;
 
 	public:
-		enum class StateImpact{
-			RedrawNeeded, // Eg: changing the color of a box
-			RepositionNeeded, // Changing the scroll on a scrollable
-			RelayoutNeeded, // Size change
-		};
-	
-		template<class T, StateImpact stateImpact>
-		struct Stateful {
-			template<class ...Args>
-			Stateful(Widget *parent, const Args&... args) : item(args...), parent(parent) {}
-
-			Stateful(const Stateful &) = delete;
-			Stateful(Stateful &) = delete;
-			Stateful(const Stateful &&) = delete;
-			Stateful(Stateful &&) = delete;
-
-			operator const Stateful&() const {
-				return item;
-			}
-
-			Stateful &operator=(const T& other) {
-				item = other;
-				if constexpr (stateImpact == StateImpact::RedrawNeeded) {
-					parent->reDraw();
-				} else if constexpr (stateImpact == StateImpact::RepositionNeeded) {
-					parent->reArrange();
-				} else if constexpr (stateImpact == StateImpact::RelayoutNeeded) {
-					parent->reLayout();
-				}
-				return *this;
-			}
-		private:
-			T item;
-			Widget *parent;
-		};
 		struct State {
 			std::unordered_map<std::string_view, std::any> properties{};
-			const std::variant<float, Size> width;
-			const std::variant<float, Size> height;
+			Stateful<std::variant<float, Size>, StateImpact::RelayoutNeeded> width;
+			Stateful<std::variant<float, Size>, StateImpact::RelayoutNeeded> height;
 			// FIXME: Also make this const and add a setter
 			SizeConstraints sizeConstraints;
-			const Margin margin;
-			const Margin padding;
-			Widget *parent = nullptr;
-			Widget *root = nullptr;
+			Stateful<Margin, StateImpact::RelayoutNeeded> margin;
+			Stateful<Margin, StateImpact::RelayoutNeeded> padding;
+			Stateful<Widget *, StateImpact::RelayoutNeeded> parent;
+			Stateful<Widget *, StateImpact::RelayoutNeeded> root;
 		};
 		State state;
 		const uint64_t id;
@@ -250,90 +290,40 @@ namespace squi {
 		Widget(Widget &&) = delete;
 		Widget &operator=(Widget &&) = delete;
 
-		explicit Widget(const Args &args, const Flags &flags);
+		explicit Widget(const Args &args, const FlagsArgs &flags);
 		virtual ~Widget();
-
-		inline void setWidth(const std::variant<float, Size> &width) {
-			if (this->state.width == width) return;
-			const_cast<std::variant<float, Size> &>(this->state.width) = width;
-			reLayout();
-		}
-		inline void setHeight(const std::variant<float, Size> &height) {
-			if (this->state.height == height) return;
-			const_cast<std::variant<float, Size> &>(this->state.height) = height;
-			reLayout();
-		}
-		inline void setMargin(const Margin &margin) {
-			if (this->state.margin == margin) return;
-			const_cast<Margin &>(this->state.margin) = margin;
-			reLayout();
-		}
-		inline void setPadding(const Margin &padding) {
-			if (this->state.padding == padding) return;
-			const_cast<Margin &>(this->state.padding) = padding;
-			reLayout();
-		}
-
-		inline void setShouldUpdateChildren(bool value) {
-			if (value == flags.shouldUpdateChildren) return;
-			const_cast<bool &>(flags.shouldUpdateChildren) = value;
-		}
-		inline void setShouldDrawChildren(bool value) {
-			if (value == flags.shouldDrawChildren) return;
-			const_cast<bool &>(flags.shouldDrawChildren) = value;
-			reLayout();
-		}
-		inline void setShouldLayoutChildren(bool value) {
-			if (value == flags.shouldLayoutChildren) return;
-			const_cast<bool &>(flags.shouldLayoutChildren) = value;
-			reLayout();
-		}
-		inline void setShouldArrangeChildren(bool value) {
-			if (value == flags.shouldArrangeChildren) return;
-			const_cast<bool &>(flags.shouldArrangeChildren) = value;
-			reLayout();
-		}
-		inline void setIsInteractive(bool value) {
-			if (value == flags.isInteractive) return;
-			const_cast<bool &>(flags.isInteractive) = value;
-		}
-		inline void setVisible(bool value) {
-			if (value == flags.visible) return;
-			const_cast<bool &>(flags.visible) = value;
-			reLayout();
-		}
 
 		[[nodiscard]] FunctionArgs &funcs();
 		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
 		[[nodiscard]] inline Rect getRect() const {
-			return Rect::fromPosSize(pos + state.margin.getPositionOffset(), size);
+			return Rect::fromPosSize(pos + state.margin->getPositionOffset(), size);
 		}
 		[[nodiscard]] inline Rect getContentRect() const {
 			return Rect::fromPosSize(
-				pos + state.margin.getPositionOffset() + state.padding.getPositionOffset(),
-				size - state.padding.getSizeOffset());
+				pos + state.margin->getPositionOffset() + state.padding->getPositionOffset(),
+				size - state.padding->getSizeOffset());
 		}
 		[[nodiscard]] inline Rect getLayoutRect() const {
 			return Rect::fromPosSize(
 				pos,
-				size + state.margin.getSizeOffset());
+				size + state.margin->getSizeOffset());
 		}
 		[[nodiscard]] inline vec2 getSize() const {
 			return size;
 		}
 		[[nodiscard]] inline vec2 getContentSize() const {
-			return size - state.padding.getSizeOffset();
+			return size - state.padding->getSizeOffset();
 		}
 		[[nodiscard]] inline vec2 getLayoutSize() const {
-			return size + state.margin.getSizeOffset();
+			return size + state.margin->getSizeOffset();
 		}
 		[[nodiscard]] inline vec2 getPos() const {
 			return pos;
 		}
 		[[nodiscard]] inline vec2 getContentPos() const {
-			return pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+			return pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 		}
 		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
 		[[nodiscard]] inline bool isMarkedForDeletion() const {
@@ -342,7 +332,7 @@ namespace squi {
 
 		template<class T>
 		T &as() {
-			return dynamic_cast<T&>(*this);
+			return dynamic_cast<T &>(*this);
 		}
 
 		// Setters
@@ -378,19 +368,19 @@ namespace squi {
 		}
 
 		// Virtual methods
-		virtual void onUpdate(){};
+		virtual void onUpdate() {};
 		virtual void updateChildren();
-		virtual void afterUpdate(){};
+		virtual void afterUpdate() {};
 
-		virtual void onLayout(vec2 &maxSize, vec2 &minSize){};
+		virtual void onLayout(vec2 &maxSize, vec2 &minSize) {};
 		virtual vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink);
-		virtual void postLayout(vec2 &size){};
+		virtual void postLayout(vec2 &size) {};
 
-		virtual void onArrange(vec2 &pos){};
+		virtual void onArrange(vec2 &pos) {};
 		virtual void arrangeChildren(vec2 &pos);
-		virtual void postArrange(vec2 &pos){};
+		virtual void postArrange(vec2 &pos) {};
 
-		virtual void onDraw(){};
+		virtual void onDraw() {};
 		virtual void drawChildren();
 
 		void reDraw() const;

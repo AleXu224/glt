@@ -87,11 +87,11 @@ struct MenuItem {
 							Text{
 								.widget{
 									.onInit = [storage, isExpandedEvent = isExpandedEvent, isExpanded = isExpanded](Widget &widget) {
-										widget.setVisible(isExpanded);
+										widget.flags.visible = isExpanded;
 										if (auto event = isExpandedEvent.lock()) {
 											storage->expandedObserver = event->observe([w = widget.weak_from_this()](bool isExpanded) {
 												if (auto widget = w.lock())
-													widget->setVisible(isExpanded);
+													widget->flags.visible = isExpanded;
 											});
 										}
 									},
@@ -114,7 +114,7 @@ NavigationMenu::operator Child() const {
 			.width = storage->isExpanded ? 320.f : 48.f,
 			.onInit = [storage](Widget &w) {
 				storage->expandedObserver = storage->isExpandedEvent->observe([&w](bool isExpanded) {
-					w.setWidth(isExpanded ? 320.f : 48.f);
+					w.state.width = isExpanded ? 320.f : 48.f;
 				});
 			},
 		},

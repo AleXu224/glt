@@ -107,14 +107,14 @@ struct TextItems {
 					.widget = widget,
 					.title{"Margin"},
 					.getValue = [](Widget &widget) {
-						return std::format("l: {}, t: {}, r: {}, b: {}", widget.state.margin.left, widget.state.margin.top, widget.state.margin.right, widget.state.margin.bottom);
+						return std::format("l: {}, t: {}, r: {}, b: {}", widget.state.margin->left, widget.state.margin->top, widget.state.margin->right, widget.state.margin->bottom);
 					},
 				},
 				TextItem{
 					.widget = widget,
 					.title{"Padding"},
 					.getValue = [](Widget &widget) {
-						return std::format("l: {}, t: {}, r: {}, b: {}", widget.state.padding.left, widget.state.padding.top, widget.state.padding.right, widget.state.padding.bottom);
+						return std::format("l: {}, t: {}, r: {}, b: {}", widget.state.padding->left, widget.state.padding->top, widget.state.padding->right, widget.state.padding->bottom);
 					},
 					.darkenedBackground = true,
 				},
@@ -122,7 +122,7 @@ struct TextItems {
 					.widget = widget,
 					.title{"Visible"},
 					.getValue = [](Widget &widget) {
-						return std::format("{}", widget.flags.visible);
+						return std::format("{}", *widget.flags.visible);
 					},
 					.darkenedBackground = true,
 				},
@@ -186,9 +186,9 @@ struct LayoutItem {
 
 							auto widget = storage->widget.lock();
 							if (widget && !widget->getChildren().empty()) {
-								w.getChildren().front()->setVisible(true);
+								w.getChildren().front()->flags.visible = true;
 							} else {
-								w.getChildren().front()->setVisible(false);
+								w.getChildren().front()->flags.visible = false;
 							}
 						},
 					},
@@ -295,7 +295,7 @@ struct LayoutItem {
 					.widget{
 						.height = Size::Shrink,
 						.onUpdate = [storage](Widget &w) {
-							w.setVisible(storage->expanded);
+							w.flags.visible = storage->expanded;
 							if (!storage->expanded) return;
 							Child widget = storage->widget.lock();
 							if (!widget) return;
@@ -496,9 +496,9 @@ LayoutInspector::operator Child() const {
 					.width = Size::Expand,
 					.height = Size::Expand,
 					.onUpdate = [storage](Widget &w) {
-						w.setShouldUpdateChildren(!storage->pauseUpdates || GestureDetector::isKey(GLFW_KEY_F10, GLFW_PRESS));
-						w.setShouldLayoutChildren(!storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS));
-						w.setShouldArrangeChildren(!storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS));
+						w.flags.shouldUpdateChildren = !storage->pauseUpdates || GestureDetector::isKey(GLFW_KEY_F10, GLFW_PRESS);
+						w.flags.shouldLayoutChildren = !storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS);
+						w.flags.shouldArrangeChildren = !storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS);
 					},
 				},
 				.children{
@@ -557,10 +557,10 @@ LayoutInspector::operator Child() const {
 						storage->pauseLayout = !storage->pauseLayout;
 					}
 					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F12)) {
-						event.widget.setVisible(!event.widget.flags.visible);
+						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
 					if (GestureDetector::isKey(GLFW_KEY_I, GLFW_PRESS, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
-						event.widget.setVisible(!event.widget.flags.visible);
+						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
 				},
 				.child{
@@ -571,22 +571,22 @@ LayoutInspector::operator Child() const {
 							.margin{4.f},
 							.padding{1.f},
 							.onInit = [](Widget &w) {
-								w.setVisible(false);
+								w.flags.visible = false;
 							},
 							.afterDraw = [storage](Widget &w) {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
-								if (widget->flags.visible) {
+								if (*widget->flags.visible) {
 									// FIXME: add preview quads again
 									// Quad previewQuad{Quad::Args{
-									// 	.pos = widget->getPos() + widget->state.margin.getPositionOffset(),
+									// 	.pos = widget->getPos() + widget->state.margin->getPositionOffset(),
 									// 	.size = widget->getSize(),
 									// 	.color = Color(0x00008040),
 									// }};
 
 									// Quad paddingQuad{Quad::Args{
-									// 	.pos = widget->getPos() + widget->state.padding.getPositionOffset() + widget->state.margin.getPositionOffset(),
-									// 	.size = widget->getSize() - widget->state.padding.getSizeOffset(),
+									// 	.pos = widget->getPos() + widget->state.padding->getPositionOffset() + widget->state.margin->getPositionOffset(),
+									// 	.size = widget->getSize() - widget->state.padding->getSizeOffset(),
 									// 	.color = Color(0x0008040),
 									// }};
 

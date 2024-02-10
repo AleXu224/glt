@@ -75,7 +75,7 @@ TextBox::operator Child() const {
 											.padding = Padding{0, 11, 0, 11},
 											.onInit = [](Widget &w) {
 												auto font = FontStore::getFontOptional(R"(C:\Windows\Fonts\segoeui.ttf)");
-												if (font.has_value()) w.setHeight(static_cast<float>(font.value()->getLineHeight(14)));
+												if (font.has_value()) w.state.height = static_cast<float>(font.value()->getLineHeight(14));
 											},
 											// TODO: Add support for text color change
 											.onUpdate = [&, storage](Widget &w) {
@@ -123,15 +123,15 @@ TextBox::operator Child() const {
 															// box.setColor(theme.bottomBorder);
 															// break;
 														case Storage::State::hover:
-															w.setHeight(1.0f);
+															w.state.height = 1.0f;
 															box.setColor(theme.bottomBorder);
 															break;
 														case Storage::State::active:
-															w.setHeight(2.0f);
+															w.state.height = 2.0f;
 															box.setColor(theme.bottomBorderActive);
 															break;
 														case Storage::State::disabled:
-															w.setHeight(0.f);
+															w.state.height = 0.f;
 															box.setColor(theme.bottomBorder);
 															break;
 													}

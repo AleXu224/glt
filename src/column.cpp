@@ -7,14 +7,14 @@
 using namespace squi;
 
 Column::Impl::Impl(const Column &args)
-	: Widget(args.widget, Widget::Flags::Default()),
+	: Widget(args.widget, Widget::FlagsArgs::Default()),
 	  alignment(args.alignment), spacing(args.spacing) {
 	setChildren(args.children);
 }
 
 vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 	const auto childCount = std::ranges::count_if(children, [](auto) {
 		return true;
@@ -42,9 +42,9 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 
 		auto &childState = child->state;
 		childState.parent = this;
-		childState.root = state.root;
+		childState.root = *state.root;
 
-		if (shouldShrink.height == false && childState.height.index() == 1 && std::get<1>(childState.height) == Size::Expand) {
+		if (shouldShrink.height == false && childState.height->index() == 1 && std::get<1>(*childState.height) == Size::Expand) {
 			expandedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxSize.withYOffset(-spacingOffset), {minSize.x, 0}, shouldShrink);
@@ -73,10 +73,10 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 
 void Column::Impl::arrangeChildren(vec2 &pos) {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 	const auto width = getContentRect().width();
-	auto cursor = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	auto cursor = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	const auto initialX = cursor.x;
 
 	for (auto &child: children) {
@@ -101,7 +101,7 @@ void Column::Impl::arrangeChildren(vec2 &pos) {
 
 void Column::Impl::drawChildren() {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 
 	const Rect clipRect = Window::of(this).engine.instance.scissorStack.back();

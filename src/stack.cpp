@@ -7,7 +7,7 @@
 using namespace squi;
 
 Stack::Impl::Impl(const Stack &args)
-	: Widget(args.widget, Widget::Flags::Default()) {
+	: Widget(args.widget, Widget::FlagsArgs::Default()) {
 	setChildren(args.children);
 }
 
@@ -19,7 +19,7 @@ void Stack::Impl::updateChildren() {
 
 	for (auto &child: std::views::reverse(children)) {
 		child->state.parent = this;
-		child->state.root = state.root;
+		child->state.root = *state.root;
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
 		GestureDetector::g_hitCheckRects.insert(GestureDetector::g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());

@@ -11,7 +11,7 @@ TEST(Widget, layout) {
                 .width = 100.f,
                 .height = 100.f,
             },
-            Widget::Flags::Default(),
+            Widget::FlagsArgs::Default(),
         };
 
         const vec2 maxSize{1000.f, 1000.f};
@@ -23,53 +23,53 @@ TEST(Widget, layout) {
         expectedSize = {50.f, 50.f};
 		EXPECT_EQ(widget.layout(smallerMaxSize, {0, 0}), expectedSize) << "Widget should return the maxSize when the size is larger than the maxSize";
 
-		widget.setWidth(Size::Expand);
-        widget.setHeight(Size::Expand);
+		widget.state.width = Size::Expand;
+        widget.state.height = Size::Expand;
         expectedSize = maxSize;
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should return the maxSize when the size is expand";
 
-		widget.setMargin(10.f);
-        widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+        widget.state.padding = 10.f;
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize);
 
 		widget.state.sizeConstraints.maxHeight = 50.f;
         widget.state.sizeConstraints.maxWidth = 50.f;
-		widget.setMargin(0.f);
-		widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+		widget.state.padding = 0.f;
 		expectedSize = {50.f, 50.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should still follow the constraints when the size is expand";
 
-		widget.setMargin(10.f);
-		widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+		widget.state.padding = 10.f;
         expectedSize = {70.f, 70.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize);
-		widget.setMargin(0.f);
-        widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+        widget.state.padding = 0.f;
 
 		widget.state.sizeConstraints.maxHeight = std::nullopt;
         widget.state.sizeConstraints.maxWidth = std::nullopt;
-        widget.setWidth(Size::Shrink);
-        widget.setHeight(Size::Shrink);
+        widget.state.width = Size::Shrink;
+        widget.state.height = Size::Shrink;
         expectedSize = {0.f, 0.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget has no content, padding or margin so the size should be 0";
 
-		widget.setMargin(10.f);
-        widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+        widget.state.padding = 10.f;
         expectedSize = {40.f, 40.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget has a margin and padding so the size should be 2 * margin + 2 * padding";
-		widget.setMargin(0.f);
-		widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+		widget.state.padding = 0.f;
 
 		widget.state.sizeConstraints.minHeight = 50.f;
         widget.state.sizeConstraints.minWidth = 50.f;
         expectedSize = {50.f, 50.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should still follow the constraints when the size is shrink";
 
-		widget.setMargin(10.f);
+		widget.state.margin = 10.f;
         expectedSize = {70.f, 70.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget has a margin so the size should be 2 * margin + size";
 
-		widget.setPadding(10.f);
+		widget.state.padding = 10.f;
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Padding should not affect the final layoutSize in this circumstance";
 	}
     {
@@ -78,7 +78,7 @@ TEST(Widget, layout) {
                 .width = 100.f,
                 .height = 100.f,
             },
-            Widget::Flags::Default(),
+            Widget::FlagsArgs::Default(),
         };
 
         Child container{Container{
@@ -95,35 +95,35 @@ TEST(Widget, layout) {
         vec2 expectedSize{100.f, 100.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should return its size when the size is fixed";
 
-		widget.setMargin(10.f);
-        widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+        widget.state.padding = 10.f;
         expectedSize = {120.f, 120.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should return its size + margin when the size is fixed";
-		widget.setMargin(0.f);
-        widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+        widget.state.padding = 0.f;
 
-        widget.setWidth(Size::Expand);
-        widget.setHeight(Size::Expand);
+        widget.state.width = Size::Expand;
+        widget.state.height = Size::Expand;
         expectedSize = maxSize;
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize) << "Widget should return the maxSize when the size is expand";
 
-		widget.setMargin(10.f);
-        widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+        widget.state.padding = 10.f;
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize);
-		widget.setMargin(0.f);
-        widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+        widget.state.padding = 0.f;
 
-        widget.setWidth(Size::Shrink);
-        widget.setHeight(Size::Shrink);
+        widget.state.width = Size::Shrink;
+        widget.state.height = Size::Shrink;
         expectedSize = {200.f, 200.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize);
 
-		widget.setMargin(10.f);
-        widget.setPadding(10.f);
+		widget.state.margin = 10.f;
+        widget.state.padding = 10.f;
         expectedSize = {240.f, 240.f};
 		EXPECT_EQ(widget.layout(maxSize, {0, 0}), expectedSize);
-		widget.setMargin(0.f);
-        widget.setPadding(0.f);
+		widget.state.margin = 0.f;
+        widget.state.padding = 0.f;
 
         widget.state.sizeConstraints.maxHeight = 50.f;
         widget.state.sizeConstraints.maxWidth = 50.f;

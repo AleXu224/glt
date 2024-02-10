@@ -20,7 +20,7 @@ using namespace squi;
 Text::TextPipeline *Text::Impl::pipeline = nullptr;
 
 Text::Impl::Impl(const Text &args)
-	: Widget(args.widget.withDefaultWidth(Size::Shrink).withDefaultHeight(Size::Shrink), Widget::Flags{
+	: Widget(args.widget.withDefaultWidth(Size::Shrink).withDefaultHeight(Size::Shrink), Widget::FlagsArgs{
 																							 .shouldDrawChildren = false,
 																						 }),
 	  text(args.text), fontSrc([&]() -> std::string_view {
@@ -44,7 +44,7 @@ Text::Impl::Impl(const Text &args)
 vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
 	if (!font.has_value()) {
 		font = FontStore::getFont(fontSrc, Window::of(this).engine.instance);
-		const auto textPos = (getPos() + state.margin.getPositionOffset() + state.padding.getPositionOffset()).rounded();
+		const auto textPos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
 		std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, textPos, color);
 	}
 	if (shouldShrink.width && lineWrap) maxSize.x = 0;
@@ -66,7 +66,7 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldS
 }
 
 void Text::Impl::onArrange(vec2 &pos) {
-	const auto textPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	const auto textPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	if (textPos.x != lastX || textPos.y != lastY) {
 		const vec2 roundedPos = textPos.rounded();
 		for (auto &quadVec: quads) {
@@ -81,12 +81,12 @@ void Text::Impl::onArrange(vec2 &pos) {
 
 void Text::Impl::updateSize() {
 	if (lineWrap) {
-		setWidth(Size::Expand);
-		setHeight(Size::Shrink);
+		state.width = Size::Expand;
+		state.height = Size::Shrink;
 	} else {
-		const auto newSize = textSize + state.padding.getSizeOffset();
-		setWidth(newSize.x);
-		setHeight(newSize.y);
+		const auto newSize = textSize + state.padding->getSizeOffset();
+		state.width = newSize.x;
+		state.height = newSize.y;
 	}
 	reLayout();
 }
@@ -101,7 +101,7 @@ void Text::Impl::onDraw() {
 		});
 	}
 
-	const auto pos = getPos() + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	const auto pos = getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 
 	pipeline->bindWithSampler(font.value()->getSampler());
 	const auto clipRect = Window::of(this).engine.instance.scissorStack.back();

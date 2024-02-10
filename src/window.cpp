@@ -20,7 +20,7 @@ void Window::glfwError(int id, const char *description) {
 
 std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
 
-Window::Window() : Widget(Widget::Args{}, Widget::Flags{
+Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 											  .shouldLayoutChildren = false,
 											  .shouldArrangeChildren = false,
 											  .isInteractive = false,
@@ -145,8 +145,8 @@ void Window::updateAndDraw() {
 	auto &children = getChildren();
 	int width, height;
 	glfwGetWindowSize(engine.instance.window.ptr, &width, &height);
-	setWidth(static_cast<float>(width));
-	setHeight(static_cast<float>(height));
+	state.width = static_cast<float>(width);
+	state.height = static_cast<float>(height);
 	state.root = this;
 
 	auto currentTime = std::chrono::steady_clock::now();

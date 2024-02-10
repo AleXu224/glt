@@ -53,7 +53,7 @@ Checkbox::operator Child() const {
 						.child = FontIcon{
 							.widget{
 								.onUpdate = [storage](Widget &w) {
-									w.setVisible(storage->internalValue);
+									w.flags.visible = storage->internalValue;
 								},
 							},
 							.icon = 0xF78C,

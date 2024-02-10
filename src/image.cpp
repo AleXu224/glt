@@ -104,7 +104,7 @@ Engine::Texture Image::Data::createTexture(Engine::Instance &instance) const {
 }
 
 Image::Impl::Impl(const Image &args)
-	: Widget(args.widget, Widget::Flags{
+	: Widget(args.widget, Widget::FlagsArgs{
 							  .shouldLayoutChildren = false,
 						  }),
 	  fit(args.fit), type(args.type) {

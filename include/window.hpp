@@ -41,14 +41,14 @@ namespace squi {
 		~Window() override;
 
 		static Window &of(Widget *w) {
-			if (!w->state.root) throw std::runtime_error("Widget has invalid root!");
-			return *dynamic_cast<Window*>(w->state.root);
+			if (!*w->state.root) throw std::runtime_error("Widget has invalid root!");
+			return *dynamic_cast<Window*>(*w->state.root);
 		}
 		static Window &of(const std::weak_ptr<Widget> &w) {
 			if (w.expired())throw std::runtime_error("Weak pointer has expired");
 			Widget &widgetRef = *w.lock();
-			if (!widgetRef.state.root) throw std::runtime_error("Widget has invalid root!");
-			return *dynamic_cast<Window *>(widgetRef.state.root);
+			if (!*widgetRef.state.root) throw std::runtime_error("Widget has invalid root!");
+			return *dynamic_cast<Window *>(*widgetRef.state.root);
 		}
 
 		void run();
