@@ -16,7 +16,7 @@ using namespace squi;
 
 struct MenuItem {
 	// Args
-	Widget::Args widget;
+	Widget::Args widget{};
 	std::string_view name = "Menu Item";
 	char32_t icon;
 	std::weak_ptr<Observable<bool>> isExpandedEvent;
@@ -70,7 +70,7 @@ struct MenuItem {
 								.onInit = indicatorUpdate,
 								.onUpdate = indicatorUpdate,
 							},
-							.borderRadius = 1.5f,
+							.borderRadius{1.5f},
 						},
 					},
 					Row{

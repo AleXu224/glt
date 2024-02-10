@@ -1,6 +1,6 @@
 #include "scrollable.hpp"
 #include "gestureDetector.hpp"
-#include "renderer.hpp"
+#include "window.hpp"
 #include <algorithm>
 #include <memory>
 
@@ -124,12 +124,12 @@ void Scrollable::Impl::drawChildren() {
 	auto &child = children[0];
 	if (!child) return;
 
-	auto &renderer = Renderer::getInstance();
-	renderer.addClipRect(getRect());
+	auto &instance = Window::of(this).engine.instance;
+	instance.pushScissor(getRect());
 
 	child->draw();
 
-	renderer.popClipRect();
+	instance.popScissor();
 }
 
 squi::Scrollable::operator Child() const {

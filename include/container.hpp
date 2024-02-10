@@ -6,8 +6,8 @@
 namespace squi {
 	struct Container {
 		// Args
-		Widget::Args widget;
-		Child child;
+		Widget::Args widget{};
+		Child child{};
 
 		class Impl : public Widget {
 		public:

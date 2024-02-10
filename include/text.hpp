@@ -2,7 +2,8 @@
 
 #include "color.hpp"
 #include "fontStore.hpp"
-#include "quad.hpp"
+#include "engine/pipeline.hpp"
+#include "engine/textQuad.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
 #include <memory>
@@ -12,12 +13,13 @@
 namespace squi {
 	struct Text {
 		// Args
-		Widget::Args widget;
-		std::string_view text;
+		Widget::Args widget{};
+		std::string_view text = "";
 		float fontSize{14.0f};
 		bool lineWrap{false};
 		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = R"(C:\Windows\Fonts\arial.ttf)";
-		Color color{Color::HEX(0xFFFFFFFF)};
+		Color color{0xFFFFFFFF};
+		using TextPipeline = Engine::Pipeline<Engine::TextQuad::Vertex, true>;
 
 		class Impl : public Widget {
 			// Data
@@ -25,12 +27,16 @@ namespace squi {
 			float lastY{0};
 			float lastAvailableSpace{0};
 			std::string text;
+			std::string fontSrc;
 			float fontSize;
 			bool lineWrap;
-			std::shared_ptr<FontStore::Font> font;
+			bool textModified = false;
+			std::optional<std::shared_ptr<FontStore::Font>> font{};
 			Color color;
 			vec2 textSize;
-			std::vector<std::vector<Quad>> quads{};
+			std::vector<std::vector<Engine::TextQuad>> quads{};
+			// static std::unique_ptr<TextPipeline> pipeline;
+			static TextPipeline *pipeline;
 
 		public:
 			Impl(const Text &args);
@@ -50,7 +56,7 @@ namespace squi {
 		};
 
 		operator Child() const {
-			return std::make_unique<Impl>(*this);
+			return std::make_shared<Impl>(*this);
 		}
 	};
 }// namespace squi

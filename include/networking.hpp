@@ -1,14 +1,9 @@
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef ASIO_STANDALONE
-#define ASIO_STANDALONE
-#endif
 #include "asio/io_context.hpp"
 #include "vector"
 #include <unordered_map>
+#include "thread"
 
 
 namespace squi {
@@ -27,8 +22,8 @@ namespace squi {
 	public:
 		struct Response {
 			std::string body;
-			uint32_t statusCode;
-			std::unordered_map<std::string, std::string> headers;
+			uint32_t statusCode = 0;
+			std::unordered_map<std::string, std::string> headers{};
 			bool success;
 			std::string error;
 		};

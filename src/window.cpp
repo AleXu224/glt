@@ -1,21 +1,16 @@
-#ifdef NDEBUG
-#ifdef _WIN32
-#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-#endif
-#endif
+// #ifdef NDEBUG
+// #ifdef _WIN32
+// #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+// #endif
+// #endif
 
 #include "window.hpp"
 #include "chrono"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
 #include "widget.hpp"
-#include <GLFW/glfw3.h>
 #include <print>
-#define GLFW_INCLUDE_NONE
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3native.h"
 #include "dwmapi.h"
-#include "renderer.hpp"
 
 using namespace squi;
 
@@ -29,60 +24,46 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 											  .shouldLayoutChildren = false,
 											  .shouldArrangeChildren = false,
 											  .isInteractive = false,
-										  }) {
-	glfwSetErrorCallback(&glfwError);
-	if (!glfwInit()) {
-		std::println("Failed to initialize GLFW");
-		exit(1);
-	}
+										  }), engine() {
+	auto &window = engine.instance.window.ptr;
 
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+	windowMap[window] = this;
 
-	window.reset(glfwCreateWindow(800, 600, "Window", nullptr, nullptr), [](GLFWwindow *windowPtr) {
-		glfwDestroyWindow(windowPtr);
-		glfwTerminate();
-	});
-
-	if (!window) {
-		std::println("Failed to create GLFW window");
-		exit(1);
-	}
-
-	windowMap[window.get()] = this;
-
-	glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *windowPtr, int width, int height) {
-		auto &renderer = Renderer::getInstance();
-		renderer.updateScreenSize(width, height);
+	// FIXME: add this
+	glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int width, int height) {
+		// auto &renderer = Renderer::getInstance();
+		// renderer.updateScreenSize(width, height);
 		auto *window = windowMap[windowPtr];
-		window->shouldRelayout();
-		window->updateAndDraw();
+		// window->shouldRelayout();
+		// window->updateAndDraw();
+		
+		window->engine.resized = true;
 	});
-	glfwSetCursorPosCallback(window.get(), [](GLFWwindow *m_window, double xpos, double ypos) {
+	glfwSetCursorPosCallback(window, [](GLFWwindow *m_window, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
 		GestureDetector::setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
 	});
-	glfwSetCharCallback(window.get(), [](GLFWwindow *m_window, unsigned int codepoint) {
+	glfwSetCharCallback(window, [](GLFWwindow *m_window, unsigned int codepoint) {
 		GestureDetector::g_textInput.append(1, static_cast<char>(codepoint));
 	});
-	glfwSetScrollCallback(window.get(), [](GLFWwindow *m_window, double xoffset, double yoffset) {
+	glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
 		GestureDetector::g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
 	});
-	glfwSetKeyCallback(window.get(), [](GLFWwindow *m_window, int key, int scancode, int action, int mods) {
+	glfwSetKeyCallback(window, [](GLFWwindow *m_window, int key, int scancode, int action, int mods) {
 		//		Screen::getCurrentScreen()->animationRunning();
 		if (!GestureDetector::g_keys.contains(key))
 			GestureDetector::g_keys.insert({key, {action, mods}});
 		else
 			GestureDetector::g_keys.at(key) = {action, mods};
 	});
-	glfwSetMouseButtonCallback(window.get(), [](GLFWwindow *m_window, int button, int action, int mods) {
+	glfwSetMouseButtonCallback(window, [](GLFWwindow *m_window, int button, int action, int mods) {
 		//		Screen::getCurrentScreen()->animationRunning();
 		if (!GestureDetector::g_keys.contains(button))
 			GestureDetector::g_keys.insert({button, {action, mods}});
 		else
 			GestureDetector::g_keys.at(button) = {action, mods};
 	});
-	glfwSetCursorEnterCallback(window.get(), [](GLFWwindow *m_window, int entered) {
+	glfwSetCursorEnterCallback(window, [](GLFWwindow *m_window, int entered) {
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
@@ -107,8 +88,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 		if (HIWORD(pFixed->dwFileVersionLS) >= 22523) supportsNewMica = true;
 	}
 
-	HWND hwnd = glfwGetWin32Window(window.get());
-	Renderer::getInstance().initialize(hwnd, 800, 600);
+	HWND hwnd = glfwGetWin32Window(window);
+	// Renderer::getInstance().initialize(hwnd, 800, 600);
 
 	int darkMode = 1;
 	int mica = 2;
@@ -128,55 +109,51 @@ Window::Window() : Widget(Widget::Args{}, Widget::Flags{
 }
 
 Window::~Window() {
-	windowMap.erase(window.get());
+	windowMap.erase(engine.instance.window.ptr);
 }
 
 void Window::run() {
-	while (!glfwWindowShouldClose(window.get())) {
+	engine.run([&]{
 		updateAndDraw();
-	}
+	});
 }
 
 void Window::updateAndDraw() {
-	Renderer &renderer = Renderer::getInstance();
 	auto currentFpsTime = std::chrono::steady_clock::now();
 	auto fpsDeltaTime = currentFpsTime - lastFpsTime;
 	if (fpsDeltaTime > 1s) {
-		glfwSetWindowTitle(window.get(), std::to_string(fps).c_str());
+		glfwSetWindowTitle(engine.instance.window.ptr, std::to_string(fps).c_str());
 		fps = 0;
 		lastFpsTime = currentFpsTime;
 	}
 	fps++;
-	auto context = renderer.getDeviceContext();
-	const auto beforePoll = std::chrono::steady_clock::now();
+	// const auto beforePoll = std::chrono::steady_clock::now();
 	// glfwPollEvents();
 	if (drewLastFrame) glfwPollEvents();
 	else
 		glfwWaitEventsTimeout(1.0 / 10.0);// Run at 10 fps
 	drewLastFrame = false;
 
-	const auto afterPoll = std::chrono::steady_clock::now();
+	// const auto afterPoll = std::chrono::steady_clock::now();
 
-	const auto color = [isWin11 = isWin11]() -> std::array<float, 4> {
-		if (isWin11) return {0.0f, 0.0f, 0.0f, 0.0f};
-		else
-			return {32.f / 255.f, 32.f / 255.f, 32.f / 255.f, 1.0f};
-	}();
-	auto *renderTargetView = renderer.getRenderTargetView().get();
-	context->ClearRenderTargetView(renderTargetView, color.data());
+	// const auto color = [isWin11 = isWin11]() -> std::array<float, 4> {
+	// 	if (isWin11) return {0.0f, 0.0f, 0.0f, 0.0f};
+	// 	else
+	// 		return {32.f / 255.f, 32.f / 255.f, 32.f / 255.f, 1.0f};
+	// }();
 
 	auto &children = getChildren();
 	int width, height;
-	glfwGetWindowSize(window.get(), &width, &height);
+	glfwGetWindowSize(engine.instance.window.ptr, &width, &height);
 	setWidth(static_cast<float>(width));
 	setHeight(static_cast<float>(height));
 	state.root = this;
 
 	auto currentTime = std::chrono::steady_clock::now();
-	auto deltaTime = currentTime - lastTime;
+	// auto deltaTime = currentTime - lastTime;
 
-	renderer.updateDeltaTime(deltaTime);
-	renderer.updateCurrentFrameTime(currentTime);
+	// renderer.updateDeltaTime(deltaTime);
+	// renderer.updateCurrentFrameTime(currentTime);
 
 	for (auto &child: children) {
 		addedChildren->notify(child);
@@ -194,10 +171,10 @@ void Window::updateAndDraw() {
 	content->state.root = this;
 	content->update();
 
-	if (needsRelayout)
+	// if (needsRelayout)
 		content->layout({static_cast<float>(width), static_cast<float>(height)}, {});
 
-	if (needsRelayout || needsReposition)
+	// if (needsRelayout || needsReposition)
 		content->arrange({0.0f, 0.0f});
 
 	for (uint32_t i = 0; i < hitChecks; i++) {
@@ -207,21 +184,25 @@ void Window::updateAndDraw() {
 	GestureDetector::g_activeArea.pop_back();
 	if (!GestureDetector::g_activeArea.empty()) printf("active area not empty\n");
 
-	const auto afterUpdateTime = std::chrono::steady_clock::now();
+	// const auto afterUpdateTime = std::chrono::steady_clock::now();
 
-	renderer.prepare();
-
-	if (needsRedraw || needsRelayout || needsReposition) {
+	// if (needsRedraw || needsRelayout || needsReposition) {
 		content->draw();
-		renderer.render();
-	}
+		// renderer.render();
+	// }
 
-	renderer.popClipRect();
-	const auto afterDrawTime = std::chrono::steady_clock::now();
+	// {
+	// 	auto font = FontStore::getFont(R"(C:\Windows\Fonts\arial.ttf)", engine.instance);
+	// 	auto [quads, width, height] = font->generateQuads("A", 20, {0, 0}, Color(1, 1, 1, 1.f));
+	// 	auto quad = quads.front();
+	// }
 
-	auto *swapChain = renderer.getSwapChain().get();
+	// renderer.popClipRect();
+	// const auto afterDrawTime = std::chrono::steady_clock::now();
+
+	// auto *swapChain = renderer.getSwapChain().get();
 	if (needsRedraw || needsRelayout || needsReposition) {
-		swapChain->Present(1, 0);
+		// swapChain->Present(1, 0);
 		drewLastFrame = true;
 	}
 	lastTime = currentTime;
@@ -241,12 +222,12 @@ void Window::updateAndDraw() {
 	needsRelayout = false;
 	needsReposition = false;
 
-	const auto afterPresentTime = std::chrono::steady_clock::now();
+	// const auto afterPresentTime = std::chrono::steady_clock::now();
 
-	renderer.updatePollTime(afterPoll - beforePoll);
-	renderer.updateUpdateTime(afterUpdateTime - currentTime);
-	renderer.updateDrawTime(afterDrawTime - afterUpdateTime);
-	renderer.updatePresentTime(afterPresentTime - afterDrawTime);
+	// renderer.updatePollTime(afterPoll - beforePoll);
+	// renderer.updateUpdateTime(afterUpdateTime - currentTime);
+	// renderer.updateDrawTime(afterDrawTime - afterUpdateTime);
+	// renderer.updatePresentTime(afterPresentTime - afterDrawTime);
 
 	GestureDetector::frameEnd();
 }

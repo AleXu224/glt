@@ -40,14 +40,14 @@ Checkbox::operator Child() const {
 						.onUpdate = [storage](Widget &w) {
 							auto &box = dynamic_cast<Box::Impl &>(w);
 
-							box.setColor(storage->internalValue ? Color::HEX(0x60CDFFFF) : Color::HEX(0x0));
-							box.setBorderColor(storage->internalValue ? Color::HEX(0x60CDFFFF) : Color::RGBA(1, 1, 1, 0.6f));
+							box.setColor(storage->internalValue ? Color(0x60CDFFFF) : Color(0x0));
+							box.setBorderColor(storage->internalValue ? Color(0x60CDFFFF) : Color(1, 1, 1, 0.6f));
 						},
 					},
-					.color = Color::RGBA(0, 0, 0, 0.1f),
-					.borderColor = Color::RGBA(1, 1, 1, 0.6f),
-					.borderWidth = 1.f,
-					.borderRadius = 4.f,
+					.color = Color(0, 0, 0, 0.1f),
+					.borderColor = Color(1, 1, 1, 0.6f),
+					.borderWidth{1.f},
+					.borderRadius{4.f},
 					.borderPosition = Box::BorderPosition::outset,
 					.child = Align{
 						.child = FontIcon{
@@ -58,7 +58,7 @@ Checkbox::operator Child() const {
 							},
 							.icon = 0xF78C,
 							.size = 12.f,
-							.color = Color::RGBA(0, 0, 0),
+							.color = Color(0.f, 0.f, 0.f),
 						},
 					},
 				},

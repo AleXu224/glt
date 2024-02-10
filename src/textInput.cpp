@@ -2,7 +2,6 @@
 #include "box.hpp"
 #include "cstdint"
 #include "gestureDetector.hpp"
-#include "renderer.hpp"
 #include "text.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
@@ -12,7 +11,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
-
+#include "window.hpp"
 
 using namespace squi;
 
@@ -28,21 +27,21 @@ TextInput::Impl::Impl(const TextInput &args)
 	});
 	// Selection
 	addChild(Box{
-		.color{Color::HEX(0x0078D4FF)},
+		.color{0x0078D4FF},
 	});
 	// Selected text
 	addChild(Text{
 		.text{""},
 		.fontSize = args.fontSize,
 		.font{args.font},
-		.color{Color::HEX(0xFFFFFFFF)},
+		.color{0xFFFFFFFF},
 	});
 	// Cursor
 	addChild(Box{
 		.widget{
 			.width = 2.f,
 		},
-		.color{Color::HEX(0xFFFFFFFF)},
+		.color{0xFFFFFFFF},
 	});
 }
 
@@ -303,15 +302,15 @@ void TextInput::Impl::drawChildren() {
 	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
 	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
 
-	auto &renderer = Renderer::getInstance();
-	renderer.addClipRect(getRect());
+	auto &instance = Window::of(this).engine.instance;
+	instance.pushScissor(getRect());
 
 	textWidget.draw();
 	selectionWidget.draw();
 	selectedTextWidget.draw();
 	cursorWidget.draw();
 
-	renderer.popClipRect();
+	instance.popScissor();
 }
 TextInput::operator Child() const {
 	return GestureDetector{.child{std::make_unique<Impl>(*this)}};

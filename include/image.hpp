@@ -1,11 +1,14 @@
 #pragma once
 
-#include "quad.hpp"
-#include "texture.hpp"
+#include "engine/pipeline.hpp"
+#include "engine/samplerUniform.hpp"
+#include "engine/texture.hpp"
+#include "engine/texturedQuad.hpp"
 #include "vector"
 #include "widget.hpp"
 #include <future>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <variant>
 
@@ -13,9 +16,9 @@ namespace squi {
 	struct Image {
 		struct Data {
 			std::vector<uint8_t> data;
-			uint32_t width;
-			uint32_t height;
-			uint32_t channels;
+			int32_t width;
+			int32_t height;
+			int32_t channels;
 
 			Data(std::vector<uint8_t> data, uint32_t width, uint32_t height, uint32_t channels) : data(std::move(data)), width(width), height(height), channels(channels){};
 			Data(unsigned char *bytes, uint32_t length);
@@ -24,7 +27,7 @@ namespace squi {
 			static std::future<Data> fromUrlAsync(std::string_view url);
 			static std::future<Data> fromFileAsync(std::string_view path);
 
-			[[nodiscard]] Texture::Impl createTexture() const;
+			[[nodiscard]] Engine::Texture createTexture(Engine::Instance &instance) const;
 		};
 
 		enum class Fit {
@@ -38,31 +41,31 @@ namespace squi {
 			contain,
 		};
 
-		struct State {
-			bool valid = true;
-			bool ready = false;
-		};
-
 		enum class Type {
 			normal = 0,
 			signedDistanceField = 1,
 		};
 
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		Fit fit = Fit::none;
 		Type type = Type::normal;
 		std::variant<Data, std::shared_future<Data>> image;
+		using ImagePipeline = Engine::Pipeline<Engine::TexturedQuad::Vertex, true>;
 
 		class Impl : public Widget {
 			// Data
-			Texture::Impl texture;
 			Fit fit;
 			Type type = Type::normal;
-			Quad quad;
-			Image::State imageState{};
+			std::optional<Engine::SamplerUniform> sampler;
+			Engine::TexturedQuad quad{Engine::TexturedQuad::Args{
+				.position{0, 0},
+				.size{0, 0},
+			}};
+			// static std::unique_ptr<ImagePipeline> pipeline;
 
 		public:
+			static ImagePipeline *pipeline;
 			Impl(const Image &args);
 
 			void onUpdate() override;
@@ -71,7 +74,7 @@ namespace squi {
 			void postArrange(vec2 &pos) override;
 			void onDraw() override;
 
-			[[nodiscard]] Quad &getQuad() {
+			[[nodiscard]] Engine::TexturedQuad &getQuad() {
 				return quad;
 			}
 		};

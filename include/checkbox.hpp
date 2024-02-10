@@ -6,7 +6,7 @@
 namespace squi {
     struct Checkbox {
         // Args
-        Widget::Args widget;
+        Widget::Args widget{};
         std::optional<std::string_view> text{};
         std::optional<std::reference_wrapper<bool>> value{};
         std::function<void(bool)> onChange{};

@@ -12,10 +12,10 @@ Expander::operator Child() const {
 
 	return Box{
 		.widget = widget.withDefaultHeight(64.f),
-		.color = Color::HEX(0xFFFFFF0D),
-		.borderColor = Color::HEX(0x0000001A),
-		.borderWidth = 1.f,
-		.borderRadius = 4.f,
+		.color = 0xFFFFFF0D,
+		.borderColor = 0x0000001A,
+		.borderWidth{1.f},
+		.borderRadius{4.f},
 		.borderPosition = Box::BorderPosition::outset,
 		.child = Row{
 			.widget{
@@ -41,7 +41,7 @@ Expander::operator Child() const {
 						caption.has_value() ? Text{
 												  .text = caption.value(),
 												  .fontSize = 12.f,
-												  .color = Color::HEX(0xFFFFFFC8),
+												  .color = 0xFFFFFFC8,
 											  }
 											: Child{},
 					},

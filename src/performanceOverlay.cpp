@@ -2,7 +2,6 @@
 #include "align.hpp"
 #include "box.hpp"
 #include "column.hpp"
-#include "renderer.hpp"
 #include "row.hpp"
 #include "text.hpp"
 #include <string_view>
@@ -24,10 +23,10 @@ PerformanceOverlay::operator squi::Child() const {
 				.margin{16},
 				.padding{8},
 			},
-			.color{Color::HEX(0xFFFFFF0D)},
-			.borderColor{Color::HEX(0x0000001A)},
-			.borderWidth = 1.0f,
-			.borderRadius = 4,
+			.color = 0xFFFFFF0D,
+			.borderColor = 0x0000001A,
+			.borderWidth{1.0f},
+			.borderRadius{4},
 			.borderPosition = Box::BorderPosition::outset,
 			.child{
 				Column{
@@ -51,9 +50,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>08.0f}", 1.0 / renderer.getDeltaTime().count()));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>08.0f}", 1.0 / renderer.getDeltaTime().count()));
 										},
 									},
 									.text = "60",
@@ -75,9 +75,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.2f}ms", renderer.getDeltaTime().count() * 1000));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>06.2f}ms", renderer.getDeltaTime().count() * 1000));
 										},
 									},
 									.text = "16.6ms",
@@ -98,9 +99,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.2f}ms", renderer.getPollTime().count() * 1000));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>06.2f}ms", renderer.getPollTime().count() * 1000));
 										},
 									},
 									.text = "100",
@@ -121,9 +123,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.2f}ms", renderer.getUpdateTime().count() * 1000));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>06.2f}ms", renderer.getUpdateTime().count() * 1000));
 										},
 									},
 									.text = "100",
@@ -144,9 +147,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.2f}ms", renderer.getDrawTime().count() * 1000));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>06.2f}ms", renderer.getDrawTime().count() * 1000));
 										},
 									},
 									.text = "10000",
@@ -167,9 +171,10 @@ PerformanceOverlay::operator squi::Child() const {
 								Text{
 									.widget{
 										.onUpdate = [storage](Widget &widget) {
-											auto &text = reinterpret_cast<Text::Impl &>(widget);
-											const auto &renderer = Renderer::getInstance();
-											text.setText(std::format("{:>06.2f}ms", renderer.getPresentTime().count() * 1000));
+											// FIXME: add this back
+											// auto &text = reinterpret_cast<Text::Impl &>(widget);
+											// const auto &renderer = Renderer::getInstance();
+											// text.setText(std::format("{:>06.2f}ms", renderer.getPresentTime().count() * 1000));
 										},
 									},
 									.text = "10000",

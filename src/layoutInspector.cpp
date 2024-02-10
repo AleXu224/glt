@@ -6,8 +6,6 @@
 #include "container.hpp"
 #include "fontIcon.hpp"
 #include "gestureDetector.hpp"
-#include "quad.hpp"
-#include "renderer.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
@@ -39,7 +37,7 @@ struct TextItem {
 				.height = Size::Shrink,
 				.padding = 8,
 			},
-			.color{darkenedBackground ? Color::HEX(0x00000040) : Color::HEX(0x00000000)},
+			.color{darkenedBackground ? Color(0x00000040) : Color(0x00000000)},
 			.child{
 				Row{
 					.widget{
@@ -256,20 +254,20 @@ struct LayoutItem {
 								.onUpdate = [storage = storage, state = state](Widget &w) {
 									Color outputColor = [&]() {
 										if (storage->hovered || state->activeButton.lock() == w.shared_from_this())
-											return Color::HEX(0xFFFFFF0D);
+											return Color(0xFFFFFF0D);
 										else
-											return Color::HEX(0x00000000);
+											return Color(0x00000000);
 									}();
 									const auto timeAlive = std::chrono::steady_clock::now() - storage->timeCreated;
 									if (timeAlive < std::chrono::milliseconds(200)) {
-										outputColor = outputColor.transistion(Color::HEX(0x17C55DAA), 1.f - (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(timeAlive).count()) / 200.f));
+										outputColor = outputColor.transistion(Color(0x17C55DAA), 1.f - (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(timeAlive).count()) / 200.f));
 									}
 									auto &box = dynamic_cast<Box::Impl &>(w);
 									box.setColor(outputColor);
 								},
 							},
-							.color{Color::HEX(0x00000000)},
-							.borderRadius = 4.0f,
+							.color{Color(0x00000000)},
+							.borderRadius{4.0f},
 							.child{
 								Row{
 									.widget{
@@ -350,9 +348,9 @@ struct LayoutInspectorActionButton {
 				auto &box = dynamic_cast<Box::Impl &>(event.widget);
 
 				if (event.state.hovered || event.state.focused)
-					box.setColor(Color::HEX(0xFFFFFF0D));
+					box.setColor(Color(0xFFFFFF0D));
 				else
-					box.setColor(Color::HEX(0x00000000));
+					box.setColor(Color(0x00000000));
 			},
 			.child{
 				Box{
@@ -377,8 +375,8 @@ struct LayoutInspectorActionButton {
 							}
 						},
 					},
-					.color{Color::HEX(0x00000000)},
-					.borderRadius = 4.f,
+					.color{Color(0x00000000)},
+					.borderRadius{4.f},
 					.child = Align{
 						.child{
 							FontIcon{
@@ -424,7 +422,7 @@ struct LayoutInspectorContent {
 						.height = 1.f,
 						.margin = Margin{1, 0, 2, 0},
 					},
-					.color{Color::HEX(0xFFFFFF15)},
+					.color{Color(0xFFFFFF15)},
 				},
 				ScrollableFrame{
 					.children{
@@ -464,7 +462,7 @@ struct LayoutInspectorContent {
 						.width = Size::Expand,
 						.height = 1.f,
 					},
-					.color{Color::HEX(0x00000033)},
+					.color{Color(0x00000033)},
 				},
 				Box{
 					.widget{
@@ -476,7 +474,7 @@ struct LayoutInspectorContent {
 							}
 						},
 					},
-					.color{Color::HEX(0x00000015)},
+					.color{Color(0x00000015)},
 					.child{
 						Align{
 							.child{Text{.text{"Select a widget to show info"}}},
@@ -579,36 +577,37 @@ LayoutInspector::operator Child() const {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
 								if (widget->flags.visible) {
-									Quad previewQuad{Quad::Args{
-										.pos = widget->getPos() + widget->state.margin.getPositionOffset(),
-										.size = widget->getSize(),
-										.color = Color::HEX(0x00008040),
-									}};
+									// FIXME: add preview quads again
+									// Quad previewQuad{Quad::Args{
+									// 	.pos = widget->getPos() + widget->state.margin.getPositionOffset(),
+									// 	.size = widget->getSize(),
+									// 	.color = Color(0x00008040),
+									// }};
 
-									Quad paddingQuad{Quad::Args{
-										.pos = widget->getPos() + widget->state.padding.getPositionOffset() + widget->state.margin.getPositionOffset(),
-										.size = widget->getSize() - widget->state.padding.getSizeOffset(),
-										.color = Color::HEX(0x0008040),
-									}};
+									// Quad paddingQuad{Quad::Args{
+									// 	.pos = widget->getPos() + widget->state.padding.getPositionOffset() + widget->state.margin.getPositionOffset(),
+									// 	.size = widget->getSize() - widget->state.padding.getSizeOffset(),
+									// 	.color = Color(0x0008040),
+									// }};
 
-									const auto layoutRect = widget->getLayoutRect();
-									Quad layoutQuad{Quad::Args{
-										.pos = widget->getPos(),
-										.size = layoutRect.size(),
-										.color = Color::HEX(0x008A0040),
-									}};
+									// const auto layoutRect = widget->getLayoutRect();
+									// Quad layoutQuad{Quad::Args{
+									// 	.pos = widget->getPos(),
+									// 	.size = layoutRect.size(),
+									// 	.color = Color(0x008A0040),
+									// }};
 
-									auto &renderer = Renderer::getInstance();
-									renderer.addQuad(layoutQuad);
-									renderer.addQuad(previewQuad);
-									renderer.addQuad(paddingQuad);
+									// auto &renderer = Renderer::getInstance();
+									// renderer.addQuad(layoutQuad);
+									// renderer.addQuad(previewQuad);
+									// renderer.addQuad(paddingQuad);
 								}
 							},
 						},
-						.color{Color::HEX(0x1C1C1CFF)},
-						.borderColor{Color::HEX(0x00000033)},
-						.borderWidth = 1.f,
-						.borderRadius = 8.f,
+						.color{Color(0x1C1C1CFF)},
+						.borderColor{Color(0x00000033)},
+						.borderWidth{1.f},
+						.borderRadius{8.f},
 						.borderPosition = squi::Box::BorderPosition::outset,
 						.child{
 							LayoutInspectorContent{storage},

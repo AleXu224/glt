@@ -100,7 +100,7 @@ ContextMenuButton::operator Child() const {
 			}
 			if (!storage->stateChanged) return;
 			if (!storage->hovered && !storage->submenuHovered) {
-				reinterpret_cast<Box::Impl &>(event.widget).setColor(Color::HEX(0x00000000));
+				reinterpret_cast<Box::Impl &>(event.widget).setColor(0x00000000);
 				if (storage->content.index() == 1 && storage->submenuOpened) {
 					ContextMenu::Storage::removeMenu(storage->submenu);
 					storage->submenuOpened = false;
@@ -112,7 +112,7 @@ ContextMenuButton::operator Child() const {
 					}
 				}
 			} else {
-				reinterpret_cast<Box::Impl &>(event.widget).setColor(Color::HEX(0xFFFFFF0F));
+				reinterpret_cast<Box::Impl &>(event.widget).setColor(0xFFFFFF0F);
 				if (storage->content.index() == 1 && !storage->submenuOpened) {
 					storage->submenuOpened = true;
 					if (storage->menuToLock.has_value()) {
@@ -151,8 +151,8 @@ ContextMenuButton::operator Child() const {
 					.margin = Margin{5.f, 2.f},
 					.padding = Padding{4.f, 0.f},
 				},
-				.color{Color::HEX(0)},
-				.borderRadius = 4.f,
+				.color{Color(0)},
+				.borderRadius{4.f},
 				.child{
 					Row{
 						.alignment = Row::Alignment::center,
@@ -250,10 +250,10 @@ ContextMenuFrame::operator Child() const {
 				pos = newPos;
 			},
 		},
-		.color{Color::HEX(0x2C2C2CF5)},
-		.borderColor{Color::HEX(0x00000033)},
-		.borderWidth = 1.f,
-		.borderRadius = 8.f,
+		.color{Color(0x2C2C2CF5)},
+		.borderColor{Color(0x00000033)},
+		.borderWidth{1.f},
+		.borderRadius{8.f},
 		.borderPosition = Box::BorderPosition::outset,
 	};
 	box->setChildren(Children{
@@ -273,7 +273,7 @@ ContextMenuFrame::operator Child() const {
 									.height = 1.f,
 									.margin = Margin{1, 1, 2, 1},
 								},
-								.color{Color::HEX(0xFFFFFF15)},
+								.color{Color(0xFFFFFF15)},
 							});
 							continue;
 						}

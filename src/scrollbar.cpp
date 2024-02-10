@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 
 struct ScrollbarKnob {
 	// Args
-	Widget::Args widget;
+	Widget::Args widget{};
 	std::shared_ptr<Scrollbar::Storage> storage;
 
 	class Impl : public Widget {
@@ -53,15 +53,15 @@ Scrollbar::operator Child() const {
 			using namespace std::chrono_literals;
 			auto &w = reinterpret_cast<Box::Impl &>(event.widget);
 			if (currentTime - storage->lastHoverTime > 1s) {
-				w.setColor(Color::HEX(0));
+				w.setColor(0);
 			} else {
-				w.setColor(Color::HEX(0xFFFFFF0F));
+				w.setColor(0xFFFFFF0F);
 			}
 		},
 		.child{
 			Box{
 				.widget = wCopy.withDefaultWidth(16.f).withDefaultPadding(3.f),
-				.color{Color::HEX(0xFFFFFF0F)},
+				.color{0xFFFFFF0F},
 				.child{
 					GestureDetector{
 						.onPress = [storage](auto) {
@@ -105,8 +105,8 @@ Scrollbar::operator Child() const {
 										pos.y += maxOffset.y * storage->scroll;
 									},
 								},
-								.color{Color::HEX(0xFFFFFF8B)},
-								.borderRadius = 2,
+								.color{0xFFFFFF8B},
+								.borderRadius{2},
 								.child = ScrollbarKnob({}, storage),
 							},
 						},

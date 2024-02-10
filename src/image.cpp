@@ -1,46 +1,53 @@
 #include "networking.hpp"
 
+#include "engine/compiledShaders/texturedRectfrag.hpp"
+#include "engine/compiledShaders/texturedRectvert.hpp"
 #include "fstream"
 #include "image.hpp"
-#include "renderer.hpp"
-#include "vertex.hpp"
+#include "pipeline.hpp"
+#include "samplerUniform.hpp"
+#include "texture.hpp"
+#include "texturedQuad.hpp"
+#include "vec2.hpp"
 #include "widget.hpp"
+#include "window.hpp"
+#include <cstring>
+#include <expected>
 #include <future>
 #include <iostream>
 #include <string_view>
 
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image_ext.h"
 #include "format"
 #include "stdexcept"
 
 using namespace squi;
 
+// std::unique_ptr<Image::ImagePipeline> Image::Impl::pipeline = nullptr;
+Image::ImagePipeline *Image::Impl::pipeline = nullptr;
+
 Image::Data::Data(unsigned char *bytes, uint32_t length) {
-	int width, height, channels;
-	stbi_uc *data = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 0);
+	stbi_uc *data = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 4);
 	if (data == nullptr) {
 		throw std::runtime_error("Failed to load image");
 	}
-	if (channels == 3) {
+	// if (channels == 3) {
+	// 	channels = 2;
+	// 	this->data.resize(width * height * 2);
+	// 	for (int i = 0; i < width * height; i++) {
+	// 		this->data[i * 4 + 0] = data[i * 3 + 0];
+	// 		this->data[i * 4 + 1] = data[i * 3 + 1];
+	// 		this->data[i * 4 + 2] = data[i * 3 + 2];
+	// 		this->data[i * 4 + 3] = 255;
+	// 	}
+	// } else 
+	if (channels == 1 || channels == 2 || channels == 3 || channels == 4) {
 		channels = 4;
-		this->data.resize(width * height * 4);
-		for (int i = 0; i < width * height; i++) {
-			this->data[i * 4 + 0] = data[i * 3 + 0];
-			this->data[i * 4 + 1] = data[i * 3 + 1];
-			this->data[i * 4 + 2] = data[i * 3 + 2];
-			this->data[i * 4 + 3] = 255;
-		}
-	} else if (channels == 1 || channels == 2 || channels == 4) {
 		this->data.resize(width * height * channels);
-		std::memcpy(this->data.data(), data, this->data.size());
+		std::memcpy(this->data.data(), data, width * height * channels);
 	} else {
 		throw std::runtime_error("Unsupported number of channels");
 	}
-	this->width = width;
-	this->height = height;
-	this->channels = channels;
 	stbi_image_free(data);
 }
 
@@ -83,51 +90,44 @@ std::future<Image::Data> Image::Data::fromFileAsync(std::string_view path) {
 	});
 }
 
-Texture::Impl Image::Data::createTexture() const {
-	return {Texture{
-		.width = static_cast<uint16_t>(this->width),
-		.height = static_cast<uint16_t>(this->height),
-		.channels = static_cast<uint16_t>(this->channels),
-		.data = this->data.data(),
-		.dynamic = false,
+Engine::Texture Image::Data::createTexture(Engine::Instance &instance) const {
+	Engine::Texture ret{Engine::Texture::Args{
+		.instance = instance,
+		.width = static_cast<uint32_t>(this->width),
+		.height = static_cast<uint32_t>(this->height),
+		.channels = static_cast<uint32_t>(this->channels),
 	}};
+
+	memcpy(ret.mappedMemory, this->data.data(), this->width * this->height * this->channels * sizeof(uint8_t));
+
+	return ret;
 }
 
 Image::Impl::Impl(const Image &args)
 	: Widget(args.widget, Widget::Flags{
-		.shouldLayoutChildren = false,
-	}),
-	  texture(Texture::Empty()),
-	  fit(args.fit),
-	  type(args.type),
-	  quad(Quad::Args{
-		  .size = {0, 0},
-		  .texture = this->texture.getTextureView(),
-		  .textureType = (args.type == Type::normal ? TextureType::Texture : TextureType::Sdf),
-	  }) {
+							  .shouldLayoutChildren = false,
+						  }),
+	  fit(args.fit), type(args.type) {
 
 	switch (args.image.index()) {
 		case 0: {
-			imageState.ready = false;
-			auto data = std::get<0>(args.image);
-			std::future<Texture::Impl> texFuture = std::async(std::launch::async, [data = data]() {
-				return data.createTexture();
+			auto &data = std::get<0>(args.image);
+			std::future<Data> texFuture = std::async(std::launch::async, [data = data]() -> Data {
+				return data;
 			});
 			state.properties.insert({"imageFuture", texFuture.share()});
 			break;
 		}
 		case 1: {
 			auto &future = std::get<1>(args.image);
-			imageState.ready = false;
-			if (!future.valid()) {
 #ifdef _DEBUG
+			if (!future.valid()) {
 				printf("Warning: Image future is not valid\n");
-#endif
-				imageState.valid = false;
 			}
-			std::future<Texture::Impl> texFuture = std::async(std::launch::async, [future = future]() {
+#endif
+			std::future<Data> texFuture = std::async(std::launch::async, [future = future]() -> Data {
 				future.wait();
-				return future.get().createTexture();
+				return future.get();
 			});
 			state.properties.insert({"imageFuture", texFuture.share()});
 		}
@@ -135,17 +135,23 @@ Image::Impl::Impl(const Image &args)
 }
 
 void Image::Impl::onUpdate() {
-	if (imageState.ready || !imageState.valid) return;
-	auto &future = std::any_cast<std::shared_future<Texture::Impl> &>(state.properties.at("imageFuture"));
+	if (sampler.has_value()) return;
+	auto &future = std::any_cast<std::shared_future<Data> &>(state.properties.at("imageFuture"));
 	// const auto status = future.wait_for(std::chrono::seconds(0));
 	if (future._Is_ready()) {
-		texture = future.get();
-		quad = Quad::Args{
-			.size = {0, 0},
-			.texture = this->texture.getTextureView(),
-			.textureType = (type == Type::normal ? TextureType::Texture : TextureType::Sdf),
-		};
-		imageState.ready = true;
+		auto &data = future.get();
+		sampler.emplace(Engine::SamplerUniform::Args{
+			.instance = Window::of(this).engine.instance,
+			.textureArgs{
+				Engine::Texture::Args{
+					.instance = Window::of(this).engine.instance,
+					.width = static_cast<uint32_t>(data.width),
+					.height = static_cast<uint32_t>(data.height),
+					.channels = static_cast<uint32_t>(data.channels),
+				},
+			},
+		});
+		memcpy(sampler->texture.mappedMemory, data.data.data(), data.width * data.height * data.channels);
 		auto iter = state.properties.find("imageFuture");
 		if (iter != state.properties.end()) {
 			state.properties.erase(iter);
@@ -155,7 +161,8 @@ void Image::Impl::onUpdate() {
 }
 
 void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
-	const auto &properties = texture.getProperties();
+	if (!sampler.has_value()) return;
+	const auto &properties = sampler->texture;
 	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 	switch (this->fit) {
 		case Fit::none: {
@@ -163,9 +170,7 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 			maxSize.y = std::min(maxSize.y, static_cast<float>(properties.height));
 			break;
 		}
-		case Fit::fill: {
-			break;
-		}
+		case Fit::fill:
 		case Fit::cover: {
 			break;
 		}
@@ -181,33 +186,34 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 }
 
 void Image::Impl::postLayout(vec2 &size) {
-	const auto &properties = texture.getProperties();
+	if (!sampler.has_value()) return;
+	const auto &properties = sampler->texture;
 
 	switch (this->fit) {
 		case Fit::none: {
-			quad.setSize(vec2{
+			quad.size = vec2{
 				static_cast<float>(properties.width),
 				static_cast<float>(properties.height),
-			});
+			};
 			break;
 		}
 		case Fit::fill:
 		case Fit::contain: {
-			quad.setSize(size);
+			quad.size = size;
 			break;
 		}
 		case Fit::cover: {
 			const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 			if (size.x / size.y > aspectRatio) {
-				quad.setSize(vec2{
+				quad.size = vec2{
 					size.x,
 					size.x / aspectRatio,
-				});
+				};
 			} else {
-				quad.setSize(vec2{
+				quad.size = vec2{
 					size.y * aspectRatio,
 					size.y,
-				});
+				};
 			}
 			break;
 		}
@@ -215,26 +221,42 @@ void Image::Impl::postLayout(vec2 &size) {
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
+	if (!sampler.has_value()) return;
 	const auto &widgetSize = getSize();
-	const vec2 quadSize = quad.getData().size;
+	const vec2 quadSize = vec2(quad.size);
 
 	switch (this->fit) {
 		case Fit::fill:
 		case Fit::contain: {
-			this->quad.setPos(pos);
+			quad.position = pos;
 			break;
 		}
 		case Fit::none:
 		case Fit::cover: {
-			this->quad.setPos(pos.withXOffset(-(quadSize.x - widgetSize.x) / 2.0f)
-								  .withYOffset(-(quadSize.y - widgetSize.y) / 2.0f));
+			quad.position = pos.withXOffset(-(quadSize.x - widgetSize.x) / 2.0f)
+								.withYOffset(-(quadSize.y - widgetSize.y) / 2.0f);
 			break;
 		}
 	}
 }
 
 void Image::Impl::onDraw() {
-	Renderer::getInstance().addClipRect(getContentRect());
-	Renderer::getInstance().addQuad(quad);
-	Renderer::getInstance().popClipRect();
+	if (!pipeline) {
+		auto &instance = Window::of(this).engine.instance;
+		// pipeline = std::make_unique<ImagePipeline>(ImagePipeline::Args{
+		// 	.vertexShader = Engine::Shaders::texturedRectvert,
+		// 	.fragmentShader = Engine::Shaders::texturedRectfrag,
+		// 	.instance = Window::of(this).engine.instance,
+		// });
+		pipeline = &instance.createPipeline<ImagePipeline>(ImagePipeline::Args{
+			.vertexShader = Engine::Shaders::texturedRectvert,
+			.fragmentShader = Engine::Shaders::texturedRectfrag,
+			.instance = Window::of(this).engine.instance,
+		});
+	}
+
+	if (!sampler.has_value()) return;
+	pipeline->bindWithSampler(sampler.value());
+	auto [vi, ii] = pipeline->getIndexes();
+	pipeline->addData(quad.getData(vi, ii));
 }

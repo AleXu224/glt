@@ -1,15 +1,23 @@
 #include "color.hpp"
 #include "algorithm"
+#include <glm/fwd.hpp>
 
 using namespace squi;
 
-Color Color::HEX(uint32_t value) {
-	return {value};
-}
+Color::Color(uint32_t value)
+	: r(value >> 24),
+	  g((value >> 16) & 0xFF),
+	  b((value >> 8) & 0xFF),
+	  a((value) & 0xFF) {}
 
-Color Color::HEX(std::string_view hex) {
+Color::Color(std::string_view hex) : r(), g(), b(), a() {
 	if (hex.starts_with('#')) hex.remove_prefix(1);
-	if (hex.size() != 6 && hex.size() != 8) return {0};
+	if (hex.size() != 6 && hex.size() != 8) {
+		r = 0;
+		g = 0;
+		b = 0;
+		a = 0;
+	}
 	uint32_t value = 0;
 	for (auto c: hex) {
 		if (c >= '0' && c <= '9') {
@@ -19,7 +27,10 @@ Color Color::HEX(std::string_view hex) {
 		} else if (c >= 'A' && c <= 'F') {
 			value |= c - 'A' + 10;
 		} else {
-			return {0};
+			r = 0;
+			g = 0;
+			b = 0;
+			a = 0;
 		}
 		value <<= 4;
 	}
@@ -27,57 +38,37 @@ Color Color::HEX(std::string_view hex) {
 		value <<= 4;
 		value |= 0xFF;
 	}
-	return {value};
+
+	*this = Color(value);
 }
 
-Color Color::RGBA255(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) : r(r), g(g), b(b), a(a) {}
+
+Color::Color(float r, float g, float b, float a)
+	: r(static_cast<uint8_t>(r * 255.f)),
+	  g(static_cast<uint8_t>(g * 255.f)),
+	  b(static_cast<uint8_t>(b * 255.f)),
+	  a(static_cast<uint8_t>(a * 255.f)) {}
+
+Color::Color(const glm::vec4 &vec)
+	: r(static_cast<uint8_t>(vec.r * 255.f)),
+	  g(static_cast<uint8_t>(vec.g * 255.f)),
+	  b(static_cast<uint8_t>(vec.b * 255.f)),
+	  a(static_cast<uint8_t>(vec.a * 255.f)) {}
+
+Color::operator glm::vec4() const {
 	return {
-		static_cast<uint32_t>(r) << 24 |
-		static_cast<uint32_t>(g) << 16 |
-		static_cast<uint32_t>(b) << 8 |
-		static_cast<uint32_t>(a) << 0};
-}
-
-Color Color::RGBA(float r, float g, float b, float a) {
-	return RGBA255(
-		static_cast<uint8_t>(r * 255),
-		static_cast<uint8_t>(g * 255),
-		static_cast<uint8_t>(b * 255),
-		static_cast<uint8_t>(a * 255));
-}
-
-Color Color::VEC4(const DirectX::XMFLOAT4 &vec) {
-	return RGBA(vec.x, vec.y, vec.z, vec.w);
-}
-
-uint8_t Color::r() const {
-	return (value >> 24) & 0xFF;
-}
-
-uint8_t Color::g() const {
-	return (value >> 16) & 0xFF;
-}
-
-uint8_t Color::b() const {
-	return (value >> 8) & 0xFF;
-}
-
-uint8_t Color::a() const {
-	return (value >> 0) & 0xFF;
-}
-
-Color::operator DirectX::XMFLOAT4() const {
-	return {
-		static_cast<float>(r()) / 255.0f,
-		static_cast<float>(g()) / 255.0f,
-		static_cast<float>(b()) / 255.0f,
-		static_cast<float>(a()) / 255.0f};
+		static_cast<float>(r) / 255.0f,
+		static_cast<float>(g) / 255.0f,
+		static_cast<float>(b) / 255.0f,
+		static_cast<float>(a) / 255.0f,
+	};
 }
 
 // TODO: Add support for transition curves
 Color Color::transistion(const Color &other, float t) const {
-	DirectX::XMFLOAT4 color1 = *this;
-	DirectX::XMFLOAT4 color2 = other;
+	glm::vec4 color1 = *this;
+	glm::vec4 color2 = other;
 
 	// Convert to premultiplied alpha
 	color1.x *= color1.w;
@@ -98,24 +89,26 @@ Color Color::transistion(const Color &other, float t) const {
 	g /= a;
 	b /= a;
 
-	return RGBA(r, g, b, a);
+	return {r, g, b, a};
 }
 
 Color Color::mix(const Color &other) const {
-	DirectX::XMFLOAT4 color1 = *this;
-	DirectX::XMFLOAT4 color2 = other;
+	glm::vec4 color1 = *this;
+	glm::vec4 color2 = other;
 
 	const float alpha = (1 - color1.w) * color2.w + color1.w;
 	const float r = ((1 - color1.w) * color2.w * color2.x + color1.w * color1.x) / alpha;
 	const float g = ((1 - color1.w) * color2.w * color2.y + color1.w * color1.y) / alpha;
 	const float b = ((1 - color1.w) * color2.w * color2.z + color1.w * color1.z) / alpha;
-	return RGBA(r, g, b, alpha);
+	return {r, g, b, alpha};
 }
 
 bool Color::operator==(const Color &other) const {
-	return value == other.value;
+	return r == other.r && g == other.g && b == other.b && a == other.a;
 }
 
 Color Color::operator*(const float &multiplier) const {
-	return RGBA255(r(), g(), b(), std::clamp(static_cast<uint8_t>(static_cast<float>(a()) * multiplier), (uint8_t) 0, (uint8_t) 255));
+	return {r, g, b,
+			std::clamp(static_cast<uint8_t>(static_cast<float>(a) * multiplier),
+					   (uint8_t) 0, (uint8_t) 255)};
 }

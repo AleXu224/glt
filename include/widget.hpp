@@ -1,12 +1,5 @@
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
 #include "functional"
 #include "margin.hpp"
 #include "memory"
@@ -202,6 +195,41 @@ namespace squi {
 		static uint32_t widgetCount;
 
 	public:
+		enum class StateImpact{
+			RedrawNeeded, // Eg: changing the color of a box
+			RepositionNeeded, // Changing the scroll on a scrollable
+			RelayoutNeeded, // Size change
+		};
+	
+		template<class T, StateImpact stateImpact>
+		struct Stateful {
+			template<class ...Args>
+			Stateful(Widget *parent, const Args&... args) : item(args...), parent(parent) {}
+
+			Stateful(const Stateful &) = delete;
+			Stateful(Stateful &) = delete;
+			Stateful(const Stateful &&) = delete;
+			Stateful(Stateful &&) = delete;
+
+			operator const Stateful&() const {
+				return item;
+			}
+
+			Stateful &operator=(const T& other) {
+				item = other;
+				if constexpr (stateImpact == StateImpact::RedrawNeeded) {
+					parent->reDraw();
+				} else if constexpr (stateImpact == StateImpact::RepositionNeeded) {
+					parent->reArrange();
+				} else if constexpr (stateImpact == StateImpact::RelayoutNeeded) {
+					parent->reLayout();
+				}
+				return *this;
+			}
+		private:
+			T item;
+			Widget *parent;
+		};
 		struct State {
 			std::unordered_map<std::string_view, std::any> properties{};
 			const std::variant<float, Size> width;
@@ -224,7 +252,6 @@ namespace squi {
 
 		explicit Widget(const Args &args, const Flags &flags);
 		virtual ~Widget();
-
 
 		inline void setWidth(const std::variant<float, Size> &width) {
 			if (this->state.width == width) return;
@@ -311,6 +338,11 @@ namespace squi {
 		[[nodiscard]] virtual std::vector<Rect> getHitcheckRect() const;
 		[[nodiscard]] inline bool isMarkedForDeletion() const {
 			return shouldDelete;
+		}
+
+		template<class T>
+		T &as() {
+			return dynamic_cast<T&>(*this);
 		}
 
 		// Setters

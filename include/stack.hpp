@@ -6,7 +6,7 @@
 namespace squi {
 	struct Stack {
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		Children children{};
 
 		class Impl : public Widget {

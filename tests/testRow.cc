@@ -7,7 +7,7 @@ using namespace squi;
 // A Widget whose height depends on its width
 struct TextLikeWidget {
 	// Args
-	Widget::Args widget;
+	Widget::Args widget{};
 
 	class Impl : public Widget {
 		// Data

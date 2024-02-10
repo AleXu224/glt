@@ -1,5 +1,4 @@
 #include <utf8/cpp17.h>
-#define NOMINMAX
 #include "align.hpp"
 #include "container.hpp"
 #include "fontIcon.hpp"

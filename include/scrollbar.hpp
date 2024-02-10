@@ -9,7 +9,7 @@
 namespace squi {
 	struct Scrollbar {
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		std::shared_ptr<Scrollable::Controller> controller{std::make_shared<Scrollable::Controller>()};
 
 		struct Storage {

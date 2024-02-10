@@ -1,7 +1,7 @@
 #include "column.hpp"
 #include "ranges"
-#include "renderer.hpp"
 #include <algorithm>
+#include "window.hpp"
 
 
 using namespace squi;
@@ -104,7 +104,7 @@ void Column::Impl::drawChildren() {
 						return child->flags.visible;
 					});
 
-	const Rect clipRect = Renderer::getInstance().getCurrentClipRect().rect;
+	const Rect clipRect = Window::of(this).engine.instance.scissorStack.back();
 
 	for (auto &child: children) {
 		if (!child) continue;

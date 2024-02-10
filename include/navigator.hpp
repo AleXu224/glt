@@ -15,9 +15,9 @@ namespace squi {
 		};
 
 		// Args
-		Widget::Args widget;
-		Controller controller;
-		Child child;
+		Widget::Args widget{};
+		Controller controller{};
+		Child child{};
 
 		class Impl : public Widget {
 			// Data

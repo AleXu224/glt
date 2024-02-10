@@ -1,12 +1,11 @@
 #pragma once
 
 #include "array"
-#include "d3d11.h"
-#include "memory"
+#include "engine/samplerUniform.hpp"
 #include "vec2.hpp"
 #include "vector"
 
-constexpr uint16_t ATLAS_SIZE = 1024;
+constexpr size_t AtlasSize = 1024;
 
 namespace squi {
 	struct AtlasElement {
@@ -25,22 +24,18 @@ namespace squi {
 
 	class Atlas {
 		// Allocating on the heap because it's too big for the stack
-		std::unique_ptr<std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE>> atlas = std::make_unique<std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE>>();
 		std::vector<AtlasRow> rows{};
-		uint16_t availableHeight{ATLAS_SIZE};
-		std::shared_ptr<ID3D11Texture2D> texture{};
+		size_t availableHeight = AtlasSize;
 		bool textureDirty = false;
 
 	public:
-		std::shared_ptr<ID3D11ShaderResourceView> textureView{};
+		Engine::SamplerUniform sampler;
 
-		Atlas();
+		Atlas(Engine::Instance &instance);
 
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
 		add(const uint16_t &width, const uint16_t &height, unsigned char *data);
 
-		std::array<unsigned char, ATLAS_SIZE * ATLAS_SIZE> &getAtlasData();
-
-		void updateTexture();
+		[[nodiscard]] std::array<unsigned char, AtlasSize * AtlasSize> &getAtlasData() const;
 	};
 }// namespace squi
