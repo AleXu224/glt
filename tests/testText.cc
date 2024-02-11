@@ -20,9 +20,8 @@ TEST(Text, equality) {
 			.text = textCase,
 			.fontSize = 12,
 		}});
-        window.setChildren({text});
-        window.update();
-        // window.layout({800, 600}, {0 ,0});
+        text->state.root = &window;
+        text->state.parent = &window;
 
 		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
@@ -39,9 +38,8 @@ TEST(Text, equality) {
 			.fontSize = 12,
 			.lineWrap = true,
 		}});
-		window.setChildren({text2});
-        window.update();
-		// window.layout({800, 600}, {0, 0});
+		text2->state.root = &window;
+		text2->state.parent = &window;
 
 		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
