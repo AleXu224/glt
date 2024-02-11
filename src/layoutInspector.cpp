@@ -6,10 +6,12 @@
 #include "container.hpp"
 #include "fontIcon.hpp"
 #include "gestureDetector.hpp"
+#include "inspectorQuad.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "window.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <any>
@@ -20,9 +22,11 @@
 #include <print>
 #include <string_view>
 #include <utility>
-
+#include "engine/compiledShaders/inspectorQuadfrag.hpp"
+#include "engine/compiledShaders/inspectorQuadvert.hpp"
 
 using namespace squi;
+LayoutInspector::InspectorPipeline * LayoutInspector::pipeline = nullptr;
 
 struct TextItem {
 	// Args
@@ -490,6 +494,17 @@ LayoutInspector::operator Child() const {
 	auto storage = std::make_shared<Storage>();
 
 	return Row{
+		.widget{
+			.onDraw = [](Widget &w) {
+				if (!LayoutInspector::pipeline) {
+					pipeline = &Window::of(&w).engine.instance.createPipeline<InspectorPipeline>(InspectorPipeline::Args{
+						.vertexShader = Engine::Shaders::inspectorQuadvert,
+						.fragmentShader = Engine::Shaders::inspectorQuadfrag,
+						.instance = Window::of(&w).engine.instance,
+					});
+				}
+			}
+		},
 		.children{
 			Stack{
 				.widget{
@@ -577,30 +592,15 @@ LayoutInspector::operator Child() const {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
 								if (*widget->flags.visible) {
-									// FIXME: add preview quads again
-									// Quad previewQuad{Quad::Args{
-									// 	.pos = widget->getPos() + widget->state.margin->getPositionOffset(),
-									// 	.size = widget->getSize(),
-									// 	.color = Color(0x00008040),
-									// }};
-
-									// Quad paddingQuad{Quad::Args{
-									// 	.pos = widget->getPos() + widget->state.padding->getPositionOffset() + widget->state.margin->getPositionOffset(),
-									// 	.size = widget->getSize() - widget->state.padding->getSizeOffset(),
-									// 	.color = Color(0x0008040),
-									// }};
-
-									// const auto layoutRect = widget->getLayoutRect();
-									// Quad layoutQuad{Quad::Args{
-									// 	.pos = widget->getPos(),
-									// 	.size = layoutRect.size(),
-									// 	.color = Color(0x008A0040),
-									// }};
-
-									// auto &renderer = Renderer::getInstance();
-									// renderer.addQuad(layoutQuad);
-									// renderer.addQuad(previewQuad);
-									// renderer.addQuad(paddingQuad);
+									Engine::InspectorQuad quad{Engine::InspectorQuad::Args{
+										.position = widget->getPos(),
+										.size = widget->getLayoutSize(),
+										.margins = *widget->state.margin,
+										.paddings = *widget->state.padding,
+									}};
+									LayoutInspector::pipeline->bind();
+									auto [vi, ii] = LayoutInspector::pipeline->getIndexes();
+									LayoutInspector::pipeline->addData(quad.getData(vi, ii));
 								}
 							},
 						},
