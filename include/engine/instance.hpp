@@ -1,5 +1,6 @@
 #pragma once
 
+#include "any"
 #include "frame.hpp"
 #include "rect.hpp"
 #include "vulkanIncludes.hpp"
@@ -10,7 +11,7 @@
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_structs.hpp>
-#include "any"
+
 
 namespace Engine {
 	struct Instance {
@@ -42,16 +43,22 @@ namespace Engine {
 		std::vector<std::any> pipelines{};
 
 		template<class T, class U>
-		T &createPipeline(U && args) {
+		T &createPipeline(U &&args) {
 			auto &val = pipelines.emplace_back(std::make_any<std::shared_ptr<T>>(std::make_shared<T>(std::forward<U>(args))));
-			return *std::any_cast<std::shared_ptr<T>&>(val);
+			return *std::any_cast<std::shared_ptr<T> &>(val);
 		}
 
 		std::vector<squi::Rect> scissorStack{};
 		void pushScissor(const squi::Rect &rect) {
-			scissorStack.push_back(rect);
-			auto sz = rect.size().rounded();
-			auto pos = rect.getTopLeft();
+			if (currentPipelineFlush) (*currentPipelineFlush)();
+			if (!scissorStack.empty()) {
+				scissorStack.push_back(rect.overlap(scissorStack.back()));
+			} else {
+				scissorStack.push_back(rect);
+			}
+			const auto &r = scissorStack.back();
+			auto sz = r.size().rounded();
+			auto pos = r.getTopLeft();
 			currentFrame.get().commandBuffer.setScissor(
 				0, vk::Rect2D{
 					   .offset{
@@ -62,9 +69,11 @@ namespace Engine {
 						   static_cast<uint32_t>(sz.x),
 						   static_cast<uint32_t>(sz.y),
 					   },
-				   });
+				   }
+			);
 		}
 		void popScissor() {
+			if (currentPipelineFlush) (*currentPipelineFlush)();
 			scissorStack.pop_back();
 			if (scissorStack.empty()) return;
 			auto rect = scissorStack.back();
@@ -80,7 +89,8 @@ namespace Engine {
 						   static_cast<uint32_t>(sz.x),
 						   static_cast<uint32_t>(sz.y),
 					   },
-				   });
+				   }
+			);
 		}
 
 		Instance();
