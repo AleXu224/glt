@@ -4,6 +4,7 @@
 #include "widget.hpp"
 #include "engine/quad.hpp"
 #include "engine/pipeline.hpp"
+#include <glm/fwd.hpp>
 #include <memory>
 
 namespace squi {
@@ -24,14 +25,12 @@ namespace squi {
 		using BoxPipeline = Engine::Pipeline<Engine::Quad::Vertex>;
 		class Impl : public Widget {
 			Engine::Quad quad;
-			// This is stored as a hack to get around the fact the renderer doesn't support
-			// overlapping the border color on top of the background color.
 			BorderPosition borderPosition;
 			bool shouldClipContent;
-			// static std::unique_ptr<BoxPipeline> pipeline;
 			static BoxPipeline *pipeline;
 
 		public:
+
 			explicit Impl(const Box &args);
 
 			void onDraw() final;

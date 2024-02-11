@@ -175,17 +175,19 @@ namespace squi {
 				return *this;
 			}
 
-			// template<class Q = T, std::enable_if_t<std::is_pointer<Q>::value, bool> = true>
 			inline const T &operator->() const requires(std::is_pointer_v<T>) {
 				return item;
 			}
 
-			// template<class Q = T, std::enable_if_t<!std::is_pointer<Q>::value, bool> = true>
 			inline const T *operator->() const requires(!std::is_pointer_v<T>) {
 				return std::addressof(item);
 			}
 
 			inline const T &operator*() const {
+				return item;
+			}
+
+			inline operator const T&() const {
 				return item;
 			}
 

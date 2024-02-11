@@ -10,7 +10,6 @@
 
 using namespace squi;
 
-// std::unique_ptr<Box::BoxPipeline> Box::Impl::pipeline = nullptr;
 Box::BoxPipeline *Box::Impl::pipeline = nullptr;
 
 Box::Impl::Impl(const Box &args)
@@ -32,11 +31,6 @@ void Box::Impl::onDraw() {
 	if (!pipeline) {
 		Engine::Instance &instance = Window::of(this).engine.instance;
 
-		// pipeline = std::make_unique<BoxPipeline>(BoxPipeline::Args{
-		// 	.vertexShader = Engine::Shaders::rectvert,
-		// 	.fragmentShader = Engine::Shaders::rectfrag,
-		// 	.instance = instance,
-		// });
 		pipeline = &instance.createPipeline<BoxPipeline>(BoxPipeline::Args{
 			.vertexShader = Engine::Shaders::rectvert,
 			.fragmentShader = Engine::Shaders::rectfrag,
