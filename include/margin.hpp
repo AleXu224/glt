@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vec2.hpp"
+#include <glm/fwd.hpp>
 
 namespace squi {
 	/**
@@ -86,6 +87,8 @@ namespace squi {
 		[[nodiscard]] inline vec2 getSizeOffset() const {
 			return {left + right, top + bottom};
 		}
+
+		operator glm::vec4() const;
 	};
 
 	using Padding = Margin;
