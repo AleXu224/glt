@@ -1,6 +1,6 @@
 #pragma once
-#include "instance.hpp"
 #include "frame.hpp"
+#include "instance.hpp"
 #include "samplerUniform.hpp"
 #include "shader.hpp"
 #include "uniform.hpp"
@@ -56,9 +56,6 @@ namespace Engine {
 			return *indexBuffers.at(indexArrIndex);
 		}
 
-		// FIXME: Might need to create more buffers at some point but unsure at the moment
-		// It is possible that after a batch has been submited, further modifying the buffers afterwards
-		// might alter the data in the old draw calls.
 		std::vector<std::unique_ptr<Buffer>> vertexBuffers{};
 		std::vector<std::unique_ptr<Buffer>> indexBuffers{};
 
@@ -89,8 +86,18 @@ namespace Engine {
 					1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
 					-1.0f, -1.0f, 1.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 1.0f};
+					0.0f, 0.0f, 0.0f, 1.0f
+				};
 			});
+			float width = instance.swapChainExtent.width;
+			float height = instance.swapChainExtent.height;
+
+			basicUniform.getData().view = glm::mat4{
+				1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
+				-1.0f, -1.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f
+			};
 			instance.listenFrameEnd([&] {
 				lastVertexBufferIndex = 0;
 				vertexBufferIndex = 0;
@@ -298,11 +305,13 @@ namespace Engine {
 			},
 										  uniforms);
 
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-								   *layout,
-								   0,
-								   descriptors,
-								   {});
+			cmd.bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				*layout,
+				0,
+				descriptors,
+				{}
+			);
 
 			instance.currentPipeline = this;
 			instance.currentPipelineFlush = &currentPipelineFlush;
@@ -323,11 +332,13 @@ namespace Engine {
 				},
 											  uniforms);
 
-				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-									   *layout,
-									   0,
-									   descriptors,
-									   {});
+				cmd.bindDescriptorSets(
+					vk::PipelineBindPoint::eGraphics,
+					*layout,
+					0,
+					descriptors,
+					{}
+				);
 				lastBoundSampler = &sampler;
 				binds++;
 			}
@@ -398,8 +409,6 @@ namespace Engine {
 				}
 				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
 			}
-
-
 		}
 
 	private:
