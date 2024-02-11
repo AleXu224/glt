@@ -18,10 +18,9 @@ void Engine::Vulkan::recreateSwapChain() {
 	instance.recreateSwapChain();
 }
 
-void Engine::Vulkan::run(std::function<void()> runFunc) {
+void Engine::Vulkan::run(std::function<bool()> preDraw, std::function<void()> drawFunc) {
 	try {
 		auto &device = instance.device;
-		drawFunc = runFunc;
 
 		uint32_t frames = 0;
 		auto lastFrameTime = std::chrono::steady_clock::now();
@@ -34,13 +33,14 @@ void Engine::Vulkan::run(std::function<void()> runFunc) {
 				lastFrameTime = currentTime;
 			}
 			frames++;
-			glfwPollEvents();
-			if (resized) {
-				resized = false;
-				std::println("Caught resize before draw!");
-			}
+
+			auto newFrameStartTime = std::chrono::steady_clock::now();
+			deltaTime = newFrameStartTime - frameStartTime;
+			frameStartTime = newFrameStartTime;
 
 			instance.currentFrame = getCurrentFrame();
+
+			if (!preDraw()) continue;
 
 			auto resFence = device.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
 			if (resFence != vk::Result::eSuccess) throw std::runtime_error("Timeout waiting for render fence");
@@ -89,7 +89,7 @@ void Engine::Vulkan::run(std::function<void()> runFunc) {
 			// cmd.setScissor(0, scissor);
 			instance.pushScissor(squi::Rect::fromPosSize({0, 0}, {static_cast<float>(instance.swapChainExtent.width), static_cast<float>(instance.swapChainExtent.height)}));
 
-			runFunc();
+			drawFunc();
 
 
 			if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();

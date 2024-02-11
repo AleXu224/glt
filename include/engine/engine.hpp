@@ -1,8 +1,10 @@
 #pragma once
 
 #include "instance.hpp"
+#include <chrono>
 #include <functional>
 
+using namespace std::chrono_literals;
 namespace Engine {
 	struct Vulkan {
 		Instance instance;
@@ -15,11 +17,12 @@ namespace Engine {
 
 		void recreateSwapChain();
 
-		std::function<void()> drawFunc{};
-
 		bool resized = false;
+		std::chrono::time_point<std::chrono::steady_clock> frameStartTime;
+		std::chrono::duration<double> deltaTime{0ms};
 
-		void run(std::function<void()>);
+		void run(std::function<bool()> preDraw, std::function<void()> drawFunc);
+
 	private:
 	};
 }// namespace Engine

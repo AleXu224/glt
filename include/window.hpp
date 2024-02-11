@@ -1,6 +1,5 @@
 #pragma once
 
-#include "chrono"
 #include "observer.hpp"
 #include <memory>
 #include <stdexcept>
@@ -8,6 +7,7 @@
 #include "engine/engine.hpp"
 #include "widget.hpp"
 
+#include "chrono"// IWYU pragma: export
 using namespace std::chrono_literals;
 
 namespace squi {
@@ -16,10 +16,6 @@ namespace squi {
 		Engine::Vulkan engine;
 
 	private:
-		std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
-		std::chrono::steady_clock::time_point lastFpsTime = std::chrono::steady_clock::now();
-		uint32_t fps = 0;
-		bool isWin11 = false;
 		bool needsRedraw = true;
 		bool needsRelayout = true;
 		bool needsReposition = true;
@@ -33,19 +29,16 @@ namespace squi {
 
 		Child content{};
 
-		void updateAndDraw();
-
-
 	public:
 		Window();
 		~Window() override;
 
 		static Window &of(Widget *w) {
 			if (!*w->state.root) throw std::runtime_error("Widget has invalid root!");
-			return *dynamic_cast<Window*>(*w->state.root);
+			return *dynamic_cast<Window *>(*w->state.root);
 		}
 		static Window &of(const std::weak_ptr<Widget> &w) {
-			if (w.expired())throw std::runtime_error("Weak pointer has expired");
+			if (w.expired()) throw std::runtime_error("Weak pointer has expired");
 			Widget &widgetRef = *w.lock();
 			if (!*widgetRef.state.root) throw std::runtime_error("Widget has invalid root!");
 			return *dynamic_cast<Window *>(*widgetRef.state.root);

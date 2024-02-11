@@ -1,7 +1,6 @@
 #include "instance.hpp"
 #include "ranges"
 #include "set"
-#include "window.hpp"
 #include <print>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_handles.hpp>
@@ -177,7 +176,6 @@ vk::raii::Device Engine::Instance::createLogicalDevice() {
 	}
 
 	return {physicalDevice, createInfo};
-	// device = physicalDevice.createDeviceUnique(createInfo);
 }
 
 vk::raii::Queue Engine::Instance::createGraphicsQueue() {
@@ -233,7 +231,6 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 		createInfo.pQueueFamilyIndices = nullptr;// Optional
 	}
 
-	// swapChain.clear();
 	return device.createSwapchainKHR(createInfo);
 }
 
@@ -256,8 +253,6 @@ vk::Extent2D Engine::Instance::createExtent() {
 std::vector<vk::raii::ImageView> Engine::Instance::createImageViews() {
 	std::vector<vk::raii::ImageView> ret{};
 	ret.reserve(swapChainImages.size());
-	// swapChainImageViews.clear();
-	// swapChainImageViews.reserve(swapChainImages.size());
 
 	for (auto index: std::views::iota(0ull, swapChainImages.size())) {
 		vk::ImageViewCreateInfo createInfo{
@@ -332,8 +327,6 @@ vk::raii::RenderPass Engine::Instance::createRenderPass() {
 std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 	std::vector<vk::raii::Framebuffer> ret{};
 	ret.reserve(swapChainImageViews.size());
-	// swapChainFramebuffers.clear();
-	// swapChainFramebuffers.reserve(swapChainImageViews.size());
 
 	for (auto index: std::views::iota(0ull, swapChainImageViews.size())) {
 		vk::FramebufferCreateInfo framebufferInfo{
@@ -346,7 +339,6 @@ std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 		};
 
 		ret.emplace_back(device.createFramebuffer(framebufferInfo));
-		// swapChainFramebuffers.at(index) = device.createFramebuffer(framebufferInfo);
 	}
 
 	return ret;
