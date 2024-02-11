@@ -11,7 +11,7 @@ TEST(FontStore, equality) {
     Window window;
     
     constexpr std::string_view fontPath = R"(C:\Windows\Fonts\arial.ttf)";
-    const auto font = FontStore::getFont(fontPath);
+    const auto font = FontStore::getFont(fontPath, window.engine.instance);
     constexpr std::string_view text = "The quick brown fox jumps over the lazy dog";
     constexpr float fontSize = 12;
     

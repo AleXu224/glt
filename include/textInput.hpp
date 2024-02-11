@@ -15,12 +15,12 @@
 namespace squi {
 	struct TextInput {
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		float fontSize = 14.0f;
 		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = R"(C:\Windows\Fonts\arial.ttf)";
 		std::optional<std::reference_wrapper<std::string>> text{};
 		std::function<void(std::string_view)> onTextChanged{};
-		Color color{Color::HEX(0xFFFFFFFF)};
+		Color color{0xFFFFFFFF};
 
 		class Impl : public Widget {
 			// Data

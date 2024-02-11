@@ -1,11 +1,11 @@
 #include "box.hpp"
 #include "expander.hpp"
-#include "window.hpp"
 #include <print>
+#include "window.hpp"
 
 int main(int, char **) {
 	using namespace squi;
-	squi::Window window;
+	squi::Window window{};
 	window.addChild(Expander{
 		.widget{
 			.margin = 8.f,
@@ -18,7 +18,7 @@ int main(int, char **) {
 				.width = 16.f,
 				.height = 16.f,
 			},
-			.color = Color::HEX(0xFF0000FF),
+			.color = 0xFF0000FF,
 		},
 	});
 	window.run();

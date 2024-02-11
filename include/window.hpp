@@ -1,22 +1,21 @@
 #pragma once
 
-#include "chrono"
 #include "observer.hpp"
 #include <memory>
+#include <stdexcept>
 
-#define GLFW_INCLUDE_NONE
-#include "GLFW/glfw3.h"
+#include "engine/engine.hpp"
 #include "widget.hpp"
 
+#include "chrono"// IWYU pragma: export
 using namespace std::chrono_literals;
 
 namespace squi {
 	class Window : public Widget {
-		std::shared_ptr<GLFWwindow> window;
-		std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
-		std::chrono::steady_clock::time_point lastFpsTime = std::chrono::steady_clock::now();
-		uint32_t fps = 0;
-		bool isWin11 = false;
+	public:
+		Engine::Vulkan engine;
+
+	private:
 		bool needsRedraw = true;
 		bool needsRelayout = true;
 		bool needsReposition = true;
@@ -30,19 +29,27 @@ namespace squi {
 
 		Child content{};
 
-		void updateAndDraw();
-
-
 	public:
 		Window();
 		~Window() override;
+
+		static Window &of(Widget *w) {
+			if (!*w->state.root) throw std::runtime_error("Widget has invalid root!");
+			return *dynamic_cast<Window *>(*w->state.root);
+		}
+		static Window &of(const std::weak_ptr<Widget> &w) {
+			if (w.expired()) throw std::runtime_error("Weak pointer has expired");
+			Widget &widgetRef = *w.lock();
+			if (!*widgetRef.state.root) throw std::runtime_error("Widget has invalid root!");
+			return *dynamic_cast<Window *>(*widgetRef.state.root);
+		}
 
 		void run();
 
 		Window(const Window &) = delete;
 		Window &operator=(const Window &) = delete;
 
-		operator GLFWwindow *() const { return window.get(); }
+		operator GLFWwindow *() const { return engine.instance.window.ptr; }
 
 		void addOverlay(Child &&overlay) {
 			addedOverlays->notify(overlay);

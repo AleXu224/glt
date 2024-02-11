@@ -6,12 +6,12 @@
 namespace squi {
 	struct Container {
 		// Args
-		Widget::Args widget;
-		Child child;
+		Widget::Args widget{};
+		Child child{};
 
 		class Impl : public Widget {
 		public:
-			Impl(const Container &args) : Widget(args.widget, Widget::Flags::Default()) {
+			Impl(const Container &args) : Widget(args.widget, Widget::FlagsArgs::Default()) {
 				addChild(args.child);
 			}
 		};

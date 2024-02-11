@@ -49,3 +49,7 @@ Margin Margin::withHorizontalOffset(const float &offset) const {
 Margin Margin::withVerticalOffset(const float &offset) const {
 	return {top + offset, right, bottom + offset, left};
 }
+
+squi::Margin::operator glm::vec4() const {
+	return {top, right, bottom, left};
+}

@@ -82,7 +82,7 @@ namespace squi {
 
 		struct Storage {
 			// Data
-			State state;
+			State state{};
 			std::function<void(Event)> onEnter{};
 			std::function<void(Event)> onLeave{};
 			std::function<void(Event)> onClick{};

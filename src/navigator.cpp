@@ -11,6 +11,6 @@ void Navigator::Controller::pop() {
 	shouldPop = true;
 }
 
-Navigator::Impl::Impl(const Navigator &args) : Widget(args.widget, Widget::Flags::Default()) {
+Navigator::Impl::Impl(const Navigator &args) : Widget(args.widget, Widget::FlagsArgs::Default()) {
 	addChild(args.child);
 }

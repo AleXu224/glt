@@ -7,11 +7,11 @@
 namespace squi {
 	struct ScrollableFrame {
 		// Args
-		Widget::Args widget;
-		Widget::Args scrollableWidget;
+		Widget::Args widget{};
+		Widget::Args scrollableWidget{};
 		Column::Alignment alignment{Column::Alignment::left};
 		float spacing{0.0f};
-		Children children;
+		Children children{};
 
 		struct Storage {
 			// Data

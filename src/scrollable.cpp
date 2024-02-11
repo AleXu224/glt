@@ -1,13 +1,13 @@
 #include "scrollable.hpp"
 #include "gestureDetector.hpp"
-#include "renderer.hpp"
+#include "window.hpp"
 #include <algorithm>
 #include <memory>
 
 using namespace squi;
 
 Scrollable::Impl::Impl(const Scrollable &args)
-	: Widget(args.widget, Widget::Flags::Default()), controller(args.controller) {
+	: Widget(args.widget, Widget::FlagsArgs::Default()), controller(args.controller) {
 	GestureDetector{
 		.onUpdate = [this](GestureDetector::Event event) {
 			scrolled = false;
@@ -114,7 +114,7 @@ void Scrollable::Impl::arrangeChildren(vec2 &pos) {
 	auto &child = children[0];
 	if (!child) return;
 
-	const auto childPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	const auto childPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	child->arrange(childPos.withYOffset(-scroll));
 }
 
@@ -124,12 +124,12 @@ void Scrollable::Impl::drawChildren() {
 	auto &child = children[0];
 	if (!child) return;
 
-	auto &renderer = Renderer::getInstance();
-	renderer.addClipRect(getRect());
+	auto &instance = Window::of(this).engine.instance;
+	instance.pushScissor(getRect());
 
 	child->draw();
 
-	renderer.popClipRect();
+	instance.popScissor();
 }
 
 squi::Scrollable::operator Child() const {

@@ -2,7 +2,6 @@
 #include "box.hpp"
 #include "cstdint"
 #include "gestureDetector.hpp"
-#include "renderer.hpp"
 #include "text.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
@@ -12,12 +11,12 @@
 #include <limits>
 #include <memory>
 #include <optional>
-
+#include "window.hpp"
 
 using namespace squi;
 
 TextInput::Impl::Impl(const TextInput &args)
-	: Widget(args.widget, Widget::Flags::Default()),
+	: Widget(args.widget, Widget::FlagsArgs::Default()),
 	  text(args.text),
 	  gd(GestureDetector{}.mount(*this)) {
 	addChild(Text{
@@ -28,21 +27,21 @@ TextInput::Impl::Impl(const TextInput &args)
 	});
 	// Selection
 	addChild(Box{
-		.color{Color::HEX(0x0078D4FF)},
+		.color{0x0078D4FF},
 	});
 	// Selected text
 	addChild(Text{
 		.text{""},
 		.fontSize = args.fontSize,
 		.font{args.font},
-		.color{Color::HEX(0xFFFFFFFF)},
+		.color{0xFFFFFFFF},
 	});
 	// Cursor
 	addChild(Box{
 		.widget{
 			.width = 2.f,
 		},
-		.color{Color::HEX(0xFFFFFFFF)},
+		.color{0xFFFFFFFF},
 	});
 }
 
@@ -99,10 +98,10 @@ void TextInput::Impl::clearSelection() {
 void TextInput::Impl::onUpdate() {
 	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*getChildren()[3]);
 	if (!gd.active) {
-		cursorWidget.setVisible(false);
+		cursorWidget.flags.visible = false;
 		return;
 	}
-	cursorWidget.setVisible(true);
+	cursorWidget.flags.visible = true;
 
 	auto &children = getChildren();
 	auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
@@ -247,16 +246,16 @@ void TextInput::Impl::onUpdate() {
 		auto &selectionTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
 
 		if (selectionStart.has_value()) {
-			selectionWidget.setVisible(true);
-			selectionTextWidget.setVisible(true);
+			selectionWidget.flags.visible = true;
+			selectionTextWidget.flags.visible = true;
 			auto textVal = getText();
 			const auto newText = textVal.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			const auto [width, height] = text.getTextSize(newText);
-			selectionWidget.setWidth(static_cast<float>(width));
+			selectionWidget.state.width = static_cast<float>(width);
 			selectionTextWidget.setText(newText);
 		} else {
-			selectionWidget.setVisible(false);
-			selectionTextWidget.setVisible(false);
+			selectionWidget.flags.visible = false;
+			selectionTextWidget.flags.visible = false;
 			selectionTextWidget.setText("");
 		}
 	}
@@ -285,7 +284,7 @@ void TextInput::Impl::arrangeChildren(vec2 &pos) {
 	const auto contentWidth = std::max(getContentRect().width(), 0.f);
 	scroll = std::clamp(scroll, static_cast<float>(startToCursorWidth) - contentWidth, static_cast<float>(startToCursorWidth));
 
-	const auto contentPos = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset() - vec2{scroll, 0};
+	const auto contentPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset() - vec2{scroll, 0};
 
 	textWidget.arrange(contentPos);
 	if (selectionStart.has_value()) {
@@ -303,15 +302,15 @@ void TextInput::Impl::drawChildren() {
 	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
 	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
 
-	auto &renderer = Renderer::getInstance();
-	renderer.addClipRect(getRect());
+	auto &instance = Window::of(this).engine.instance;
+	instance.pushScissor(getRect());
 
 	textWidget.draw();
 	selectionWidget.draw();
 	selectedTextWidget.draw();
 	cursorWidget.draw();
 
-	renderer.popClipRect();
+	instance.popScissor();
 }
 TextInput::operator Child() const {
 	return GestureDetector{.child{std::make_unique<Impl>(*this)}};

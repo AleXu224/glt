@@ -13,7 +13,7 @@ namespace squi {
 		};
 
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		Alignment alignment{Alignment::left};
 		float spacing{0.0f};
 		Children children{};

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "engine/inspectorQuad.hpp"
+#include "engine/pipeline.hpp"
 #include "observer.hpp"
 #include "widget.hpp"
 #include <memory>
@@ -9,6 +11,9 @@ namespace squi {
 		// Args
 		std::weak_ptr<Observable<Child>> addedChildren;
 		std::weak_ptr<Observable<Child>> addedOverlays;
+
+		using InspectorPipeline = Engine::Pipeline<Engine::InspectorQuad::Vertex>;
+		static InspectorPipeline *pipeline;
 
 		struct Storage {
 			// Data

@@ -10,18 +10,18 @@
 
 namespace squi {
 	struct ButtonStyle {
-		Color color{Color::HEX(0x60CDFFFF)};
+		Color color{0x60CDFFFF};
 		Color colorHover{color * 0.9f};
 		Color colorActive{color * 0.8f};
-		Color colorDisabled{Color::HEX(0xFFFFFF28)};
-		Color borderColor{Color::HEX(0x00000024)};
+		Color colorDisabled{0xFFFFFF28};
+		Color borderColor{0x00000024};
 		Color borderColorHover{borderColor};
-		Color borderColorActive{Color::HEX(0xFFFFFF14)};
-		Color borderColorDisabled{Color::HEX(0)};
+		Color borderColorActive{0xFFFFFF14};
+		Color borderColorDisabled{0};
 		Box::BorderPosition borderPosition = Box::BorderPosition::inset;
 		float borderRadius{4.0f};
 		float borderWidth{1.0f};
-		Color textColor{Color::HEX(0x000000FF)};
+		Color textColor{0x000000FF};
 		float textSize{14.0f};
 
 		static ButtonStyle Accent() {
@@ -30,34 +30,34 @@ namespace squi {
 
 		static ButtonStyle Standard() {
 			return ButtonStyle{
-				.color{Color::HEX(0xFFFFFF0F)},
-				.colorHover{Color::HEX(0xFFFFFF15)},
-				.colorActive{Color::HEX(0xFFFFFF12)},
-				.colorDisabled{Color::HEX(0xFFFFFF12)},
-				.borderColor{Color::HEX(0xFFFFFF18)},
-				.borderColorHover{Color::HEX(0xFFFFFF18)},
-				.borderColorActive{Color::HEX(0xFFFFFF12)},
-				.borderColorDisabled{Color::HEX(0xFFFFFF12)},
+				.color{0xFFFFFF0F},
+				.colorHover{0xFFFFFF15},
+				.colorActive{0xFFFFFF12},
+				.colorDisabled{0xFFFFFF12},
+				.borderColor{0xFFFFFF18},
+				.borderColorHover{0xFFFFFF18},
+				.borderColorActive{0xFFFFFF12},
+				.borderColorDisabled{0xFFFFFF12},
 				.borderPosition = Box::BorderPosition::outset,
-				.textColor{Color::HEX(0xFFFFFFFF)},
+				.textColor{0xFFFFFFFF},
 			};
 		}
 
 		static ButtonStyle Subtle() {
 			return ButtonStyle{
-				.color{Color::HEX(0xFFFFFF00)},
-				.colorHover{Color::HEX(0xFFFFFF0F)},
-				.colorActive{Color::HEX(0xFFFFFF0B)},
-				.colorDisabled{Color::HEX(0xFFFFFF00)},
+				.color{0xFFFFFF00},
+				.colorHover{0xFFFFFF0F},
+				.colorActive{0xFFFFFF0B},
+				.colorDisabled{0xFFFFFF00},
 				.borderWidth = 0.0f,
-				.textColor{Color::HEX(0xFFFFFFFF)},
+				.textColor{0xFFFFFFFF},
 			};
 		}
 	};
 
 	struct Button {
 		// Args
-		Widget::Args widget;
+		Widget::Args widget{};
 		std::variant<float, Size> width = Size::Shrink;
 		std::variant<float, Size> height = Size::Shrink;
 		Margin margin{};

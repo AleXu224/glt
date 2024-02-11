@@ -10,7 +10,7 @@ Align::operator Child() {
 	auto &childFuncs = child->funcs();
 
 	childFuncs.onArrange.emplace_back([storage](Widget &widget, vec2 &pos) {
-		if (!widget.state.parent) return;
+		if (!*widget.state.parent) return;
 
 		const auto maxOffset = widget.state.parent->getContentSize() - widget.getLayoutSize();
 

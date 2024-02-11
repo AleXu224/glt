@@ -1,13 +1,8 @@
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#include "atlas.hpp"
 #include <cstdint>
 #include <freetype/fttypes.h>
 #include <memory>
 #include <print>
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
 
 #include "fontStore.hpp"
 #include <limits>
@@ -30,7 +25,7 @@ bool FontStore::init = []() {
 	return true;
 }();
 
-FontStore::Font::Font(std::string_view fontPath) {
+FontStore::Font::Font(std::string_view fontPath, Engine::Instance &instance) : atlas(instance) {
 	const std::string fontPathStr(fontPath);
 	if (FT_New_Face(ftLibrary, fontPathStr.c_str(), 0, &face)) {
 		std::println("Failed to load font: {}", fontPathStr);
@@ -38,23 +33,33 @@ FontStore::Font::Font(std::string_view fontPath) {
 	}
 }
 
-FontStore::Font::Font(std::span<char> fontData) {
+FontStore::Font::Font(std::span<char> fontData, Engine::Instance &instance) :atlas(instance) {
 	if (FT_New_Memory_Face(ftLibrary, reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
 		std::println("Failed to load font from memory");
 		loaded = false;
 	}
 }
 
-std::shared_ptr<FontStore::Font> FontStore::getFont(std::string_view fontPath) {
+std::shared_ptr<FontStore::Font> FontStore::getFont(std::string_view fontPath, Engine::Instance &instance) {
 	const std::string fontPathStr(fontPath);
 	if (fonts.contains(fontPathStr)) {
 		if (auto font = fonts[fontPathStr].lock()) {
 			return font;
 		}
 	}
-	auto font = std::make_shared<Font>(fontPath);
+	auto font = std::make_shared<Font>(fontPath, instance);
 	fonts[fontPathStr] = font;
 	return font;
+}
+
+std::optional<std::shared_ptr<FontStore::Font>> squi::FontStore::getFontOptional(std::string_view fontPath) {
+	const std::string fontPathStr(fontPath);
+	if (fonts.contains(fontPathStr)) {
+		if (auto font = fonts[fontPathStr].lock()) {
+			return font;
+		}
+	}
+	return {};
 }
 
 bool FontStore::Font::generateTexture(char32_t character, float size) {
@@ -196,7 +201,7 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	return {widestLine, lineCount * lineHeight};
 }
 
-std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
+std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
 	const uint32_t maxWidthClamped = [&]() -> uint32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<uint32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
@@ -204,8 +209,8 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::Font::genera
 			return std::numeric_limits<uint32_t>::max();
 		}
 	}();
-	std::vector<std::vector<Quad>> quads{};
-	quads.resize(1, std::vector<Quad>{});
+	std::vector<std::vector<Engine::TextQuad>> quads{};
+	quads.resize(1, std::vector<Engine::TextQuad>{});
 	struct CharData {
 		Font::CharInfo &charInfo;
 		int32_t offsetX = 0;
@@ -231,22 +236,16 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::Font::genera
 			return static_cast<float>(i);
 		};
 		for (const auto &charData: currentWordCharData) {
-			quads.back().emplace_back(Quad::Args{
-				.pos{pos},
+			quads.back().emplace_back(Engine::TextQuad::Args{
+				.color{color},
+				.position{pos},
 				.size{charData.charInfo.size},
 				.offset{
 					toFloat(static_cast<int32_t>(currentLineWidth) + charData.offsetX) + charData.charInfo.offset.x,
 					toFloat(static_cast<int32_t>(yOffset) + charData.offsetY) + charData.charInfo.offset.y,
 				},
-				.color{color},
-				.texture{atlas.textureView},
-				.textureType = TextureType::Text,
-				.textureUv{
-					charData.charInfo.uvTopLeft.x,
-					charData.charInfo.uvTopLeft.y,
-					charData.charInfo.uvBottomRight.x,
-					charData.charInfo.uvBottomRight.y,
-				},
+				.uvTopLeft = charData.charInfo.uvTopLeft,
+				.uvBottomRight = charData.charInfo.uvBottomRight,
 			});
 		}
 		currentWordCharData.clear();
@@ -290,7 +289,8 @@ std::tuple<std::vector<std::vector<Quad>>, float, float> FontStore::Font::genera
 
 	widestLine = std::max(currentLineWidth, widestLine);
 
-	atlas.updateTexture();
-
 	return {quads, widestLine, quads.size() * lineHeight};
+}
+Engine::SamplerUniform &squi::FontStore::Font::getSampler() {
+	return atlas.sampler;
 }

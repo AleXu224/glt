@@ -1,20 +1,20 @@
 #include "row.hpp"
 #include "ranges"
-#include "renderer.hpp"
+#include "window.hpp"
 #include <algorithm>
 
 
 using namespace squi;
 
 Row::Impl::Impl(const Row &args)
-	: Widget(args.widget, Widget::Flags::Default()),
+	: Widget(args.widget, Widget::FlagsArgs::Default()),
 	  alignment(args.alignment), spacing(args.spacing) {
 	setChildren(args.children);
 }
 
 vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 	const auto childCount = std::ranges::count_if(children, [](auto) {
 		return true;
@@ -42,9 +42,9 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 
 		auto &childState = child->state;
 		childState.parent = this;
-		childState.root = state.root;
+		childState.root = *state.root;
 
-		if (shouldShrink.width == false && childState.width.index() == 1 && std::get<1>(childState.width) == Size::Expand) {
+		if (shouldShrink.width == false && childState.width->index() == 1 && std::get<1>(*childState.width) == Size::Expand) {
 			expandedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxSize.withXOffset(-spacingOffset), {0, minSize.y}, shouldShrink);
@@ -73,10 +73,10 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 
 void Row::Impl::arrangeChildren(vec2 &pos) {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 	const auto height = getContentRect().height();
-	auto cursor = pos + state.margin.getPositionOffset() + state.padding.getPositionOffset();
+	auto cursor = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	const auto initialY = cursor.y;
 
 	for (auto &child: children) {
@@ -101,10 +101,10 @@ void Row::Impl::arrangeChildren(vec2 &pos) {
 
 void Row::Impl::drawChildren() {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
-						return child->flags.visible;
+						return *child->flags.visible;
 					});
 
-	const Rect clipRect = Renderer::getInstance().getCurrentClipRect().rect;
+	const Rect clipRect = Window::of(this).engine.instance.scissorStack.back();
 
 	for (auto &child: children) {
 		if (!child) continue;

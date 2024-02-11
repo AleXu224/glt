@@ -9,6 +9,7 @@ using namespace squi;
 
 TEST(Text, equality) {
     Window window{};
+    window.state.root = &window;
     std::array<std::string_view, 2> textTestCases {
         "The quick brown fox jumps over the lazy dog",
         "Charged Attack DMG"
@@ -19,6 +20,8 @@ TEST(Text, equality) {
 			.text = textCase,
 			.fontSize = 12,
 		}});
+        text->state.root = &window;
+        text->state.parent = &window;
 
 		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
@@ -35,8 +38,10 @@ TEST(Text, equality) {
 			.fontSize = 12,
 			.lineWrap = true,
 		}});
+		text2->state.root = &window;
+		text2->state.parent = &window;
 
-        for (uint32_t i = 0; i < 100; ++i) {
+		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
 			const vec2 layoutSize = text2->layout(maxSize, {0, 0}, Widget::ShouldShrink{true, true});
 			const auto [minWidth, minHeight] = text2->getTextSize(textCase);

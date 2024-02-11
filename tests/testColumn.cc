@@ -8,13 +8,13 @@ using namespace squi;
 // A Widget whose width depends on its height
 struct InvTextLikeWidget {
 	// Args
-	Widget::Args widget;
+	Widget::Args widget{};
 
 	class Impl : public Widget {
 		// Data
 
 	public:
-		Impl(const InvTextLikeWidget &args) : Widget(args.widget, Widget::Flags::Default()) {}
+		Impl(const InvTextLikeWidget &args) : Widget(args.widget, Widget::FlagsArgs::Default()) {}
 
 		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
 			if (shouldShrink.height) {
