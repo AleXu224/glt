@@ -14,26 +14,26 @@ endif()
 
 # Shader compilation:
 add_executable(ShaderHeaderGenerator shaderHeaderGenerator.cpp)
-file(GLOB_RECURSE shader_files "${CMAKE_SOURCE_DIR}/src/engine/shaders/*.vert" "${CMAKE_SOURCE_DIR}/src/engine/shaders/*.frag")
+file(GLOB_RECURSE shader_files "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.vert" "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.frag")
 add_custom_target(Shaders)
 # Create the compiled shaders folder
 add_custom_command(TARGET Shaders PRE_BUILD
-COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/compiledShaders")
+COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/compiledShaders")
 # Compile the shaders into shaders/compiled
 foreach(shader_file ${shader_files})
     get_filename_component(dir ${shader_file} DIRECTORY)
     get_filename_component(fileName ${shader_file} NAME)
     add_custom_command(TARGET Shaders PRE_BUILD
-    COMMAND glslc ${shader_file} -o "${CMAKE_BINARY_DIR}/compiledShaders/${fileName}.spv")
+    COMMAND glslc ${shader_file} -o "${PROJECT_BINARY_DIR}/compiledShaders/${fileName}.spv")
 endforeach()
 # Create the compiledShaders directory
 add_custom_command(TARGET Shaders PRE_BUILD
-COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/engine/compiledShaders")
+COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
 # Run ShaderHeaderGenerator on all shaders to generate a header with the bytecode in include/compiledShaders
 foreach(shader_file ${shader_files})
     get_filename_component(fileName ${shader_file} NAME)
     add_custom_command(TARGET Shaders PRE_BUILD
-    COMMAND ShaderHeaderGenerator "${CMAKE_BINARY_DIR}/compiledShaders" "${CMAKE_SOURCE_DIR}/src/engine/shaders" ${fileName} "${CMAKE_SOURCE_DIR}/include/engine/compiledShaders")
+    COMMAND ShaderHeaderGenerator "${PROJECT_BINARY_DIR}/compiledShaders" "${PROJECT_SOURCE_DIR}/src/engine/shaders" ${fileName} "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
 endforeach()
 
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS "src/*.cpp" "include/*.h" "external/*.h")
