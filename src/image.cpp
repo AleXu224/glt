@@ -13,11 +13,18 @@
 #include "window.hpp"
 #include <cstring>
 #include <expected>
+#include <fstream>
 #include <future>
+#include <ios>
 #include <iostream>
+#include <sstream>
 #include <string_view>
+#include <vector>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 #include "../external/stb_image_ext.h"
+#include "../external/stb_image_write.h"
 #include "format"
 #include "stdexcept"
 
@@ -27,28 +34,26 @@ using namespace squi;
 Image::ImagePipeline *Image::Impl::pipeline = nullptr;
 
 Image::Data::Data(unsigned char *bytes, uint32_t length) {
-	stbi_uc *data = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 4);
-	if (data == nullptr) {
+	stbi_uc *loadedData = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 0);
+	if (loadedData == nullptr) {
 		throw std::runtime_error("Failed to load image");
 	}
-	// if (channels == 3) {
-	// 	channels = 2;
-	// 	this->data.resize(width * height * 2);
-	// 	for (int i = 0; i < width * height; i++) {
-	// 		this->data[i * 4 + 0] = data[i * 3 + 0];
-	// 		this->data[i * 4 + 1] = data[i * 3 + 1];
-	// 		this->data[i * 4 + 2] = data[i * 3 + 2];
-	// 		this->data[i * 4 + 3] = 255;
-	// 	}
-	// } else 
-	if (channels == 1 || channels == 2 || channels == 3 || channels == 4) {
+	if (channels == 3) {
 		channels = 4;
+		this->data.resize(width * height * 4);
+		for (int i = 0; i < width * height; i++) {
+			this->data[i * 4 + 0] = loadedData[i * 3 + 0];
+			this->data[i * 4 + 1] = loadedData[i * 3 + 1];
+			this->data[i * 4 + 2] = loadedData[i * 3 + 2];
+			this->data[i * 4 + 3] = 255;
+		}
+	} else if (channels == 1 || channels == 2 || channels == 4) {
 		this->data.resize(width * height * channels);
-		std::memcpy(this->data.data(), data, width * height * channels);
+		std::memcpy(this->data.data(), loadedData, width * height * channels);
 	} else {
 		throw std::runtime_error("Unsupported number of channels");
 	}
-	stbi_image_free(data);
+	stbi_image_free(loadedData);
 }
 
 Image::Data Image::Data::fromUrl(std::string_view url) {
@@ -60,21 +65,19 @@ Image::Data Image::Data::fromUrl(std::string_view url) {
 }
 
 Image::Data Image::Data::fromFile(std::string_view path) {
-	std::fstream s{path.data(), std::ios::binary | std::ios::in};
+	std::ifstream s{path.data(), std::ios::binary | std::ios::in};
 
-	if (!s.is_open()) {
+	if (!s) {
 		std::cout << "Failed to open file " << path << std::endl;
 		return {{0, 0, 0, 0}, 1, 1, 4};
 	}
 
-	s.seekg(0, std::ios::end);
-	auto length = s.tellg();
-	s.seekg(0, std::ios::beg);
+	std::stringstream bytes{};
+	bytes << s.rdbuf();
 
-	std::vector<unsigned char> bytes(length);
-	s.read(reinterpret_cast<char *>(bytes.data()), length);
-
-	return {bytes.data(), (uint32_t) length};
+	auto str = bytes.str();
+	Image::Data data{reinterpret_cast<unsigned char *>(str.data()), static_cast<uint32_t>(str.size())};
+	return data;
 }
 
 std::future<Image::Data> Image::Data::fromUrlAsync(std::string_view url) {
@@ -151,7 +154,19 @@ void Image::Impl::onUpdate() {
 				},
 			},
 		});
-		memcpy(sampler->texture.mappedMemory, data.data.data(), data.width * data.height * data.channels);
+		auto layout = sampler->texture.image.getSubresourceLayout(vk::ImageSubresource{
+			.aspectMask = vk::ImageAspectFlagBits::eColor,
+			.mipLevel = 0,
+			.arrayLayer = 0,
+		});
+		for (int row = 0; row < data.height; row++) {
+			memcpy(
+				(uint8_t *) sampler->texture.mappedMemory + row * layout.rowPitch,
+				data.data.data() + row * data.width * data.channels,
+				data.width * data.channels
+			);
+		}
+		// stbi_write_png("hmmge.png", data.width, data.height, data.channels, sampler->texture.mappedMemory, data.width * data.channels);
 		auto iter = state.properties.find("imageFuture");
 		if (iter != state.properties.end()) {
 			state.properties.erase(iter);
