@@ -14,7 +14,11 @@ endif()
 
 # Shader compilation:
 add_executable(ShaderHeaderGenerator shaderHeaderGenerator.cpp)
-file(GLOB_RECURSE shader_files "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.vert" "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.frag")
+if (NOT DEFINED GLT_SHADERS)
+    file(GLOB_RECURSE shader_files "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.vert" "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.frag")
+else()
+    file(GLOB_RECURSE shader_files "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.vert" "${PROJECT_SOURCE_DIR}/src/engine/shaders/*.frag" ${GLT_SHADERS})
+endif()
 add_custom_target(Shaders)
 # Create the compiled shaders folder
 add_custom_command(TARGET Shaders PRE_BUILD
@@ -32,8 +36,9 @@ COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/include/engine
 # Run ShaderHeaderGenerator on all shaders to generate a header with the bytecode in include/compiledShaders
 foreach(shader_file ${shader_files})
     get_filename_component(fileName ${shader_file} NAME)
+    get_filename_component(fileDir ${shader_file} DIRECTORY)
     add_custom_command(TARGET Shaders PRE_BUILD
-    COMMAND ShaderHeaderGenerator "${PROJECT_BINARY_DIR}/compiledShaders" "${PROJECT_SOURCE_DIR}/src/engine/shaders" ${fileName} "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
+    COMMAND ShaderHeaderGenerator "${PROJECT_BINARY_DIR}/compiledShaders" ${fileDir} ${fileName} "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
 endforeach()
 
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS "src/*.cpp" "include/*.h" "external/*.h")
@@ -41,7 +46,7 @@ add_library(glt STATIC ${all_files})
 add_dependencies(glt Shaders)
 target_compile_definitions(glt PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN ASIO_STANDALONE STB_IMAGE_IMPLEMENTATION GLFW_EXPOSE_NATIVE_WIN32 GLFW_INCLUDE_VULKAN VK_USE_PLATFORM_WIN32_KHR)
 target_include_directories(glt PUBLIC include)
-target_include_directories(glt PRIVATE include/engine)
+target_include_directories(glt PUBLIC include/engine)
 
 file(GLOB_RECURSE all_test_files CONFIGURE_DEPENDS "tests/*.cc")
 add_executable(gltTest ${all_test_files})
