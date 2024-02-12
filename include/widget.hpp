@@ -107,33 +107,33 @@ namespace squi {
 			std::function<void()> onDebugDraw{};
 #endif
 
-			[[nodiscard]] inline Args withDefaultWidth(const Width &width) const {
+			[[nodiscard]] inline Args withDefaultWidth(const Width &newWidth) const {
 				Args args = *this;
-				args.width = this->width.value_or(width);
+				args.width = this->width.value_or(newWidth);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withDefaultHeight(const Height &height) const {
+			[[nodiscard]] inline Args withDefaultHeight(const Height &newHeight) const {
 				Args args = *this;
-				args.height = this->height.value_or(height);
+				args.height = this->height.value_or(newHeight);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withDefaultMargin(const Margin &margin) const {
+			[[nodiscard]] inline Args withDefaultMargin(const Margin &newMargin) const {
 				Args args = *this;
-				args.margin = this->margin.value_or(margin);
+				args.margin = this->margin.value_or(newMargin);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withDefaultPadding(const Padding &padding) const {
+			[[nodiscard]] inline Args withDefaultPadding(const Padding &newPadding) const {
 				Args args = *this;
-				args.padding = this->padding.value_or(padding);
+				args.padding = this->padding.value_or(newPadding);
 				return args;
 			}
 
-			[[nodiscard]] inline Args withSizeConstraints(const SizeConstraints &sizeConstraints) const {
+			[[nodiscard]] inline Args withSizeConstraints(const SizeConstraints &newSizeConstraints) const {
 				Args args = *this;
-				args.sizeConstraints = sizeConstraints;
+				args.sizeConstraints = newSizeConstraints;
 				return args;
 			}
 		};
