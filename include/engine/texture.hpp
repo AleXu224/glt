@@ -23,10 +23,6 @@ namespace Engine {
 			uint32_t channels;
 		};
 
-		void bind(vk::raii::CommandBuffer &cmd) {
-			// cmd.image
-		}
-
 		Texture(const Args &args)
 			: image(createImage(args)),
 			  memory(createMemory(args)),
