@@ -121,7 +121,7 @@ Window::~Window() {
 
 void Window::run() {
 	engine.run(
-		[&] -> bool {
+		[&]() -> bool {
 			if (drewLastFrame) {
 				glfwPollEvents();
 			} else {
@@ -182,7 +182,7 @@ void Window::run() {
 
 			return false;
 		},
-		[&] {
+		[&]() {
 			// updateAndDraw();
 			content->draw();
 		}
