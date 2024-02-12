@@ -79,28 +79,28 @@ Color Color::transistion(const Color &other, float t) const {
 	color2.z *= color2.w;
 
 	// Interpolate
-	auto r = color1.x * (1.0f - t) + color2.x * t;
-	auto g = color1.y * (1.0f - t) + color2.y * t;
-	auto b = color1.z * (1.0f - t) + color2.z * t;
-	auto a = color1.w * (1.0f - t) + color2.w * t;
+	auto newR = color1.x * (1.0f - t) + color2.x * t;
+	auto newG = color1.y * (1.0f - t) + color2.y * t;
+	auto newB = color1.z * (1.0f - t) + color2.z * t;
+	auto newA = color1.w * (1.0f - t) + color2.w * t;
 
 	// Convert back to straight alpha
-	r /= a;
-	g /= a;
-	b /= a;
+	newR /= newA;
+	newG /= newA;
+	newB /= newA;
 
-	return {r, g, b, a};
+	return {newR, newG, newB, newA};
 }
 
 Color Color::mix(const Color &other) const {
 	glm::vec4 color1 = *this;
 	glm::vec4 color2 = other;
 
-	const float alpha = (1 - color1.w) * color2.w + color1.w;
-	const float r = ((1 - color1.w) * color2.w * color2.x + color1.w * color1.x) / alpha;
-	const float g = ((1 - color1.w) * color2.w * color2.y + color1.w * color1.y) / alpha;
-	const float b = ((1 - color1.w) * color2.w * color2.z + color1.w * color1.z) / alpha;
-	return {r, g, b, alpha};
+	const float newA = (1 - color1.w) * color2.w + color1.w;
+	const float newR = ((1 - color1.w) * color2.w * color2.x + color1.w * color1.x) / newA;
+	const float newG = ((1 - color1.w) * color2.w * color2.y + color1.w * color1.y) / newA;
+	const float newB = ((1 - color1.w) * color2.w * color2.z + color1.w * color1.z) / newA;
+	return {newR, newG, newB, newA};
 }
 
 bool Color::operator==(const Color &other) const {
