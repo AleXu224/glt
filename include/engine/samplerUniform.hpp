@@ -53,7 +53,7 @@ namespace Engine {
 			}
 		}
 
-		vk::DescriptorSet getDescriptorSet() {
+		vk::DescriptorSet getDescriptorSet() const {
 			return *descriptorSets.at(instance.currentFrame.get().index);
 		}
 

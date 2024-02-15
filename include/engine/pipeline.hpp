@@ -318,9 +318,9 @@ namespace Engine {
 			binds++;
 		}
 
-		void *lastBoundSampler = nullptr;
+		void const *lastBoundSampler = nullptr;
 
-		void bindWithSampler(SamplerUniform &sampler) {
+		void bindWithSampler(const SamplerUniform &sampler) {
 			auto &cmd = instance.currentFrame.get().commandBuffer;
 			if (instance.currentPipeline != this || lastBoundSampler != &sampler) {
 				if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
