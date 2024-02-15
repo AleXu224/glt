@@ -1,8 +1,11 @@
 #pragma once
 #include "utils.hpp"
 #include "vulkanIncludes.hpp"
+#include <mutex>
 #include <stdexcept>
 #include <vulkan/vulkan_enums.hpp>
+
+inline std::mutex queue_mutex;
 
 namespace Engine {
 	struct Texture {
@@ -34,8 +37,17 @@ namespace Engine {
 			auto reqs = image.getMemoryRequirements();
 			mappedMemory = memory.mapMemory(0, reqs.size);
 
+			auto props = args.instance.findQueueFamilies(args.instance.physicalDevice);
+
+			vk::CommandPoolCreateInfo poolInfo{
+				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+				.queueFamilyIndex = props.graphicsFamily.value(),
+			};
+
+			auto commandPool = args.instance.device.createCommandPool(poolInfo);
+
 			vk::raii::CommandBuffer cmd = std::move(args.instance.device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-																									.commandPool = *args.instance.currentFrame.get().commandPool,
+																									.commandPool = *commandPool,
 																									.level = vk::CommandBufferLevel::ePrimary,
 																									.commandBufferCount = 1,
 																								})
@@ -72,12 +84,14 @@ namespace Engine {
 
 			vk::raii::Fence fence{args.instance.device, vk::FenceCreateInfo{}};
 
+			queue_mutex.lock();
 			args.instance.graphicsQueue.submit(submitInfo, *fence);
 
 			auto res = args.instance.device.waitForFences(*fence, true, 100000000);
 			if (res != vk::Result::eSuccess) {
 				throw std::runtime_error("Texture creation failed :(");
 			}
+			queue_mutex.unlock();
 		}
 
 		vk::raii::ImageView createImageView(const Args &args) const {
