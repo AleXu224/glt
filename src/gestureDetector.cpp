@@ -84,14 +84,17 @@ void GestureDetector::Storage::update(Widget &widget) {
 			if (!state.focused) {
 				state.dragStart = g_cursorPos;
 				if (onPress) onPress({widget, state});
+				if (onFocus) onFocus({widget, state});
 			}
 			state.focused = true;
+			if (!state.active && onActive) onActive({widget, state});
 			state.active = true;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
 			if (state.focused && !state.focusedOutside) {
 				if (onClick) onClick({widget, state});
 				if (onRelease) onRelease({widget, state});
 			}
+			if (state.focused && onFocusLoss) onFocusLoss({widget, state});
 			state.focused = false;
 			state.focusedOutside = false;
 		}
@@ -103,8 +106,10 @@ void GestureDetector::Storage::update(Widget &widget) {
 
 		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focused) {
 			state.focusedOutside = true;
+			if (state.active && onInactive) onInactive({widget, state});
 			state.active = false;
 		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
+			if (state.focused && onFocusLoss) onFocusLoss({widget, state});
 			state.focused = false;
 			state.focusedOutside = false;
 		}
@@ -154,6 +159,10 @@ GestureDetector::State &GestureDetector::mount(Widget &widget) const {
 	auto storage = std::make_shared<Storage>(Storage{
 		.onEnter = onEnter,
 		.onLeave = onLeave,
+		.onFocus = onFocus,
+		.onFocusLoss = onFocusLoss,
+		.onActive = onActive,
+		.onInactive = onInactive,
 		.onClick = onClick,
 		.onPress = onPress,
 		.onRelease = onRelease,
@@ -163,6 +172,24 @@ GestureDetector::State &GestureDetector::mount(Widget &widget) const {
 	widget.funcs().onUpdate.emplace(widget.funcs().onUpdate.begin(), [storage](Widget &widget) mutable {
 		storage->update(widget);
 		if (storage->onUpdate) storage->onUpdate({widget, storage->state});
+		if (storage->state.forceActive) {
+			if (!storage->state.active && storage->onActive) storage->onActive({widget, storage->state});
+			storage->state.active = true;
+			storage->state.forceActive = false;
+		}
+		if (storage->state.forceInactive) {
+			if (storage->state.active && storage->onInactive) storage->onInactive({widget, storage->state});
+			storage->state.active = false;
+			storage->state.forceInactive = false;
+		}
 	});
 	return storage->state;
+}
+
+void squi::GestureDetector::State::setActive() {
+	forceActive = true;
+}
+
+void squi::GestureDetector::State::setInactive() {
+	forceInactive = true;
 }

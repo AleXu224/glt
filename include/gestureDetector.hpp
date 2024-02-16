@@ -35,16 +35,31 @@ namespace squi {
 			// Get the location of where the drag began
 			[[nodiscard]] const vec2 &getDragStartPos() const;
 
+			void setActive();
+			void setInactive();
+
 		private:
+			friend GestureDetector;
+			bool forceActive = false;
+			bool forceInactive = false;
 			vec2 scrollDelta{};
 			vec2 dragStart{};
 		};
+
 		struct Event {
 			Widget &widget;
 			State &state;
 		};
+
+		static void setActive(Event event);
+		static void setInactive(Event event);
+
 		std::function<void(Event)> onEnter{};
 		std::function<void(Event)> onLeave{};
+		std::function<void(Event)> onFocus{};
+		std::function<void(Event)> onFocusLoss{};
+		std::function<void(Event)> onActive{};
+		std::function<void(Event)> onInactive{};
 		std::function<void(Event)> onClick{};
 		std::function<void(Event)> onPress{};
 		std::function<void(Event)> onRelease{};
@@ -85,6 +100,10 @@ namespace squi {
 			State state{};
 			std::function<void(Event)> onEnter{};
 			std::function<void(Event)> onLeave{};
+			std::function<void(Event)> onFocus{};
+			std::function<void(Event)> onFocusLoss{};
+			std::function<void(Event)> onActive{};
+			std::function<void(Event)> onInactive{};
 			std::function<void(Event)> onClick{};
 			std::function<void(Event)> onPress{};
 			std::function<void(Event)> onRelease{};
