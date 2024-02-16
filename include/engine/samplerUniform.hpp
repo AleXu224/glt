@@ -1,7 +1,7 @@
 #pragma once
 
-#include "instance.hpp"
 #include "frame.hpp"
+#include "instance.hpp"
 #include "texture.hpp"
 #include "utils.hpp"
 #include "vulkanIncludes.hpp"
@@ -10,6 +10,9 @@
 #include <functional>
 #include <print>
 #include <ranges>
+#include <thread>
+#include <utility>
+
 
 namespace Engine {
 	struct SamplerUniform {
@@ -53,16 +56,20 @@ namespace Engine {
 			}
 		}
 
+		~SamplerUniform() {
+			auto thread = std::thread([&instance = instance, texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
+				// Wait for the device to be done with the descriptor sets
+				instance.device.waitIdle();
+			});
+			thread.detach();
+		}
+
 		vk::DescriptorSet getDescriptorSet() const {
 			return *descriptorSets.at(instance.currentFrame.get().index);
 		}
 
 		void bind(vk::raii::PipelineLayout &layout) {
-			instance.currentFrame.get().commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-																		 *layout,
-																		 0,
-																		 *descriptorSets.at(instance.currentFrame.get().index),
-																		 {});
+			instance.currentFrame.get().commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, 0, *descriptorSets.at(instance.currentFrame.get().index), {});
 		}
 
 		static vk::raii::DescriptorSetLayout createSetLayout(const Args &args) {
@@ -78,8 +85,8 @@ namespace Engine {
 				createInfo,
 			};
 		}
-	private:
 
+	private:
 		static vk::DescriptorSetLayoutBinding getDescriptorSetLayout(uint32_t binding = 0, uint32_t count = 1) {
 			return {
 				.binding = binding,
