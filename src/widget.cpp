@@ -23,6 +23,7 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 		  .root{this, nullptr},
 	  },
 	  id(idCounter++) {
+	if (args.customState) customState.add(args.customState.value());
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
 	if (args.onUpdate) m_funcs.onUpdate.push_back(args.onUpdate);
 	if (args.afterUpdate) m_funcs.afterUpdate.push_back(args.afterUpdate);
@@ -361,6 +362,8 @@ void Widget::draw() {
 }
 
 void Widget::initialize() {
+	if (initialized) return;
+	initialized = true;
 	for (auto &func: m_funcs.onInit) {
 		if (func) func(*this);
 	}

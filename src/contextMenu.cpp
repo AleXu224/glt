@@ -9,7 +9,6 @@
 #include "text.hpp"
 #include "vec2.hpp"
 #include <algorithm>
-#include <any>
 #include <memory>
 #include <optional>
 #include <print>
@@ -91,10 +90,11 @@ ContextMenuButton::operator Child() const {
 		.onUpdate = [storage = storage, root = root](GestureDetector::Event event) {
 			Child rootWidget = root.lock();
 			if (!rootWidget) return;
-			auto &rootState = std::any_cast<ContextMenu::Storage &>(rootWidget->state.properties.at("state"));
+			auto &rootState = rootWidget->customState.get<ContextMenu::Storage>("state");
 			if (storage->content.index() == 1 && storage->submenuOpened) {
 				if (Child menuWidget = storage->menu.lock()) {
-					const auto &menuLocked = std::any_cast<bool &>(menuWidget->state.properties.at("locked"));
+					// const auto &menuLocked = std::any_cast<bool &>(menuWidget->state.properties.at("locked"));
+					const auto &menuLocked = menuWidget->customState.get<bool>("locked");
 					if (menuLocked) return;
 				}
 			}
@@ -106,7 +106,7 @@ ContextMenuButton::operator Child() const {
 					storage->submenuOpened = false;
 					if (storage->menuToLock.has_value()) {
 						if (Child menuToLockWidget = storage->menuToLock.value().lock()) {
-							auto &locked = std::any_cast<bool &>(menuToLockWidget->state.properties.at("locked"));
+							auto &locked = menuToLockWidget->customState.get<bool>("locked");
 							locked = false;
 						}
 					}
@@ -117,7 +117,7 @@ ContextMenuButton::operator Child() const {
 					storage->submenuOpened = true;
 					if (storage->menuToLock.has_value()) {
 						if (Child menuToLockWidget = storage->menuToLock.value().lock()) {
-							auto &locked = std::any_cast<bool &>(menuToLockWidget->state.properties.at("locked"));
+							auto &locked  = menuToLockWidget->customState.get<bool>("locked");
 							locked = true;
 						}
 					}
@@ -233,7 +233,7 @@ ContextMenuFrame::operator Child() const {
 			},
 			.padding = Padding{1.f, 4.f},
 			.onInit = [](Widget &w) {
-				w.state.properties["locked"] = false;
+				w.customState.add("locked", false);
 			},
 			.onArrange = [position = position](Widget &w, vec2 &pos) {
 				auto rect = Rect::fromPosSize(position, w.getLayoutRect().size());
@@ -299,7 +299,7 @@ ContextMenu::operator Child() const {
 	Child stack = Stack{
 		.widget{
 			.onUpdate = [](Widget &w) {
-				auto &state = std::any_cast<Storage &>(w.state.properties.at("state"));
+				auto &state = w.customState.get<Storage>("state");
 				for (auto &menu: state.menusToAdd) {
 					w.addChild(menu);
 				}
@@ -307,7 +307,7 @@ ContextMenu::operator Child() const {
 			},
 		},
 	};
-	stack->state.properties["state"] = Storage{.stack = stack};
+	stack->customState.add("state", Storage{.stack = stack});
 	stack->setChildren(Children{
 		GestureDetector{
 			.onClick = [](GestureDetector::Event event) {

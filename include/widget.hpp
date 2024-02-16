@@ -4,14 +4,13 @@
 #include "margin.hpp"
 #include "memory"
 #include "rect.hpp"
+#include "stateContainer.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include <any>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
 #include <variant>
 
 
@@ -88,6 +87,7 @@ namespace squi {
 			 * The space inside the widget. Does not affect the size.
 			 */
 			std::optional<Margin> padding{};
+			std::optional<StateContainer> customState{};
 			std::function<void(Widget &)> onInit{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
@@ -270,10 +270,9 @@ namespace squi {
 		std::vector<std::shared_ptr<Widget>> children{};
 		static uint64_t idCounter;
 		static uint32_t widgetCount;
-
 	public:
+		CustomState customState{};
 		struct State {
-			std::unordered_map<std::string_view, std::any> properties{};
 			Stateful<std::variant<float, Size>, StateImpact::RelayoutNeeded> width;
 			Stateful<std::variant<float, Size>, StateImpact::RelayoutNeeded> height;
 			// FIXME: Also make this const and add a setter

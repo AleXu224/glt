@@ -62,6 +62,7 @@ namespace squi {
 				.position{0, 0},
 				.size{0, 0},
 			}};
+			std::optional<std::shared_future<Data>> dataFuture{};
 			// static std::unique_ptr<ImagePipeline> pipeline;
 
 		public:

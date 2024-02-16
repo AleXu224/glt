@@ -118,7 +118,7 @@ Image::Impl::Impl(const Image &args)
 			std::future<Data> texFuture = std::async(std::launch::async, [data = data]() -> Data {
 				return data;
 			});
-			state.properties.insert({"imageFuture", texFuture.share()});
+			dataFuture = texFuture.share();
 			break;
 		}
 		case 1: {
@@ -132,15 +132,15 @@ Image::Impl::Impl(const Image &args)
 				future.wait();
 				return future.get();
 			});
-			state.properties.insert({"imageFuture", texFuture.share()});
+			dataFuture = texFuture.share();
 		}
 	}
 }
 
 void Image::Impl::onUpdate() {
 	if (sampler.has_value()) return;
-	auto &future = std::any_cast<std::shared_future<Data> &>(state.properties.at("imageFuture"));
-	// const auto status = future.wait_for(std::chrono::seconds(0));
+	if (dataFuture.has_value()) return;
+	auto &future = dataFuture.value();
 	if (future._Is_ready()) {
 		auto &data = future.get();
 		sampler.emplace(Engine::SamplerUniform::Args{
@@ -166,11 +166,7 @@ void Image::Impl::onUpdate() {
 				data.width * data.channels
 			);
 		}
-		// stbi_write_png("hmmge.png", data.width, data.height, data.channels, sampler->texture.mappedMemory, data.width * data.channels);
-		auto iter = state.properties.find("imageFuture");
-		if (iter != state.properties.end()) {
-			state.properties.erase(iter);
-		}
+		dataFuture.reset();
 		reLayout();
 	}
 }

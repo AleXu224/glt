@@ -14,7 +14,6 @@
 #include "window.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
-#include <any>
 #include <chrono>
 #include <format>
 #include <functional>
@@ -223,7 +222,7 @@ struct LayoutItem {
 			.widget{
 				.height = Size::Shrink,
 				.onInit = [storage](Widget &w) {
-					w.state.properties.insert({"layoutItem", storage});
+					w.customState.add("layoutItem", storage);
 				},
 				.onUpdate = [storage](Widget &w) {
 					if (storage->widget.expired()) w.deleteLater();
@@ -305,8 +304,8 @@ struct LayoutItem {
 							if (!widget) return;
 							const auto &children = w.getChildren();
 							const auto test = [&children](Child &child) -> bool {
-								auto result = std::find_if(children.begin(), children.end(), [child = child](const auto &w) {
-									return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->state.properties.at("layoutItem"))->widget.lock() == child->shared_from_this();
+								auto result = std::find_if(children.begin(), children.end(), [child = child](const Child &w) {
+									return w->customState.get<std::shared_ptr<LayoutItem::Storage>>("layoutItem")->widget.lock() == child->shared_from_this();
 								});
 								return result == children.end();
 							};
@@ -437,8 +436,8 @@ struct LayoutInspectorContent {
 								.onUpdate = [storage = storage](Widget &w) {
 									const auto &children = w.getChildren();
 									const auto test = [&children](Child &child) -> bool {
-										auto result = std::find_if(children.begin(), children.end(), [child = child](const auto &w) {
-											return std::any_cast<std::shared_ptr<LayoutItem::Storage>>(w->state.properties.at("layoutItem"))->widget.lock() == child;
+										auto result = std::find_if(children.begin(), children.end(), [child = child](const Child &w) {
+											return w->customState.get<std::shared_ptr<LayoutItem::Storage>>("layoutItem")->widget.lock() == child;
 										});
 										return result == children.end();
 									};
