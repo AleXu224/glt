@@ -27,8 +27,11 @@ namespace Engine {
 
 		GetterSetter(const GetterSetter &) = delete;
 		GetterSetter(GetterSetter &) = delete;
+		GetterSetter &operator=(const GetterSetter &) = delete;
 		GetterSetter(const GetterSetter &&) = delete;
 		GetterSetter(GetterSetter &&) = delete;
+		GetterSetter &operator=(GetterSetter &&) = delete;
+		~GetterSetter() = default;
 
 	private:
 		std::tuple<std::reference_wrapper<T>...> obj;

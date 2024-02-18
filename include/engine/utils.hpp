@@ -13,7 +13,7 @@ namespace Engine {
 		auto memProperties = instance.physicalDevice.getMemoryProperties();
 
 		for (auto i: std::views::iota(0u, memProperties.memoryTypeCount)) {
-			if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			if (typeFilter & (1U << i) && (memProperties.memoryTypes.at(i).propertyFlags & properties) == properties) {
 				return i;
 			}
 		}
@@ -22,7 +22,7 @@ namespace Engine {
 	}
 
 	template<class T, size_t N, size_t... I>
-	static inline std::array<T, N> _generateArray(const std::function<T(size_t)> &generator, const std::index_sequence<I...> &) {
+	static inline std::array<T, N> _generateArray(const std::function<T(size_t)> &generator, const std::index_sequence<I...> & /*unused*/) {
 		return {((void) I, generator(I))...};
 	}
 	
@@ -30,55 +30,4 @@ namespace Engine {
 	static inline std::array<T, N> generateArray(const std::function<T(size_t)> &generator) {
 		return _generateArray<T, N>(generator, std::make_index_sequence<N>{});
 	}
-
-
-	struct MoveNCopyDetector {
-		MoveNCopyDetector() = default;
-		MoveNCopyDetector(const MoveNCopyDetector&) {
-			std::println("Copied!");
-		}
-		MoveNCopyDetector(MoveNCopyDetector &) {
-			std::println("Copied!");
-		}
-		MoveNCopyDetector(const MoveNCopyDetector &&) {
-			std::println("Moved!");
-		}
-		MoveNCopyDetector(MoveNCopyDetector &&) {
-			std::println("Moved!");
-		}
-
-		MoveNCopyDetector &operator=(const MoveNCopyDetector&) {
-			std::println("Copied!");
-			return *this;
-		}
-		MoveNCopyDetector &operator=(MoveNCopyDetector &) {
-			std::println("Copied!");
-			return *this;
-		}
-		MoveNCopyDetector &operator=(const MoveNCopyDetector &&) {
-			std::println("Moved!");
-			return *this;
-		}
-		MoveNCopyDetector &operator=(MoveNCopyDetector &&) {
-			std::println("Moved!");
-			return *this;
-		}
-
-		const MoveNCopyDetector &operator=(const MoveNCopyDetector &) const {
-			std::println("Copied!");
-			return *this;
-		}
-		const MoveNCopyDetector &operator=(MoveNCopyDetector &) const {
-			std::println("Copied!");
-			return *this;
-		}
-		const MoveNCopyDetector &operator=(const MoveNCopyDetector &&) const {
-			std::println("Moved!");
-			return *this;
-		}
-		const MoveNCopyDetector &operator=(MoveNCopyDetector &&) const {
-			std::println("Moved!");
-			return *this;
-		}
-	};
 }// namespace Engine

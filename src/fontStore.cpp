@@ -33,7 +33,7 @@ FontStore::Font::Font(std::string_view fontPath, Engine::Instance &instance) : a
 	}
 }
 
-FontStore::Font::Font(std::span<char> fontData, Engine::Instance &instance) :atlas(instance) {
+FontStore::Font::Font(std::span<char> fontData, Engine::Instance &instance) : atlas(instance) {
 	if (FT_New_Memory_Face(ftLibrary, reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
 		std::println("Failed to load font from memory");
 		loaded = false;
@@ -153,9 +153,8 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	const uint32_t maxWidthClamped = [&]() -> uint32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<uint32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
-		} else {
-			return std::numeric_limits<uint32_t>::max();
 		}
+		return std::numeric_limits<uint32_t>::max();
 	}();
 	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
 
@@ -205,9 +204,8 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 	const uint32_t maxWidthClamped = [&]() -> uint32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<uint32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
-		} else {
-			return std::numeric_limits<uint32_t>::max();
 		}
+		return std::numeric_limits<uint32_t>::max();
 	}();
 	std::vector<std::vector<Engine::TextQuad>> quads{};
 	quads.resize(1, std::vector<Engine::TextQuad>{});

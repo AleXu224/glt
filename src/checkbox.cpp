@@ -16,7 +16,7 @@ Checkbox::operator Child() const {
 	if (value.has_value()) storage->internalValue = value.value().get();
 
 	return GestureDetector{
-		.onClick = [storage, onChange = onChange](GestureDetector::Event event) {
+		.onClick = [storage, onChange = onChange](GestureDetector::Event  /*event*/) {
 			if (storage->value.has_value()) {
 				bool &value = storage->value.value().get();
 				value = !value;

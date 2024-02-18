@@ -1,5 +1,4 @@
 #pragma once
-#include "getterSetter.hpp"
 #include "pipeline.hpp"
 #include "vulkanIncludes.hpp"
 #include <array>

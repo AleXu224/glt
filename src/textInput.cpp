@@ -5,13 +5,14 @@
 #include "text.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
+#include "window.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <format>
 #include <limits>
 #include <memory>
 #include <optional>
-#include "window.hpp"
+
 
 using namespace squi;
 
@@ -68,11 +69,10 @@ int64_t TextInput::Impl::getSelectionMax() {
 
 std::string_view TextInput::Impl::getText() {
 	if (text.has_value()) return text.value().get();
-	else {
-		auto &children = getChildren();
-		auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
-		return text.getText();
-	}
+
+	auto &children = getChildren();
+	auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
+	return text.getText();
 }
 
 void TextInput::Impl::setText(std::string_view text) {
@@ -227,7 +227,7 @@ void TextInput::Impl::onUpdate() {
 		}
 	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_V)) {
 		if (key->mods & GLFW_MOD_CONTROL) {
-			const auto clipboardText = glfwGetClipboardString(nullptr);
+			const auto *const clipboardText = glfwGetClipboardString(nullptr);
 			if (clipboardText) {
 				clearSelection();
 				const auto clipboardString = std::string_view(clipboardText);
@@ -261,7 +261,7 @@ void TextInput::Impl::onUpdate() {
 	}
 }
 
-vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink  /*shouldShrink*/) {
 	auto &children = getChildren();
 	for (auto &child: children) {
 		const auto size = child->layout(maxSize.withX(std::numeric_limits<float>::max()), {});

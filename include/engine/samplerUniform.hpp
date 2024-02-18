@@ -30,13 +30,17 @@ namespace Engine {
 
 		Instance &instance;
 
+		SamplerUniform(const SamplerUniform &) = delete;
+		SamplerUniform(SamplerUniform &&) = delete;
+		SamplerUniform &operator=(const SamplerUniform &) = delete;
+		SamplerUniform &operator=(SamplerUniform &&) = delete;
 		SamplerUniform(const Args &args)
 			: texture(args.textureArgs),
 			  descriptorSetLayout(createSetLayout(args)),
 			  descriptorPool(createDescriptorPool(args)),
 			  descriptorSets(createDescriptorSets(args)),
 			  instance(args.instance) {
-			for (auto i: std::views::iota(0ull, FrameBuffer)) {
+			for (auto i: std::views::iota(0ULL, FrameBuffer)) {
 				vk::DescriptorImageInfo bufferInfo{
 					.sampler = *texture.sampler,
 					.imageView = *texture.view,
@@ -112,8 +116,8 @@ namespace Engine {
 			return args.instance.device.createDescriptorPool(createInfo);
 		}
 
-		std::vector<vk::raii::DescriptorSet> createDescriptorSets(const Args &args) {
-			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t i) -> vk::DescriptorSetLayout {
+		[[nodiscard]] std::vector<vk::raii::DescriptorSet> createDescriptorSets(const Args &args) const {
+			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t /*i*/) -> vk::DescriptorSetLayout {
 				return *descriptorSetLayout;
 			});
 

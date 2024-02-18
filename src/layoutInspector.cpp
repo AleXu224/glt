@@ -4,6 +4,8 @@
 #include "button.hpp"
 #include "column.hpp"
 #include "container.hpp"
+#include "engine/compiledShaders/inspectorQuadfrag.hpp"
+#include "engine/compiledShaders/inspectorQuadvert.hpp"
 #include "fontIcon.hpp"
 #include "gestureDetector.hpp"
 #include "inspectorQuad.hpp"
@@ -21,11 +23,10 @@
 #include <print>
 #include <string_view>
 #include <utility>
-#include "engine/compiledShaders/inspectorQuadfrag.hpp"
-#include "engine/compiledShaders/inspectorQuadvert.hpp"
+
 
 using namespace squi;
-LayoutInspector::InspectorPipeline * LayoutInspector::pipeline = nullptr;
+LayoutInspector::InspectorPipeline *LayoutInspector::pipeline = nullptr;
 
 struct TextItem {
 	// Args
@@ -80,7 +81,9 @@ struct TextItems {
 				.width = Size::Expand,
 				.height = Size::Shrink,
 				.onUpdate = [widget = widget](Widget &w) {
-					if (widget.expired()) w.deleteLater();
+					if (widget.expired()) {
+						w.deleteLater();
+					}
 				},
 			},
 			.children{
@@ -258,8 +261,8 @@ struct LayoutItem {
 									Color outputColor = [&]() {
 										if (storage->hovered || state->activeButton.lock() == w.shared_from_this())
 											return Color(0xFFFFFF0D);
-										else
-											return Color(0x00000000);
+
+										return Color(0x00000000);
 									}();
 									const auto timeAlive = std::chrono::steady_clock::now() - storage->timeCreated;
 									if (timeAlive < std::chrono::milliseconds(200)) {
@@ -495,7 +498,7 @@ LayoutInspector::operator Child() const {
 	return Row{
 		.widget{
 			.onDraw = [](Widget &w) {
-				if (!LayoutInspector::pipeline) {
+				if (LayoutInspector::pipeline == nullptr) {
 					pipeline = &Window::of(&w).engine.instance.createPipeline<InspectorPipeline>(InspectorPipeline::Args{
 						.vertexShader = Engine::Shaders::inspectorQuadvert,
 						.fragmentShader = Engine::Shaders::inspectorQuadfrag,
@@ -587,7 +590,7 @@ LayoutInspector::operator Child() const {
 							.onInit = [](Widget &w) {
 								w.flags.visible = false;
 							},
-							.afterDraw = [storage](Widget &w) {
+							.afterDraw = [storage](Widget & /*w*/) {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
 								if (*widget->flags.visible) {

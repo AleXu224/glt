@@ -71,7 +71,7 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 			while (true) {
 				const auto chunkSizeEnd = std::find(chunkStart, body.end(), '\r');
 				const auto chunkSizeStr = body.substr(chunkStart - body.begin(), chunkSizeEnd - chunkStart);
-				size_t chunkSize;
+				size_t chunkSize = 0;
 				std::from_chars(chunkSizeStr.data(), chunkSizeStr.data() + chunkSizeStr.size(), chunkSize, 16);
 				if (chunkSize == 0) break;
 				const auto chunkEnd = chunkSizeEnd + 2 + static_cast<std::ptrdiff_t>(chunkSize);
@@ -143,7 +143,7 @@ Networking::Response Networking::get(std::string_view url) {
 	}
 
 	std::string response;
-	std::array<char, 10 * 1024> buffer{};
+	std::array<char, 10ull * 1024> buffer{};
 	while (true) {
 		size_t len = stream.read_some(asio::buffer(buffer), ec);
 		if (!ec) {

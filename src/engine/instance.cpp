@@ -51,7 +51,8 @@ Instance::Instance() : window(800, 600, "Vulkan window"),
 					   currentFrame(frames.front()) {}
 
 void Engine::Instance::recreateSwapChain() {
-	int width = 0, height = 0;
+	int width = 0;
+	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
 	while (width == 0 || height == 0) {
 		glfwGetFramebufferSize(window.ptr, &width, &height);
@@ -72,7 +73,7 @@ void Engine::Instance::recreateSwapChain() {
 	}
 }
 
-vk::raii::Instance Engine::Instance::createInstance() {
+vk::raii::Instance Engine::Instance::createInstance() const {
 	if (debugBuild && !checkValidationLayers()) {
 		throw std::runtime_error("The required validation layers are not available");
 	}
@@ -103,15 +104,15 @@ vk::raii::Instance Engine::Instance::createInstance() {
 	return {context, createInfo};
 }
 
-vk::raii::SurfaceKHR Engine::Instance::createSurface() {
-	VkSurfaceKHR surface_;
+vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
+	VkSurfaceKHR surface_ = nullptr;
 	if (glfwCreateWindowSurface(*instance, window.ptr, nullptr, &surface_) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create window surface!");
 	}
 	return {instance, surface_};
 }
 
-vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() {
+vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() const {
 	auto devices = instance.enumeratePhysicalDevices();
 
 	if (devices.empty()) {
@@ -142,7 +143,7 @@ vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() {
 	throw std::runtime_error("Failed to find a suitable GPU");
 }
 
-vk::raii::Device Engine::Instance::createLogicalDevice() {
+vk::raii::Device Engine::Instance::createLogicalDevice() const {
 	auto indices = findQueueFamilies(physicalDevice);
 
 	constexpr float queuePriority = 1.f;
@@ -178,12 +179,12 @@ vk::raii::Device Engine::Instance::createLogicalDevice() {
 	return {physicalDevice, createInfo};
 }
 
-vk::raii::Queue Engine::Instance::createGraphicsQueue() {
+vk::raii::Queue Engine::Instance::createGraphicsQueue() const {
 	auto indices = findQueueFamilies(physicalDevice);
 	return device.getQueue(indices.graphicsFamily.value(), 0);
 }
 
-vk::raii::Queue Engine::Instance::createPresentQueue() {
+vk::raii::Queue Engine::Instance::createPresentQueue() const {
 	auto indices = findQueueFamilies(physicalDevice);
 	return device.getQueue(indices.presentFamily.value(), 0);
 }
@@ -219,12 +220,12 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 	if (recreating) createInfo.setOldSwapchain(*swapChain);
 
 	auto indices = findQueueFamilies(physicalDevice);
-	uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+	std::array<uint32_t, 2> queueFamilyIndices{indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 	if (indices.graphicsFamily != indices.presentFamily) {
 		createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		createInfo.queueFamilyIndexCount = 2;
-		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+		createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 	} else {
 		createInfo.imageSharingMode = vk::SharingMode::eExclusive;
 		createInfo.queueFamilyIndexCount = 0;    // Optional
@@ -234,7 +235,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 	return device.createSwapchainKHR(createInfo);
 }
 
-std::vector<vk::Image> Engine::Instance::createSwapChainImages() {
+std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
 	return (*device).getSwapchainImagesKHR(*swapChain);
 }
 
@@ -362,7 +363,7 @@ bool Engine::Instance::checkValidationLayers() {
 	return true;
 }
 
-Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const vk::raii::PhysicalDevice &device) {
+Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const vk::raii::PhysicalDevice &device) const {
 	QueueFamilyIndices indices{};
 
 	auto queueFamilies = device.getQueueFamilyProperties();
@@ -383,7 +384,7 @@ Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const v
 	return indices;
 }
 
-Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) {
+Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) const {
 	SwapChainSupportDetails details;
 
 	details.capabilities = device.getSurfaceCapabilitiesKHR(*surface);
@@ -393,23 +394,23 @@ Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSuppor
 	return details;
 }
 
-vk::Extent2D Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) {
-	if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
+vk::Extent2D Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const {
+	if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
 		return capabilities.currentExtent;
-	} else {
-		int width, height;
-		glfwGetFramebufferSize(window.ptr, &width, &height);
 
-		vk::Extent2D actualExtent = {
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height),
-		};
+	int width = 0;
+	int height = 0;
+	glfwGetFramebufferSize(window.ptr, &width, &height);
 
-		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+	vk::Extent2D actualExtent = {
+		static_cast<uint32_t>(width),
+		static_cast<uint32_t>(height),
+	};
 
-		return actualExtent;
-	}
+	actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+	return actualExtent;
 }
 
 vk::PresentModeKHR Engine::Instance::chooseSwapPresentMode() {

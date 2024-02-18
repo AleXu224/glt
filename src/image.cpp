@@ -11,9 +11,9 @@
 #include "vec2.hpp"
 #include "widget.hpp"
 #include "window.hpp"
+#include <cstddef>
 #include <cstring>
 #include <expected>
-#include <fstream>
 #include <future>
 #include <ios>
 #include <iostream>
@@ -33,14 +33,14 @@ using namespace squi;
 // std::unique_ptr<Image::ImagePipeline> Image::Impl::pipeline = nullptr;
 Image::ImagePipeline *Image::Impl::pipeline = nullptr;
 
-Image::Data::Data(unsigned char *bytes, uint32_t length) {
+Image::Data::Data(unsigned char *bytes, uint32_t length) : width(0), height(0) {
 	stbi_uc *loadedData = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 0);
 	if (loadedData == nullptr) {
 		throw std::runtime_error("Failed to load image");
 	}
 	if (channels == 3) {
 		channels = 4;
-		this->data.resize(width * height * 4);
+		this->data.resize(static_cast<size_t>(width * height) * 4);
 		for (int i = 0; i < width * height; i++) {
 			this->data[i * 4 + 0] = loadedData[i * 3 + 0];
 			this->data[i * 4 + 1] = loadedData[i * 3 + 1];
@@ -48,8 +48,8 @@ Image::Data::Data(unsigned char *bytes, uint32_t length) {
 			this->data[i * 4 + 3] = 255;
 		}
 	} else if (channels == 1 || channels == 2 || channels == 4) {
-		this->data.resize(width * height * channels);
-		std::memcpy(this->data.data(), loadedData, width * height * channels);
+		this->data.resize(static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels));
+		std::memcpy(this->data.data(), loadedData, static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels));
 	} else {
 		throw std::runtime_error("Unsupported number of channels");
 	}
@@ -65,7 +65,7 @@ Image::Data Image::Data::fromUrl(std::string_view url) {
 }
 
 Image::Data Image::Data::fromFile(std::string_view path) {
-	std::ifstream s{path.data(), std::ios::binary | std::ios::in};
+	std::ifstream s{path.data(), std::ios::binary};
 
 	if (!s) {
 		std::cout << "Failed to open file " << path << std::endl;
@@ -101,7 +101,7 @@ Engine::Texture Image::Data::createTexture(Engine::Instance &instance) const {
 		.channels = static_cast<uint32_t>(this->channels),
 	}};
 
-	memcpy(ret.mappedMemory, this->data.data(), this->width * this->height * this->channels * sizeof(uint8_t));
+	memcpy(ret.mappedMemory, this->data.data(), static_cast<size_t>(this->width) * this->height * this->channels);
 
 	return ret;
 }
@@ -114,7 +114,7 @@ Image::Impl::Impl(const Image &args)
 
 	switch (args.image.index()) {
 		case 0: {
-			auto &data = std::get<0>(args.image);
+			const auto &data = std::get<0>(args.image);
 			std::future<Data> texFuture = std::async(std::launch::async, [data = data]() -> Data {
 				return data;
 			});
@@ -122,10 +122,10 @@ Image::Impl::Impl(const Image &args)
 			break;
 		}
 		case 1: {
-			auto &future = std::get<1>(args.image);
+			const auto &future = std::get<1>(args.image);
 #ifdef _DEBUG
 			if (!future.valid()) {
-				printf("Warning: Image future is not valid\n");
+				std::println("Warning: Image future is not valid");
 			}
 #endif
 			std::future<Data> texFuture = std::async(std::launch::async, [future = future]() -> Data {
@@ -138,11 +138,15 @@ Image::Impl::Impl(const Image &args)
 }
 
 void Image::Impl::onUpdate() {
-	if (sampler.has_value()) return;
-	if (dataFuture.has_value()) return;
+	if (sampler.has_value()) {
+		return;
+	}
+	if (dataFuture.has_value()) {
+		return;
+	}
 	auto &future = dataFuture.value();
 	if (future._Is_ready()) {
-		auto &data = future.get();
+		const auto &data = future.get();
 		sampler.emplace(Engine::SamplerUniform::Args{
 			.instance = Window::of(this).engine.instance,
 			.textureArgs{
@@ -161,9 +165,9 @@ void Image::Impl::onUpdate() {
 		});
 		for (int row = 0; row < data.height; row++) {
 			memcpy(
-				(uint8_t *) sampler->texture.mappedMemory + row * layout.rowPitch,
-				data.data.data() + row * data.width * data.channels,
-				data.width * data.channels
+				reinterpret_cast<uint8_t *>(sampler->texture.mappedMemory) + row * layout.rowPitch,
+				data.data.data() + static_cast<ptrdiff_t>(row * data.width * data.channels),
+				static_cast<size_t>(data.width) * static_cast<size_t>(data.channels)
 			);
 		}
 		dataFuture.reset();
@@ -171,8 +175,10 @@ void Image::Impl::onUpdate() {
 	}
 }
 
-void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
-	if (!sampler.has_value()) return;
+void Image::Impl::onLayout(vec2 &maxSize, vec2 & /*minSize*/) {
+	if (!sampler.has_value()) {
+		return;
+	}
 	const auto &properties = sampler->texture;
 	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 	switch (this->fit) {
@@ -197,7 +203,9 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 &minSize) {
 }
 
 void Image::Impl::postLayout(vec2 &size) {
-	if (!sampler.has_value()) return;
+	if (!sampler.has_value()) {
+		return;
+	}
 	const auto &properties = sampler->texture;
 
 	switch (this->fit) {
@@ -232,7 +240,9 @@ void Image::Impl::postLayout(vec2 &size) {
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
-	if (!sampler.has_value()) return;
+	if (!sampler.has_value()) {
+		return;
+	}
 	const auto &widgetSize = getSize();
 	const vec2 quadSize = vec2(quad.size);
 
@@ -252,13 +262,8 @@ void Image::Impl::postArrange(vec2 &pos) {
 }
 
 void Image::Impl::onDraw() {
-	if (!pipeline) {
+	if (pipeline == nullptr) {
 		auto &instance = Window::of(this).engine.instance;
-		// pipeline = std::make_unique<ImagePipeline>(ImagePipeline::Args{
-		// 	.vertexShader = Engine::Shaders::texturedRectvert,
-		// 	.fragmentShader = Engine::Shaders::texturedRectfrag,
-		// 	.instance = Window::of(this).engine.instance,
-		// });
 		pipeline = &instance.createPipeline<ImagePipeline>(ImagePipeline::Args{
 			.vertexShader = Engine::Shaders::texturedRectvert,
 			.fragmentShader = Engine::Shaders::texturedRectfrag,
@@ -266,7 +271,9 @@ void Image::Impl::onDraw() {
 		});
 	}
 
-	if (!sampler.has_value()) return;
+	if (!sampler.has_value()) {
+		return;
+	}
 	pipeline->bindWithSampler(sampler.value());
 	auto [vi, ii] = pipeline->getIndexes();
 	pipeline->addData(quad.getData(vi, ii));

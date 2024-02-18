@@ -104,7 +104,7 @@ namespace Engine {
 				return graphicsFamily.has_value() && presentFamily.has_value();
 			}
 		};
-		QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &device);
+		Engine::Instance::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &device) const;
 		void frameEnd() {
 			for (auto &listener: frameEndListeners) listener();
 		}
@@ -123,16 +123,16 @@ namespace Engine {
 		std::vector<std::function<void(void)>> frameEndListeners{};
 		std::vector<std::function<void(void)>> frameBeginListeners{};
 
-		[[nodiscard]] vk::raii::Instance createInstance();
-		[[nodiscard]] vk::raii::SurfaceKHR createSurface();
-		[[nodiscard]] vk::raii::PhysicalDevice selectPhysicalDevice();
-		[[nodiscard]] vk::raii::Device createLogicalDevice();
-		[[nodiscard]] vk::raii::Queue createGraphicsQueue();
-		[[nodiscard]] vk::raii::Queue createPresentQueue();
+		[[nodiscard]] vk::raii::Instance createInstance() const;
+		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
+		[[nodiscard]] vk::raii::PhysicalDevice selectPhysicalDevice() const;
+		[[nodiscard]] vk::raii::Device createLogicalDevice() const;
+		[[nodiscard]] vk::raii::Queue createGraphicsQueue() const;
+		[[nodiscard]] vk::raii::Queue createPresentQueue() const;
 
 
 		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating);
-		[[nodiscard]] std::vector<vk::Image> createSwapChainImages();
+		[[nodiscard]] std::vector<vk::Image> createSwapChainImages() const;
 		[[nodiscard]] vk::Format createSwapChainImageFormat();
 		[[nodiscard]] vk::Extent2D createExtent();
 		[[nodiscard]] std::vector<vk::raii::ImageView> createImageViews();
@@ -140,7 +140,7 @@ namespace Engine {
 		[[nodiscard]] vk::raii::RenderPass createRenderPass();
 		[[nodiscard]] std::vector<vk::raii::Framebuffer> createFramebuffers();
 
-		bool checkValidationLayers();
+		static bool checkValidationLayers();
 
 
 		struct SwapChainSupportDetails {
@@ -149,9 +149,9 @@ namespace Engine {
 			std::vector<vk::PresentModeKHR> presentModes;
 		};
 
-		SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device);
+		Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
 		static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
 		static vk::PresentModeKHR chooseSwapPresentMode();
-		vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities);
+		vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const;
 	};
 }// namespace Engine

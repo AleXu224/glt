@@ -1,6 +1,7 @@
 #include "atlas.hpp"
 #include "samplerUniform.hpp"
 #include <array>
+#include <cstddef>
 
 using namespace squi;
 
@@ -55,7 +56,7 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 
 	// Copy data to atlas
 	for (int y = 0; y < height; y++) {
-		memcpy(&getAtlasData().at((y + usedRow->yOffset) * AtlasSize + AtlasSize - usedRow->availableWidth), data + y * width, width);
+		memcpy(&getAtlasData().at((y + usedRow->yOffset) * AtlasSize + AtlasSize - usedRow->availableWidth), data + static_cast<ptrdiff_t>(y * width), width);
 	}
 
 	// Prepare return values

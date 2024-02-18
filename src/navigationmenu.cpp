@@ -158,7 +158,7 @@ NavigationMenu::operator Child() const {
 				.children = std::invoke([&]() -> Children {
 					Children children{};
 					bool first = true;
-					for (auto &item: items) {
+					for (const auto &item: items) {
 						children.emplace_back(MenuItem{
 							.name = item.name,
 							.icon = item.icon,

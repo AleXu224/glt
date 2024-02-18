@@ -1,9 +1,9 @@
-#include "textQuad.hpp"
+#include "text.hpp"
 #include "engine/compiledShaders/textRectfrag.hpp"
 #include "engine/compiledShaders/textRectvert.hpp"
 #include "fontStore.hpp"
 #include "ranges"
-#include "text.hpp"
+#include "textQuad.hpp"
 #include "widget.hpp"
 #include "window.hpp"
 #include <algorithm>
@@ -13,22 +13,25 @@
 #include <variant>
 
 
-
 using namespace squi;
 
 // std::unique_ptr<Text::TextPipeline> Text::Impl::pipeline = nullptr;
 Text::TextPipeline *Text::Impl::pipeline = nullptr;
 
 Text::Impl::Impl(const Text &args)
-	: Widget(args.widget.withDefaultWidth(Size::Shrink).withDefaultHeight(Size::Shrink), Widget::FlagsArgs{
-																							 .shouldDrawChildren = false,
-																						 }),
+	: Widget(
+		  args.widget
+			  .withDefaultWidth(Size::Shrink)
+			  .withDefaultHeight(Size::Shrink),
+		  Widget::FlagsArgs{
+			  .shouldDrawChildren = false,
+		  }
+	  ),
 	  text(args.text), fontSrc([&]() -> std::string_view {
 		  if (std::holds_alternative<std::string_view>(args.font)) {
 			  return std::get<std::string_view>(args.font);
-		  } else {
-			  return "";
 		  }
+		  return "";
 	  }()),
 	  fontSize(args.fontSize), lineWrap(args.lineWrap), color(args.color) {
 	if (std::holds_alternative<std::shared_ptr<FontStore::Font>>(args.font)) {
@@ -41,7 +44,7 @@ Text::Impl::Impl(const Text &args)
 }
 
 // The text characters are considered to be the children of the text widget
-vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2  /*minSize*/, ShouldShrink shouldShrink) {
 	if (!font.has_value()) {
 		font = FontStore::getFont(fontSrc, Window::of(this).engine.instance);
 		const auto textPos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
@@ -117,14 +120,16 @@ void Text::Impl::onDraw() {
 			minOffsetX,
 			[](const auto &quad, const auto &offset) {
 				return (quad.getOffset().x + quad.getSize().x) < offset;
-			});
+			}
+		);
 		auto it2 = std::lower_bound(
 			it,
 			quadVec.end(),
 			maxOffsetX,
 			[](const auto &quad, const auto &offset) {
 				return (quad.getOffset().x) < offset;
-			});
+			}
+		);
 		for (auto &quad: std::ranges::subrange(it, it2)) {
 			auto [vi, ii] = pipeline->getIndexes();
 			pipeline->addData(quad.getData(vi, ii));

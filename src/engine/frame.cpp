@@ -36,7 +36,7 @@ void Engine::Frame::recreateCommandBuffer(vk::raii::Device &device) {
 	commandBuffer = std::move(device.allocateCommandBuffers(allocInfo).front());
 }
 
-void Engine::Frame::transitionSwapchainImage(vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) {
+void Engine::Frame::transitionSwapchainImage(vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) const {
 	vk::ImageAspectFlags aspectMask = (newLayout == vk::ImageLayout::eDepthAttachmentOptimal) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
 
 	vk::ImageSubresourceRange subrange{

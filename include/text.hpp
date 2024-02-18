@@ -14,7 +14,7 @@ namespace squi {
 	struct Text {
 		// Args
 		Widget::Args widget{};
-		std::string_view text = "";
+		std::string_view text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
 		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = R"(C:\Windows\Fonts\arial.ttf)";

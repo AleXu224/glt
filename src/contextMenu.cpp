@@ -69,7 +69,7 @@ ContextMenuButton::operator Child() const {
 			storage->hovered = false;
 			storage->stateChanged = true;
 		},
-		.onClick = [storage = storage, root = root](GestureDetector::Event event) {
+		.onClick = [storage = storage, root = root](GestureDetector::Event /*event*/) {
 			if (Child rootWidget = root.lock()) {
 				switch (storage->content.index()) {
 					case 0: {
@@ -117,7 +117,7 @@ ContextMenuButton::operator Child() const {
 					storage->submenuOpened = true;
 					if (storage->menuToLock.has_value()) {
 						if (Child menuToLockWidget = storage->menuToLock.value().lock()) {
-							auto &locked  = menuToLockWidget->customState.get<bool>("locked");
+							auto &locked = menuToLockWidget->customState.get<bool>("locked");
 							locked = true;
 						}
 					}
@@ -175,9 +175,8 @@ ContextMenuButton::operator Child() const {
 													.height = 12.f,
 												},
 											};
-										} else {
-											return {};
 										}
+										return {};
 									}
 								}
 							}(),
@@ -203,9 +202,8 @@ ContextMenuButton::operator Child() const {
 													.height = 12.f,
 												},
 											};
-										} else {
-											return {};
 										}
+										return {};
 									}
 								}
 							}(),

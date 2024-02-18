@@ -115,8 +115,11 @@ void GestureDetector::Storage::update(Widget &widget) {
 		}
 	}
 
-	if (state.active && onDrag) onDrag({widget, state});
-	if (state.active) state.textInput = g_textInput;
+	if (state.active && onDrag)
+		onDrag({widget, state});
+
+	if (state.active)
+		state.textInput = g_textInput;
 	else
 		state.textInput.clear();
 }

@@ -8,7 +8,7 @@
 #include <vector>
 
 
-Engine::Vulkan::Vulkan() {}
+Engine::Vulkan::Vulkan() = default;
 
 Engine::Frame &Engine::Vulkan::getCurrentFrame() {
 	return instance.frames.at(frameNumber % FrameBuffer);
@@ -18,7 +18,7 @@ void Engine::Vulkan::recreateSwapChain() {
 	instance.recreateSwapChain();
 }
 
-void Engine::Vulkan::run(std::function<bool()> preDraw, std::function<void()> drawFunc) {
+void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc) {
 	try {
 		auto &device = instance.device;
 
@@ -145,9 +145,9 @@ void Engine::Vulkan::run(std::function<bool()> preDraw, std::function<void()> dr
 					recreateSwapChain();
 					instance.frameEnd();
 					continue;
-				} else if (res2 != vk::Result::eSuccess) {
-					throw std::runtime_error("Failed to present\n");
 				}
+				if (res2 != vk::Result::eSuccess) throw std::runtime_error("Failed to present\n");
+
 			} catch (const std::exception &e) {
 				std::cerr << e.what() << std::endl;
 				recreateSwapChain();

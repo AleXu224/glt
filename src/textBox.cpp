@@ -18,7 +18,7 @@ TextBox::operator Child() const {
 
 	return GestureDetector{
 		.onUpdate = [&, storage](GestureDetector::Event event) {
-			auto &box = (Box::Impl &) event.widget;
+			auto &box = event.widget.as<Box::Impl>();
 
 			storage->changed = false;
 			if (event.state.active) {
@@ -91,7 +91,7 @@ TextBox::operator Child() const {
 															break;
 														case Storage::State::active:
 															// text.setColor(theme.text);
-															((TextInput::Impl &) w).setActive(true);
+															w.as<TextInput::Impl>().setActive(true);
 															break;
 														case Storage::State::disabled:
 															// text.setColor(theme.textDisabled);
@@ -114,7 +114,7 @@ TextBox::operator Child() const {
 										.widget{
 											.height = 1.f,
 											.onUpdate = [&, storage](Widget &w) {
-												auto &box = (Box::Impl &) w;
+												auto &box = w.as<Box::Impl>();
 
 												if (storage->changed) {
 													switch (storage->state) {

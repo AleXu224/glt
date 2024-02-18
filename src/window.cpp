@@ -35,7 +35,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 	windowMap[window] = this;
 
 	// FIXME: add this
-	glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int width, int height) {
+	glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int /*width*/, int /*height*/) {
 		// auto &renderer = Renderer::getInstance();
 		// renderer.updateScreenSize(width, height);
 		auto *window = windowMap[windowPtr];
@@ -44,49 +44,49 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 
 		window->engine.resized = true;
 	});
-	glfwSetCursorPosCallback(window, [](GLFWwindow *m_window, double xpos, double ypos) {
+	glfwSetCursorPosCallback(window, [](GLFWwindow * /*m_window*/, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
 		GestureDetector::setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
 	});
-	glfwSetCharCallback(window, [](GLFWwindow *m_window, unsigned int codepoint) {
+	glfwSetCharCallback(window, [](GLFWwindow * /*m_window*/, unsigned int codepoint) {
 		GestureDetector::g_textInput.append(1, static_cast<char>(codepoint));
 	});
-	glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
+	glfwSetScrollCallback(window, [](GLFWwindow * /*m_window*/, double xoffset, double yoffset) {
 		GestureDetector::g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
 	});
-	glfwSetKeyCallback(window, [](GLFWwindow *m_window, int key, int scancode, int action, int mods) {
+	glfwSetKeyCallback(window, [](GLFWwindow * /*m_window*/, int key, int /*scancode*/, int action, int mods) {
 		//		Screen::getCurrentScreen()->animationRunning();
 		if (!GestureDetector::g_keys.contains(key))
 			GestureDetector::g_keys.insert({key, {action, mods}});
 		else
 			GestureDetector::g_keys.at(key) = {action, mods};
 	});
-	glfwSetMouseButtonCallback(window, [](GLFWwindow *m_window, int button, int action, int mods) {
+	glfwSetMouseButtonCallback(window, [](GLFWwindow * /*m_window*/, int button, int action, int mods) {
 		//		Screen::getCurrentScreen()->animationRunning();
 		if (!GestureDetector::g_keys.contains(button))
 			GestureDetector::g_keys.insert({button, {action, mods}});
 		else
 			GestureDetector::g_keys.at(button) = {action, mods};
 	});
-	glfwSetCursorEnterCallback(window, [](GLFWwindow *m_window, int entered) {
+	glfwSetCursorEnterCallback(window, [](GLFWwindow * /*m_window*/, int entered) {
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
 	bool supportsNewMica = false;
 
 #ifdef WIN32
-	const auto system = L"kernel32.dll";
-	DWORD dummy;
+	const auto *const system = L"kernel32.dll";
+	DWORD dummy = 0;
 	const auto cbInfo =
 		::GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, system, &dummy);
 	std::vector<char> buffer(cbInfo);
-	::GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, system, dummy, buffer.size(), &buffer[0]);
+	::GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, system, dummy, buffer.size(), buffer.data());
 	void *p = nullptr;
 	UINT size = 0;
 	::VerQueryValueW(buffer.data(), L"\\", &p, &size);
 	assert(size >= sizeof(VS_FIXEDFILEINFO));
 	assert(p != nullptr);
-	auto pFixed = static_cast<const VS_FIXEDFILEINFO *>(p);
+	const auto *pFixed = static_cast<const VS_FIXEDFILEINFO *>(p);
 
 	bool isWin11 = false;
 	if (HIWORD(pFixed->dwFileVersionMS) == 10 && HIWORD(pFixed->dwFileVersionLS) >= 22000) {

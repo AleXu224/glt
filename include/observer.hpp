@@ -3,8 +3,6 @@
 #include <memory>
 #include <utility>
 
-#include "functional"
-
 namespace squi {
 	template<typename T>
 	struct Observable : std::enable_shared_from_this<Observable<T>> {

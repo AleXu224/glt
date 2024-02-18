@@ -1,7 +1,6 @@
 #pragma once
 #include "chrono"
 #include "functional"
-#include <chrono>
 using namespace std::chrono_literals;
 
 namespace squi {

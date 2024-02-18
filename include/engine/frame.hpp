@@ -18,6 +18,6 @@ namespace Engine {
 
 		void recreateCommandBuffer(vk::raii::Device &device);
 
-		void transitionSwapchainImage(vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout);
+		void transitionSwapchainImage(vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) const;
 	};
 }// namespace Engine

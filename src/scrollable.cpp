@@ -29,7 +29,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 			.sizeConstraints{
 				.maxHeight = std::numeric_limits<float>::max(),
 			},
-			.afterUpdate = [this](Widget &widget) {
+			.afterUpdate = [this](Widget & /*widget*/) {
 				const float beforeScroll = scroll;
 
 				const auto contentHeight = controller->contentHeight;
@@ -86,7 +86,7 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 	return minSize;
 }
 
-void Scrollable::Impl::postLayout(vec2 &size) {
+void Scrollable::Impl::postLayout(vec2 & /*size*/) {
 	const float beforeScroll = scroll;
 
 	const auto viewHeight = getContentRect().height();

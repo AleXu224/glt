@@ -20,7 +20,11 @@ namespace squi {
 			int32_t height;
 			int32_t channels;
 
-			Data(std::vector<uint8_t> data, uint32_t width, uint32_t height, uint32_t channels) : data(std::move(data)), width(width), height(height), channels(channels){};
+			Data(std::vector<uint8_t> data, uint32_t width, uint32_t height, uint32_t channels)
+				: data(std::move(data)),
+				  width(static_cast<int32_t>(width)),
+				  height(static_cast<int32_t>(height)),
+				  channels(static_cast<int32_t>(channels)){};
 			Data(unsigned char *bytes, uint32_t length);
 			static Data fromUrl(std::string_view url);
 			static Data fromFile(std::string_view path);

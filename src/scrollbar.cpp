@@ -19,7 +19,7 @@ struct ScrollbarKnob {
 	public:
 		Impl(const ScrollbarKnob &args) : Widget(args.widget, Widget::FlagsArgs::Default()), storage(args.storage) {}
 
-		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
+		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink  /*shouldShrink*/) final {
 			return minSize.withY(maxSize.y * (storage->controller->viewHeight / storage->controller->contentHeight));
 		}
 	};

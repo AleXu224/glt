@@ -68,12 +68,11 @@ vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink should
 std::vector<Rect> Stack::Impl::getHitcheckRect() const {
 	if (flags.isInteractive) {
 		std::vector<Rect> ret{};
-		for (auto &child: getChildren()) {
+		for (const auto &child: getChildren()) {
 			const auto childHitcheckRect = child->getHitcheckRect();
 			ret.insert(ret.end(), childHitcheckRect.begin(), childHitcheckRect.end());
 		}
 		return ret;
-	} else {
-		return {};
 	}
+	return {};
 }

@@ -22,8 +22,8 @@ namespace Engine {
 	template<class Vertex, bool hasTexture = false, class... Uniforms>
 	struct Pipeline {
 		struct Args {
-			size_t vertexBufferSize = 1024 * 4;
-			size_t IndexBufferSize = 1024 * 6;
+			size_t vertexBufferSize = 1024ull * 4;
+			size_t IndexBufferSize = 1024ull * 6;
 			const std::span<const char> vertexShader;
 			const std::span<const char> fragmentShader;
 			Instance &instance;
@@ -61,8 +61,11 @@ namespace Engine {
 
 		Pipeline(const Pipeline &) = delete;
 		Pipeline(Pipeline &) = delete;
+		Pipeline &operator=(const Pipeline &) = delete;
 		Pipeline(const Pipeline &&) = delete;
 		Pipeline(Pipeline &&) = delete;
+		Pipeline &operator=(Pipeline &&) = delete;
+		~Pipeline() = default;
 
 		Pipeline(const Args &args)
 			: fragmentShader(args.instance.device, args.fragmentShader),
@@ -131,7 +134,7 @@ namespace Engine {
 				.pName = "main",
 			};
 
-			vk::PipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+			std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages{vertShaderStageInfo, fragShaderStageInfo};
 
 			std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,
@@ -264,7 +267,7 @@ namespace Engine {
 
 			vk::GraphicsPipelineCreateInfo pipelineInfo{
 				.stageCount = 2,
-				.pStages = shaderStages,
+				.pStages = shaderStages.data(),
 				.pVertexInputState = &vertexInputInfo,
 				.pInputAssemblyState = &inputAssembly,
 				.pViewportState = &viewportState,
@@ -290,11 +293,9 @@ namespace Engine {
 		uint32_t binds = 0;
 
 		void bind() {
-			if (instance.currentPipeline == this) {
-				return;
-			} else if (instance.currentPipelineFlush) {
-				(*instance.currentPipelineFlush)();
-			}
+			if (instance.currentPipeline == this) return;
+			if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
+
 			auto &cmd = instance.currentFrame.get().commandBuffer;
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
 			cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
@@ -444,7 +445,7 @@ namespace Engine {
 			auto memProperties = instance.physicalDevice.getMemoryProperties();
 
 			for (auto i: std::views::iota(0u, memProperties.memoryTypeCount)) {
-				if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+				if (typeFilter & (1u << i) && (memProperties.memoryTypes.at(i).propertyFlags & properties) == properties) {
 					return i;
 				}
 			}

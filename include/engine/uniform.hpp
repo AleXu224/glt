@@ -52,7 +52,7 @@ namespace Engine {
 			  descriptorSets(createDescriptorSets(args)),
 			  instance(args.instance) {
 			for (auto i: std::views::iota(0ull, FrameBuffer)) {
-				auto &buffer = buffers[i].buffer;
+				auto &buffer = buffers.at(i).buffer;
 
 				vk::DescriptorBufferInfo bufferInfo{
 					.buffer = *buffer,
@@ -139,7 +139,7 @@ namespace Engine {
 		}
 
 		std::vector<vk::raii::DescriptorSet> createDescriptorSets(const Args &args) {
-			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t i) -> vk::DescriptorSetLayout {
+			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t  /*i*/) -> vk::DescriptorSetLayout {
 				return *descriptorSetLayout;
 			});
 

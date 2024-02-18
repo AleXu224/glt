@@ -19,28 +19,26 @@ namespace squi {
 	struct CustomState {
 		template<class T>
 		[[nodiscard]] T &get() {
-			auto name = typeid(T).name();
+			const auto *name = typeid(T).name();
 			if (auto iterator = states.find(name); iterator != states.end()) {
 				return std::any_cast<T &>(*iterator);
-			} else {
-				throw std::runtime_error("Cannot get the state from the widget");
 			}
+			throw std::runtime_error("Cannot get the state from the widget");
 		}
 
 		template<class T>
 		[[nodiscard]] T &get(std::string_view name) {
 			if (auto iterator = states.find(name); iterator != states.end()) {
 				return std::any_cast<T &>(iterator->second);
-			} else {
-				throw std::runtime_error("Cannot get the state from the widget");
 			}
+			throw std::runtime_error("Cannot get the state from the widget");
 		}
 
 		template<class T>
 		void add(std::string_view name, T &&state) {
 			if (auto iterator = states.find(name); iterator == states.end()) {
 				states.insert(std::pair(name, std::forward<T>(state)));
-                return;
+				return;
 			}
 			throw std::runtime_error("State of this type already in widget");
 		}

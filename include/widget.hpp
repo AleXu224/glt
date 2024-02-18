@@ -7,8 +7,6 @@
 #include "stateContainer.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include <functional>
-#include <memory>
 #include <optional>
 #include <type_traits>
 #include <variant>
@@ -154,8 +152,11 @@ namespace squi {
 
 			Stateful(const Stateful &) = delete;
 			Stateful(Stateful &) = delete;
+			Stateful &operator=(const Stateful &) = delete;
 			Stateful(const Stateful &&) = delete;
 			Stateful(Stateful &&) = delete;
+			Stateful &operator=(Stateful &&) = delete;
+			~Stateful() = default;
 
 			inline operator const Stateful &() const {
 				return item;

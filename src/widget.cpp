@@ -72,8 +72,8 @@ const std::vector<Child> &Widget::getChildren() const {
 std::vector<Rect> Widget::getHitcheckRect() const {
 	if (flags.isInteractive && *flags.visible)
 		return {getRect()};
-	else
-		return {};
+
+	return {};
 }
 
 void Widget::setChildren(const Children &newChildren) {
@@ -83,7 +83,7 @@ void Widget::setChildren(const Children &newChildren) {
 		}
 	}
 	children.clear();
-	for (auto &child: newChildren) {
+	for (const auto &child: newChildren) {
 		if (child) {
 			child->state.parent = this;
 			if (!child->initialized) child->initialize();
@@ -143,7 +143,8 @@ void Widget::update() {
 			}
 			return child->shouldDelete;
 		}),
-		children.end());
+		children.end()
+	);
 
 	// After update
 	for (auto &func: m_funcs.afterUpdate) {
@@ -370,19 +371,19 @@ void Widget::initialize() {
 }
 
 void Widget::reDraw() const {
-	if (!*state.root) return;
+	if (*state.root == nullptr) return;
 	auto *window = reinterpret_cast<Window *>(*state.root);
 	window->shouldRedraw();
 }
 
 void Widget::reLayout() const {
-	if (!*state.root) return;
+	if (*state.root == nullptr) return;
 	auto *window = reinterpret_cast<Window *>(*state.root);
 	window->shouldRelayout();
 }
 
 void Widget::reArrange() const {
-	if (!*state.root) return;
+	if (*state.root == nullptr) return;
 	auto *window = reinterpret_cast<Window *>(*state.root);
 	window->shouldReposition();
 }
