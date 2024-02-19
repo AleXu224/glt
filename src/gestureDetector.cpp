@@ -65,7 +65,7 @@ void GestureDetector::Storage::update(Widget &widget) {
 	bool cursorInsideAnotherWidget = false;
 	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
 	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
-	if (cursorInsideWidget && cursorInsideActiveArea) {
+	if (widget.flags.isInteractive && cursorInsideWidget && cursorInsideActiveArea) {
 		for (auto &widgetRect: g_hitCheckRects) {
 			if (widgetRect.contains(g_cursorPos)) {
 				cursorInsideAnotherWidget = true;
@@ -74,7 +74,7 @@ void GestureDetector::Storage::update(Widget &widget) {
 		}
 	}
 
-	if (g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea) {
+	if (widget.flags.isInteractive && g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea) {
 		state.scrollDelta = g_scrollDelta;
 
 		if (!state.hovered && onEnter) onEnter(Event{widget, state});
