@@ -3,7 +3,6 @@
 #include "any"
 #include "string"
 #include <stdexcept>
-#include <string_view>
 #include <unordered_map>
 
 
@@ -21,13 +20,13 @@ namespace squi {
 		[[nodiscard]] T &get() {
 			const auto *name = typeid(T).name();
 			if (auto iterator = states.find(name); iterator != states.end()) {
-				return std::any_cast<T &>(*iterator);
+				return std::any_cast<T &>(iterator->second);
 			}
 			throw std::runtime_error("Cannot get the state from the widget");
 		}
 
 		template<class T>
-		[[nodiscard]] T &get(std::string_view name) {
+		[[nodiscard]] T &get(const std::string &name) {
 			if (auto iterator = states.find(name); iterator != states.end()) {
 				return std::any_cast<T &>(iterator->second);
 			}
@@ -35,7 +34,7 @@ namespace squi {
 		}
 
 		template<class T>
-		void add(std::string_view name, T &&state) {
+		void add(const std::string &name, T &&state) {
 			if (auto iterator = states.find(name); iterator == states.end()) {
 				states.insert(std::pair(name, std::forward<T>(state)));
 				return;
@@ -52,6 +51,6 @@ namespace squi {
 		}
 
 	private:
-		std::unordered_map<std::string_view, std::any> states{};
+		std::unordered_map<std::string, std::any> states{};
 	};
 }// namespace squi
