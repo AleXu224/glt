@@ -16,6 +16,8 @@ constexpr bool debugBuild = false;
 constexpr bool debugBuild = true;
 #endif
 
+static bool validationLayersAvailable = true;
+
 static const std::vector<const char *> validationLayers{
 	"VK_LAYER_KHRONOS_validation",
 };
@@ -75,7 +77,8 @@ void Engine::Instance::recreateSwapChain() {
 
 vk::raii::Instance Engine::Instance::createInstance() const {
 	if (debugBuild && !checkValidationLayers()) {
-		throw std::runtime_error("The required validation layers are not available");
+		std::println("The required validation layers are not available, proceeding without them");
+		validationLayersAvailable = false;
 	}
 
 	vk::ApplicationInfo appInfo{
@@ -96,7 +99,7 @@ vk::raii::Instance Engine::Instance::createInstance() const {
 		.ppEnabledExtensionNames = glfwExtensions,
 	};
 
-	if constexpr (debugBuild) {
+	if (debugBuild && validationLayersAvailable) {
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 		createInfo.enabledLayerCount = validationLayers.size();
 	}
@@ -171,7 +174,7 @@ vk::raii::Device Engine::Instance::createLogicalDevice() const {
 		.pEnabledFeatures = &deviceFeatures,
 	};
 
-	if constexpr (debugBuild) {
+	if (debugBuild && validationLayersAvailable) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 	}
