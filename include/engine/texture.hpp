@@ -1,11 +1,11 @@
 #pragma once
+#include "instance.hpp"
 #include "utils.hpp"
 #include "vulkanIncludes.hpp"
 #include <mutex>
 #include <stdexcept>
 #include <vulkan/vulkan_enums.hpp>
 
-inline std::mutex queue_mutex;
 
 namespace Engine {
 	struct Texture {
@@ -84,14 +84,14 @@ namespace Engine {
 
 			vk::raii::Fence fence{args.instance.device, vk::FenceCreateInfo{}};
 
-			queue_mutex.lock();
+			graphicsQueueMutex.lock();
 			args.instance.graphicsQueue.submit(submitInfo, *fence);
 
 			auto res = args.instance.device.waitForFences(*fence, true, 100000000);
 			if (res != vk::Result::eSuccess) {
 				throw std::runtime_error("Texture creation failed :(");
 			}
-			queue_mutex.unlock();
+			graphicsQueueMutex.unlock();
 		}
 
 		vk::raii::ImageView createImageView(const Args &args) const {

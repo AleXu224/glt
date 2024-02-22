@@ -483,8 +483,10 @@ namespace Engine {
 				.pCommandBuffers = &*cmdBuffer,
 			};
 
+			graphicsQueueMutex.lock();
 			instance.graphicsQueue.submit(submitInfo);
 			instance.graphicsQueue.waitIdle();
+			graphicsQueueMutex.unlock();
 		}
 	};
 }// namespace Engine

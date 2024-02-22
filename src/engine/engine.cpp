@@ -1,6 +1,7 @@
 #include "engine.hpp"
 #include "chrono"
 #include "frame.hpp"
+#include "instance.hpp"
 #include "iostream"
 #include "stdexcept"
 #include "vulkanIncludes.hpp"
@@ -129,7 +130,9 @@ void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::functi
 				.pSignalSemaphores = &*instance.currentFrame.get().renderSemaphore,
 			};
 
+			graphicsQueueMutex.lock();
 			instance.graphicsQueue.submit(submitInfo, *instance.currentFrame.get().renderFence);
+			graphicsQueueMutex.unlock();
 
 			vk::PresentInfoKHR presentInfo{
 				.waitSemaphoreCount = 1,
@@ -140,7 +143,9 @@ void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::functi
 			};
 
 			try {
+				graphicsQueueMutex.lock();
 				auto res2 = instance.graphicsQueue.presentKHR(presentInfo);
+				graphicsQueueMutex.unlock();
 				if (res2 == vk::Result::eErrorOutOfDateKHR || res2 == vk::Result::eSuboptimalKHR) {
 					recreateSwapChain();
 					instance.frameEnd();

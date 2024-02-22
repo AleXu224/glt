@@ -7,11 +7,13 @@
 #include "window.hpp"
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
+inline std::mutex graphicsQueueMutex;
 
 namespace Engine {
 	struct Instance {
