@@ -94,6 +94,7 @@ namespace squi {
 		[[nodiscard]] static std::optional<KeyState> getKeyPressedOrRepeat(int key);
 		[[nodiscard]] static bool isKey(int key, int action, int mods = 0);
 		[[nodiscard]] static bool isKeyPressedOrRepeat(int key, int mods = 0);
+		[[nodiscard]] static bool canClick(Widget &widget);
 
 		struct Storage {
 			// Data

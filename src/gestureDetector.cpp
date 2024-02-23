@@ -62,19 +62,7 @@ bool GestureDetector::isKeyPressedOrRepeat(int key, int mods) {
 }
 
 void GestureDetector::Storage::update(Widget &widget) {
-	bool cursorInsideAnotherWidget = false;
-	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
-	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
-	if (widget.flags.isInteractive && cursorInsideWidget && cursorInsideActiveArea) {
-		for (auto &widgetRect: g_hitCheckRects) {
-			if (widgetRect.contains(g_cursorPos)) {
-				cursorInsideAnotherWidget = true;
-				break;
-			}
-		}
-	}
-
-	if (widget.flags.isInteractive && g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea) {
+	if (GestureDetector::canClick(widget)) {
 		state.scrollDelta = g_scrollDelta;
 
 		if (!state.hovered && onEnter) onEnter(Event{widget, state});
@@ -195,4 +183,20 @@ void squi::GestureDetector::State::setActive() {
 
 void squi::GestureDetector::State::setInactive() {
 	forceInactive = true;
+}
+
+bool squi::GestureDetector::canClick(Widget &widget) {
+	bool cursorInsideAnotherWidget = false;
+	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
+	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
+	if (widget.flags.isInteractive && cursorInsideWidget && cursorInsideActiveArea) {
+		for (auto &widgetRect: g_hitCheckRects) {
+			if (widgetRect.contains(g_cursorPos)) {
+				cursorInsideAnotherWidget = true;
+				break;
+			}
+		}
+	}
+
+	return (widget.flags.isInteractive && g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea);
 }
