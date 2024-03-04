@@ -8,6 +8,7 @@
 #include "vec2.hpp"
 #include "vector"
 #include <optional>
+#include <print>
 #include <type_traits>
 #include <variant>
 
@@ -145,10 +146,19 @@ namespace squi {
 
 		template<class T, StateImpact stateImpact>
 		struct Stateful {
+			Stateful(const Stateful &) = delete;
+			Stateful(Stateful &&) = default;
+			Stateful &operator=(const Stateful &other) {
+				if (this != &other) *this = *other;
+				return *this;
+			}
+			Stateful &operator=(Stateful &&) = default;
+			~Stateful() = default;
+			
 			template<class... Args>
 			Stateful(Widget *parent, const Args &...args) : item(args...), parent(parent) {}
 			template<class... Args>
-			Stateful(std::function<void(const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
+			Stateful(std::function<void(Widget *, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
 
 			inline operator const Stateful &() const {
 				return item;
@@ -164,7 +174,7 @@ namespace squi {
 					} else if constexpr (stateImpact == StateImpact::RelayoutNeeded) {
 						parent->reLayout();
 					}
-					if (callback) callback(item);
+					if (callback) callback(parent, item);
 				}
 				return *this;
 			}
@@ -188,7 +198,7 @@ namespace squi {
 		private:
 			T item;
 			Widget *parent;
-			std::function<void(const T&)> callback{};
+			std::function<void(Widget *parent, const T&)> callback{};
 		};
 
 		struct FlagsArgs {
@@ -276,8 +286,8 @@ namespace squi {
 			Stateful<Widget *, StateImpact::RelayoutNeeded> parent;
 			Stateful<Widget *, StateImpact::RelayoutNeeded> root;
 		};
-		State state;
 		const uint64_t id;
+		State state;
 		// Disable copy
 		Widget(const Widget &) = delete;
 		Widget &operator=(const Widget &) = delete;

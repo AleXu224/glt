@@ -18,8 +18,6 @@ void Stack::Impl::updateChildren() {
 	uint32_t addedRects = 0;
 
 	for (auto &child: std::views::reverse(children)) {
-		child->state.parent = this;
-		child->state.root = *state.root;
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
 		GestureDetector::g_hitCheckRects.insert(GestureDetector::g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());

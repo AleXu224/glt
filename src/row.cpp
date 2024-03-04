@@ -41,8 +41,6 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 		if (!child) continue;
 
 		auto &childState = child->state;
-		childState.parent = this;
-		childState.root = *state.root;
 
 		if (!shouldShrink.width && childState.width->index() == 1 && std::get<1>(*childState.width) == Size::Expand) {
 			expandedChildren.emplace_back(child);

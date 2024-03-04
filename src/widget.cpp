@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <print>
 
 
 using namespace squi;
@@ -13,6 +14,7 @@ uint32_t Widget::widgetCount = 0;
 
 Widget::Widget(const Args &args, const FlagsArgs &flags)
 	: flags(this, flags),
+	  id(idCounter++),
 	  state{
 		  .width{this, args.width.value_or(Size::Expand)},
 		  .height{this, args.height.value_or(Size::Expand)},
@@ -20,9 +22,17 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 		  .margin{this, args.margin.value_or(Margin{})},
 		  .padding{this, args.padding.value_or(Margin{})},
 		  .parent{this, nullptr},
-		  .root{this, nullptr},
-	  },
-	  id(idCounter++) {
+		  .root = Stateful<Widget *, StateImpact::RelayoutNeeded>{
+			  [](Widget *parent, Widget *newRoot) {
+				  parent->initialize();
+				  for (auto &child: parent->getChildren()) {
+					  child->state.root = newRoot;
+				  }
+			  },
+			  this,
+			  nullptr,
+		  },
+	  } {
 	if (args.customState) customState.add(args.customState.value());
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
 	if (args.onUpdate) m_funcs.onUpdate.push_back(args.onUpdate);
@@ -86,6 +96,7 @@ void Widget::setChildren(const Children &newChildren) {
 	for (const auto &child: newChildren) {
 		if (child) {
 			child->state.parent = this;
+			child->state.root = state.root;
 			if (!child->initialized) child->initialize();
 			children.push_back(child);
 			for (auto &func: m_funcs.onChildAdded) {
@@ -99,6 +110,7 @@ void Widget::setChildren(const Children &newChildren) {
 void Widget::addChild(const Child &child) {
 	if (child) {
 		child->state.parent = this;
+		child->state.root = state.root;
 		if (!child->initialized) child->initialize();
 		children.push_back(child);
 		for (auto &func: m_funcs.onChildAdded) {
@@ -110,8 +122,6 @@ void Widget::addChild(const Child &child) {
 
 void Widget::updateChildren() {
 	for (auto &child: std::views::reverse(children)) {
-		child->state.parent = this;
-		child->state.root = *state.root;
 		child->update();
 	}
 }
@@ -364,10 +374,12 @@ void Widget::draw() {
 
 void Widget::initialize() {
 	if (initialized) return;
+	if (!*state.root || !*state.parent) return;
 	initialized = true;
 	for (auto &func: m_funcs.onInit) {
 		if (func) func(*this);
 	}
+	m_funcs.onInit.clear();
 }
 
 void Widget::reDraw() const {

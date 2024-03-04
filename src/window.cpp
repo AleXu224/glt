@@ -31,6 +31,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 										  }),
 				   engine() {
 	auto &window = engine.instance.window.ptr;
+	state.root = this;
 
 	windowMap[window] = this;
 
@@ -120,6 +121,8 @@ Window::~Window() {
 }
 
 void Window::run() {
+	content->state.parent = this;
+	content->state.root = this;
 	engine.run(
 		[&]() -> bool {
 			if (drewLastFrame) {
