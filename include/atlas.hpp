@@ -26,7 +26,6 @@ namespace squi {
 		// Allocating on the heap because it's too big for the stack
 		std::vector<AtlasRow> rows{};
 		size_t availableHeight = AtlasSize;
-		bool textureDirty = false;
 
 	public:
 		Engine::SamplerUniform sampler;
