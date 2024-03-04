@@ -17,8 +17,11 @@
 #include <future>
 #include <ios>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string_view>
+#include <thread>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
@@ -107,71 +110,75 @@ Engine::Texture Image::Data::createTexture(Engine::Instance &instance) const {
 }
 
 Image::Impl::Impl(const Image &args)
-	: Widget(args.widget, Widget::FlagsArgs{
-							  .shouldLayoutChildren = false,
-						  }),
-	  fit(args.fit), type(args.type) {
-
-	switch (args.image.index()) {
-		case 0: {
-			const auto &data = std::get<0>(args.image);
-			std::future<Data> texFuture = std::async(std::launch::async, [data = data]() -> Data {
-				return data;
-			});
-			dataFuture = texFuture.share();
-			break;
-		}
-		case 1: {
-			const auto &future = std::get<1>(args.image);
+	: Widget(
+		  args.widget,
+		  Widget::FlagsArgs{
+			  .shouldLayoutChildren = false,
+		  }
+	  ),
+	  fit(args.fit),
+	  type(args.type) {
+	funcs().onInit.emplace_back([img = args.image](Widget &w) {
+		std::thread imageCreatorThread{[img = img, w = w.weak_from_this()]() mutable {
+			const Data &data = std::invoke([&]() -> const Data & {
+				switch (img.index()) {
+					case 0: {
+						return std::get<0>(img);
+					}
+					case 1: {
+						const auto &future = std::get<1>(img);
 #ifdef _DEBUG
-			if (!future.valid()) {
-				std::println("Warning: Image future is not valid");
-			}
+						if (!future.valid()) {
+							std::println("Warning: Image future is not valid");
+						}
 #endif
-			std::future<Data> texFuture = std::async(std::launch::async, [future = future]() -> Data {
-				future.wait();
-				return future.get();
+						future.wait();
+						return future.get();
+					}
+					default: {
+						std::unreachable();
+					}
+				}
 			});
-			dataFuture = texFuture.share();
-		}
-	}
+
+			if (w.expired()) return;
+
+			auto &widget = w.lock()->as<Image::Impl>();
+
+			widget.sampler.emplace(Engine::SamplerUniform::Args{
+				.instance = Window::of(&widget).engine.instance,
+				.textureArgs{
+					Engine::Texture::Args{
+						.instance = Window::of(&widget).engine.instance,
+						.width = static_cast<uint32_t>(data.width),
+						.height = static_cast<uint32_t>(data.height),
+						.channels = static_cast<uint32_t>(data.channels),
+					},
+				},
+			});
+			auto layout = widget.sampler->texture.image.getSubresourceLayout(vk::ImageSubresource{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.mipLevel = 0,
+				.arrayLayer = 0,
+			});
+			for (int row = 0; row < data.height; row++) {
+				memcpy(
+					reinterpret_cast<uint8_t *>(widget.sampler->texture.mappedMemory) + row * layout.rowPitch,
+					data.data.data() + static_cast<ptrdiff_t>(row * data.width * data.channels),
+					static_cast<size_t>(data.width) * static_cast<size_t>(data.channels)
+				);
+			}
+			widget.relayoutNextFrame = true;
+		}};
+
+		imageCreatorThread.detach();
+	});
 }
 
 void Image::Impl::onUpdate() {
-	if (sampler.has_value()) {
-		return;
-	}
-	if (dataFuture.has_value()) {
-		return;
-	}
-	auto &future = dataFuture.value();
-	if (future._Is_ready()) {
-		const auto &data = future.get();
-		sampler.emplace(Engine::SamplerUniform::Args{
-			.instance = Window::of(this).engine.instance,
-			.textureArgs{
-				Engine::Texture::Args{
-					.instance = Window::of(this).engine.instance,
-					.width = static_cast<uint32_t>(data.width),
-					.height = static_cast<uint32_t>(data.height),
-					.channels = static_cast<uint32_t>(data.channels),
-				},
-			},
-		});
-		auto layout = sampler->texture.image.getSubresourceLayout(vk::ImageSubresource{
-			.aspectMask = vk::ImageAspectFlagBits::eColor,
-			.mipLevel = 0,
-			.arrayLayer = 0,
-		});
-		for (int row = 0; row < data.height; row++) {
-			memcpy(
-				reinterpret_cast<uint8_t *>(sampler->texture.mappedMemory) + row * layout.rowPitch,
-				data.data.data() + static_cast<ptrdiff_t>(row * data.width * data.channels),
-				static_cast<size_t>(data.width) * static_cast<size_t>(data.channels)
-			);
-		}
-		dataFuture.reset();
+	if (relayoutNextFrame) {
 		reLayout();
+		relayoutNextFrame = false;
 	}
 }
 

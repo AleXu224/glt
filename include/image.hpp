@@ -4,6 +4,7 @@
 #include "engine/samplerUniform.hpp"
 #include "engine/texture.hpp"
 #include "engine/texturedQuad.hpp"
+#include "instance.hpp"
 #include "vector"
 #include "widget.hpp"
 #include <future>
@@ -61,13 +62,12 @@ namespace squi {
 			// Data
 			Fit fit;
 			Type type = Type::normal;
-			std::optional<Engine::SamplerUniform> sampler;
 			Engine::TexturedQuad quad{Engine::TexturedQuad::Args{
 				.position{0, 0},
 				.size{0, 0},
 			}};
-			std::optional<std::shared_future<Data>> dataFuture{};
-			// static std::unique_ptr<ImagePipeline> pipeline;
+			std::optional<Engine::SamplerUniform> sampler;
+			bool relayoutNextFrame = false;
 
 		public:
 			static ImagePipeline *pipeline;
