@@ -5,7 +5,6 @@
 #include "gestureDetector.hpp"
 #include "stack.hpp"
 #include "textInput.hpp"
-#include <debugapi.h>
 
 
 using namespace squi;
