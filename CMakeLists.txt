@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.27)
+set(VCPKG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
+set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(CMAKE_CXX_STANDARD 23)
+
 project(glt VERSION 0.1.0)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 if (MSVC)
     # add_compile_options(/W4 /WX)
     #add_compile_options(/fsanitize=address)
@@ -48,9 +52,6 @@ target_compile_definitions(glt PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN ASIO_STANDAL
 target_include_directories(glt PUBLIC include)
 target_include_directories(glt PUBLIC include/engine)
 
-file(GLOB_RECURSE all_test_files CONFIGURE_DEPENDS "tests/*.cc")
-add_executable(gltTest ${all_test_files})
-
 add_executable(gltDemo main.cpp)
 
 enable_testing()
@@ -78,6 +79,8 @@ target_link_libraries(glt PUBLIC glfw)
 target_link_libraries(glt PRIVATE "Dwmapi.lib")
 target_link_libraries(glt PRIVATE "version.lib")
 
+file(GLOB_RECURSE all_test_files CONFIGURE_DEPENDS "tests/*.cc")
+add_executable(gltTest ${all_test_files})
 target_link_libraries(gltTest PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 target_link_libraries(gltTest PRIVATE glt)
 include(GoogleTest)
