@@ -48,9 +48,9 @@ TextInput::Impl::Impl(const TextInput &args)
 
 void TextInput::Impl::clampCursors() {
 	const auto text = getText();
-	cursor = std::clamp(cursor, 0ll, static_cast<int64_t>(text.size()));
+	cursor = std::clamp(cursor, static_cast<int64_t>(0), static_cast<int64_t>(text.size()));
 	if (selectionStart.has_value()) {
-		selectionStart = std::clamp(selectionStart.value_or(0), 0ll, static_cast<int64_t>(text.size()));
+		selectionStart = std::clamp(selectionStart.value_or(0), static_cast<int64_t>(0), static_cast<int64_t>(text.size()));
 		if (cursor == selectionStart.value()) selectionStart = std::nullopt;
 	}
 }
