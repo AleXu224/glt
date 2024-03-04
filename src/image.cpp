@@ -116,8 +116,7 @@ Image::Impl::Impl(const Image &args)
 			  .shouldLayoutChildren = false,
 		  }
 	  ),
-	  fit(args.fit),
-	  type(args.type) {
+	  fit(args.fit) {
 	funcs().onInit.emplace_back([img = args.image](Widget &w) {
 		std::thread imageCreatorThread{[img = img, w = w.weak_from_this()]() mutable {
 			const Data &data = std::invoke([&]() -> const Data & {

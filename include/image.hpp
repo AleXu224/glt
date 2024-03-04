@@ -46,22 +46,15 @@ namespace squi {
 			contain,
 		};
 
-		enum class Type {
-			normal = 0,
-			signedDistanceField = 1,
-		};
-
 		// Args
 		Widget::Args widget{};
 		Fit fit = Fit::none;
-		Type type = Type::normal;
 		std::variant<Data, std::shared_future<Data>> image;
 		using ImagePipeline = Engine::Pipeline<Engine::TexturedQuad::Vertex, true>;
 
 		class Impl : public Widget {
 			// Data
 			Fit fit;
-			Type type = Type::normal;
 			Engine::TexturedQuad quad{Engine::TexturedQuad::Args{
 				.position{0, 0},
 				.size{0, 0},
