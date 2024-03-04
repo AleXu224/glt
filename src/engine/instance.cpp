@@ -371,7 +371,8 @@ Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const v
 
 	auto queueFamilies = device.getQueueFamilyProperties();
 
-	for (const auto &[index, queueFamily]: queueFamilies | std::views::enumerate) {
+	for (size_t index = 0; queueFamilies.size(); index++) {
+		auto &queueFamily = queueFamilies.at(index);
 
 		if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
 			indices.graphicsFamily = index;
