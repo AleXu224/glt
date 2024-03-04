@@ -73,9 +73,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
-	bool supportsNewMica = false;
-
 #ifdef WIN32
+	bool supportsNewMica = false;
 	const auto *const system = L"kernel32.dll";
 	DWORD dummy = 0;
 	const auto cbInfo =
