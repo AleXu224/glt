@@ -2,7 +2,6 @@
 #include "box.hpp"
 #include "gestureDetector.hpp"
 #include "memory"
-#include <debugapi.h>
 
 using namespace squi;
 
