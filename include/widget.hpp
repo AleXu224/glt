@@ -146,7 +146,7 @@ namespace squi {
 
 		template<class T, StateImpact stateImpact>
 		struct Stateful {
-			Stateful(const Stateful &) = delete;
+			Stateful(const Stateful &) = default;
 			Stateful(Stateful &&) = default;
 			Stateful &operator=(const Stateful &other) {
 				if (this != &other) *this = *other;
@@ -158,7 +158,7 @@ namespace squi {
 			template<class... Args>
 			Stateful(Widget *parent, const Args &...args) : item(args...), parent(parent) {}
 			template<class... Args>
-			Stateful(std::function<void(Widget *, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
+			Stateful(std::function<void(Widget &, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
 
 			inline operator const Stateful &() const {
 				return item;
@@ -174,7 +174,7 @@ namespace squi {
 					} else if constexpr (stateImpact == StateImpact::RelayoutNeeded) {
 						parent->reLayout();
 					}
-					if (callback) callback(parent, item);
+					if (callback) callback(*parent, item);
 				}
 				return *this;
 			}
@@ -198,7 +198,7 @@ namespace squi {
 		private:
 			T item;
 			Widget *parent;
-			std::function<void(Widget *parent, const T&)> callback{};
+			std::function<void(Widget &parent, const T&)> callback{};
 		};
 
 		struct FlagsArgs {

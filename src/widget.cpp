@@ -23,9 +23,9 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 		  .padding{this, args.padding.value_or(Margin{})},
 		  .parent{this, nullptr},
 		  .root = Stateful<Widget *, StateImpact::RelayoutNeeded>{
-			  [](Widget *parent, Widget *newRoot) {
-				  parent->initialize();
-				  for (auto &child: parent->getChildren()) {
+			  [](Widget &parent, Widget *newRoot) {
+				  parent.initialize();
+				  for (auto &child: parent.getChildren()) {
 					  child->state.root = newRoot;
 				  }
 			  },
