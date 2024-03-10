@@ -46,7 +46,7 @@ void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::functi
 			auto resFence = device.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
 			if (resFence != vk::Result::eSuccess) throw std::runtime_error("Timeout waiting for render fence");
 
-			auto [resNextImage, swapchainImageIndex] = (*device).acquireNextImageKHR(*instance.swapChain, 1000000000, *instance.currentFrame.get().swapchainSemaphore);
+			auto [resNextImage, swapchainImageIndex] = instance.swapChain.acquireNextImage(1000000000, *instance.currentFrame.get().swapchainSemaphore);
 			if (resNextImage == vk::Result::eErrorOutOfDateKHR) {
 				recreateSwapChain();
 				continue;

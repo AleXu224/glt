@@ -2,6 +2,7 @@
 
 #include "any"
 #include "frame.hpp"
+#include "loader.hpp"
 #include "rect.hpp"
 #include "vulkanIncludes.hpp"
 #include "window.hpp"
@@ -10,16 +11,18 @@
 #include <mutex>
 #include <utility>
 #include <vector>
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_structs.hpp>
+
 
 inline std::mutex graphicsQueueMutex;
 
 namespace Engine {
 	struct Instance {
 		Window window;
-
-		vk::raii::Context context{};
+		DynamicLoader dynamicLoader;
+		vk::raii::Context context;
 		vk::raii::Instance instance;
 		vk::raii::SurfaceKHR surface;
 		vk::raii::PhysicalDevice physicalDevice;
@@ -106,7 +109,7 @@ namespace Engine {
 				return graphicsFamily.has_value() && presentFamily.has_value();
 			}
 		};
-		Engine::Instance::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &device) const;
+		[[nodiscard]] Engine::Instance::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &device) const;
 		void frameEnd() {
 			for (auto &listener: frameEndListeners) listener();
 		}
@@ -125,7 +128,9 @@ namespace Engine {
 		std::vector<std::function<void(void)>> frameEndListeners{};
 		std::vector<std::function<void(void)>> frameBeginListeners{};
 
-		[[nodiscard]] vk::raii::Instance createInstance() const;
+		[[nodiscard]] static DynamicLoader createDynamicLoader(bool useFallback = false);
+		[[nodiscard]] vk::raii::Context createContext() const;
+		[[nodiscard]] vk::raii::Instance createInstance();
 		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
 		[[nodiscard]] vk::raii::PhysicalDevice selectPhysicalDevice() const;
 		[[nodiscard]] vk::raii::Device createLogicalDevice() const;
@@ -142,7 +147,7 @@ namespace Engine {
 		[[nodiscard]] vk::raii::RenderPass createRenderPass();
 		[[nodiscard]] std::vector<vk::raii::Framebuffer> createFramebuffers();
 
-		static bool checkValidationLayers();
+		bool checkValidationLayers() const;
 
 
 		struct SwapChainSupportDetails {
@@ -151,9 +156,9 @@ namespace Engine {
 			std::vector<vk::PresentModeKHR> presentModes;
 		};
 
-		Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
-		static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
-		static vk::PresentModeKHR chooseSwapPresentMode();
-		vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const;
+		[[nodiscard]] Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
+		[[nodiscard]] static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
+		[[nodiscard]] static vk::PresentModeKHR chooseSwapPresentMode();
+		[[nodiscard]] vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const;
 	};
 }// namespace Engine

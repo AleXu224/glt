@@ -427,7 +427,7 @@ namespace Engine {
 
 			auto buffer = instance.device.createBuffer(bufferInfo);
 
-			vk::MemoryRequirements memRequirements = (*instance.device).getBufferMemoryRequirements(*buffer);
+			vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
 			vk::MemoryAllocateInfo allocInfo{
 				.allocationSize = memRequirements.size,
@@ -436,7 +436,7 @@ namespace Engine {
 
 			auto bufferMemory = instance.device.allocateMemory(allocInfo);
 
-			(*instance.device).bindBufferMemory(*buffer, *bufferMemory, 0);
+			buffer.bindMemory(*bufferMemory, 0);
 
 			return {std::move(buffer), std::move(bufferMemory)};
 		}

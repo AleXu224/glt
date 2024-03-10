@@ -11,7 +11,7 @@
 #include <print>
 #include <stdexcept>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include "dwmapi.h"
 #endif
 
@@ -73,7 +73,7 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
 
-#ifdef WIN32
+#ifdef _WIN32
 	bool supportsNewMica = false;
 	const auto *const system = L"kernel32.dll";
 	DWORD dummy = 0;

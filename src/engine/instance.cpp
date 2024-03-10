@@ -1,12 +1,9 @@
 #include "instance.hpp"
 #include "ranges"
 #include "set"
+#include <GLFW/glfw3native.h>
 #include <print>
-#include <vulkan/vulkan_enums.hpp>
-#include <vulkan/vulkan_handles.hpp>
-#include <vulkan/vulkan_raii.hpp>
-#include <vulkan/vulkan_structs.hpp>
-
+#include "vulkanIncludes.hpp"
 
 using namespace Engine;
 
@@ -27,6 +24,8 @@ const std::vector<const char *> deviceExtensions = {
 };
 
 Instance::Instance() : window(800, 600, "Vulkan window"),
+					   dynamicLoader(createDynamicLoader()),
+					   context(createContext()),
 					   instance(createInstance()),
 					   surface(createSurface()),
 					   physicalDevice(selectPhysicalDevice()),
@@ -75,7 +74,7 @@ void Engine::Instance::recreateSwapChain() {
 	}
 }
 
-vk::raii::Instance Engine::Instance::createInstance() const {
+vk::raii::Instance Engine::Instance::createInstance() {
 	if (debugBuild && !checkValidationLayers()) {
 		std::println("The required validation layers are not available, proceeding without them");
 		validationLayersAvailable = false;
@@ -103,16 +102,30 @@ vk::raii::Instance Engine::Instance::createInstance() const {
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 		createInfo.enabledLayerCount = validationLayers.size();
 	}
-
-	return {context, createInfo};
+	try {
+		vk::raii::Instance ret{context, createInfo};
+		return ret;
+	} catch (std::exception &) {
+		std::println("Instance creation failed, falling back to swiftshader");
+		dynamicLoader = createDynamicLoader(true);
+		context = vk::raii::Context{
+			dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr")
+		};
+		vk::raii::Instance ret{context, createInfo};
+		return ret;
+	}
 }
 
 vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
-	VkSurfaceKHR surface_ = nullptr;
-	if (glfwCreateWindowSurface(*instance, window.ptr, nullptr, &surface_) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create window surface!");
-	}
-	return {instance, surface_};
+#ifdef _WIN32
+	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo{
+		.hinstance = dynamicLoader.m_library,
+		.hwnd = glfwGetWin32Window(window.ptr),
+	};
+	return instance.createWin32SurfaceKHR(surfaceCreateInfo);
+#else
+#error "Platform not supported"
+#endif
 }
 
 vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() const {
@@ -122,7 +135,6 @@ vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() const {
 		throw std::runtime_error("No GPUs with Vulkan support found");
 	}
 
-	// bool found = false;
 	for (const auto &device: devices) {
 		auto extensions = device.enumerateDeviceExtensionProperties();
 		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
@@ -239,7 +251,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 }
 
 std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
-	return (*device).getSwapchainImagesKHR(*swapChain);
+	return swapChain.getImages();
 }
 
 vk::Format Engine::Instance::createSwapChainImageFormat() {
@@ -348,8 +360,8 @@ std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 	return ret;
 }
 
-bool Engine::Instance::checkValidationLayers() {
-	auto availableLayers = vk::enumerateInstanceLayerProperties();
+bool Engine::Instance::checkValidationLayers() const {
+	auto availableLayers = context.enumerateInstanceLayerProperties();
 
 	for (const auto &layer: validationLayers) {
 		bool layerFound = false;
@@ -386,6 +398,35 @@ Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const v
 	}
 
 	return indices;
+}
+
+DynamicLoader Engine::Instance::createDynamicLoader(bool useFallback) {
+	const std::string fallbackLoader{
+#ifdef _WIN32
+		"vk_swiftshader.dll"
+#else
+#error "Platform not supported"
+#endif
+	};
+
+	DynamicLoader loader = std::invoke([&]() -> DynamicLoader {
+		if (useFallback) {
+			return DynamicLoader{fallbackLoader};
+		}
+
+		try {
+			DynamicLoader dynamicLoader{};
+			return dynamicLoader;
+		} catch (std::exception &) {
+			std::println("System doesn't have a vulkan loader, falling back to swiftshader: {}", fallbackLoader);
+			return DynamicLoader{fallbackLoader};
+		}
+	});
+	return loader;
+}
+
+vk::raii::Context Engine::Instance::createContext() const {
+	return {dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr")};
 }
 
 Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) const {

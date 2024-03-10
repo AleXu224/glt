@@ -21,11 +21,11 @@ namespace Engine {
 											   .sharingMode = vk::SharingMode::eExclusive,
 										   }),
 			  memory(args.instance.device, vk::MemoryAllocateInfo{
-											   .allocationSize = (*args.instance.device).getBufferMemoryRequirements(*buffer).size,
-											   .memoryTypeIndex = findMemoryType((*args.instance.device).getBufferMemoryRequirements(*buffer).memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, args.instance),
+											   .allocationSize = buffer.getMemoryRequirements().size,
+											   .memoryTypeIndex = findMemoryType(buffer.getMemoryRequirements().memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, args.instance),
 										   }),
-			  mappedMemory(memory.mapMemory(0, (*args.instance.device).getBufferMemoryRequirements(*buffer).size)) {
-                (*args.instance.device).bindBufferMemory(*buffer, *memory, 0);
-              }
+			  mappedMemory(memory.mapMemory(0, buffer.getMemoryRequirements().size)) {
+			buffer.bindMemory(*memory, 0);
+		}
 	};
 }// namespace Engine
