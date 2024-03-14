@@ -36,15 +36,10 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 
 	windowMap[window] = this;
 
-	// FIXME: add this
 	glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int /*width*/, int /*height*/) {
-		// auto &renderer = Renderer::getInstance();
-		// renderer.updateScreenSize(width, height);
 		auto *window = windowMap[windowPtr];
-		// window->shouldRelayout();
-		// window->updateAndDraw();
-
 		window->engine.resized = true;
+		window->engine.draw();
 	});
 	glfwSetCursorPosCallback(window, [](GLFWwindow * /*m_window*/, double xpos, double ypos) {
 		auto dpiScale = GestureDetector::g_dpi / vec2{96};
@@ -138,6 +133,8 @@ void Window::run() {
 			if (engine.resized) {
 				needsRelayout = true;
 				engine.resized = false;
+				// FIXME: Might want to look an alternative way of resizing
+				// Recreating the swap chain is way too costly and will result in a laggy resize
 				engine.recreateSwapChain();
 			}
 			const auto &width = engine.instance.swapChainExtent.width;

@@ -23,6 +23,10 @@ namespace Engine {
 
 		void run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc);
 
-	private:
+		void draw();
+
+		std::function<bool()> preDraw{};
+		std::function<void()> drawFunc{};
+		std::function<void()> cleanupFunc{};
 	};
 }// namespace Engine
