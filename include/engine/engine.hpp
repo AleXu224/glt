@@ -21,7 +21,7 @@ namespace Engine {
 		std::chrono::time_point<std::chrono::steady_clock> frameStartTime;
 		std::chrono::duration<double> deltaTime{0ms};
 
-		void run(const std::function<bool()>& preDraw, const std::function<void()>& drawFunc);
+		void run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc);
 
 	private:
 	};

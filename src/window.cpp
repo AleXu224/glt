@@ -5,6 +5,7 @@
 // #endif
 
 #include "window.hpp"
+#include "fontStore.hpp"
 #include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
 #include "widget.hpp"
@@ -72,6 +73,8 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 	glfwSetCursorEnterCallback(window, [](GLFWwindow * /*m_window*/, int entered) {
 		GestureDetector::g_cursorInside = static_cast<bool>(entered);
 	});
+
+	FontStore::initializeDefaultFont(engine.instance);
 
 #ifdef _WIN32
 	bool supportsNewMica = false;
@@ -185,8 +188,10 @@ void Window::run() {
 			return false;
 		},
 		[&]() {
-			// updateAndDraw();
 			content->draw();
+		},
+		[]() {
+			FontStore::defaultFont.reset();
 		}
 	);
 }

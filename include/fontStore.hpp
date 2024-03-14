@@ -13,8 +13,7 @@
 #include "unordered_map"
 
 namespace squi {
-	class FontStore {
-	public:
+	struct FontStore {
 		struct Font {
 			struct CharInfo {
 				vec2 uvTopLeft{};
@@ -72,7 +71,7 @@ namespace squi {
 
 		public:
 			explicit Font(std::string_view fontPath, Engine::Instance &instance);
-			explicit Font(std::span<char> fontData, Engine::Instance &instance);
+			explicit Font(std::span<const char> fontData, Engine::Instance &instance);
 
 			[[nodiscard]] uint32_t getLineHeight(float size);
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
@@ -86,5 +85,9 @@ namespace squi {
 		static bool init;
 		static FT_Library ftLibrary;
 		static std::unordered_map<std::string, std::weak_ptr<Font>> fonts;
+
+		static std::shared_ptr<Font> defaultFont;
+
+		static void initializeDefaultFont(Engine::Instance &instance);
 	};
 }// namespace squi

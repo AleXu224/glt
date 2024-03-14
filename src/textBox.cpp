@@ -13,7 +13,6 @@ TextBox::Theme TextBox::theme{};
 
 TextBox::operator Child() const {
 	auto storage = std::make_shared<Storage>();
-	// auto font = FontStore::getFont(R"(C:\Windows\Fonts\segoeui.ttf)");
 
 	return GestureDetector{
 		.onUpdate = [&, storage](GestureDetector::Event event) {
@@ -73,8 +72,8 @@ TextBox::operator Child() const {
 											.width = Size::Expand,
 											.padding = Padding{0, 11, 0, 11},
 											.onInit = [](Widget &w) {
-												auto font = FontStore::getFontOptional(R"(C:\Windows\Fonts\segoeui.ttf)");
-												if (font.has_value()) w.state.height = static_cast<float>(font.value()->getLineHeight(14));
+												auto font = FontStore::defaultFont;
+												if (font) w.state.height = static_cast<float>(font->getLineHeight(14));
 											},
 											// TODO: Add support for text color change
 											.onUpdate = [&, storage](Widget &w) {
@@ -100,7 +99,6 @@ TextBox::operator Child() const {
 											},
 										},
 										.fontSize = 14.0f,
-										.font{R"(C:\Windows\Fonts\segoeui.ttf)"},
 										.color{theme.text},
 									},
 								},

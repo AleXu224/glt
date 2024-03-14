@@ -5,6 +5,7 @@
 #include <print>
 
 #include "fontStore.hpp"
+#include "roboto-regular.hpp"
 #include <limits>
 #include <optional>
 #include <string>
@@ -14,6 +15,8 @@
 #include <freetype/freetype.h>
 
 using namespace squi;
+
+std::shared_ptr<FontStore::Font> FontStore::defaultFont{};
 
 FT_Library FontStore::ftLibrary{};
 
@@ -33,7 +36,7 @@ FontStore::Font::Font(std::string_view fontPath, Engine::Instance &instance) : a
 	}
 }
 
-FontStore::Font::Font(std::span<char> fontData, Engine::Instance &instance) : atlas(instance) {
+FontStore::Font::Font(std::span<const char> fontData, Engine::Instance &instance) : atlas(instance) {
 	if (FT_New_Memory_Face(ftLibrary, reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
 		std::println("Failed to load font from memory");
 		loaded = false;
@@ -60,6 +63,10 @@ std::optional<std::shared_ptr<FontStore::Font>> squi::FontStore::getFontOptional
 		}
 	}
 	return {};
+}
+
+void squi::FontStore::initializeDefaultFont(Engine::Instance &instance) {
+	defaultFont = std::make_shared<Font>(Fonts::roboto, instance);
 }
 
 bool FontStore::Font::generateTexture(char32_t character, float size) {

@@ -17,7 +17,7 @@ namespace squi {
 		std::string_view text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
-		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = R"(C:\Windows\Fonts\arial.ttf)";
+		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
 		Color color{0xFFFFFFFF};
 		using TextPipeline = Engine::Pipeline<Engine::TextQuad::Vertex, true>;
 
@@ -30,7 +30,7 @@ namespace squi {
 			std::string fontSrc;
 			float fontSize;
 			bool lineWrap;
-			bool textModified = false;
+			bool forceRegen = false;
 			std::optional<std::shared_ptr<FontStore::Font>> font{};
 			Color color;
 			vec2 textSize;

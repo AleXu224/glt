@@ -19,7 +19,7 @@ void Engine::Vulkan::recreateSwapChain() {
 	instance.recreateSwapChain();
 }
 
-void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc) {
+void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
 	try {
 		auto &device = instance.device;
 
@@ -163,6 +163,7 @@ void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::functi
 			frameNumber++;
 		}
 		device.waitIdle();
+		cleanupFunc();
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
 		return;

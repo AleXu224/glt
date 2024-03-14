@@ -36,11 +36,8 @@ Text::Impl::Impl(const Text &args)
 	  fontSize(args.fontSize), lineWrap(args.lineWrap), color(args.color) {
 	if (std::holds_alternative<std::shared_ptr<FontStore::Font>>(args.font)) {
 		font = std::get<std::shared_ptr<FontStore::Font>>(args.font);
+		forceRegen = true;
 	}
-	// auto [quadsVec, width, height] = font->generateQuads(text, fontSize, 0, color);
-	// quads = std::move(quadsVec);
-	// textSize = {width, height};
-	// updateSize();
 }
 
 // The text characters are considered to be the children of the text widget
@@ -51,15 +48,15 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2  /*minSize*/, ShouldShrink sh
 		std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, textPos, color);
 	}
 	if (shouldShrink.width && lineWrap) maxSize.x = 0;
-	if ((lineWrap && maxSize.x != lastAvailableSpace) || textModified) {
+	if ((lineWrap && maxSize.x != lastAvailableSpace) || forceRegen) {
 		lastAvailableSpace = maxSize.x;
 		const auto lineHeight = font.value()->getLineHeight(fontSize);
 
 		// Will only recalculate the text layout under the following circumstances:
 		// 1. The available width is smaller than the cached text width
 		// 2. The cached text is wrapping (the text is occupying more than one line)
-		// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
-		if (maxSize.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight) {
+		// - This is done because it would be really difficult to figure o1ut if a change in available width would cause a layout change in this case
+		if (maxSize.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
 			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, {lastX, lastY}, color, maxSize.x);
 			updateSize();
 		}
@@ -140,12 +137,7 @@ void Text::Impl::onDraw() {
 void Text::Impl::setText(const std::string_view &text) {
 	if (this->text == text) return;
 	this->text = text;
-	textModified = true;
-	// vec2 oldSize = textSize;
-
-	// std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, getPos().rounded(), color);
-
-	// if (textSize != oldSize) updateSize();
+	forceRegen = true;
 	reLayout();
 }
 

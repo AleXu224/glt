@@ -54,6 +54,7 @@ IF (WIN32)
 ENDIF()
 target_include_directories(glt PUBLIC include)
 target_include_directories(glt PUBLIC include/engine)
+target_include_directories(glt PUBLIC external/fonts)
 
 add_executable(gltDemo main.cpp)
 
