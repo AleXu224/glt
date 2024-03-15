@@ -2,6 +2,7 @@
 #include "ranges"
 #include "window.hpp"
 #include <algorithm>
+#include <cmath>
 
 
 using namespace squi;
@@ -85,7 +86,7 @@ void Row::Impl::arrangeChildren(vec2 &pos) {
 				cursor.y = initialY;
 				break;
 			case Alignment::center:
-				cursor.y = initialY + (height - child->getLayoutSize().y) / 2.0f;
+				cursor.y = initialY + std::round((height - child->getLayoutSize().y) / 2.0f);
 				break;
 			case Alignment::bottom:
 				cursor.y = initialY + height - child->getLayoutSize().y;

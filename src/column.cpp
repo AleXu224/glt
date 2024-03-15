@@ -1,6 +1,7 @@
 #include "column.hpp"
 #include "ranges"
 #include <algorithm>
+#include <cmath>
 #include "window.hpp"
 
 
@@ -85,7 +86,7 @@ void Column::Impl::arrangeChildren(vec2 &pos) {
 				cursor.x = initialX;
 				break;
 			case Alignment::center:
-				cursor.x = initialX + (width - child->getLayoutSize().x) / 2.0f;
+				cursor.x = initialX + std::round((width - child->getLayoutSize().x) / 2.0f);
 				break;
 			case Alignment::right:
 				cursor.x = initialX + width - child->getLayoutSize().x;
