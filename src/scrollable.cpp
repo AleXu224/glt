@@ -2,6 +2,7 @@
 #include "gestureDetector.hpp"
 #include "window.hpp"
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
 using namespace squi;
@@ -111,17 +112,17 @@ void Scrollable::Impl::postLayout(vec2 & /*size*/) {
 void Scrollable::Impl::arrangeChildren(vec2 &pos) {
 	auto &children = getChildren();
 	if (children.empty()) return;
-	auto &child = children[0];
+	auto &child = children.front();
 	if (!child) return;
 
 	const auto childPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
-	child->arrange(childPos.withYOffset(-scroll));
+	child->arrange(childPos.withYOffset(-std::round(scroll)));
 }
 
 void Scrollable::Impl::drawChildren() {
 	auto &children = getChildren();
 	if (children.empty()) return;
-	auto &child = children[0];
+	auto &child = children.front();
 	if (!child) return;
 
 	auto &instance = Window::of(this).engine.instance;
