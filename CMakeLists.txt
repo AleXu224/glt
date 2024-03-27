@@ -5,16 +5,6 @@ set(CMAKE_CXX_STANDARD 23)
 
 project(glt VERSION 0.1.0)
 
-if (MSVC)
-    # add_compile_options(/W4 /WX)
-    # add_compile_options(/fsanitize=address)
-    add_compile_definitions(_DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-else()
-    add_compile_options(-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-c++11-narrowing -Werror -ferror-limit=0)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-endif()
-
 # Shader compilation:
 add_executable(ShaderHeaderGenerator shaderHeaderGenerator.cpp)
 if (NOT DEFINED GLT_SHADERS)
@@ -55,6 +45,14 @@ ENDIF()
 target_include_directories(glt PUBLIC include)
 target_include_directories(glt PUBLIC include/engine)
 target_include_directories(glt PUBLIC external/fonts)
+
+if (MSVC)
+    # add_compile_options(/W4 /WX)
+    # add_compile_options(/fsanitize=address)
+    target_compile_definitions(glt PRIVATE _DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION)
+else()
+    target_compile_options(glt PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-c++11-narrowing -Werror -ferror-limit=0)
+endif()
 
 add_executable(gltDemo main.cpp)
 
