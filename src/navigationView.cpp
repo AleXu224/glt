@@ -27,7 +27,7 @@ NavigationView::operator Child() const {
 							.name = page.name,
 							.icon = page.icon,
 							.onClick = [w = page.content, storage]() {
-								storage->contentChangeEvent->notify(w);
+								storage->contentChangeEvent.notify(w);
 							},
 						});
 					}
@@ -37,7 +37,7 @@ NavigationView::operator Child() const {
 			Container{
 				.widget{
 					.onInit = [storage](Widget &widget) {
-						storage->contentChangeObserver = storage->contentChangeEvent->observe([w = widget.weak_from_this()](Child content) {
+						storage->contentChangeObserver = storage->contentChangeEvent.observe([w = widget.weak_from_this()](Child content) {
 							if (auto widget = w.lock())
 								widget->setChildren({std::move(content)});
 						});

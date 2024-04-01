@@ -4,21 +4,20 @@
 #include "engine/pipeline.hpp"
 #include "observer.hpp"
 #include "widget.hpp"
-#include <memory>
 
 namespace squi {
 	struct LayoutInspector {
 		// Args
-		std::weak_ptr<Observable<Child>> addedChildren;
-		std::weak_ptr<Observable<Child>> addedOverlays;
+		Observable<Child> addedChildren;
+		Observable<Child> addedOverlays;
 
 		using InspectorPipeline = Engine::Pipeline<Engine::InspectorQuad::Vertex>;
 		static InspectorPipeline *pipeline;
 
 		struct Storage {
 			// Data
-			std::shared_ptr<Observable<Child>::Observer> addedChildrenObserver{};
-			std::shared_ptr<Observable<Child>::Observer> addedOverlaysObserver{};
+			Observer<Child> addedChildrenObserver{};
+			Observer<Child> addedOverlaysObserver{};
 
 			ChildRef activeButton{};
 			ChildRef selectedWidget{};

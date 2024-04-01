@@ -1,70 +1,89 @@
 #pragma once
 #include <functional>
 #include <memory>
-#include <utility>
 
 namespace squi {
 	template<typename T>
-	struct Observable : std::enable_shared_from_this<Observable<T>> {
-		struct Observer {
-			std::function<void(const T &)> update;
+	struct Observable {
+		struct Observer;
+		struct ControlBlock {
+			std::vector<Observer> observers{};
 		};
+		using BlockPtr = std::shared_ptr<ControlBlock>;
+		using UpdateFunc = std::function<void(const T &)>;
+		BlockPtr _controlBlock = std::make_shared<ControlBlock>();
 
-		// FIXME: old observers are never removed
-		std::vector<std::weak_ptr<Observer>> observers{};
-
-		void notify(const T &t) {
-			for (auto &observer: observers) {
-				if (auto o = observer.lock())
-					o->update(t);
+		static void _notify(const BlockPtr &controlBlock, const T &t) {
+			for (auto &observer: controlBlock->observers) {
+				observer.update(t);
 			}
 		}
 
-		[[nodiscard]] std::shared_ptr<Observer> observe(std::function<void(const T &)> update) {
-			std::shared_ptr<Observer> observer = std::make_shared<Observer>(std::move(update));
-			observers.emplace_back(observer);
-			return observer;
+		struct Observer {
+			std::shared_ptr<ControlBlock> _controlBlock;
+			UpdateFunc update;
+
+			void notifyOthers(const T &t) const {
+				_notify(_controlBlock, t);
+			}
+		};
+
+		[[nodiscard]] static Observer &_observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
+			return controlBlock->observers.emplace_back(controlBlock, updateFunc);
 		}
 
-		[[nodiscard]] static std::shared_ptr<Observable<T>> create() {
-			return std::make_shared<Observable<T>>(Observable<T>{});
+		void notify(const T &t) const {
+			_notify(_controlBlock, t);
 		}
 
-	private:
+		[[nodiscard]] Observer &observe(const UpdateFunc &updateFunc) const {
+			return _observe(_controlBlock, updateFunc);
+		}
+
 		Observable() = default;
 	};
 
-	struct VoidObservable : std::enable_shared_from_this<VoidObservable> {
-		struct Observer {
-			std::weak_ptr<VoidObservable> observable;
-			std::function<void()> update;
+	template<class T>
+	using Observer = Observable<T>::Observer;
 
-			void notifyObserver() const {
-				if (auto o = observable.lock())
-					o->notify();
+	struct VoidObservable {
+		struct Observer;
+		struct ControlBlock {
+			std::vector<Observer> observers{};
+		};
+		using BlockPtr = std::shared_ptr<ControlBlock>;
+		using UpdateFunc = std::function<void()>;
+		BlockPtr _controlBlock = std::make_shared<ControlBlock>();
+
+		static void _notify(const BlockPtr &controlBlock) {
+			for (auto &observer: controlBlock->observers) {
+				observer.update();
+			}
+		}
+
+		struct Observer {
+			std::shared_ptr<ControlBlock> _controlBlock;
+			UpdateFunc update;
+
+			void notifyOthers() const {
+				_notify(_controlBlock);
 			}
 		};
 
-		std::vector<std::weak_ptr<Observer>> observers{};
-
-		void notify() {
-			for (auto &observer: observers) {
-				if (auto o = observer.lock())
-					o->update();
-			}
+		[[nodiscard]] static Observer &_observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
+			return controlBlock->observers.emplace_back(controlBlock, updateFunc);
 		}
 
-		[[nodiscard]] std::shared_ptr<Observer> observe(std::function<void()> update) {
-			std::shared_ptr<Observer> observer = std::make_shared<Observer>(weak_from_this(), std::move(update));
-			observers.emplace_back(observer);
-			return observer;
+		void notify() const {
+			_notify(_controlBlock);
 		}
 
-		[[nodiscard]] static std::shared_ptr<VoidObservable> create() {
-			return std::make_shared<VoidObservable>(VoidObservable{});
+		[[nodiscard]] Observer &observe(const UpdateFunc &updateFunc) const {
+			return _observe(_controlBlock, updateFunc);
 		}
 
-	private:
 		VoidObservable() = default;
 	};
+
+	using VoidObserver = VoidObservable::Observer;
 }// namespace squi

@@ -22,9 +22,9 @@ namespace squi {
 		struct Storage {
 			// Data
 			bool isExpanded = true;
-			std::shared_ptr<Observable<bool>> isExpandedEvent = Observable<bool>::create();
-			std::shared_ptr<Observable<bool>::Observer> expandedObserver;
-			std::shared_ptr<VoidObservable> selectionEvent = VoidObservable::create();
+			Observable<bool> isExpandedEvent{};
+			Observer<bool> expandedObserver;
+			VoidObservable selectionEvent{};
 		};
 
 		operator Child() const;

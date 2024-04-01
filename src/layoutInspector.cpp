@@ -527,13 +527,11 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedChildren = addedChildren, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->contentStack = shared;
-								if (auto addedChildrenEvent = addedChildren.lock()) {
-									storage->addedChildrenObserver = addedChildrenEvent->observe([w = shared](const Child &child) {
-										if (auto widget = w.lock()) {
-											widget->addChild(child);
-										}
-									});
-								}
+								storage->addedChildrenObserver = addedChildren.observe([w = shared](const Child &child) {
+									if (auto widget = w.lock()) {
+										widget->addChild(child);
+									}
+								});
 							},
 							.onUpdate = [storage](Widget &w) {
 								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {});
@@ -548,13 +546,11 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedOverlays = addedOverlays, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->overlayStack = shared;
-								if (auto addedOverlaysEvent = addedOverlays.lock()) {
-									storage->addedOverlaysObserver = addedOverlaysEvent->observe([w = shared](const Child &child) {
-										if (auto widget = w.lock()) {
-											widget->addChild(child);
-										}
-									});
-								}
+								storage->addedOverlaysObserver = addedOverlays.observe([w = shared](const Child &child) {
+									if (auto widget = w.lock()) {
+										widget->addChild(child);
+									}
+								});
 							},
 						},
 					},

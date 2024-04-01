@@ -2,7 +2,6 @@
 
 #include "observer.hpp"
 #include "widget.hpp"
-#include <memory>
 
 namespace squi {
 	struct NavigationView {
@@ -20,8 +19,8 @@ namespace squi {
 
 		struct Storage {
 			// Data
-			std::shared_ptr<Observable<Child>> contentChangeEvent = Observable<Child>::create();
-			std::shared_ptr<Observable<Child>::Observer> contentChangeObserver;
+			Observable<Child> contentChangeEvent{};
+			Observer<Child> contentChangeObserver;
 		};
 
 		operator Child() const;
