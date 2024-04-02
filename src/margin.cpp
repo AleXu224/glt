@@ -51,5 +51,5 @@ Margin Margin::withVerticalOffset(const float &offset) const {
 }
 
 squi::Margin::operator glm::vec4() const {
-	return {top, right, bottom, left};
+	return {top, bottom, right, left};
 }
