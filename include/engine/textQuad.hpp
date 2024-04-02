@@ -1,4 +1,5 @@
 #pragma once
+#include "color.hpp"
 #include "pipeline.hpp"
 #include "vulkanIncludes.hpp"
 #include <array>
@@ -78,6 +79,12 @@ namespace Engine {
 			vertices[1].pos = newPos;
 			vertices[2].pos = newPos;
 			vertices[3].pos = newPos;
+		}
+		void setColor(const squi::Color& newColor) {
+			vertices[0].color = newColor;
+			vertices[1].color = newColor;
+			vertices[2].color = newColor;
+			vertices[3].color = newColor;
 		}
 		squi::vec2 getPos() const {
 			return vertices[0].pos;
