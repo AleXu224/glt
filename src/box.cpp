@@ -45,8 +45,9 @@ void Box::Impl::onDraw() {
 void Box::Impl::drawChildren() {
 	auto &window = Window::of(this);
 	// FIXME: inset by border sizes
+	const auto borderWidth = getBorderWidth();
 	if (shouldClipContent) {
-		window.engine.instance.pushScissor(getRect());
+		window.engine.instance.pushScissor(getRect().inset(borderWidth[0], borderWidth[1], borderWidth[2], borderWidth[3]));
 	}
 
 	auto &children = getChildren();

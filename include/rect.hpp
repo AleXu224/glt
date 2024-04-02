@@ -50,6 +50,13 @@ namespace squi {
 			bottom -= distance;
 			return *this;
 		}
+		Rect &inset(const float &top, const float &right, const float &bottom, const float &left) {
+			this->left += left;
+			this->top += top;
+			this->right -= right;
+			this->bottom -= bottom;
+			return *this;
+		}
 		[[nodiscard]] Rect overlap(const Rect &other) const;
 	};
 }// namespace squi
