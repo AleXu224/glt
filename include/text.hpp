@@ -1,9 +1,9 @@
 #pragma once
 
 #include "color.hpp"
-#include "fontStore.hpp"
 #include "engine/pipeline.hpp"
 #include "engine/textQuad.hpp"
+#include "fontStore.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
 #include <memory>
@@ -49,10 +49,15 @@ namespace squi {
 			void onDraw() final;
 
 			void setText(const std::string_view &text);
+			void setColor(const Color &newColor);
 
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSize(const std::string_view &text) const;
 
 			[[nodiscard]] std::string_view getText() const;
+
+			[[nodiscard]] const std::vector<std::vector<Engine::TextQuad>> &getQuads() const;
+
+			[[nodiscard]] uint32_t getLineHeight() const;
 		};
 
 		operator Child() const {

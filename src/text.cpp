@@ -41,7 +41,7 @@ Text::Impl::Impl(const Text &args)
 }
 
 // The text characters are considered to be the children of the text widget
-vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2  /*minSize*/, ShouldShrink shouldShrink) {
+vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink shouldShrink) {
 	if (!font.has_value()) {
 		font = FontStore::getFont(fontSrc, Window::of(this).engine.instance);
 		const auto textPos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
@@ -147,4 +147,24 @@ std::string_view Text::Impl::getText() const {
 
 std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
 	return font.value()->getTextSizeSafe(text, fontSize);
+}
+
+void squi::Text::Impl::setColor(const Color &newColor) {
+	if (color == newColor) return;
+	color = newColor;
+	for (auto &quadVec: quads) {
+		for (auto &quad: quadVec) {
+			quad.setColor(newColor);
+		}
+	}
+	reDraw();
+}
+
+const std::vector<std::vector<Engine::TextQuad>> &squi::Text::Impl::getQuads() const {
+	return quads;
+}
+
+uint32_t squi::Text::Impl::getLineHeight() const {
+	if (!font.has_value()) return 0;
+	return font.value()->getLineHeight(fontSize);
 }
