@@ -3,6 +3,7 @@
 #include "expander.hpp"
 #include "window.hpp"
 #include <print>
+#include "numberBox.hpp"
 
 
 int main(int /*unused*/, char ** /*unused*/) {
@@ -25,6 +26,7 @@ int main(int /*unused*/, char ** /*unused*/) {
 					.color = 0xFF0000FF,
 				},
 			},
+			NumberBox{},
 		},
 	});
 	window.run();
