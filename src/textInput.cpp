@@ -18,32 +18,62 @@ using namespace squi;
 
 TextInput::Impl::Impl(const TextInput &args)
 	: Widget(args.widget, Widget::FlagsArgs::Default()),
+	  textWidget(Text{
+		  .text{""},
+		  .fontSize = args.fontSize,
+		  .font{args.font},
+		  .color{args.color},
+	  }),
+	  selectionWidget(Box{
+		  .color{0x0078D4FF},
+	  }),
+	  selectionTextWidget(Text{
+		  .text{""},
+		  .fontSize = args.fontSize,
+		  .font{args.font},
+		  .color{0xFFFFFFFF},
+	  }),
+	  cursorWidget(Box{
+		  .widget{
+			  .width = 2.f,
+		  },
+		  .color{0xFFFFFFFF},
+	  }),
 	  text(args.text),
-	  gd(GestureDetector{}.mount(*this)) {
-	addChild(Text{
-		.text{""},
-		.fontSize = args.fontSize,
-		.font{args.font},
-		.color{args.color},
-	});
-	// Selection
-	addChild(Box{
-		.color{0x0078D4FF},
-	});
-	// Selected text
-	addChild(Text{
-		.text{""},
-		.fontSize = args.fontSize,
-		.font{args.font},
-		.color{0xFFFFFFFF},
-	});
-	// Cursor
-	addChild(Box{
-		.widget{
-			.width = 2.f,
-		},
-		.color{0xFFFFFFFF},
-	});
+	  gd(GestureDetector{
+		  .onClick = [](GestureDetector::Event event) {
+			  auto &input = event.widget.as<TextInput::Impl>();
+			  auto &textWidget = input.textWidget->as<Text::Impl>();
+			  const auto &quads = textWidget.getQuads();
+			  const auto mousePos = GestureDetector::getMousePos();
+			  const auto lineHeight = textWidget.getLineHeight();
+			  const auto textPos = textWidget.getPos();
+
+			  const auto lineIt = std::lower_bound(quads.begin(), quads.end(), mousePos.y, [&](const std::vector<Engine::TextQuad> &vec, float yPos) {
+				  return textPos.y + static_cast<float>((std::distance(&quads.front(), &vec) + 1) * lineHeight) < yPos;
+			  });
+
+			  if (lineIt == quads.end()) {
+				// Should not happen in practice but better safe than sorry
+				return;
+			  }
+
+			  const auto quadIt = std::upper_bound(lineIt->begin(), lineIt->end(), mousePos.x, [](float xPos, const Engine::TextQuad &quad) {
+				  return xPos < (quad.getPos().x + quad.getOffset().x + quad.getSize().x / 2);
+			  });
+
+			  input.cursor = std::distance(lineIt->begin(), quadIt);
+			  input.clampCursors();
+			  input.reArrange();
+
+			  // TODO: add cursor dragging to select, double click to select word, triple click to select everything and maybe a context menu
+		  },
+	  }
+			 .mount(*this)) {
+	addChild(textWidget);
+	addChild(selectionWidget);
+	addChild(selectionTextWidget);
+	addChild(cursorWidget);
 }
 
 void TextInput::Impl::clampCursors() {
@@ -69,17 +99,12 @@ int64_t TextInput::Impl::getSelectionMax() {
 
 std::string_view TextInput::Impl::getText() {
 	if (text.has_value()) return text.value().get();
-
-	auto &children = getChildren();
-	auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
-	return text.getText();
+	return textWidget->as<Text::Impl>().getText();
 }
 
 void TextInput::Impl::setText(std::string_view text) {
 	if (this->text.has_value()) this->text.value().get() = text;
-	auto &children = getChildren();
-	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
-	textWidget.setText(text);
+	textWidget->as<Text::Impl>().setText(text);
 }
 
 void TextInput::Impl::clearSelection() {
@@ -96,16 +121,13 @@ void TextInput::Impl::clearSelection() {
 }
 
 void TextInput::Impl::onUpdate() {
-	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*getChildren()[3]);
 	if (!gd.active) {
-		cursorWidget.flags.visible = false;
+		cursorWidget->flags.visible = false;
 		return;
 	}
-	cursorWidget.flags.visible = true;
+	cursorWidget->flags.visible = true;
 
-	auto &children = getChildren();
-	auto &text = reinterpret_cast<Text::Impl &>(*children[0]);
-	// auto &selectedText = reinterpret_cast<Text::Impl &>(*children[2]);
+	auto &text = textWidget->as<Text::Impl>();
 	const auto oldCursor = cursor;
 	const auto oldSelectionStart = selectionStart;
 
@@ -242,26 +264,23 @@ void TextInput::Impl::onUpdate() {
 		reLayout();
 	}
 	if (oldCursor != cursor || oldSelectionStart != selectionStart) {
-		auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
-		auto &selectionTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
-
 		if (selectionStart.has_value()) {
-			selectionWidget.flags.visible = true;
-			selectionTextWidget.flags.visible = true;
+			selectionWidget->flags.visible = true;
+			selectionTextWidget->flags.visible = true;
 			auto textVal = getText();
 			const auto newText = textVal.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			const auto [width, height] = text.getTextSize(newText);
-			selectionWidget.state.width = static_cast<float>(width);
-			selectionTextWidget.setText(newText);
+			selectionWidget->state.width = static_cast<float>(width);
+			selectionTextWidget->as<Text::Impl>().setText(newText);
 		} else {
-			selectionWidget.flags.visible = false;
-			selectionTextWidget.flags.visible = false;
-			selectionTextWidget.setText("");
+			selectionWidget->flags.visible = false;
+			selectionTextWidget->flags.visible = false;
+			selectionTextWidget->as<Text::Impl>().setText("");
 		}
 	}
 }
 
-vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink  /*shouldShrink*/) {
+vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink /*shouldShrink*/) {
 	auto &children = getChildren();
 	for (auto &child: children) {
 		const auto size = child->layout(maxSize.withX(std::numeric_limits<float>::max()), {});
@@ -273,42 +292,30 @@ vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink  /
 }
 
 void TextInput::Impl::arrangeChildren(vec2 &pos) {
-	auto &children = getChildren();
-	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
-	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
-	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
-	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
-
 	const auto text = getText();
-	const auto [startToCursorWidth, startToCursorHeight] = textWidget.getTextSize(text.substr(0, cursor));
+	const auto [startToCursorWidth, startToCursorHeight] = textWidget->as<Text::Impl>().getTextSize(text.substr(0, cursor));
 	const auto contentWidth = std::max(getContentRect().width(), 0.f);
 	scroll = std::clamp(scroll, static_cast<float>(startToCursorWidth) - contentWidth, static_cast<float>(startToCursorWidth));
 
 	const auto contentPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset() - vec2{scroll, 0};
 
-	textWidget.arrange(contentPos);
+	textWidget->arrange(contentPos);
 	if (selectionStart.has_value()) {
-		const auto [width, height] = textWidget.getTextSize(text.substr(0, getSelectionMin()));
-		selectionWidget.arrange(contentPos.withXOffset(static_cast<float>(width)));
-		selectedTextWidget.arrange(contentPos.withXOffset(static_cast<float>(width)));
+		const auto [width, height] = textWidget->as<Text::Impl>().getTextSize(text.substr(0, getSelectionMin()));
+		selectionWidget->arrange(contentPos.withXOffset(static_cast<float>(width)));
+		selectionTextWidget->arrange(contentPos.withXOffset(static_cast<float>(width)));
 	}
-	cursorWidget.arrange(contentPos.withXOffset(static_cast<float>(startToCursorWidth)));
+	cursorWidget->arrange(contentPos.withXOffset(static_cast<float>(startToCursorWidth)));
 }
 
 void TextInput::Impl::drawChildren() {
-	auto &children = getChildren();
-	auto &textWidget = reinterpret_cast<Text::Impl &>(*children[0]);
-	auto &selectionWidget = reinterpret_cast<Box::Impl &>(*children[1]);
-	auto &selectedTextWidget = reinterpret_cast<Text::Impl &>(*children[2]);
-	auto &cursorWidget = reinterpret_cast<Box::Impl &>(*children[3]);
-
 	auto &instance = Window::of(this).engine.instance;
 	instance.pushScissor(getRect());
 
-	textWidget.draw();
-	selectionWidget.draw();
-	selectedTextWidget.draw();
-	cursorWidget.draw();
+	textWidget->draw();
+	selectionWidget->draw();
+	selectionTextWidget->draw();
+	cursorWidget->draw();
 
 	instance.popScissor();
 }
@@ -318,4 +325,8 @@ TextInput::operator Child() const {
 
 void squi::TextInput::Impl::setActive(bool active) {
 	gd.active = active;
+}
+
+void squi::TextInput::Impl::setColor(const Color &newColor) {
+	textWidget->as<Text::Impl>().setColor(newColor);
 }
