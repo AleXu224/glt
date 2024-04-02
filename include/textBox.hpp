@@ -24,6 +24,8 @@ namespace squi {
 		static Theme theme;
 		// Args
 		Widget::Args widget{};
+		std::function<void(std::string_view)> onTextChanged{};
+		std::string_view text{};
 
 		struct Storage {
 			// Data

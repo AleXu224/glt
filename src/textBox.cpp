@@ -71,34 +71,33 @@ TextBox::operator Child() const {
 										.widget{
 											.width = Size::Expand,
 											.padding = Padding{0, 11, 0, 11},
-											.onInit = [](Widget &w) {
+											.onInit = [text = std::string(text)](Widget &w) {
 												auto font = FontStore::defaultFont;
 												if (font) w.state.height = static_cast<float>(font->getLineHeight(14));
+												w.as<TextInput::Impl>().setText(text);
 											},
-											// TODO: Add support for text color change
 											.onUpdate = [&, storage](Widget &w) {
-												// auto &text = (Text::Impl &)w;
+												auto &input = w.as<TextInput::Impl>();
 
 												if (storage->changed) {
 													switch (storage->state) {
 														case Storage::State::rest:
-															// text.setColor(theme.text);
-															// break;
 														case Storage::State::hover:
-															// text.setColor(theme.text);
+															input.setColor(theme.text);
 															break;
 														case Storage::State::active:
-															// text.setColor(theme.text);
-															w.as<TextInput::Impl>().setActive(true);
+															input.setColor(theme.text);
+															input.setActive(true);
 															break;
 														case Storage::State::disabled:
-															// text.setColor(theme.textDisabled);
+															input.setColor(theme.textDisabled);
 															break;
 													}
 												}
 											},
 										},
 										.fontSize = 14.0f,
+										.onTextChanged = onTextChanged,
 										.color{theme.text},
 									},
 								},

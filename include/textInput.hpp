@@ -11,7 +11,6 @@
 #include <variant>
 
 
-
 namespace squi {
 	struct TextInput {
 		// Args
@@ -26,6 +25,10 @@ namespace squi {
 			// Data
 			int64_t cursor{};
 			float scroll{};
+			Child textWidget;
+			Child selectionWidget;
+			Child selectionTextWidget;
+			Child cursorWidget;
 			std::optional<std::reference_wrapper<std::string>> text{};
 			std::optional<int64_t> selectionStart{};
 			GestureDetector::State &gd;
@@ -46,7 +49,7 @@ namespace squi {
 
 			std::string_view getText();
 			void setText(std::string_view text);
-
+			void setColor(const Color &newColor);
 			int64_t getSelectionMin();
 			int64_t getSelectionMax();
 		};
