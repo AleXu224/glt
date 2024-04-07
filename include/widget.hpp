@@ -92,8 +92,9 @@ namespace squi {
 			std::function<void(Widget &)> afterUpdate{};
 			std::function<void(Widget &, vec2 &, vec2 &)> beforeLayout{};
 			std::function<void(Widget &, vec2 &, vec2 &)> onLayout{};
-			std::function<void(Widget &, vec2 &, vec2 &)> afterLayout{};
+			std::function<void(Widget &, vec2 &)> afterLayout{};
 			std::function<void(Widget &, vec2 &)> onArrange{};
+			std::function<void(Widget &, vec2 &)> afterArrange{};
 			std::function<void(Widget &)> beforeDraw{};
 			std::function<void(Widget &)> onDraw{};
 			std::function<void(Widget &)> afterDraw{};
@@ -254,8 +255,9 @@ namespace squi {
 			std::vector<std::function<void(Widget &)>> afterUpdate{};
 			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> beforeLayout{};
 			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> onLayout{};
-			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> afterLayout{};
+			std::vector<std::function<void(Widget &, vec2 &)>> afterLayout{};
 			std::vector<std::function<void(Widget &, vec2 &)>> onArrange{};
+			std::vector<std::function<void(Widget &, vec2 &)>> afterArrange{};
 			std::vector<std::function<void(Widget &)>> beforeDraw{};
 			std::vector<std::function<void(Widget &)>> onDraw{};
 			std::vector<std::function<void(Widget &)>> afterDraw{};
