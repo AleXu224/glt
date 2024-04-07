@@ -2,7 +2,7 @@
 
 #include "color.hpp"
 #include "fontStore.hpp"
-#include "gestureDetector.hpp"
+#include "observer.hpp"
 #include "widget.hpp"
 #include <functional>
 #include <memory>
@@ -17,9 +17,14 @@ namespace squi {
 		Widget::Args widget{};
 		float fontSize = 14.0f;
 		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
-		std::optional<std::reference_wrapper<std::string>> text{};
+		std::string_view text{};
 		std::function<void(std::string_view)> onTextChanged{};
 		Color color{0xFFFFFFFF};
+		struct Controller {
+			Observable<bool> setActive{};
+			Observable<bool> setDisabled{};
+		};
+		Controller controller{};
 
 		class Impl : public Widget {
 			// Data
@@ -29,9 +34,12 @@ namespace squi {
 			Child selectionWidget;
 			Child selectionTextWidget;
 			Child cursorWidget;
-			std::optional<std::reference_wrapper<std::string>> text{};
+			std::function<void(std::string_view)> onTextChanged;
 			std::optional<int64_t> selectionStart{};
-			GestureDetector::State &gd;
+
+			Observer<bool> setActiveObs{};
+
+			bool active = false;
 
 		public:
 			explicit Impl(const TextInput &args);
@@ -46,6 +54,7 @@ namespace squi {
 
 			void clampCursors();
 			void clearSelection();
+			void handleMouseInput();
 
 			std::string_view getText();
 			void setText(std::string_view text);

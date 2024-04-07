@@ -9,7 +9,6 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <format>
-#include <limits>
 #include <memory>
 #include <optional>
 
@@ -19,17 +18,20 @@ using namespace squi;
 TextInput::Impl::Impl(const TextInput &args)
 	: Widget(args.widget, Widget::FlagsArgs::Default()),
 	  textWidget(Text{
-		  .text{""},
+		  .text{args.text},
 		  .fontSize = args.fontSize,
+		  .lineWrap = false,
 		  .font{args.font},
 		  .color{args.color},
 	  }),
 	  selectionWidget(Box{
+		  .widget{.width = 0.f},
 		  .color{0x0078D4FF},
 	  }),
 	  selectionTextWidget(Text{
 		  .text{""},
 		  .fontSize = args.fontSize,
+		  .lineWrap = false,
 		  .font{args.font},
 		  .color{0xFFFFFFFF},
 	  }),
@@ -39,37 +41,10 @@ TextInput::Impl::Impl(const TextInput &args)
 		  },
 		  .color{0xFFFFFFFF},
 	  }),
-	  text(args.text),
-	  gd(GestureDetector{
-		  .onClick = [](GestureDetector::Event event) {
-			  auto &input = event.widget.as<TextInput::Impl>();
-			  auto &textWidget = input.textWidget->as<Text::Impl>();
-			  const auto &quads = textWidget.getQuads();
-			  const auto mousePos = GestureDetector::getMousePos();
-			  const auto lineHeight = textWidget.getLineHeight();
-			  const auto textPos = textWidget.getPos();
-
-			  const auto lineIt = std::lower_bound(quads.begin(), quads.end(), mousePos.y, [&](const std::vector<Engine::TextQuad> &vec, float yPos) {
-				  return textPos.y + static_cast<float>((std::distance(&quads.front(), &vec) + 1) * lineHeight) < yPos;
-			  });
-
-			  if (lineIt == quads.end()) {
-				// Should not happen in practice but better safe than sorry
-				return;
-			  }
-
-			  const auto quadIt = std::upper_bound(lineIt->begin(), lineIt->end(), mousePos.x, [](float xPos, const Engine::TextQuad &quad) {
-				  return xPos < (quad.getPos().x + quad.getOffset().x + quad.getSize().x / 2);
-			  });
-
-			  input.cursor = std::distance(lineIt->begin(), quadIt);
-			  input.clampCursors();
-			  input.reArrange();
-
-			  // TODO: add cursor dragging to select, double click to select word, triple click to select everything and maybe a context menu
-		  },
-	  }
-			 .mount(*this)) {
+	  onTextChanged(args.onTextChanged),
+	  setActiveObs(args.controller.setActive.observe([&self = *this](bool newVal) {
+		  self.active = newVal;
+	  })) {
 	addChild(textWidget);
 	addChild(selectionWidget);
 	addChild(selectionTextWidget);
@@ -98,13 +73,18 @@ int64_t TextInput::Impl::getSelectionMax() {
 }
 
 std::string_view TextInput::Impl::getText() {
-	if (text.has_value()) return text.value().get();
 	return textWidget->as<Text::Impl>().getText();
 }
 
 void TextInput::Impl::setText(std::string_view text) {
-	if (this->text.has_value()) this->text.value().get() = text;
+	if (selectionStart.has_value()) {
+		selectionStart = std::nullopt;
+		selectionWidget->flags.visible = false;
+		selectionTextWidget->flags.visible = false;
+		selectionTextWidget->as<Text::Impl>().setText("");
+	}
 	textWidget->as<Text::Impl>().setText(text);
+	if (onTextChanged) onTextChanged(getText());
 }
 
 void TextInput::Impl::clearSelection() {
@@ -121,11 +101,12 @@ void TextInput::Impl::clearSelection() {
 }
 
 void TextInput::Impl::onUpdate() {
-	if (!gd.active) {
+	if (!active) {
 		cursorWidget->flags.visible = false;
 		return;
 	}
 	cursorWidget->flags.visible = true;
+	handleMouseInput();
 
 	auto &text = textWidget->as<Text::Impl>();
 	const auto oldCursor = cursor;
@@ -282,13 +263,16 @@ void TextInput::Impl::onUpdate() {
 
 vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink /*shouldShrink*/) {
 	auto &children = getChildren();
+	// A text input can scroll horizontally so it has no real maximum width
+	maxSize = vec2::infinity().withY(static_cast<float>(textWidget->as<Text::Impl>().getLineHeight()));
+	vec2 ret{};
 	for (auto &child: children) {
-		const auto size = child->layout(maxSize.withX(std::numeric_limits<float>::max()), {});
-		minSize.x = std::clamp(size.x, minSize.x, maxSize.x);
-		minSize.y = std::clamp(size.y, minSize.y, maxSize.y);
+		const auto size = child->layout(maxSize, minSize);
+		ret.x = std::max(size.x, ret.x);
+		ret.y = std::max(size.y, ret.y);
 	}
 
-	return minSize;
+	return ret;
 }
 
 void TextInput::Impl::arrangeChildren(vec2 &pos) {
@@ -296,8 +280,12 @@ void TextInput::Impl::arrangeChildren(vec2 &pos) {
 	const auto [startToCursorWidth, startToCursorHeight] = textWidget->as<Text::Impl>().getTextSize(text.substr(0, cursor));
 	const auto contentWidth = std::max(getContentRect().width(), 0.f);
 	scroll = std::clamp(scroll, static_cast<float>(startToCursorWidth) - contentWidth, static_cast<float>(startToCursorWidth));
+	// Avoid empty space on the right side when the text size is bigger than the input size
+	scroll = std::clamp(scroll, 0.f, std::max(textWidget->getSize().x - contentWidth, 0.f));
 
-	const auto contentPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset() - vec2{scroll, 0};
+	const auto lineHeight = textWidget->as<Text::Impl>().getLineHeight();
+	const auto verticalOffset = std::round((getContentSize().y - static_cast<float>(lineHeight)) / 2.f);
+	const auto contentPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset() - vec2{scroll, -verticalOffset};
 
 	textWidget->arrange(contentPos);
 	if (selectionStart.has_value()) {
@@ -324,7 +312,43 @@ TextInput::operator Child() const {
 }
 
 void squi::TextInput::Impl::setActive(bool active) {
-	gd.active = active;
+	this->active = active;
+}
+
+void squi::TextInput::Impl::handleMouseInput() {
+	if (!GestureDetector::canClick(*this)) return;
+	if (!GestureDetector::isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) return;
+	auto &textWidget = this->textWidget->as<Text::Impl>();
+	const auto &quads = textWidget.getQuads();
+	const auto mousePos = GestureDetector::getMousePos();
+	const auto lineHeight = textWidget.getLineHeight();
+	const auto textPos = textWidget.getPos();
+
+	// No text, nothing to click
+	if (quads.empty()) return;
+
+	auto lineIt = std::lower_bound(quads.begin(), quads.end(), mousePos.y, [&](const std::vector<Engine::TextQuad> &vec, float yPos) {
+		return textPos.y + static_cast<float>((std::distance(&quads.front(), &vec) + 1) * lineHeight) < yPos;
+	});
+
+	if (lineIt == quads.end()) {
+		// Select the last line if the user clicks under the text but still within the input
+		lineIt--;
+	}
+
+	const auto quadIt = std::upper_bound(lineIt->begin(), lineIt->end(), mousePos.x, [](float xPos, const Engine::TextQuad &quad) {
+		return xPos < (quad.getPos().x + quad.getOffset().x + quad.getSize().x / 2);
+	});
+
+	if (selectionStart.has_value()) {
+		selectionStart = std::nullopt;
+		selectionWidget->flags.visible = false;
+		selectionTextWidget->flags.visible = false;
+		selectionTextWidget->as<Text::Impl>().setText("");
+	}
+	cursor = std::distance(lineIt->begin(), quadIt);
+	clampCursors();
+	reArrange();
 }
 
 void squi::TextInput::Impl::setColor(const Color &newColor) {
