@@ -1,46 +1,85 @@
 #include "numberBox.hpp"
-#include "box.hpp"
 #include "gestureDetector.hpp"
-#include "stack.hpp"
+#include "registerEvent.hpp"
 #include "textBox.hpp"
+#include <GLFW/glfw3.h>
+#include <algorithm>
 using namespace squi;
 
+NumberBox::operator Child() const {
+	auto storage = std::make_shared<Storage>(Storage{
+		.value = value,
+		.min = min,
+		.max = max,
+		.step = step,
+	});
+	storage->onChange = [onChange = onChange, storage = std::weak_ptr<Storage>(storage)](float val) {
+		if (storage.expired()) return;
+		auto &storageRef = *storage.lock();
+		storageRef.value = val;
+		storageRef.clampValue();
+		if (onChange) onChange(storageRef.value);
+	};
 
-squi::NumberBox::operator squi::Child() const {
-	auto storage = std::make_shared<Storage>();
-	const auto &theme = TextBox::theme;
 
-	return GestureDetector{
-		.onEnter = [storage](auto) {
-			storage->state.hovered = true;
-			storage->stateObserver.notify(storage->state);
+	return RegisterEvent{
+		.onInit = [storage, stateObserver = controller.stateObserver](Widget &w){
+			w.customState.add("_stateObservable", stateObserver.observe([storage](TextBox::InputState state){
+				storage->focused = (state == TextBox::InputState::focused);
+			}));
 		},
-		.onLeave = [storage](auto) {
-			storage->state.hovered = false;
-			storage->stateObserver.notify(storage->state);
+		.onUpdate = [storage, updateText = controller.updateText](Widget &) {
+			if (!storage->focused) return;
+			if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_UP)) {
+				storage->value += storage->step;
+				storage->clampValue();
+				updateText.notify(std::format("{}", storage->value));
+			}
+			if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_DOWN)) {
+				storage->value -= storage->step;
+				storage->clampValue();
+				updateText.notify(std::format("{}", storage->value));
+			}
 		},
-		.onUpdate = [storage](GestureDetector::Event event) {
-			if (event.state.focused) storage->state.focused = true;
-			if (event.state.focusedOutside) storage->state.focused = false;
-			storage->stateObserver.notify(storage->state);
-		},
-		.child = Stack{
-			.widget{widget.withDefaultHeight(32.f).withDefaultWidth(Size::Shrink).withSizeConstraints(SizeConstraints{.minWidth = 124.f})},
-			.children{
-				Box{
-					.color{theme.rest},
-					.borderColor{theme.border},
-					.borderWidth{1.f},
-					.borderRadius{4.f},
-					.borderPosition = Box::BorderPosition::outset,
+		.child = TextBox{
+			.widget{widget},
+			.disabled = disabled,
+			.text = std::format("{}", value),
+			.controller{
+				.disable = controller.disable,
+				.focus = controller.focus,
+				.onChange = controller.onChange,
+				.onSubmit = controller.onSubmit,
+				.validator = [storage, textValidator = controller.validator, numValidator = validator](std::string_view str) -> TextBox::Controller::ValidatorResponse {
+					if (textValidator) {
+						auto _ = textValidator(str);
+						if (!_.valid) return _;
+					}
+					try {
+						auto _ = std::stof(std::string(str));
+						if (_ < storage->min) return {.valid = false, .message = "Value is too small"};
+						if (_ > storage->max) return {.valid = false, .message = "Value is too big"};
+						if (storage->onChange) storage->onChange(_);
+					} catch (const std::invalid_argument &) {
+						return {.valid = false, .message = "Invalid number"};
+					} catch (const std::out_of_range &) {
+						return {.valid = false, .message = "Number too big/small"};
+					}
+					
+					if (numValidator) {
+						auto _ = numValidator(storage->value);
+						if (!_.valid) return _;
+					}
+					
+					return {.valid = true};
 				},
-				Box{
-					.color{0.f},
-					.borderColor{theme.bottomBorder},
-					.borderWidth{0.f, 0.f, 1.f, 0.f},
-					.borderRadius{4.f},
-				},
+				.updateText = controller.updateText,
+				.stateObserver = controller.stateObserver,
 			},
 		},
 	};
+}
+
+void squi::NumberBox::Storage::clampValue() {
+	value = std::clamp(value, min, max);
 }

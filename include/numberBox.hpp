@@ -1,29 +1,31 @@
 #pragma once
 
+#include "textBox.hpp"
 #include "widget.hpp"
-#include "observer.hpp"
+
 
 namespace squi {
 	struct NumberBox {
-        struct Controller{
-            Observable<bool> disable{};
-            Observable<bool> focus{};
-        };
 		// Args
 		Widget::Args widget{};
-        bool disabled = false;
-        Controller controller{};
-
-        struct InputState{
-			bool hovered = false;
-			bool focused = false;
-			bool disabled = false;
-		};
+		float value = 0;
+		float min = std::numeric_limits<float>::lowest();
+		float max = std::numeric_limits<float>::max();
+		float step = 1.f;
+		bool disabled = false;
+		std::function<void(float)> onChange{};
+		std::function<TextBox::Controller::ValidatorResponse(float)> validator{};
+		TextBox::Controller controller{};
 
 		struct Storage {
-			// Data
-            InputState state{};
-            Observable<InputState> stateObserver{};
+			float value;
+			float min;
+			float max;
+			float step;
+			bool focused = false;
+			std::function<void(float)> onChange{};
+
+			void clampValue();
 		};
 
 		operator squi::Child() const;
