@@ -57,12 +57,18 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink sho
 		// 2. The cached text is wrapping (the text is occupying more than one line)
 		// - This is done because it would be really difficult to figure o1ut if a change in available width would cause a layout change in this case
 		if (maxSize.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
-			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, {lastX, lastY}, color, maxSize.x);
+			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(
+				text,
+				fontSize,
+				{lastX, lastY},
+				color,
+				lineWrap ? std::optional<float>(maxSize.x) : std::nullopt
+			);
 			updateSize();
 		}
 	}
 
-	return textSize;
+	return textSize + state.padding->getSizeOffset();
 }
 
 void Text::Impl::onArrange(vec2 &pos) {
@@ -82,11 +88,8 @@ void Text::Impl::onArrange(vec2 &pos) {
 void Text::Impl::updateSize() {
 	if (lineWrap) {
 		state.width = Size::Expand;
-		state.height = Size::Shrink;
 	} else {
-		const auto newSize = textSize + state.padding->getSizeOffset();
-		state.width = newSize.x;
-		state.height = newSize.y;
+		state.width = Size::Shrink;
 	}
 	reLayout();
 }
