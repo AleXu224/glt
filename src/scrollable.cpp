@@ -54,7 +54,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 					this->reArrange();
 				}
 			},
-			.afterLayout = [this](Widget &widget, auto, auto) {
+			.afterLayout = [this](Widget &widget, auto) {
 				const auto contentHeight = widget.getLayoutRect().height();
 				controller->contentHeight = contentHeight;
 			},
