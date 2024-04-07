@@ -1,147 +1,243 @@
 #include "textBox.hpp"
-#include "align.hpp"
 #include "box.hpp"
-#include "fontStore.hpp"
+#include "column.hpp"
 #include "gestureDetector.hpp"
+#include "registerEvent.hpp"
 #include "stack.hpp"
+#include "text.hpp"
 #include "textInput.hpp"
-
 
 using namespace squi;
 
-TextBox::Theme TextBox::theme{};
+using InputState = TextBox::InputState;
+using StObs = Observable<InputState>;
 
-TextBox::operator Child() const {
-	auto storage = std::make_shared<Storage>();
+struct Body {
+	// Args
+	squi::Widget::Args widget{};
+	StObs stateUpdateObs;
+	Observable<std::string_view> textUpdateObs{};
+	VoidObservable requestOnSubmitCall{};
+	std::function<void(std::string_view)> onChange{};
+	std::function<void(std::string_view)> onSubmit{};
+	std::string_view text;
 
-	return GestureDetector{
-		.onUpdate = [&, storage](GestureDetector::Event event) {
-			auto &box = event.widget.as<Box::Impl>();
-
-			storage->changed = false;
-			if (event.state.active) {
-				if (storage->state != Storage::State::active) storage->changed = true;
-				storage->state = Storage::State::active;
-			} else if (event.state.hovered) {
-				if (storage->state != Storage::State::hover) storage->changed = true;
-				storage->state = Storage::State::hover;
-			} else {
-				if (storage->state != Storage::State::rest) storage->changed = true;
-				storage->state = Storage::State::rest;
-			}
-
-			if (storage->changed) {
-				switch (storage->state) {
-					case Storage::State::rest:
-						box.setColor(theme.rest);
-						box.setBorderColor(theme.border);
-						break;
-					case Storage::State::hover:
-						box.setColor(theme.hover);
-						box.setBorderColor(theme.border);
-						break;
-					case Storage::State::active:
-						box.setColor(theme.active);
-						box.setBorderColor(theme.borderActive);
-						break;
-					case Storage::State::disabled:
-						box.setColor(theme.disabled);
-						box.setBorderColor(theme.border);
-						break;
-				}
-			}
-		},
-		.child{
-			Box{
-				.widget{
-					.width = 160.f,
-					.height = 32.f,
+	operator squi::Child() const {
+		return Box{
+			.widget{
+				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
+					w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+						auto &box = w.as<Box::Impl>();
+						switch (state) {
+							case squi::TextBox::InputState::resting: {
+								box.setColor(Theme::TextBox::rest);
+								return;
+							}
+							case squi::TextBox::InputState::hovered: {
+								box.setColor(Theme::TextBox::hover);
+								return;
+							}
+							case squi::TextBox::InputState::focused: {
+								box.setColor(Theme::TextBox::active);
+								return;
+							}
+							case squi::TextBox::InputState::disabled: {
+								box.setColor(Theme::TextBox::disabled);
+								return;
+							}
+						}
+					}));
 				},
-				.color{theme.rest},
-				.borderColor{theme.border},
-				.borderWidth{1.0f},
-				.borderRadius{4.0f},
-				.child{
+			},
+			.color{Theme::TextBox::rest},
+			.borderColor{Theme::TextBox::border},
+			.borderWidth{1.f},
+			.borderRadius{4.f},
+			.borderPosition = Box::BorderPosition::outset,
+			.child = TextInput{
+				.widget{
+					.padding = Padding{11.f, 0.f},
+					.onInit = [stateUpdateObs = stateUpdateObs, textUpdateObs = textUpdateObs, reqOnSubmitObs = requestOnSubmitCall, onSubmit = onSubmit](Widget &w) {
+						w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+							auto &input = w.as<TextInput::Impl>();
+							switch (state) {
+								case squi::TextBox::InputState::focused: {
+									input.setActive(true);
+									break;
+								}
+								default: {
+									input.setActive(false);
+									break;
+								}
+							}
+							switch (state) {
+								case squi::TextBox::InputState::disabled: {
+									input.setColor(Theme::TextBox::textDisabled);
+									break;
+								}
+								default: {
+									input.setColor(Theme::TextBox::text);
+									break;
+								}
+							}
+						}));
+						w.customState.add(textUpdateObs.observe([&w](std::string_view newText) {
+							auto &input = w.as<TextInput::Impl>();
+							input.setText(newText);
+						}));
+						w.customState.add(reqOnSubmitObs.observe([&w, onSubmit = onSubmit]() {
+							auto &input = w.as<TextInput::Impl>();
+							if (onSubmit) onSubmit(input.getText());
+						}));
+					},
+				},
+				.fontSize = 14.0f,
+				.text = text,
+				.onTextChanged = onChange,
+				.color{Theme::TextBox::text},
+			},
+		};
+	}
+};
+
+struct Underline {
+	// Args
+	StObs stateUpdateObs{};
+
+	operator squi::Child() const {
+		return Box{
+			.widget{
+				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
+					w.flags.isInteractive = false;
+					w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+						auto &box = w.as<Box::Impl>();
+						switch (state) {
+							case squi::TextBox::InputState::resting:
+							case squi::TextBox::InputState::hovered:
+							case squi::TextBox::InputState::disabled: {
+								box.setBorderColor(Theme::TextBox::bottomBorder);
+								box.setBorderWidth({0.f, 0.f, 1.f, 0.f});
+								return;
+							}
+							case squi::TextBox::InputState::focused: {
+								box.setBorderColor(Theme::TextBox::bottomBorderActive);
+								box.setBorderWidth({0.f, 0.f, 2.f, 0.f});
+								return;
+							}
+						}
+					}));
+				},
+			},
+			.color{0.f, 0.f, 0.f, 0.f},
+			.borderColor{Theme::TextBox::bottomBorder},
+			.borderWidth{0.f, 0.f, 1.f, 0.f},
+			.borderRadius{4.f},
+		};
+	}
+};
+
+squi::TextBox::operator squi::Child() const {
+	auto storage = std::make_shared<Storage>();
+	storage->stateObserver = controller.stateObserver;
+	storage->disableObs = controller.disable.observe([&storage = *storage](bool newDisabled) {
+		if (storage.disabled != newDisabled) {
+			storage.disabled = newDisabled;
+			storage.stateObserver.notify(storage.getState());
+		}
+	});
+	storage->focusObs = controller.focus.observe([&storage = *storage, onSubmitFunc = controller.onSubmit](bool newFocus) {
+		if (storage.focused != newFocus) {
+			storage.focused = newFocus;
+			storage.stateObserver.notify(storage.getState());
+
+			if (!newFocus) {
+				storage.requestOnSubmitCall.notify();
+			}
+		}
+	});
+
+	Observable<std::string_view> onChangeObs{};
+
+	return RegisterEvent{
+		.onInit = [storage](Widget &w) {
+			// For outside use
+			w.customState.add(storage);
+		},
+		.child = GestureDetector{
+			.onEnter = [storage](auto) {
+				storage->hovered = true;
+				storage->stateObserver.notify(storage->getState());
+			},
+			.onLeave = [storage](auto) {
+				storage->hovered = false;
+				storage->stateObserver.notify(storage->getState());
+			},
+			.onUpdate = [storage](GestureDetector::Event event) {
+				if (GestureDetector::isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) {
+					if (event.state.focused) storage->focusObs.notifyOthers(true);
+					if (event.state.focusedOutside) storage->focusObs.notifyOthers(false);
+				}
+
+				if (storage->focused && (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_ENTER) || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_ESCAPE))) {
+					storage->focusObs.notifyOthers(false);
+				}
+			},
+			.child = Column{
+				.widget{widget.withDefaultHeight(Size::Shrink).withDefaultWidth(Size::Shrink).withSizeConstraints(SizeConstraints{.minWidth = 124.f})},
+				.children{
 					Stack{
+						.widget{
+							.height = 32.f,
+						},
 						.children{
-							Align{
-								.xAlign = 0.0f,
-								.child{
-									TextInput{
-										.widget{
-											.width = Size::Expand,
-											.padding = Padding{0, 11, 0, 11},
-											.onInit = [text = std::string(text)](Widget &w) {
-												auto font = FontStore::defaultFont;
-												if (font) w.state.height = static_cast<float>(font->getLineHeight(14));
-												w.as<TextInput::Impl>().setText(text);
-											},
-											.onUpdate = [&, storage](Widget &w) {
-												auto &input = w.as<TextInput::Impl>();
-
-												if (storage->changed) {
-													switch (storage->state) {
-														case Storage::State::rest:
-														case Storage::State::hover:
-															input.setColor(theme.text);
-															break;
-														case Storage::State::active:
-															input.setColor(theme.text);
-															input.setActive(true);
-															break;
-														case Storage::State::disabled:
-															input.setColor(theme.textDisabled);
-															break;
-													}
-												}
-											},
-										},
-										.fontSize = 14.0f,
-										.onTextChanged = onTextChanged,
-										.color{theme.text},
-									},
+							Body{
+								.stateUpdateObs = storage->stateObserver,
+								.textUpdateObs = controller.updateText,
+								.requestOnSubmitCall = storage->requestOnSubmitCall,
+								.onChange = [onChangeObs, onChange = controller.onChange](std::string_view str){
+									onChangeObs.notify(str);
+									if (onChange) onChange(str);
 								},
+								.onSubmit = controller.onSubmit,
+								.text = text,
 							},
-							Align{
-								.xAlign = 0.0f,
-								.yAlign = 1.0f,
-								.child{
-									Box{
-										.widget{
-											.height = 1.f,
-											.onUpdate = [&, storage](Widget &w) {
-												auto &box = w.as<Box::Impl>();
-
-												if (storage->changed) {
-													switch (storage->state) {
-														case Storage::State::rest:
-															// w.state.setHeight(1.0f);
-															// box.setColor(theme.bottomBorder);
-															// break;
-														case Storage::State::hover:
-															w.state.height = 1.0f;
-															box.setColor(theme.bottomBorder);
-															break;
-														case Storage::State::active:
-															w.state.height = 2.0f;
-															box.setColor(theme.bottomBorderActive);
-															break;
-														case Storage::State::disabled:
-															w.state.height = 0.f;
-															box.setColor(theme.bottomBorder);
-															break;
-													}
-												}
-											},
-										},
-										.color{theme.bottomBorder},
-									},
-								},
+							Underline{
+								.stateUpdateObs = storage->stateObserver,
 							},
 						},
+					},
+					// Error text
+					Text{
+						.widget{
+							.onInit = [onChangeObs, validator = controller.validator](Widget &w){
+								w.flags.visible = false;
+								w.customState.add(onChangeObs.observe([&w, validator](std::string_view str){
+									if (!validator) return;
+									auto ret = validator(str);
+									auto &text = w.as<Text::Impl>();
+									if (ret.valid) {
+										text.flags.visible = false;
+										return;
+									}
+									
+									text.flags.visible = true;
+									text.setText(ret.message);
+								}));
+							},
+						},
+						.text = "UwU",
+						.lineWrap = true,
+						.color{0xFF99A4FF},
 					},
 				},
 			},
 		},
 	};
+}
+
+InputState squi::TextBox::Storage::getState() const {
+	if (disabled) return InputState::disabled;
+	if (focused) return InputState::focused;
+	if (hovered) return InputState::hovered;
+	return InputState::resting;
 }

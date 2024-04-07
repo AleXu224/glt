@@ -1,44 +1,68 @@
 #pragma once
 
-#include "color.hpp"
+#include "observer.hpp"
 #include "widget.hpp"
+#include "color.hpp"
 
 namespace squi {
-	struct TextBox {
-		struct Theme {
-			Color rest{0xFFFFFF0F};
-			Color hover{0xFFFFFF15};
-			Color active{0x1E1E1EB2};
-			Color disabled{0xFFFFFF0B};
+	namespace Theme {
+		struct TextBox {
+			static inline Color rest{0xFFFFFF0F};
+			static inline Color hover{0xFFFFFF15};
+			static inline Color active{0x1E1E1EB2};
+			static inline Color disabled{0xFFFFFF0B};
 
-			Color border{0xFFFFFF14};
-			Color borderActive{0xFFFFFF12};
+			static inline Color border{0xFFFFFF14};
+			static inline Color borderActive{0xFFFFFF12};
 
-			Color bottomBorder{0xFFFFFF8B};
-			Color bottomBorderActive{0x60CDFFFF};
+			static inline Color bottomBorder{0xFFFFFF8B};
+			static inline Color bottomBorderActive{0x60CDFFFF};
 
-			Color text{0xFFFFFFFF};
-			Color textDisabled{0xFFFFFF5D};
-			Color textHint{0xFFFFFFC8};
+			static inline Color text{0xFFFFFFFF};
+			static inline Color textDisabled{0xFFFFFF5D};
+			static inline Color textHint{0xFFFFFFC8};
 		};
-		static Theme theme;
+	}
+	struct TextBox {
+		enum class InputState {
+			resting,
+			hovered,
+			focused,
+			disabled,
+		};
+		struct Controller {
+			struct ValidatorResponse{
+				bool valid = true;
+				std::string message = "Invalid input";
+			};
+			Observable<bool> disable{};
+			Observable<bool> focus{};
+			std::function<void(std::string_view)> onChange{};
+			// Called whenever the input loses focus or when pressing enter
+			std::function<void(std::string_view)> onSubmit{};
+			std::function<ValidatorResponse(std::string_view)> validator{};
+			Observable<std::string_view> updateText{};
+			Observable<InputState> stateObserver{};
+		};
 		// Args
 		Widget::Args widget{};
-		std::function<void(std::string_view)> onTextChanged{};
+		bool disabled = false;
 		std::string_view text{};
+		Controller controller{};
+
 
 		struct Storage {
 			// Data
-			enum class State {
-				rest,
-				hover,
-				active,
-				disabled,
-			};
-			State state = State::rest;
-			bool changed = false;
+			bool hovered = false;
+			bool focused = false;
+			bool disabled = false;
+			[[nodiscard]] InputState getState() const;
+			Observable<InputState> stateObserver{};
+			Observer<bool> disableObs;
+			Observer<bool> focusObs;
+			VoidObservable requestOnSubmitCall{};
 		};
 
-		operator Child() const;
+		operator squi::Child() const;
 	};
 }// namespace squi
