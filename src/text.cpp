@@ -60,7 +60,7 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink sho
 			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(
 				text,
 				fontSize,
-				{lastX, lastY},
+				vec2(lastX, lastY).rounded(),
 				color,
 				lineWrap ? std::optional<float>(maxSize.x) : std::nullopt
 			);
@@ -104,7 +104,7 @@ void Text::Impl::onDraw() {
 		});
 	}
 
-	const auto pos = getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset();
+	const auto pos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
 
 	pipeline->bindWithSampler(font.value()->getSampler());
 	const auto clipRect = Window::of(this).engine.instance.scissorStack.back();
