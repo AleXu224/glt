@@ -5,6 +5,7 @@ namespace squi {
 	struct RegisterEvent {
 		// Args
 		std::function<void(Widget &)> onInit{};
+		std::function<void(Widget &)> afterInit{};
 		std::function<void(Widget &)> onUpdate{};
 		std::function<void(Widget &)> afterUpdate{};
 		std::function<void(Widget &, vec2 &, vec2 &)> beforeLayout{};
