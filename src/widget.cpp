@@ -24,17 +24,26 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 		  .parent{this, nullptr},
 		  .root = Stateful<Widget *, StateImpact::RelayoutNeeded>{
 			  [](Widget &parent, Widget *newRoot) {
+				  bool initialized = parent.initialized;
 				  parent.initialize();
 				  for (auto &child: parent.getChildren()) {
 					  child->state.root = newRoot;
+				  }
+				  if (!initialized) {
+					  for (auto &func: parent.funcs().afterInit) {
+						  if (func) func(parent);
+					  }
+					  parent.funcs().afterInit.clear();
 				  }
 			  },
 			  this,
 			  nullptr,
 		  },
 	  } {
-	if (args.customState) customState.add(args.customState.value());
+	// if (args.customState) customState.add(args.customState.value());
+	customState.add(args.customState);
 	if (args.onInit) m_funcs.onInit.push_back(args.onInit);
+	if (args.afterInit) m_funcs.afterInit.push_back(args.afterInit);
 	if (args.onUpdate) m_funcs.onUpdate.push_back(args.onUpdate);
 	if (args.afterUpdate) m_funcs.afterUpdate.push_back(args.afterUpdate);
 	if (args.beforeLayout) m_funcs.beforeLayout.push_back(args.beforeLayout);

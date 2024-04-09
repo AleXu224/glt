@@ -86,8 +86,10 @@ namespace squi {
 			 * The space inside the widget. Does not affect the size.
 			 */
 			std::optional<Margin> padding{};
-			std::optional<StateContainer> customState{};
+			// std::optional<StateContainer> customState{};
+			std::initializer_list<StateContainer> customState{};
 			std::function<void(Widget &)> onInit{};
+			std::function<void(Widget &)> afterInit{};
 			std::function<void(Widget &)> onUpdate{};
 			std::function<void(Widget &)> afterUpdate{};
 			std::function<void(Widget &, vec2 &, vec2 &)> beforeLayout{};
@@ -251,6 +253,7 @@ namespace squi {
 		bool initialized = false;
 		struct FunctionArgs {
 			std::vector<std::function<void(Widget &)>> onInit{};
+			std::vector<std::function<void(Widget &)>> afterInit{};
 			std::vector<std::function<void(Widget &)>> onUpdate{};
 			std::vector<std::function<void(Widget &)>> afterUpdate{};
 			std::vector<std::function<void(Widget &, vec2 &, vec2 &)>> beforeLayout{};

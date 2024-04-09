@@ -50,6 +50,12 @@ namespace squi {
 			throw std::runtime_error("State of this type already in widget");
 		}
 
+		void add(std::initializer_list<StateContainer> states) {
+			for (const auto &state: states) {
+				add(state);
+			}
+		}
+
 	private:
 		std::unordered_map<std::string, std::any> states{};
 	};
