@@ -22,7 +22,7 @@ namespace squi {
 		Color color{0xFFFFFFFF};
 		struct Controller {
 			Observable<bool> setActive{};
-			Observable<bool> setDisabled{};
+			VoidObservable selectAll{};
 		};
 		Controller controller{};
 
@@ -38,6 +38,7 @@ namespace squi {
 			std::optional<int64_t> selectionStart{};
 
 			Observer<bool> setActiveObs{};
+			VoidObserver selectAllObs{};
 
 			bool active = false;
 
@@ -55,6 +56,7 @@ namespace squi {
 			void clampCursors();
 			void clearSelection();
 			void handleMouseInput();
+			void updateSelection();
 
 			std::string_view getText();
 			void setText(std::string_view text);

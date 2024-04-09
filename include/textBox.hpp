@@ -43,6 +43,7 @@ namespace squi {
 			std::function<ValidatorResponse(std::string_view)> validator{};
 			Observable<std::string_view> updateText{};
 			Observable<InputState> stateObserver{};
+			VoidObservable selectAll{};
 		};
 		// Args
 		Widget::Args widget{};

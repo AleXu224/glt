@@ -75,6 +75,7 @@ NumberBox::operator Child() const {
 				},
 				.updateText = controller.updateText,
 				.stateObserver = controller.stateObserver,
+				.selectAll = controller.selectAll,
 			},
 		},
 	};

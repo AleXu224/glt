@@ -18,6 +18,7 @@ struct Body {
 	StObs stateUpdateObs;
 	Observable<std::string_view> textUpdateObs{};
 	VoidObservable requestOnSubmitCall{};
+	VoidObservable selectAll{};
 	std::function<void(std::string_view)> onChange{};
 	std::function<void(std::string_view)> onSubmit{};
 	std::string_view text;
@@ -95,6 +96,9 @@ struct Body {
 				.text = text,
 				.onTextChanged = onChange,
 				.color{Theme::TextBox::text},
+				.controller{
+					.selectAll = selectAll,
+				},
 			},
 		};
 	}
@@ -194,6 +198,7 @@ squi::TextBox::operator squi::Child() const {
 								.stateUpdateObs = storage->stateObserver,
 								.textUpdateObs = controller.updateText,
 								.requestOnSubmitCall = storage->requestOnSubmitCall,
+								.selectAll = controller.selectAll,
 								.onChange = [onChangeObs, onChange = controller.onChange](std::string_view str){
 									onChangeObs.notify(str);
 									if (onChange) onChange(str);

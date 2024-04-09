@@ -44,6 +44,13 @@ TextInput::Impl::Impl(const TextInput &args)
 	  onTextChanged(args.onTextChanged),
 	  setActiveObs(args.controller.setActive.observe([&self = *this](bool newVal) {
 		  self.active = newVal;
+	  })),
+	  selectAllObs(args.controller.selectAll.observe([&self = *this]() {
+		  self.selectionStart = 0;
+		  const auto textValue = self.textWidget->as<Text::Impl>().getText();
+		  self.cursor = static_cast<int64_t>(textValue.size());
+
+		  self.updateSelection();
 	  })) {
 	addChild(textWidget);
 	addChild(selectionWidget);
@@ -245,19 +252,7 @@ void TextInput::Impl::onUpdate() {
 		reLayout();
 	}
 	if (oldCursor != cursor || oldSelectionStart != selectionStart) {
-		if (selectionStart.has_value()) {
-			selectionWidget->flags.visible = true;
-			selectionTextWidget->flags.visible = true;
-			auto textVal = getText();
-			const auto newText = textVal.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
-			const auto [width, height] = text.getTextSize(newText);
-			selectionWidget->state.width = static_cast<float>(width);
-			selectionTextWidget->as<Text::Impl>().setText(newText);
-		} else {
-			selectionWidget->flags.visible = false;
-			selectionTextWidget->flags.visible = false;
-			selectionTextWidget->as<Text::Impl>().setText("");
-		}
+		updateSelection();
 	}
 }
 
@@ -349,6 +344,23 @@ void squi::TextInput::Impl::handleMouseInput() {
 	cursor = std::distance(lineIt->begin(), quadIt);
 	clampCursors();
 	reArrange();
+}
+
+void squi::TextInput::Impl::updateSelection() {
+	if (selectionStart.has_value()) {
+		auto &text = textWidget->as<Text::Impl>();
+		selectionWidget->flags.visible = true;
+		selectionTextWidget->flags.visible = true;
+		auto textVal = getText();
+		const auto newText = textVal.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
+		const auto [width, height] = text.getTextSize(newText);
+		selectionWidget->state.width = static_cast<float>(width);
+		selectionTextWidget->as<Text::Impl>().setText(newText);
+	} else {
+		selectionWidget->flags.visible = false;
+		selectionTextWidget->flags.visible = false;
+		selectionTextWidget->as<Text::Impl>().setText("");
+	}
 }
 
 void squi::TextInput::Impl::setColor(const Color &newColor) {
