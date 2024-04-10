@@ -50,7 +50,7 @@ namespace squi {
 			throw std::runtime_error("State of this type already in widget");
 		}
 
-		void add(std::initializer_list<StateContainer> states) {
+		void add(const std::vector<StateContainer> &states) {
 			for (const auto &state: states) {
 				add(state);
 			}

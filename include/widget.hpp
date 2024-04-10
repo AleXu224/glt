@@ -87,7 +87,7 @@ namespace squi {
 			 */
 			std::optional<Margin> padding{};
 			// std::optional<StateContainer> customState{};
-			std::initializer_list<StateContainer> customState{};
+			std::vector<StateContainer> customState{};
 			std::function<void(Widget &)> onInit{};
 			std::function<void(Widget &)> afterInit{};
 			std::function<void(Widget &)> onUpdate{};
