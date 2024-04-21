@@ -43,7 +43,7 @@ TextInput::Impl::Impl(const TextInput &args)
 	  }),
 	  onTextChanged(args.onTextChanged),
 	  setActiveObs(args.controller.setActive.observe([&self = *this](bool newVal) {
-		  self.active = newVal;
+		  self.setActive(newVal);
 	  })),
 	  selectAllObs(args.controller.selectAll.observe([&self = *this]() {
 		  self.selectionStart = 0;
@@ -307,6 +307,10 @@ TextInput::operator Child() const {
 }
 
 void squi::TextInput::Impl::setActive(bool active) {
+	if (!active) {
+		selectionStart = std::nullopt;
+		updateSelection();
+	}
 	this->active = active;
 }
 

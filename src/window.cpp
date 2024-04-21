@@ -107,10 +107,16 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 	}
 #endif
 
+	funcs().onChildAdded.emplace_back([](Widget &w, const Child &child) {
+		w.as<Window>().addedChildren.notify(child);
+	});
+
 	content = Child(LayoutInspector{
 		.addedChildren = addedChildren,
 		.addedOverlays = addedOverlays,
 	});
+	content->state.parent = this;
+	content->state.root = this;
 }
 
 Window::~Window() {
@@ -160,6 +166,12 @@ void Window::run() {
 
 			if (needsRelayout) {
 				content->layout({static_cast<float>(width), static_cast<float>(height)}, {});
+				// std::println("Relayout counter:");
+				// for (const auto &[key, value]: relayoutCounter) {
+				// 	std::println("{} - {} layouts", key, value);
+				// }
+				relayoutCounter.clear();
+				memoisedSizes.clear();
 			}
 
 			if (needsRelayout || needsReposition) {
@@ -187,7 +199,22 @@ void Window::run() {
 		[&]() {
 			content->draw();
 		},
-		[]() {
+		[&]() {
+			std::println("Cleaning up!");
+			this->getPendingChildren().clear();
+			this->getChildren().clear();
+			this->content.reset();
+
+			if (Widget::getCount() != 1) {
+				std::println("Widgets still alive: {} (should be 1)", Widget::getCount());
+			}
+
+			for (const auto &[key, font]: FontStore::fonts) {
+				if (!font.expired()) {
+					std::println("Found non expired font, {} uses", font.use_count());
+				}
+			}
+
 			FontStore::defaultFont.reset();
 		}
 	);

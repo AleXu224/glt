@@ -1,4 +1,5 @@
 #include "widget.hpp"
+#include "functional"
 #include "ranges"
 #include "window.hpp"
 #include <algorithm>
@@ -27,6 +28,9 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 				  bool initialized = parent.initialized;
 				  parent.initialize();
 				  for (auto &child: parent.getChildren()) {
+					  child->state.root = newRoot;
+				  }
+				  for (auto &child: parent.childrenToAdd) {
 					  child->state.root = newRoot;
 				  }
 				  if (!initialized) {
@@ -98,17 +102,15 @@ std::vector<Rect> Widget::getHitcheckRect() const {
 
 void Widget::setChildren(const Children &newChildren) {
 	for (auto &child: children) {
-		for (auto &func: m_funcs.onChildRemoved) {
-			if (func) func(*this, child);
-		}
+		child->deleteLater();
 	}
-	children.clear();
+	childrenToAdd.reserve(childrenToAdd.size() + newChildren.size());
 	for (const auto &child: newChildren) {
 		if (child) {
 			child->state.parent = this;
 			child->state.root = state.root;
 			if (!child->initialized) child->initialize();
-			children.push_back(child);
+			childrenToAdd.emplace_back(child);
 			for (auto &func: m_funcs.onChildAdded) {
 				if (func) func(*this, child);
 			}
@@ -122,7 +124,7 @@ void Widget::addChild(const Child &child) {
 		child->state.parent = this;
 		child->state.root = state.root;
 		if (!child->initialized) child->initialize();
-		children.push_back(child);
+		childrenToAdd.push_back(child);
 		for (auto &func: m_funcs.onChildAdded) {
 			if (func) func(*this, child);
 		}
@@ -136,12 +138,26 @@ void Widget::updateChildren() {
 	}
 }
 
+void Widget::insertChildren() {
+	// Add the children to the list
+	// These don't get to be updated this frame because of the inconsistency they would bring
+	if (!childrenToAdd.empty()) {
+		children.insert(children.end(), childrenToAdd.begin(), childrenToAdd.end());
+		childrenToAdd.clear();
+		reLayout();
+	}
+}
+
 void Widget::update() {
 #ifndef NDEBUG
 	for (auto &func: m_funcs.onDebugUpdate) {
 		if (func) func();
 	}
 #endif
+
+	if (shouldDelete) return;
+
+	insertChildren();
 
 	// On update
 	for (auto &func: m_funcs.onUpdate) {
@@ -166,6 +182,8 @@ void Widget::update() {
 		children.end()
 	);
 
+	insertChildren();
+
 	// After update
 	for (auto &func: m_funcs.afterUpdate) {
 		if (func) func(*this);
@@ -174,13 +192,15 @@ void Widget::update() {
 }
 
 vec2 Widget::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+	vec2 contentSize{};
+
 	for (auto &child: children) {
 		const auto size = child->layout(maxSize, minSize, shouldShrink);
-		minSize.x = std::clamp(size.x, minSize.x, maxSize.x);
-		minSize.y = std::clamp(size.y, minSize.y, maxSize.y);
+		contentSize.x = std::max(size.x, contentSize.x);
+		contentSize.y = std::max(size.y, contentSize.y);
 	}
 
-	return minSize;
+	return contentSize;
 }
 
 vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) {
@@ -189,6 +209,11 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 		if (func) func();
 	}
 #endif
+
+	if (shouldDelete) return {};
+
+	// Make sure all the children are added to the list before layout
+	insertChildren();
 
 	for (auto &func: m_funcs.beforeLayout) {
 		if (func) func(*this, maxSize, minSize);
@@ -253,6 +278,23 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 			}
 		}
 	}
+
+	auto &window = Window::of(this);
+	if (auto it = window.memoisedSizes.find(id); it != window.memoisedSizes.end()) {
+		auto member = MemoizedSize::fromShouldShrink(shouldShrink);
+		auto &data = std::invoke(member, it->second);
+
+		if (data.has_value()) {
+			const auto &value = data.value();
+			size = value;
+			for (auto &func: m_funcs.afterLayout) {
+				if (func) func(*this, size);
+			}
+			postLayout(size);
+			return value + state.margin->getSizeOffset();
+		}
+	}
+	window.relayoutCounter[id]++;
 
 	// Handle the min size constraints
 	if (constraints.minWidth.has_value()) {
@@ -321,6 +363,8 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 	}
 	postLayout(size);
 
+	std::invoke(MemoizedSize::fromShouldShrink(shouldShrink), window.memoisedSizes[id]) = size;
+
 	return size + state.margin->getSizeOffset();
 }
 
@@ -337,6 +381,8 @@ void Widget::arrange(vec2 pos) {
 		if (func) func();
 	}
 #endif
+
+	if (shouldDelete) return;
 
 	if (!*flags.visible) return;
 	for (auto &onArrange: m_funcs.onArrange) {

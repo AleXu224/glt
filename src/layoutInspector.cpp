@@ -163,6 +163,7 @@ struct LayoutItem {
 		// 		},
 		// 	};
 		// }
+		Observable<bool> setVisible{};
 		return GestureDetector{
 			.onClick = [storage](auto) {
 				storage->expanded = !storage->expanded;
@@ -174,7 +175,7 @@ struct LayoutItem {
 						.width = 32.f,
 						.height = Size::Expand,
 						.padding = Padding{0.f, 14.f, 0.f, 6.f},
-						.onUpdate = [storage](Widget &w) {
+						.onUpdate = [storage, setVisible](Widget &w) {
 							if (storage->stateChanged) {
 								w.setChildren(Children{
 									Align{
@@ -192,9 +193,11 @@ struct LayoutItem {
 
 							auto widget = storage->widget.lock();
 							if (widget && !widget->getChildren().empty()) {
-								w.getChildren().front()->flags.visible = true;
+								// w.getChildren().front()->flags.visible = true;
+								setVisible.notify(true);
 							} else {
-								w.getChildren().front()->flags.visible = false;
+								// w.getChildren().front()->flags.visible = false;
+								setVisible.notify(false);
 							}
 						},
 					},
@@ -202,6 +205,13 @@ struct LayoutItem {
 						Align{
 							.child{
 								FontIcon{
+									.widget{
+										.onInit = [setVisible](Widget &w){
+											w.customState.add(setVisible.observe([&w](bool visible){
+												w.flags.visible = visible;
+											}));
+										},
+									},
 									.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
 									.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 									.size = 12.f,
@@ -527,9 +537,9 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedChildren = addedChildren, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->contentStack = shared;
-								storage->addedChildrenObserver = addedChildren.observe([w = shared](const Child &child) {
-									if (auto widget = w.lock()) {
-										widget->addChild(child);
+								storage->addedChildrenObserver = addedChildren.observe([storage](const Child &child) {
+									if (auto content = storage->contentStack.lock()) {
+										content->addChild(child);
 									}
 								});
 							},
@@ -546,9 +556,9 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedOverlays = addedOverlays, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->overlayStack = shared;
-								storage->addedOverlaysObserver = addedOverlays.observe([w = shared](const Child &child) {
-									if (auto widget = w.lock()) {
-										widget->addChild(child);
+								storage->addedOverlaysObserver = addedOverlays.observe([storage](const Child &child) {
+									if (auto overlays = storage->overlayStack.lock()) {
+										overlays->addChild(child);
 									}
 								});
 							},

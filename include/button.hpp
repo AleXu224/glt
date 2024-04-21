@@ -62,10 +62,6 @@ namespace squi {
 		std::variant<float, Size> height = Size::Shrink;
 		Margin margin{};
 		Margin padding = {6, 12, 6, 12};
-		SizeConstraints sizeConstraints{
-			.minWidth = 32.0f,
-			.minHeight = 32.0f,
-		};
 		std::string_view text{"Button"};
 		ButtonStyle style{};
 		bool disabled = false;

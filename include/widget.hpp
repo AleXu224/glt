@@ -29,25 +29,25 @@ namespace squi {
 
 		[[nodiscard]] inline SizeConstraints withDefaultMinWidth(float value) const {
 			auto copy = *this;
-			copy.minWidth = value;
+			copy.minWidth = this->minWidth.value_or(value);
 			return copy;
 		}
 
 		[[nodiscard]] inline SizeConstraints withDefaultMinHeight(float value) const {
 			auto copy = *this;
-			copy.minHeight = value;
+			copy.minHeight = this->minHeight.value_or(value);
 			return copy;
 		}
 
 		[[nodiscard]] inline SizeConstraints withDefaultMaxWidth(float value) const {
 			auto copy = *this;
-			copy.maxWidth = value;
+			copy.maxWidth = this->maxWidth.value_or(value);
 			return copy;
 		}
 
 		[[nodiscard]] inline SizeConstraints withDefaultMaxHeight(float value) const {
 			auto copy = *this;
-			copy.maxHeight = value;
+			copy.maxHeight = this->maxHeight.value_or(value);
 			return copy;
 		}
 	};
@@ -157,7 +157,7 @@ namespace squi {
 			}
 			Stateful &operator=(Stateful &&) = default;
 			~Stateful() = default;
-			
+
 			template<class... Args>
 			Stateful(Widget *parent, const Args &...args) : item(args...), parent(parent) {}
 			template<class... Args>
@@ -182,11 +182,15 @@ namespace squi {
 				return *this;
 			}
 
-			inline const T &operator->() const requires(std::is_pointer_v<T>) {
+			inline const T &operator->() const
+				requires(std::is_pointer_v<T>)
+			{
 				return item;
 			}
 
-			inline const T *operator->() const requires(!std::is_pointer_v<T>) {
+			inline const T *operator->() const
+				requires(!std::is_pointer_v<T>)
+			{
 				return std::addressof(item);
 			}
 
@@ -194,14 +198,14 @@ namespace squi {
 				return item;
 			}
 
-			inline operator const T&() const {
+			inline operator const T &() const {
 				return item;
 			}
 
 		private:
 			T item;
 			Widget *parent;
-			std::function<void(Widget &parent, const T&)> callback{};
+			std::function<void(Widget &parent, const T &)> callback{};
 		};
 
 		struct FlagsArgs {
@@ -277,9 +281,16 @@ namespace squi {
 		vec2 size{};
 		vec2 pos{};
 		std::vector<std::shared_ptr<Widget>> children{};
+		std::vector<std::shared_ptr<Widget>> childrenToAdd{};
 		static uint64_t idCounter;
 		static uint32_t widgetCount;
+
+		void insertChildren();
+
 	public:
+		static uint32_t getCount() {
+			return widgetCount;
+		}
 		CustomState customState{};
 		struct State {
 			Stateful<std::variant<float, Size>, StateImpact::RelayoutNeeded> width;
@@ -307,18 +318,23 @@ namespace squi {
 		[[nodiscard]] const FunctionArgs &funcs() const;
 		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getChildren();
 		[[nodiscard]] const std::vector<std::shared_ptr<Widget>> &getChildren() const;
+		[[nodiscard]] std::vector<std::shared_ptr<Widget>> &getPendingChildren() {
+			return childrenToAdd;
+		}
 		[[nodiscard]] inline Rect getRect() const {
 			return Rect::fromPosSize(pos + state.margin->getPositionOffset(), size);
 		}
 		[[nodiscard]] inline Rect getContentRect() const {
 			return Rect::fromPosSize(
 				pos + state.margin->getPositionOffset() + state.padding->getPositionOffset(),
-				size - state.padding->getSizeOffset());
+				size - state.padding->getSizeOffset()
+			);
 		}
 		[[nodiscard]] inline Rect getLayoutRect() const {
 			return Rect::fromPosSize(
 				pos,
-				size + state.margin->getSizeOffset());
+				size + state.margin->getSizeOffset()
+			);
 		}
 		[[nodiscard]] inline vec2 getSize() const {
 			return size;

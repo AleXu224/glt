@@ -29,7 +29,10 @@ void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::functi
 		instance.device.waitIdle();
 		cleanupFunc();
 	} catch (const std::exception &e) {
-		std::cerr << e.what() << std::endl;
+		std::println("Error: {}", e.what());
+		
+		instance.device.waitIdle();
+		cleanupFunc();
 		return;
 	}
 }

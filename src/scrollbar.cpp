@@ -19,7 +19,8 @@ struct ScrollbarKnob {
 	public:
 		Impl(const ScrollbarKnob &args) : Widget(args.widget, Widget::FlagsArgs::Default()), storage(args.storage) {}
 
-		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink  /*shouldShrink*/) final {
+		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
+			if (shouldShrink.height) return {0.f};
 			return minSize.withY(maxSize.y * (storage->controller->viewHeight / storage->controller->contentHeight));
 		}
 	};
@@ -73,6 +74,7 @@ Scrollbar::operator Child() const {
 								storage->scroll = storage->scrollDragStart + event.state.getDragOffset().y / contentHeight;
 								storage->scroll = (std::clamp)(storage->scroll, 0.f, 1.0f);
 								storage->controller->scroll = storage->scroll * (storage->controller->contentHeight - storage->controller->viewHeight);
+								storage->controller->onScrollChange.notify(storage->controller->scroll);
 							}
 
 							const auto currentTime = std::chrono::steady_clock::now();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "column.hpp"
+#include "observer.hpp"
 #include "widget.hpp"
 #include <memory>
 
@@ -11,6 +12,7 @@ namespace squi {
 			float viewHeight{0.0f};
 			float contentHeight{0.0f};
 			float scroll{0.0f};
+			Observable<float> onScrollChange{};
 		};
 		// Args
 		Widget::Args widget{};
@@ -26,6 +28,9 @@ namespace squi {
 		class Impl : public Widget {
 		public:
 			float scroll = 0;
+			float spacing;
+			float horizontalOffsetFactor;
+			float contentHeight = 0.f;
 			bool scrolled = false;
 			std::shared_ptr<Controller> controller;
 			std::function<void(float, float, float)> onScroll{};

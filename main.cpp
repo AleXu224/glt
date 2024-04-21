@@ -3,13 +3,11 @@
 #include "expander.hpp"
 #include "window.hpp"
 #include <print>
-#include "numberBox.hpp"
 
 
 int main(int /*unused*/, char ** /*unused*/) {
 	using namespace squi;
 	squi::Window window{};
-	Observable<bool> focus{};
 	window.addChild(Column{
 		.children{
 			Expander{
@@ -27,21 +25,8 @@ int main(int /*unused*/, char ** /*unused*/) {
 					.color = 0xFF0000FF,
 				},
 			},
-			NumberBox{
-				.value = 10,
-				.min = 5,
-				.max = 15,
-				.step = 2,
-				.onChange = [](float val){
-					std::println("{}", val);
-				},
-				.controller{
-					.focus = focus,
-				},
-			},
 		},
 	});
-	focus.notify(true);
 	window.run();
 	return 0;
 }
