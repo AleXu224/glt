@@ -6,6 +6,9 @@
 
 #include "fontStore.hpp"
 #include "roboto-regular.hpp"
+#include "roboto-bold.hpp"
+#include "roboto-italic.hpp"
+#include "roboto-bolditalic.hpp"
 #include <limits>
 #include <optional>
 #include <string>
@@ -17,6 +20,9 @@
 using namespace squi;
 
 std::shared_ptr<FontStore::Font> FontStore::defaultFont{};
+std::shared_ptr<FontStore::Font> FontStore::defaultFontBold{};
+std::shared_ptr<FontStore::Font> FontStore::defaultFontItalic{};
+std::shared_ptr<FontStore::Font> FontStore::defaultFontBoldItalic{};
 
 FT_Library FontStore::ftLibrary{};
 
@@ -67,6 +73,9 @@ std::optional<std::shared_ptr<FontStore::Font>> squi::FontStore::getFontOptional
 
 void squi::FontStore::initializeDefaultFont(Engine::Instance &instance) {
 	defaultFont = std::make_shared<Font>(Fonts::roboto, instance);
+	defaultFontBold = std::make_shared<Font>(Fonts::robotoBold, instance);
+	defaultFontItalic = std::make_shared<Font>(Fonts::robotoItalic, instance);
+	defaultFontBoldItalic = std::make_shared<Font>(Fonts::robotoBoldItalic, instance);
 }
 
 bool FontStore::Font::generateTexture(char32_t character, float size) {

@@ -216,6 +216,9 @@ void Window::run() {
 			}
 
 			FontStore::defaultFont.reset();
+			FontStore::defaultFontBold.reset();
+			FontStore::defaultFontItalic.reset();
+			FontStore::defaultFontBoldItalic.reset();
 		}
 	);
 }

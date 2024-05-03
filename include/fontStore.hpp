@@ -87,6 +87,9 @@ namespace squi {
 		static std::unordered_map<std::string, std::weak_ptr<Font>> fonts;
 
 		static std::shared_ptr<Font> defaultFont;
+		static std::shared_ptr<Font> defaultFontBold;
+		static std::shared_ptr<Font> defaultFontItalic;
+		static std::shared_ptr<Font> defaultFontBoldItalic;
 
 		static void initializeDefaultFont(Engine::Instance &instance);
 	};
