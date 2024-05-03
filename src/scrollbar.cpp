@@ -7,29 +7,6 @@
 using namespace squi;
 using namespace std::chrono_literals;
 
-struct ScrollbarKnob {
-	// Args
-	Widget::Args widget{};
-	std::shared_ptr<Scrollbar::Storage> storage;
-
-	class Impl : public Widget {
-		// Data
-		std::shared_ptr<Scrollbar::Storage> storage;
-
-	public:
-		Impl(const ScrollbarKnob &args) : Widget(args.widget, Widget::FlagsArgs::Default()), storage(args.storage) {}
-
-		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
-			if (shouldShrink.height) return {0.f};
-			return minSize.withY(maxSize.y * (storage->controller->viewHeight / storage->controller->contentHeight));
-		}
-	};
-
-	operator Child() const {
-		return std::make_shared<Impl>(*this);
-	}
-};
-
 Scrollbar::operator Child() const {
 	auto storage = std::make_shared<Storage>(Storage{
 		.controller = controller,
@@ -90,9 +67,14 @@ Scrollbar::operator Child() const {
 							Box{
 								.widget{
 									.width = 10.0f,
-									.height = Size::Shrink,
+									.height = Size::Expand,
 									.sizeConstraints{
 										.minHeight = 24.f,
+									},
+									.onLayout = [storage](Widget &, vec2 &maxSize, vec2 & minSize) {
+										if (storage->controller->contentHeight == 0.f) return;
+										maxSize.y *= (storage->controller->viewHeight / storage->controller->contentHeight);
+										minSize.y = std::min(minSize.y, maxSize.y);
 									},
 									.onArrange = [storage](Widget &widget, vec2 &pos) {
 										if (!*widget.state.parent) return;
@@ -109,7 +91,6 @@ Scrollbar::operator Child() const {
 								},
 								.color{0xFFFFFF8B},
 								.borderRadius{2},
-								.child = ScrollbarKnob({}, storage),
 							},
 						},
 					},
