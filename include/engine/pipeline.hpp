@@ -352,7 +352,7 @@ namespace Engine {
 		}
 
 		[[nodiscard]] std::pair<size_t, size_t> getIndexes() {
-			return {vertexArrIndex * vertexBufferSize + vertexBufferIndex, indexArrIndex * indexBufferSize + indexBufferIndex};
+			return {vertexBufferIndex % vertexBufferSize, indexBufferIndex % indexBufferSize};
 		}
 
 		struct Data {
