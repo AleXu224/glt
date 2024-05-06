@@ -63,7 +63,9 @@ namespace Engine {
 		~SamplerUniform() {
 			auto thread = std::thread([&instance = instance, texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
 				// Wait for the device to be done with the descriptor sets
+				graphicsQueueMutex.lock();
 				instance.device.waitIdle();
+				graphicsQueueMutex.unlock();
 			});
 			thread.detach();
 		}
