@@ -1,5 +1,6 @@
 #include "engine/window.hpp"
 #include <string>
+#include "GLFW/glfw3.h"
 
 using namespace Engine;
 

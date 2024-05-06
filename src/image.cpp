@@ -25,6 +25,7 @@
 #include <vector>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#include "filesystem"
 
 #include "../external/stb_image_ext.h"
 #include "../external/stb_image_write.h"
@@ -68,7 +69,7 @@ Image::Data Image::Data::fromUrl(std::string_view url) {
 }
 
 Image::Data Image::Data::fromFile(std::string_view path) {
-	std::ifstream s{path.data(), std::ios::binary};
+	std::ifstream s{std::filesystem::path{path}, std::ios::binary};
 
 	if (!s) {
 		std::cout << "Failed to open file " << path << std::endl;

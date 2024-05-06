@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string_view>
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+#include "cstdint"
+
+struct GLFWwindow;
 
 namespace Engine {
 	struct Window {

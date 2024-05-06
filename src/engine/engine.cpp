@@ -7,6 +7,7 @@
 #include "vulkanIncludes.hpp"
 #include <print>
 #include <vector>
+#include "GLFW/glfw3.h"
 
 
 Engine::Vulkan::Vulkan() = default;

@@ -141,7 +141,7 @@ namespace squi {
 		};
 
 		enum class StateImpact {
-			None,            // By itself may not change anything but the callback could
+			NoImpact,            // By itself may not change anything but the callback could
 			RedrawNeeded,    // Eg: changing the color of a box
 			RepositionNeeded,// Changing the scroll on a scrollable
 			RelayoutNeeded,  // Size change

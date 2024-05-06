@@ -11,6 +11,7 @@
 #include "widget.hpp"
 #include <print>
 #include <stdexcept>
+#include "GLFW/glfw3.h"
 
 #ifdef _WIN32
 #include "dwmapi.h"
@@ -19,13 +20,13 @@
 
 using namespace squi;
 
-void Window::glfwError(int id, const char *description) {
+void squi::Window::glfwError(int id, const char *description) {
 	std::print("GLFW Error {}: {}\n", id, description);
 }
 
-std::unordered_map<GLFWwindow *, Window *> Window::windowMap{};
+std::unordered_map<GLFWwindow *, squi::Window *> squi::Window::windowMap{};
 
-Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
+squi::Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 											  .shouldLayoutChildren = false,
 											  .shouldArrangeChildren = false,
 											  .isInteractive = false,
@@ -119,11 +120,11 @@ Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 	content->state.root = this;
 }
 
-Window::~Window() {
+squi::Window::~Window() {
 	windowMap.erase(engine.instance.window.ptr);
 }
 
-void Window::run() {
+void squi::Window::run() {
 	content->state.parent = this;
 	content->state.root = this;
 	engine.run(

@@ -1,6 +1,7 @@
 #include "instance.hpp"
 #include "ranges"
 #include "set"
+#include "GLFW/glfw3.h"
 #include <GLFW/glfw3native.h>
 #include <print>
 #include "vulkanIncludes.hpp"
@@ -124,7 +125,16 @@ vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
 	};
 	return instance.createWin32SurfaceKHR(surfaceCreateInfo);
 #else
-#error "Platform not supported"
+// #error "Platform not supported"
+	// vk::WaylandSurfaceCreateInfoKHR surfaceCreateInfo{
+	// 	.display = glfwGetWaylandDisplay(),
+	// 	.surface = glfwGetWaylandWindow(window.ptr),
+	// };
+	// return instance.createWaylandSurfaceKHR(surfaceCreateInfo);
+
+	VkSurfaceKHR _surface = nullptr;
+	glfwCreateWindowSurface(*instance, window.ptr, nullptr, &_surface);
+	return {instance, _surface};
 #endif
 }
 
@@ -405,7 +415,8 @@ DynamicLoader Engine::Instance::createDynamicLoader(bool useFallback) {
 #ifdef _WIN32
 		"vk_swiftshader.dll"
 #else
-#error "Platform not supported"
+// #error "Platform not supported"
+		"vk_swiftshader.dll"
 #endif
 	};
 

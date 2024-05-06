@@ -6,6 +6,7 @@
 #include "stack.hpp"
 #include "text.hpp"
 #include "textInput.hpp"
+#include "GLFW/glfw3.h"
 
 using namespace squi;
 
