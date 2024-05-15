@@ -12,6 +12,7 @@
 #include <print>
 #include <stdexcept>
 #include "GLFW/glfw3.h"
+#include "GLFW/glfw3native.h"
 
 #ifdef _WIN32
 #include "dwmapi.h"
