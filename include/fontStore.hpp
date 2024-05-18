@@ -37,12 +37,12 @@ namespace squi {
 				}
 			};
 
+			bool loaded{true};
 		private:
 			Atlas atlas;
 			//
 			std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
 
-			bool loaded{true};
 			FT_Face face{};
 
 			/**

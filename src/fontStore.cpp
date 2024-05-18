@@ -57,6 +57,7 @@ std::shared_ptr<FontStore::Font> FontStore::getFont(std::string_view fontPath, E
 		}
 	}
 	auto font = std::make_shared<Font>(fontPath, instance);
+	if (!font->loaded) return {};
 	fonts[fontPathStr] = font;
 	return font;
 }
