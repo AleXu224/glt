@@ -29,7 +29,7 @@ void Stack::Impl::updateChildren() {
 	}
 }
 
-vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) {
 	auto &children = getChildren();
 
 
@@ -38,7 +38,7 @@ vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink should
 		for (auto &child: children) {
 			if (!child) continue;
 
-			const auto size = child->layout(maxSize, minSize, shouldShrink);
+			const auto size = child->layout(maxSize, minSize, shouldShrink, false);
 			childrenMaxSize.x = std::max(size.x, childrenMaxSize.x);
 			childrenMaxSize.y = std::max(size.y, childrenMaxSize.y);
 		}
@@ -54,7 +54,7 @@ vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink should
 
 		// No shouldShrink provided since the widgets inside might want to expand
 		// and we already calculated the max size they would be allowed to expand to
-		const auto childSize = child->layout(maxSize, minSize);
+		const auto childSize = child->layout(maxSize, minSize, {}, final);
 
 		minSize.x = std::clamp(childSize.x, minSize.x, maxSize.x);
 		minSize.y = std::clamp(childSize.y, minSize.y, maxSize.y);

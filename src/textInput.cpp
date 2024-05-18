@@ -256,13 +256,13 @@ void TextInput::Impl::onUpdate() {
 	}
 }
 
-vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink /*shouldShrink*/) {
+vec2 TextInput::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink /*shouldShrink*/, bool final) {
 	auto &children = getChildren();
 	// A text input can scroll horizontally so it has no real maximum width
 	maxSize = vec2::infinity().withY(static_cast<float>(textWidget->as<Text::Impl>().getLineHeight()));
 	vec2 ret{};
 	for (auto &child: children) {
-		const auto size = child->layout(maxSize, minSize);
+		const auto size = child->layout(maxSize, minSize, {}, final);
 		ret.x = std::max(size.x, ret.x);
 		ret.y = std::max(size.y, ret.y);
 	}

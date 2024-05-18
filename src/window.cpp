@@ -167,13 +167,12 @@ void squi::Window::run() {
 			content->update();
 
 			if (needsRelayout) {
-				content->layout({static_cast<float>(width), static_cast<float>(height)}, {});
+				content->layout({static_cast<float>(width), static_cast<float>(height)}, {}, {}, true);
 				// std::println("Relayout counter:");
 				// for (const auto &[key, value]: relayoutCounter) {
 				// 	std::println("{} - {} layouts", key, value);
 				// }
 				relayoutCounter.clear();
-				memoisedSizes.clear();
 			}
 
 			if (needsRelayout || needsReposition) {

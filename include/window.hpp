@@ -11,24 +11,10 @@
 using namespace std::chrono_literals;
 
 namespace squi {
-	struct MemoizedSize{
-		std::optional<vec2> noShrink{};
-		std::optional<vec2> verticalShrink{};
-		std::optional<vec2> horizontalShrink{};
-		std::optional<vec2> allShrink{};
-
-		[[nodiscard]] static auto fromShouldShrink(Widget::ShouldShrink shouldShrink) {
-			if (shouldShrink.width && shouldShrink.height) return &MemoizedSize::allShrink;
-			if (shouldShrink.width) return &MemoizedSize::horizontalShrink;
-			if (shouldShrink.height) return &MemoizedSize::verticalShrink;
-			return &MemoizedSize::noShrink;
-		}
-	};
 	class Window : public Widget {
 	public:
 		Engine::Vulkan engine;
 		std::unordered_map<uint64_t, uint64_t> relayoutCounter{};
-		std::unordered_map<uint64_t, MemoizedSize> memoisedSizes{};
 
 	private:
 		bool needsRedraw = true;

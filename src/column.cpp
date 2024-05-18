@@ -13,7 +13,7 @@ Column::Impl::Impl(const Column &args)
 	setChildren(args.children);
 }
 
-vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) {
 	auto children = getChildren() | std::views::filter([](const Child &child) {
 						return *child->flags.visible;
 					});
@@ -29,7 +29,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 	static bool ignoreWidth = false;
 	if (!ignoreWidth && shouldShrink.width) {
 		ignoreWidth = true;
-		const auto size = layoutChildren(maxSize, minSize, shouldShrink).x;
+		const auto size = layoutChildren(maxSize, minSize, shouldShrink, false).x;
 		maxSize.x = std::clamp(size, minSize.x, maxSize.x);
 		ignoreWidth = false;
 		shouldShrink.width = false;
@@ -46,7 +46,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 		if (!shouldShrink.height && childState.height->index() == 1 && std::get<1>(*childState.height) == Size::Expand) {
 			expandedChildren.emplace_back(child);
 		} else {
-			const auto childSize = child->layout(maxSize.withYOffset(-spacingOffset), {minSize.x, 0}, shouldShrink);
+			const auto childSize = child->layout(maxSize.withYOffset(-spacingOffset), {minSize.x, 0}, shouldShrink, final);
 			totalHeight += childSize.y;
 			maxWidth = std::max(maxWidth, childSize.x);
 		}
@@ -58,7 +58,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 			std::max(0.f, maxSize.y - spacingOffset - totalHeight) / static_cast<float>(expandedChildren.size()),
 		};
 		for (auto &child: expandedChildren) {
-			const auto childSize = child->layout(maxChildSize, {minSize.x, 0}, shouldShrink);
+			const auto childSize = child->layout(maxChildSize, {minSize.x, 0}, shouldShrink, final);
 			totalHeight += childSize.y;
 			maxWidth = std::max(maxWidth, childSize.x);
 		}

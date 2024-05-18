@@ -41,34 +41,46 @@ Text::Impl::Impl(const Text &args)
 }
 
 // The text characters are considered to be the children of the text widget
-vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink shouldShrink) {
+vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink shouldShrink, bool /*final*/) {
 	if (!font.has_value()) {
 		font = FontStore::getFont(fontSrc, Window::of(this).engine.instance);
-		const auto textPos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
-		std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(text, fontSize, textPos, color);
+		forceRegen = true;
 	}
 	if (shouldShrink.width && lineWrap) maxSize.x = 0;
-	if ((lineWrap && maxSize.x != lastAvailableSpace) || forceRegen) {
-		lastAvailableSpace = maxSize.x;
+	if (lineWrap || forceRegen) {
+		const auto &[width, height] = font.value()->getTextSizeSafe(
+			text,
+			fontSize,
+			lineWrap ? std::optional<float>(maxSize.x) : std::nullopt
+		);
+		return vec2{static_cast<float>(width), static_cast<float>(height)} + state.padding->getSizeOffset();
+	}
+
+	return textSize + state.padding->getSizeOffset();
+}
+
+void squi::Text::Impl::postLayout(vec2 &size) {
+	if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
+		lastAvailableSpace = size.x;
 		const auto lineHeight = font.value()->getLineHeight(fontSize);
 
 		// Will only recalculate the text layout under the following circumstances:
 		// 1. The available width is smaller than the cached text width
 		// 2. The cached text is wrapping (the text is occupying more than one line)
-		// - This is done because it would be really difficult to figure o1ut if a change in available width would cause a layout change in this case
-		if (maxSize.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
+		// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
+		if (size.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
 			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(
 				text,
 				fontSize,
 				vec2(lastX, lastY).rounded(),
 				color,
-				lineWrap ? std::optional<float>(maxSize.x) : std::nullopt
+				lineWrap ? std::optional<float>(size.x) : std::nullopt
 			);
 			updateSize();
 		}
 	}
 
-	return textSize + state.padding->getSizeOffset();
+	forceRegen = false;
 }
 
 void Text::Impl::onArrange(vec2 &pos) {

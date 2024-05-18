@@ -53,7 +53,7 @@ void squi::Scrollable::Impl::afterUpdate() {
 	GestureDetector::g_activeArea.pop_back();
 }
 
-vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) {
 	auto &children = getChildren();
 
 	float totalHeight = 0.f;
@@ -62,7 +62,7 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 	for (auto &child: children) {
 		if (!child) continue;
 
-		const auto size = child->layout(maxSize.withY(std::numeric_limits<float>::max()), {minSize.x, 0}, shouldShrink);
+		const auto size = child->layout(maxSize.withY(std::numeric_limits<float>::max()), {minSize.x, 0}, shouldShrink, final);
 		totalHeight += size.y;
 		maxWidth = std::max(maxWidth, size.x);
 	}

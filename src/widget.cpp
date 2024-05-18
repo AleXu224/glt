@@ -191,11 +191,11 @@ void Widget::update() {
 	afterUpdate();
 }
 
-vec2 Widget::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) {
+vec2 Widget::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) {
 	vec2 contentSize{};
 
 	for (auto &child: children) {
-		const auto size = child->layout(maxSize, minSize, shouldShrink);
+		const auto size = child->layout(maxSize, minSize, shouldShrink, final);
 		contentSize.x = std::max(size.x, contentSize.x);
 		contentSize.y = std::max(size.y, contentSize.y);
 	}
@@ -203,7 +203,7 @@ vec2 Widget::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrin
 	return contentSize;
 }
 
-vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) {
+vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, bool final) {
 #ifndef NDEBUG
 	for (auto &func: m_funcs.onDebugLayout) {
 		if (func) func();
@@ -279,23 +279,6 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 		}
 	}
 
-	auto &window = Window::of(this);
-	if (auto it = window.memoisedSizes.find(id); it != window.memoisedSizes.end()) {
-		auto member = MemoizedSize::fromShouldShrink(shouldShrink);
-		auto &data = std::invoke(member, it->second);
-
-		if (data.has_value()) {
-			const auto &value = data.value();
-			size = value;
-			for (auto &func: m_funcs.afterLayout) {
-				if (func) func(*this, size);
-			}
-			postLayout(size);
-			return value + state.margin->getSizeOffset();
-		}
-	}
-	window.relayoutCounter[id]++;
-
 	// Handle the min size constraints
 	if (constraints.minWidth.has_value()) {
 		minSize.x = std::clamp(*constraints.minWidth, minSize.x, maxSize.x);
@@ -304,13 +287,18 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 		minSize.y = std::clamp(*constraints.minHeight, minSize.y, maxSize.y);
 	}
 
+#ifndef NDEBUG
+	auto &window = Window::of(this);
+	window.relayoutCounter[id]++;
+#endif
+
 	for (auto &func: m_funcs.onLayout) {
 		if (func) func(*this, maxSize, minSize);
 	}
 	onLayout(maxSize, minSize);
 
 	if (flags.shouldLayoutChildren) {
-		const auto contentSize = layoutChildren(maxSize - padding, minSize - padding, shouldShrink);
+		const auto contentSize = layoutChildren(maxSize - padding, minSize - padding, shouldShrink, final);
 		minSize.x = std::clamp(contentSize.x + padding.x, minSize.x, maxSize.x);
 		minSize.y = std::clamp(contentSize.y + padding.y, minSize.y, maxSize.y);
 	}
@@ -358,12 +346,12 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink) 
 		}
 	}
 
-	for (auto &func: m_funcs.afterLayout) {
-		if (func) func(*this, size);
+	if (final) {
+		for (auto &func: m_funcs.afterLayout) {
+			if (func) func(*this, size);
+		}
+		postLayout(size);
 	}
-	postLayout(size);
-
-	std::invoke(MemoizedSize::fromShouldShrink(shouldShrink), window.memoisedSizes[id]) = size;
 
 	return size + state.margin->getSizeOffset();
 }

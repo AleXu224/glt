@@ -25,7 +25,7 @@ TEST(Text, equality) {
 
 		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
-            const vec2 layoutSize = text->layout(maxSize, {0, 0}, Widget::ShouldShrink{true, true});
+            const vec2 layoutSize = text->layout(maxSize, {0, 0}, Widget::ShouldShrink{true, true}, true);
             const auto [minWidth, minHeight] = text->getTextSize(textCase);
 
             EXPECT_EQ(((std::min)(static_cast<float>(minWidth), maxSize.x)), layoutSize.x) << "i = " << i << ", text = " << textCase;
@@ -43,7 +43,7 @@ TEST(Text, equality) {
 
 		for (uint32_t i = 0; i < 100; ++i) {
             const vec2 maxSize = {static_cast<float>(i), static_cast<float>(i)};
-			const vec2 layoutSize = text2->layout(maxSize, {0, 0}, Widget::ShouldShrink{true, true});
+			const vec2 layoutSize = text2->layout(maxSize, {0, 0}, Widget::ShouldShrink{true, true}, true);
 			const auto [minWidth, minHeight] = text2->getTextSize(textCase);
 
 			EXPECT_EQ(((std::min)(static_cast<float>(minWidth), maxSize.x)), layoutSize.x) << "i = " << i << ", text = " << textCase;

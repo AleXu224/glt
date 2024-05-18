@@ -15,7 +15,7 @@ struct TextLikeWidget {
 	public:
 		Impl(const TextLikeWidget &args) : Widget(args.widget, Widget::FlagsArgs::Default()) {}
 
-		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final {
+		vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool /*final*/) final {
 			if (shouldShrink.width) {
 				return minSize.withY(200.f);
 			}
@@ -65,11 +65,11 @@ TEST(Row, layout) {
 
 	const vec2 maxSize = {1000.f, 1000.f};
 
-	EXPECT_EQ(row1->layout(maxSize, {0, 0}), (vec2{200, 200}));
-	EXPECT_EQ(row2->layout(maxSize, {0, 0}), (vec2{0, 200}));
-	EXPECT_EQ(row3->layout(maxSize, {0, 0}), (vec2{200, 0}));
-	EXPECT_EQ(row4->layout(maxSize, {0, 0}), (vec2{0, 0}));
-	EXPECT_EQ(row5->layout(maxSize, {0, 0}), (vec2{0, 0}));
+	EXPECT_EQ(row1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
+	EXPECT_EQ(row2->layout(maxSize, {0, 0}, {}, true), (vec2{0, 200}));
+	EXPECT_EQ(row3->layout(maxSize, {0, 0}, {}, true), (vec2{200, 0}));
+	EXPECT_EQ(row4->layout(maxSize, {0, 0}, {}, true), (vec2{0, 0}));
+	EXPECT_EQ(row5->layout(maxSize, {0, 0}, {}, true), (vec2{0, 0}));
 
 	// Fixed sized children
 	Children children1{
@@ -86,13 +86,13 @@ TEST(Row, layout) {
 			},
 		},
 	};
-	for (auto &row: rows) row->setChildren(children1);
+	for (const auto &row: rows) row->setChildren(children1);
 
-	EXPECT_EQ(row1->layout(maxSize, {0, 0}), (vec2{200, 200}));
-	EXPECT_EQ(row2->layout(maxSize, {0, 0}), (vec2{100, 200}));
-	EXPECT_EQ(row3->layout(maxSize, {0, 0}), (vec2{200, 50}));
-	EXPECT_EQ(row4->layout(maxSize, {0, 0}), (vec2{100, 50}));
-	EXPECT_EQ(row5->layout(maxSize, {0, 0}), (vec2{110, 50}));
+	EXPECT_EQ(row1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
+	EXPECT_EQ(row2->layout(maxSize, {0, 0}, {}, true), (vec2{100, 200}));
+	EXPECT_EQ(row3->layout(maxSize, {0, 0}, {}, true), (vec2{200, 50}));
+	EXPECT_EQ(row4->layout(maxSize, {0, 0}, {}, true), (vec2{100, 50}));
+	EXPECT_EQ(row5->layout(maxSize, {0, 0}, {}, true), (vec2{110, 50}));
 
 	Children children2{
 		Container{
@@ -120,15 +120,15 @@ TEST(Row, layout) {
 			},
 		},
 	};
-	for (auto &row: rows) row->setChildren(children2);
+	for (const auto &row: rows) row->setChildren(children2);
 
-	EXPECT_EQ(row1->layout(maxSize, {0, 0}), (vec2{200, 200}));
-	EXPECT_EQ(row2->layout(maxSize, {0, 0}), (vec2{150, 200}));
-	EXPECT_EQ(row3->layout(maxSize, {0, 0}), (vec2{200, 50}));
-	EXPECT_EQ(row4->layout(maxSize, {0, 0}), (vec2{150, 50}));
-	EXPECT_EQ(row5->layout(maxSize, {0, 0}), (vec2{170, 50}));
+	EXPECT_EQ(row1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
+	EXPECT_EQ(row2->layout(maxSize, {0, 0}, {}, true), (vec2{150, 200}));
+	EXPECT_EQ(row3->layout(maxSize, {0, 0}, {}, true), (vec2{200, 50}));
+	EXPECT_EQ(row4->layout(maxSize, {0, 0}, {}, true), (vec2{150, 50}));
+	EXPECT_EQ(row5->layout(maxSize, {0, 0}, {}, true), (vec2{170, 50}));
 
-	Children children3 {
+	Children children3{
 		Container{
 			.widget{
 				.width = 100.f,
@@ -142,13 +142,13 @@ TEST(Row, layout) {
 			},
 		},
 	};
-	for (auto &row: rows) row->setChildren(children3);
+	for (const auto &row: rows) row->setChildren(children3);
 
 	const auto maxSize2 = vec2{150.f, 1000.f};
 
-	EXPECT_EQ(row1->layout(maxSize2, {0, 0}), (vec2{150, 200}));
-	EXPECT_EQ(row2->layout(maxSize2, {0, 0}), (vec2{100, 200}));
-	EXPECT_EQ(row3->layout(maxSize2, {0, 0}), (vec2{150, 150}));
-	EXPECT_EQ(row4->layout(maxSize2, {0, 0}), (vec2{100, 200}));
-	EXPECT_EQ(row5->layout(maxSize2, {0, 0}), (vec2{110, 200}));
+	EXPECT_EQ(row1->layout(maxSize2, {0, 0}, {}, true), (vec2{150, 200}));
+	EXPECT_EQ(row2->layout(maxSize2, {0, 0}, {}, true), (vec2{100, 200}));
+	EXPECT_EQ(row3->layout(maxSize2, {0, 0}, {}, true), (vec2{150, 150}));
+	EXPECT_EQ(row4->layout(maxSize2, {0, 0}, {}, true), (vec2{100, 200}));
+	EXPECT_EQ(row5->layout(maxSize2, {0, 0}, {}, true), (vec2{110, 200}));
 }

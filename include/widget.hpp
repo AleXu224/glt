@@ -377,7 +377,7 @@ namespace squi {
 		 * @param maxSize The maximum size the total size of the widget can be
 		 * @return vec2 The minimum size the content of the widget needs to be
 		 */
-		vec2 layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink = {false, false});
+		vec2 layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, bool final);
 		/**
 		 * @brief Arrange the widget
 		 * 
@@ -399,7 +399,7 @@ namespace squi {
 		virtual void afterUpdate() {};
 
 		virtual void onLayout(vec2 &maxSize, vec2 &minSize) {};
-		virtual vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink);
+		virtual vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final);
 		virtual void postLayout(vec2 &size) {};
 
 		virtual void onArrange(vec2 &pos) {};

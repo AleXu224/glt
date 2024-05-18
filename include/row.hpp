@@ -26,7 +26,7 @@ namespace squi {
 		public:
 			Impl(const Row &args);
 
-			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) override;
 			void arrangeChildren(vec2 &pos) final;
 
 			void drawChildren() final;

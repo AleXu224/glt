@@ -544,7 +544,7 @@ LayoutInspector::operator Child() const {
 								});
 							},
 							.onUpdate = [storage](Widget &w) {
-								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {});
+								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {}, {}, true);
 							},
 						},
 					},

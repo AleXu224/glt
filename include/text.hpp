@@ -41,7 +41,8 @@ namespace squi {
 		public:
 			Impl(const Text &args);
 
-			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink) final;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) final;
+			void postLayout(vec2 &size) override;
 			void onArrange(vec2 &pos) final;
 
 			void updateSize();
