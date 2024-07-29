@@ -2,6 +2,7 @@
 
 #include "sail-c++/image_input.h"
 #include "stdexcept"
+#include "cstring"
 
 using namespace squi;
 
