@@ -41,11 +41,11 @@ Checkbox::operator Child() const {
 							auto &box = dynamic_cast<Box::Impl &>(w);
 
 							box.setColor(storage->internalValue ? Color(0x60CDFFFF) : Color(0x0));
-							box.setBorderColor(storage->internalValue ? Color(0x60CDFFFF) : Color(1, 1, 1, 0.6f));
+							box.setBorderColor(storage->internalValue ? Color(0x60CDFFFF) : Color(1.f, 1.f, 1.f, 0.6f));
 						},
 					},
-					.color = Color(0, 0, 0, 0.1f),
-					.borderColor = Color(1, 1, 1, 0.6f),
+					.color = Color(0.f, 0.f, 0.f, 0.1f),
+					.borderColor = Color(1.f, 1.f, 1.f, 0.6f),
 					.borderWidth{1.f},
 					.borderRadius{4.f},
 					.borderPosition = Box::BorderPosition::outset,
