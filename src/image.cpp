@@ -2,8 +2,10 @@
 
 #include "engine/compiledShaders/texturedRectfrag.hpp"
 #include "engine/compiledShaders/texturedRectvert.hpp"
+#include "filesystem"
 #include "fstream"
 #include "image.hpp"
+#include "imageLoader.hpp"
 #include "pipeline.hpp"
 #include "samplerUniform.hpp"
 #include "texture.hpp"
@@ -25,10 +27,9 @@
 #include <vector>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
-#include "filesystem"
 
-#include "../external/stb_image_ext.h"
-#include "../external/stb_image_write.h"
+
+
 #include "format"
 #include "stdexcept"
 
@@ -38,26 +39,12 @@ using namespace squi;
 Image::ImagePipeline *Image::Impl::pipeline = nullptr;
 
 Image::Data::Data(unsigned char *bytes, uint32_t length) : width(0), height(0) {
-	stbi_uc *loadedData = stbi_load_from_memory(bytes, (int) length, &width, &height, &channels, 0);
-	if (loadedData == nullptr) {
-		throw std::runtime_error("Failed to load image");
-	}
-	if (channels == 3) {
-		channels = 4;
-		this->data.resize(static_cast<size_t>(width * height) * 4);
-		for (int i = 0; i < width * height; i++) {
-			this->data[i * 4 + 0] = loadedData[i * 3 + 0];
-			this->data[i * 4 + 1] = loadedData[i * 3 + 1];
-			this->data[i * 4 + 2] = loadedData[i * 3 + 2];
-			this->data[i * 4 + 3] = 255;
-		}
-	} else if (channels == 1 || channels == 2 || channels == 4) {
-		this->data.resize(static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels));
-		std::memcpy(this->data.data(), loadedData, static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels));
-	} else {
-		throw std::runtime_error("Unsupported number of channels");
-	}
-	stbi_image_free(loadedData);
+	auto res = loadImageInto(bytes, length);
+
+	width = res.width;
+	height = res.height;
+	channels = res.channels;
+	data = res.data;
 }
 
 Image::Data Image::Data::fromUrl(std::string_view url) {
@@ -161,7 +148,7 @@ Image::Impl::Impl(const Image &args)
 				.mipLevel = 0,
 				.arrayLayer = 0,
 			});
-			for (int row = 0; row < data.height; row++) {
+			for (uint32_t row = 0; row < data.height; row++) {
 				memcpy(
 					reinterpret_cast<uint8_t *>(widget.sampler->texture.mappedMemory) + row * layout.rowPitch,
 					data.data.data() + static_cast<ptrdiff_t>(row * data.width * data.channels),

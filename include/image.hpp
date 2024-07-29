@@ -17,9 +17,9 @@ namespace squi {
 	struct Image {
 		struct Data {
 			std::vector<uint8_t> data;
-			int32_t width;
-			int32_t height;
-			int32_t channels;
+			uint32_t width;
+			uint32_t height;
+			uint32_t channels;
 
 			Data(std::vector<uint8_t> data, uint32_t width, uint32_t height, uint32_t channels)
 				: data(std::move(data)),
@@ -49,6 +49,7 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		Fit fit = Fit::none;
+		// FIXME: add the ability to provide a sampler shared reference
 		std::variant<Data, std::shared_future<Data>> image;
 		using ImagePipeline = Engine::Pipeline<Engine::TexturedQuad::Vertex, true>;
 

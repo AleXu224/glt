@@ -5,13 +5,14 @@
     "glfw3",
     "freetype",
     {
-        "name": "asio",
-        "features": ["openssl"]
+      "name": "asio",
+      "features": ["openssl"]
     },
     "openssl",
     "skyr-url",
     "gtest",
     "utfcpp",
-    "glm"
+    "glm",
+    "sail"
   ]
 }
