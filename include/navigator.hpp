@@ -1,41 +1,30 @@
 #pragma once
 
+#include "observer.hpp"
 #include "widget.hpp"
 
 namespace squi {
+
 	struct Navigator {
 		struct Controller {
-			void push(Child child);
-			void pop();
+			void push(const Child &child) const;
+			void pop() const;
 
 		private:
 			friend Navigator;
-			Child pushChild{};
-			bool shouldPop{false};
+			Observable<Child> pusher{};
+			VoidObservable popper{};
 		};
-
 		// Args
-		Widget::Args widget{};
+		squi::Widget::Args widget{};
 		Controller controller{};
 		Child child{};
-
-		class Impl : public Widget {
+		struct Storage {
 			// Data
-			Controller controller;
-
-		public:
-			Impl(const Navigator &args);
-
-			// void updateChildren() final;
-
-			// void layoutChildren(vec2 &maxSize, vec2 &minSize) final;
-			// void arrangeChildren(vec2 &pos) final;
-
-			// void drawChildren() final;
+			size_t lastId = 0;
+			std::vector<size_t> ids{};
 		};
 
-		operator Child() const {
-			return std::make_shared<Impl>(*this);
-		}
+		operator squi::Child() const;
 	};
 }// namespace squi
