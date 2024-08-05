@@ -1,8 +1,9 @@
-#include <utf8/cpp17.h>
+#include "fontIcon.hpp"
 #include "align.hpp"
 #include "container.hpp"
-#include "fontIcon.hpp"
 #include "text.hpp"
+#include <utf8/cpp17.h>
+
 
 
 using namespace squi;
@@ -16,6 +17,7 @@ squi::FontIcon::operator Child() const {
 			Align{
 				.child{
 					Text{
+						.widget = textWidget,
 						.text{utf8::utf32to8(std::u32string{icon})},
 						.fontSize = size,
 						.font{font},

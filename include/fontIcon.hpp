@@ -12,6 +12,7 @@ namespace squi {
 	struct FontIcon {
 		// Args
 		Widget::Args widget{};
+		Widget::Args textWidget{};
 		Margin margin{};
 		char32_t icon = U'\0';
 		// FIXME: add a default Icon font
