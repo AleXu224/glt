@@ -29,7 +29,6 @@
 #include <vulkan/vulkan_structs.hpp>
 
 
-
 #include "format"
 #include "stdexcept"
 
@@ -268,7 +267,13 @@ void Image::Impl::onDraw() {
 	if (!sampler.has_value()) {
 		return;
 	}
+
+	auto &window = Window::of(this);
+	window.engine.instance.pushScissor(getRect());
+
 	pipeline->bindWithSampler(sampler.value());
 	auto [vi, ii] = pipeline->getIndexes();
 	pipeline->addData(quad.getData(vi, ii));
+
+	window.engine.instance.popScissor();
 }
