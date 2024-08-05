@@ -6,39 +6,30 @@
 using namespace squi;
 
 Button::operator squi::Child() const {
-	auto storage = std::make_shared<Storage>(Storage{
-		.color = style.color,
-		.colorHover = style.colorHover,
-		.colorActive = style.colorActive,
-		.colorDisabled = style.colorDisabled,
-		.borderColor = style.borderColor,
-		.borderColorHover = style.borderColorHover,
-		.borderColorActive = style.borderColorActive,
-		.borderColorDisabled = style.borderColorDisabled,
-		.disabled = disabled,
-	});
-
-	return GestureDetector{
-		.onClick = [storage, onClick = onClick](GestureDetector::Event event) {
-			if (!storage->disabled && onClick) {
+	Child ret = GestureDetector{
+		.onClick = [onClick = onClick](GestureDetector::Event event) {
+			auto &disabled = event.widget.customState.get<bool>("disabled");
+			if (!disabled && onClick) {
 				onClick(event);
 			}
 		},
-		.onUpdate = [storage](GestureDetector::Event event) {
+		.onUpdate = [](GestureDetector::Event event) {
 			auto &box = reinterpret_cast<Box::Impl &>(event.widget);
+			auto &disabled = event.widget.customState.get<bool>("disabled");
+			auto &style = event.widget.customState.get<ButtonStyle>("style");
 
-			if (storage->disabled) {
-				box.setColor(storage->colorDisabled);
-				box.setBorderColor(storage->borderColorDisabled);
+			if (disabled) {
+				box.setColor(style.colorDisabled);
+				box.setBorderColor(style.borderColorDisabled);
 			} else if (event.state.focused) {
-				box.setColor(storage->colorActive);
-				box.setBorderColor(storage->borderColorActive);
+				box.setColor(style.colorActive);
+				box.setBorderColor(style.borderColorActive);
 			} else if (event.state.hovered) {
-				box.setColor(storage->colorHover);
-				box.setBorderColor(storage->borderColorHover);
+				box.setColor(style.colorHover);
+				box.setBorderColor(style.borderColorHover);
 			} else {
-				box.setColor(storage->color);
-				box.setBorderColor(storage->borderColor);
+				box.setColor(style.color);
+				box.setBorderColor(style.borderColor);
 			}
 		},
 		.child{
@@ -53,4 +44,9 @@ Button::operator squi::Child() const {
 			},
 		},
 	};
+
+	ret->customState.add("style", style);
+	ret->customState.add("disabled", disabled);
+
+	return ret;
 }

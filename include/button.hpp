@@ -68,19 +68,6 @@ namespace squi {
 		std::function<void(GestureDetector::Event)> onClick{};
 		Child child = Align{.child = Text{.text = text}};
 
-		struct Storage {
-			// Data
-			Color color;
-			Color colorHover;
-			Color colorActive;
-			Color colorDisabled;
-			Color borderColor;
-			Color borderColorHover;
-			Color borderColorActive;
-			Color borderColorDisabled;
-			bool disabled;
-		};
-
 		operator Child() const;
 	};
 }// namespace squi
