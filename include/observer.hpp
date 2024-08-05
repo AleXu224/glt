@@ -99,4 +99,43 @@ namespace squi {
 	};
 
 	using VoidObserver = VoidObservable::Observer;
+
+	// An observer meant the synchronize multiple widgets, by notifying when the required count has been met, regardless of the initialization order
+	// Used in circumstances like waiting for certain widgets to be initialized before performing an action.
+	struct CountObserver {
+		struct ControlBlock {
+			size_t target = 0;
+			size_t current = 0;
+			VoidObserver counter{};
+			VoidObservable readyEvent{};
+		};
+
+		CountObserver(size_t target)
+			: _controlBlock(std::make_shared<ControlBlock>(ControlBlock{
+				  .target = target,
+			  })) {
+			_controlBlock->counter = VoidObservable{}.observe([blockPtr = std::weak_ptr<ControlBlock>{_controlBlock}]() {
+				if (auto controlBlock = blockPtr.lock()) {
+					controlBlock->current++;
+					if (controlBlock->current == controlBlock->target) {
+						controlBlock->readyEvent.notify();
+					}
+				}
+			});
+		}
+
+		void notify() const {
+			_controlBlock->counter.notifyOthers();
+		}
+
+		[[nodiscard]] VoidObserver observe(const std::function<void()> &updateFunc) const {
+			if (_controlBlock->current == _controlBlock->target && updateFunc) {
+				updateFunc();
+			}
+			return _controlBlock->readyEvent.observe(updateFunc);
+		}
+
+	private:
+		std::shared_ptr<ControlBlock> _controlBlock{};
+	};
 }// namespace squi
