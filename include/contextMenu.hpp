@@ -3,7 +3,6 @@
 #include "vec2.hpp"
 #include "widget.hpp"
 #include <functional>
-#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -19,7 +18,7 @@ namespace squi {
 			};
 			struct Divider {};
 
-			std::string_view text;
+			std::string text{};
 			std::variant<std::function<void()>, Submenu, Toggle, Divider> content;
 		};
 
