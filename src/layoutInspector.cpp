@@ -582,7 +582,7 @@ LayoutInspector::operator Child() const {
 					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F12)) {
 						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
-					if (GestureDetector::isKey(GLFW_KEY_I, GLFW_PRESS, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
+					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_I, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
 						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
 				},
