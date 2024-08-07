@@ -347,8 +347,11 @@ namespace Engine {
 			instance.currentPipelineFlush = &currentPipelineFlush;
 		}
 
-		[[nodiscard]] std::tuple<size_t, size_t> availableSpace() {
-			return {vertexBufferSize - vertexBufferIndex, indexBufferSize - indexBufferIndex};
+		[[nodiscard]] std::tuple<uint64_t, uint64_t> availableSpace() {
+			return {
+				static_cast<uint64_t>(vertexBufferSize) - static_cast<uint64_t>(vertexBufferIndex),
+				static_cast<uint64_t>(indexBufferSize) - static_cast<uint64_t>(indexBufferIndex),
+			};
 		}
 
 		[[nodiscard]] std::pair<size_t, size_t> getIndexes() {
@@ -361,8 +364,16 @@ namespace Engine {
 		};
 
 		void addData(const Data &data) {
+			assert(data.vertexes.size() < vertexBufferSize);
+			assert(data.indexes.size() < indexBufferSize);
+
 			auto [vertexSpace, indexSpace] = availableSpace();
-			if (data.vertexes.size() > vertexSpace || data.indexes.size() > indexSpace) {
+
+			size_t vertexOffset = 0;
+
+			if (data.vertexes.size() >= vertexSpace || data.indexes.size() >= indexSpace) {
+				vertexOffset = vertexBufferIndex;
+
 				flush(false);
 			}
 
@@ -371,6 +382,11 @@ namespace Engine {
 
 			memcpy((Vertex *) vertexBuffer.mappedMemory + vertexBufferIndex, data.vertexes.data(), data.vertexes.size() * sizeof(Vertex));
 			memcpy((uint16_t *) indexBuffer.mappedMemory + indexBufferIndex, data.indexes.data(), data.indexes.size() * sizeof(uint16_t));
+			if (vertexOffset) {
+				for (size_t i = 0; i < data.indexes.size(); i++) {
+					*((uint16_t *) indexBuffer.mappedMemory + i) -= vertexOffset;
+				}
+			}
 
 			vertexBufferIndex += data.vertexes.size();
 			indexBufferIndex += data.indexes.size();
@@ -379,6 +395,8 @@ namespace Engine {
 		void flush(bool early) {
 			if (indexBufferIndex - lastIndexBufferIndex == 0) return;
 			auto &cmd = instance.currentFrame.get().commandBuffer;
+
+			assert(indexBufferIndex <= indexBufferSize);
 
 			cmd.drawIndexed(indexBufferIndex - lastIndexBufferIndex, 1, lastIndexBufferIndex, 0, 0);
 
