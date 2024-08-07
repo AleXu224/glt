@@ -130,6 +130,14 @@ struct TextItems {
 					.getValue = [](Widget &widget) {
 						return std::format("{}", *widget.flags.visible);
 					},
+					.darkenedBackground = false,
+				},
+				TextItem{
+					.widget = widget,
+					.title{"Should Delete"},
+					.getValue = [](Widget &widget) {
+						return std::format("{}", widget.isMarkedForDeletion());
+					},
 					.darkenedBackground = true,
 				},
 			},
