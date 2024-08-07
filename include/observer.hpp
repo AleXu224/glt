@@ -2,6 +2,7 @@
 #include <functional>
 #include <memory>
 #include <print>
+#include "vector"
 namespace squi {
 	template<typename T>
 	struct Observable {
@@ -129,7 +130,7 @@ namespace squi {
 		}
 
 		[[nodiscard]] VoidObserver observe(const std::function<void()> &updateFunc) const {
-			if (_controlBlock->current == _controlBlock->target && updateFunc) {
+			if (_controlBlock->current >= _controlBlock->target && updateFunc) {
 				updateFunc();
 			}
 			return _controlBlock->readyEvent.observe(updateFunc);
