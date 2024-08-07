@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkanIncludes.hpp"
+#include "vulkanIncludes.hpp"// IWYU pragma: keep
 #if defined(__unix__) || defined(__APPLE__) || defined(__QNX__) || defined(__Fuchsia__)
 #include <dlfcn.h>
 #elif defined(_WIN32)
@@ -84,7 +84,7 @@ namespace Engine {
 #if defined(__unix__) || defined(__APPLE__) || defined(__QNX__) || defined(__Fuchsia__)
 			return (T) dlsym(m_library, function);
 #elif defined(_WIN32)
-			return (T)::GetProcAddress(m_library, function);
+			return reinterpret_cast<T>(reinterpret_cast<void *>(::GetProcAddress(m_library, function)));
 #else
 #error unsupported platform
 #endif
