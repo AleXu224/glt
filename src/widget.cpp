@@ -104,6 +104,9 @@ void Widget::setChildren(const Children &newChildren) {
 	for (auto &child: children) {
 		child->deleteLater();
 	}
+	for (auto &child: childrenToAdd) {
+		child->deleteLater();
+	}
 	childrenToAdd.reserve(childrenToAdd.size() + newChildren.size());
 	for (const auto &child: newChildren) {
 		if (child) {
