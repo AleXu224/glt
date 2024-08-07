@@ -21,7 +21,7 @@ Text::TextPipeline *Text::Impl::pipeline = nullptr;
 Text::Impl::Impl(const Text &args)
 	: Widget(
 		  args.widget
-			  .withDefaultWidth(Size::Shrink)
+			  .withDefaultWidth(args.lineWrap ? Size::Expand : Size::Shrink)
 			  .withDefaultHeight(Size::Shrink),
 		  Widget::FlagsArgs{
 			  .shouldDrawChildren = false,
@@ -62,7 +62,7 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink sho
 
 void squi::Text::Impl::postLayout(vec2 &size) {
 	if (!font.has_value() || !font.value()) return;
-	
+
 	if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
 		lastAvailableSpace = size.x;
 		const auto lineHeight = font.value()->getLineHeight(fontSize);
@@ -111,7 +111,7 @@ void Text::Impl::updateSize() {
 
 void Text::Impl::onDraw() {
 	if (!font.has_value() || !font.value()) return;
-	
+
 	if (!pipeline) {
 		auto &instance = Window::of(this).engine.instance;
 		pipeline = &instance.createPipeline<TextPipeline>(TextPipeline::Args{
