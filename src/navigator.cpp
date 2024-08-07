@@ -48,12 +48,10 @@ squi::Navigator::operator squi::Child() const {
 			}
 		}));
 
-		w.customState.add(controller.popper.observe([isVisible, selfDestruct, storage, wPtr = w.weak_from_this()]() {
-			if (auto w = wPtr.lock() && !storage->ids.empty()) {
-				selfDestruct.notify(storage->ids.back());
-				storage->ids.pop_back();
-				if (!storage->ids.empty()) isVisible.notify(storage->ids.back());
-			}
+		w.customState.add(controller.popper.observe([isVisible, selfDestruct, storage]() {
+			selfDestruct.notify(storage->ids.back());
+			storage->ids.pop_back();
+			if (!storage->ids.empty()) isVisible.notify(storage->ids.back());
 		}));
 
 		controller.push(child);
