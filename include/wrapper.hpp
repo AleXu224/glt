@@ -8,7 +8,7 @@ namespace squi {
 		std::function<void(Widget &)> afterUpdate{};
 		std::function<void(Widget &, vec2 &, vec2 &)> beforeLayout{};
 		std::function<void(Widget &, vec2 &, vec2 &)> onLayout{};
-		std::function<void(Widget &, vec2 &, vec2 &)> afterLayout{};
+		std::function<void(Widget &, vec2 &)> afterLayout{};
 		std::function<void(Widget &, vec2 &)> onArrange{};
 		std::function<void(Widget &)> beforeDraw{};
 		std::function<void(Widget &)> onDraw{};
