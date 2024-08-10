@@ -60,4 +60,14 @@ namespace squi::utils {
 	TransferWrapParams<std::variant, WrapperClass, T>::type FromIndex(size_t index) {
 		return impl_FromIndex<T, typename TransferWrapParams<std::variant, WrapperClass, T>::type>(std::make_index_sequence<std::tuple_size_v<T>>{}).at(index);
 	}
+
+	template<class T, class Fn, size_t... Is>
+	void _iterateTuple(const T &tuple, Fn fn, std::index_sequence<Is...> /*unused*/) {
+		(fn(std::get<Is>(tuple)), ...);
+	}
+
+	template<class T, class Fn>
+	void iterateTuple(const T &tuple, Fn fn) {
+		_iterateTuple(tuple, fn, std::make_index_sequence<std::tuple_size_v<T>>());
+	}
 }
