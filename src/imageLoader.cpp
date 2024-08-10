@@ -2,7 +2,7 @@
 
 #include "cstring"
 #include "sail-c++/image_input.h"
-#include "sail/sail-common/log.h"
+#include "sail-common/log.h"
 #include "stdexcept"
 
 
