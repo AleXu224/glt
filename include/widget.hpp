@@ -163,10 +163,6 @@ namespace squi {
 			template<class... Args>
 			Stateful(std::function<void(Widget &, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
 
-			inline operator const Stateful &() const {
-				return item;
-			}
-
 			inline Stateful &operator=(const T &other) {
 				if (item != other) {
 					item = other;
