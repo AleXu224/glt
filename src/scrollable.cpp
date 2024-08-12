@@ -17,6 +17,7 @@ Scrollable::Impl::Impl(const Scrollable &args)
 			  case Column::Alignment::right:
 				  return 1.f;
 		  }
+		  std::unreachable();
 	  }()),
 	  controller(args.controller) {
 	setChildren(args.children);
