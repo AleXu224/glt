@@ -62,12 +62,12 @@ namespace squi::utils {
 	}
 
 	template<class T, class Fn, size_t... Is>
-	void _iterateTuple(const T &tuple, Fn fn, std::index_sequence<Is...> /*unused*/) {
+	constexpr void _iterateTuple(const T &tuple, Fn fn, std::index_sequence<Is...> /*unused*/) {
 		(fn(std::get<Is>(tuple)), ...);
 	}
 
 	template<class T, class Fn>
-	void iterateTuple(const T &tuple, Fn fn) {
+	constexpr void iterateTuple(const T &tuple, Fn fn) {
 		_iterateTuple(tuple, fn, std::make_index_sequence<std::tuple_size_v<T>>());
 	}
 }
