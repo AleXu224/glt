@@ -390,15 +390,17 @@ namespace Engine {
 
 			vertexBufferIndex += data.vertexes.size();
 			indexBufferIndex += data.indexes.size();
+			assert(indexBufferIndex <= indexBufferSize);
+			assert(vertexBufferIndex <= vertexBufferSize);
 		}
 
 		void flush(bool early) {
-			if (indexBufferIndex - lastIndexBufferIndex == 0) return;
 			auto &cmd = instance.currentFrame.get().commandBuffer;
+			if (indexBufferIndex - lastIndexBufferIndex != 0) {
+				assert(indexBufferIndex <= indexBufferSize);
 
-			assert(indexBufferIndex <= indexBufferSize);
-
-			cmd.drawIndexed(indexBufferIndex - lastIndexBufferIndex, 1, lastIndexBufferIndex, 0, 0);
+				cmd.drawIndexed(indexBufferIndex - lastIndexBufferIndex, 1, lastIndexBufferIndex, 0, 0);
+			}
 
 			if (early) {
 				lastVertexBufferIndex = vertexBufferIndex;
