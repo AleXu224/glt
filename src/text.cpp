@@ -22,7 +22,7 @@ Text::Impl::Impl(const Text &args)
 	: Widget(
 		  args.widget
 			  .withDefaultWidth(Size::Wrap)
-			  .withDefaultHeight(Size::Wrap),
+			  .withDefaultHeight(Size::Shrink),
 		  Widget::FlagsArgs{
 			  .shouldDrawChildren = false,
 		  }
