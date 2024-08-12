@@ -49,6 +49,7 @@ vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink should
 			maxSize.y = std::clamp(childrenMaxSize.y, minSize.y, maxSize.y);
 	}
 
+	vec2 retSize{};
 	for (auto &child: children) {
 		if (!child) continue;
 
@@ -56,11 +57,11 @@ vec2 Stack::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink should
 		// and we already calculated the max size they would be allowed to expand to
 		const auto childSize = child->layout(maxSize, minSize, {}, final);
 
-		minSize.x = std::clamp(childSize.x, minSize.x, maxSize.x);
-		minSize.y = std::clamp(childSize.y, minSize.y, maxSize.y);
+		retSize.x = std::max(retSize.x, childSize.x);
+		retSize.y = std::max(retSize.y, childSize.y);
 	}
 
-	return minSize;
+	return retSize;
 }
 
 std::vector<Rect> Stack::Impl::getHitcheckRect() const {

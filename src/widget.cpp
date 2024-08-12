@@ -320,6 +320,7 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 						size.x = maxSize.x;
 					break;
 				}
+				case Size::Wrap:
 				case Size::Shrink: {
 					size.x = minSize.x;
 					break;
@@ -341,6 +342,7 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 						size.y = maxSize.y;
 					break;
 				}
+				case Size::Wrap:
 				case Size::Shrink: {
 					size.y = minSize.y;
 					break;

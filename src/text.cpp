@@ -21,8 +21,8 @@ Text::TextPipeline *Text::Impl::pipeline = nullptr;
 Text::Impl::Impl(const Text &args)
 	: Widget(
 		  args.widget
-			  .withDefaultWidth(args.lineWrap ? Size::Expand : Size::Shrink)
-			  .withDefaultHeight(Size::Shrink),
+			  .withDefaultWidth(Size::Wrap)
+			  .withDefaultHeight(Size::Wrap),
 		  Widget::FlagsArgs{
 			  .shouldDrawChildren = false,
 		  }
@@ -101,11 +101,6 @@ void Text::Impl::onArrange(vec2 &pos) {
 }
 
 void Text::Impl::updateSize() {
-	if (lineWrap) {
-		state.width = Size::Expand;
-	} else {
-		state.width = Size::Shrink;
-	}
 	reLayout();
 }
 

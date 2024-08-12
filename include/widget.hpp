@@ -19,6 +19,8 @@ namespace squi {
 		Expand,
 		// Will shrink to the minimum size
 		Shrink,
+		// Will will let the children expand, taking up the minimum size to contain the children afterwards
+		Wrap,
 	};
 
 	struct SizeConstraints {
