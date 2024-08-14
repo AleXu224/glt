@@ -161,7 +161,7 @@ std::string_view Text::Impl::getText() const {
 }
 
 std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
-	return font.value()->getTextSizeSafe(text, fontSize);
+	return font.value()->getTextSizeSafe(text, fontSize, lineWrap ? std::optional<float>(getContentSize().x) : std::nullopt);
 }
 
 void squi::Text::Impl::setColor(const Color &newColor) {

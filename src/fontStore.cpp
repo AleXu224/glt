@@ -5,14 +5,15 @@
 #include <print>
 
 #include "fontStore.hpp"
-#include "roboto-regular.hpp"
 #include "roboto-bold.hpp"
-#include "roboto-italic.hpp"
 #include "roboto-bolditalic.hpp"
+#include "roboto-italic.hpp"
+#include "roboto-regular.hpp"
 #include <limits>
 #include <optional>
 #include <string>
 #include <utf8/cpp17.h>
+
 
 
 #include <freetype/freetype.h>
@@ -167,11 +168,11 @@ uint32_t FontStore::Font::getLineHeight(float size) {
 }
 
 std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth) {
-	const uint32_t maxWidthClamped = [&]() -> uint32_t {
+	const int32_t maxWidthClamped = [&]() -> int32_t {
 		if (maxWidth.has_value()) {
-			return static_cast<uint32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
+			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
 		}
-		return std::numeric_limits<uint32_t>::max();
+		return std::numeric_limits<int32_t>::max();
 	}();
 	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
 
@@ -179,23 +180,15 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	uint32_t prevCharIndex = 0;
 	const uint32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
 
-	uint32_t widestLine = 0;
-	uint32_t currentLineWidth = 0;
-	uint32_t currentWordWhitespace = 0;
-	uint32_t currentWordWidth = 0;
+	int32_t widestLine = 0;
+	int32_t currentLineWidth = 0;
+	int32_t currentWordWhitespace = 0;
+	int32_t currentWordWidth = 0;
 	uint32_t lineCount = 1;
 
 	std::u32string u32text = utf8::utf8to32(text);
 	for (auto character: u32text) {
 		auto &charInfo = getCharInfo(character, sizeMap);
-
-		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > static_cast<uint32_t>(maxWidthClamped)) {
-			currentWordWidth -= currentWordWhitespace;
-			widestLine = std::max(currentLineWidth, widestLine);
-			currentWordWhitespace = 0;
-			currentLineWidth = 0;
-			++lineCount;
-		}
 
 		if (currentLineWidth != 0 || currentWordWidth != 0) {
 			currentWordWidth += charInfo.getKerning(face, prevCharIndex);
@@ -203,14 +196,33 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 			if (character == ' ') {
 				currentLineWidth += currentWordWidth;
 				currentWordWidth = 0;
+				currentWordWhitespace = 0;
 			}
 		}
 
 		currentWordWidth += charInfo.advance;
 		if (character == ' ') currentWordWhitespace += charInfo.advance;
 
+		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > maxWidthClamped) {
+			if (character == ' ') {
+				// If by the end of the row there is only a series of spaces then get the last space to the new line
+				currentLineWidth += currentWordWidth - charInfo.advance;
+				currentWordWidth = charInfo.advance;
+			} else {
+				// If there is a word at the end of the row then leave the space at the front on this row and advance the word
+				currentLineWidth += currentWordWhitespace;
+				currentWordWidth -= currentWordWhitespace;
+			}
+			widestLine = std::max(currentLineWidth, widestLine);
+			currentWordWhitespace = 0;
+			currentLineWidth = 0;
+			++lineCount;
+		}
+
 		prevCharIndex = charInfo.index;
 	}
+
+	if (currentWordWidth == 0 && currentLineWidth == 0) lineCount--;
 
 	widestLine = std::max(currentLineWidth + currentWordWidth, widestLine);
 
@@ -218,11 +230,11 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 }
 
 std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
-	const uint32_t maxWidthClamped = [&]() -> uint32_t {
+	const int32_t maxWidthClamped = [&]() -> int32_t {
 		if (maxWidth.has_value()) {
-			return static_cast<uint32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
+			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
 		}
-		return std::numeric_limits<uint32_t>::max();
+		return std::numeric_limits<int32_t>::max();
 	}();
 	std::vector<std::vector<Engine::TextQuad>> quads{};
 	quads.resize(1, std::vector<Engine::TextQuad>{});
@@ -233,15 +245,15 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 		char32_t character;
 	};
 	std::vector<CharData> currentWordCharData{};
-	uint32_t widestLine = 0;
-	uint32_t currentLineWidth = 0;
-	uint32_t currentWordWidth = 0;
+	int32_t widestLine = 0;
+	int32_t currentLineWidth = 0;
+	int32_t currentWordWidth = 0;
 	uint32_t previousCharIndex = 0;
 	if (!loaded) {
 		return {quads, 0, 0};
 	}
-	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
-	const uint32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
+	const int32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
 
 	auto &sizeMap = getSizeMap(size);
 
@@ -275,8 +287,8 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 		const auto toFloat = [](int32_t i) {
 			return static_cast<float>(i);
 		};
-		auto it = std::lower_bound(currentWordCharData.begin(), currentWordCharData.end(), ' ', [](const CharData &a, char) {
-			return a.character == ' ';
+		auto it = std::lower_bound(currentWordCharData.begin(), currentWordCharData.end(), ' ', [&](const CharData &a, char) {
+			return a.character == ' ' && (a.offsetX + currentLineWidth + a.charInfo.advance) <= maxWidthClamped;
 		});
 		int32_t whiteSpaceSize = 0;
 		for (const auto &charData: std::span<CharData>(currentWordCharData.begin(), it)) {
@@ -294,7 +306,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 			whiteSpaceSize += charData.charInfo.advance;
 		}
 		currentWordCharData = std::vector<CharData>(it, currentWordCharData.end());
-		for (auto &charData : currentWordCharData) {
+		for (auto &charData: currentWordCharData) {
 			charData.offsetX -= whiteSpaceSize;
 		}
 		currentLineWidth += whiteSpaceSize;
@@ -304,13 +316,6 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 	std::u32string u32text = utf8::utf8to32(text);
 	for (auto character: u32text) {
 		auto &charInfo = getCharInfo(character, sizeMap);
-
-		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > maxWidthClamped) {
-			pushWhitespaceToLine();
-			widestLine = std::max(currentLineWidth, widestLine);
-			quads.emplace_back();
-			currentLineWidth = 0;
-		}
 
 		if (currentLineWidth != 0 || currentWordWidth != 0) {
 			currentWordWidth += charInfo.getKerning(face, previousCharIndex);
@@ -327,6 +332,13 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 			.character = character,
 		});
 		currentWordWidth += charInfo.advance;
+
+		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > maxWidthClamped) {
+			pushWhitespaceToLine();
+			widestLine = std::max(currentLineWidth, widestLine);
+			quads.emplace_back();
+			currentLineWidth = 0;
+		}
 
 		previousCharIndex = charInfo.index;
 	}
