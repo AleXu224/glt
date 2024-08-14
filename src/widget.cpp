@@ -291,8 +291,10 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 	}
 
 #ifndef NDEBUG
-	auto &window = Window::of(this);
-	window.relayoutCounter[id]++;
+	if (state.root) {
+		auto &window = Window::of(this);
+		window.relayoutCounter[id]++;
+	}
 #endif
 
 	for (auto &func: m_funcs.onLayout) {

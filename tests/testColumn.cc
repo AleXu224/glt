@@ -1,6 +1,6 @@
 #include "column.hpp"
 #include "container.hpp"
-#include "gtest/gtest.h"
+#include <catch2/catch_test_macros.hpp>
 
 
 using namespace squi;
@@ -29,7 +29,7 @@ struct InvTextLikeWidget {
 	}
 };
 
-TEST(Column, layout) {
+TEST_CASE("Column layout") {
 	Child column1 = Column{
 		.widget{
 			.width = 200.f,
@@ -66,11 +66,11 @@ TEST(Column, layout) {
 
 	const vec2 maxSize = {1000.f, 1000.f};
 
-	EXPECT_EQ(column1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
-	EXPECT_EQ(column2->layout(maxSize, {0, 0}, {}, true), (vec2{200, 0}));
-	EXPECT_EQ(column3->layout(maxSize, {0, 0}, {}, true), (vec2{0, 200}));
-	EXPECT_EQ(column4->layout(maxSize, {0, 0}, {}, true), (vec2{0, 0}));
-	EXPECT_EQ(column5->layout(maxSize, {0, 0}, {}, true), (vec2{0, 0}));
+	REQUIRE(column1->layout(maxSize, {0, 0}, {}, true) == vec2{200, 200});
+	REQUIRE(column2->layout(maxSize, {0, 0}, {}, true) == vec2{200, 0});
+	REQUIRE(column3->layout(maxSize, {0, 0}, {}, true) == vec2{0, 200});
+	REQUIRE(column4->layout(maxSize, {0, 0}, {}, true) == vec2{0, 0});
+	REQUIRE(column5->layout(maxSize, {0, 0}, {}, true) == vec2{0, 0});
 
 	// Fixed sized children
 	Children children1{
@@ -89,11 +89,11 @@ TEST(Column, layout) {
 	};
 	for (const auto &column: columns) column->setChildren(children1);
 
-	EXPECT_EQ(column1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
-	EXPECT_EQ(column2->layout(maxSize, {0, 0}, {}, true), (vec2{200, 100}));
-	EXPECT_EQ(column3->layout(maxSize, {0, 0}, {}, true), (vec2{50, 200}));
-	EXPECT_EQ(column4->layout(maxSize, {0, 0}, {}, true), (vec2{50, 100}));
-	EXPECT_EQ(column5->layout(maxSize, {0, 0}, {}, true), (vec2{50, 110}));
+	REQUIRE(column1->layout(maxSize, {0, 0}, {}, true) == vec2{200, 200});
+	REQUIRE(column2->layout(maxSize, {0, 0}, {}, true) == vec2{200, 100});
+	REQUIRE(column3->layout(maxSize, {0, 0}, {}, true) == vec2{50, 200});
+	REQUIRE(column4->layout(maxSize, {0, 0}, {}, true) == vec2{50, 100});
+	REQUIRE(column5->layout(maxSize, {0, 0}, {}, true) == vec2{50, 110});
 
 	Children children2{
 		Container{
@@ -123,11 +123,11 @@ TEST(Column, layout) {
 	};
 	for (const auto &column: columns) column->setChildren(children2);
 
-	EXPECT_EQ(column1->layout(maxSize, {0, 0}, {}, true), (vec2{200, 200}));
-	EXPECT_EQ(column2->layout(maxSize, {0, 0}, {}, true), (vec2{200, 150}));
-	EXPECT_EQ(column3->layout(maxSize, {0, 0}, {}, true), (vec2{50, 200}));
-	EXPECT_EQ(column4->layout(maxSize, {0, 0}, {}, true), (vec2{50, 150}));
-	EXPECT_EQ(column5->layout(maxSize, {0, 0}, {}, true), (vec2{50, 170}));
+	REQUIRE(column1->layout(maxSize, {0, 0}, {}, true) == vec2{200, 200});
+	REQUIRE(column2->layout(maxSize, {0, 0}, {}, true) == vec2{200, 150});
+	REQUIRE(column3->layout(maxSize, {0, 0}, {}, true) == vec2{50, 200});
+	REQUIRE(column4->layout(maxSize, {0, 0}, {}, true) == vec2{50, 150});
+	REQUIRE(column5->layout(maxSize, {0, 0}, {}, true) == vec2{50, 170});
 
 	Children children3{
 		Container{
@@ -147,9 +147,9 @@ TEST(Column, layout) {
 
 	const auto maxSize2 = vec2{1000.f, 150.f};
 
-	EXPECT_EQ(column1->layout(maxSize2, {0, 0}, {}, true), (vec2{200, 150}));
-	EXPECT_EQ(column2->layout(maxSize2, {0, 0}, {}, true), (vec2{200, 100}));
-	EXPECT_EQ(column3->layout(maxSize2, {0, 0}, {}, true), (vec2{150, 150}));
-	EXPECT_EQ(column4->layout(maxSize2, {0, 0}, {}, true), (vec2{200, 100}));
-	EXPECT_EQ(column5->layout(maxSize2, {0, 0}, {}, true), (vec2{200, 110}));
+	REQUIRE(column1->layout(maxSize2, {0, 0}, {}, true) == vec2{200, 150});
+	REQUIRE(column2->layout(maxSize2, {0, 0}, {}, true) == vec2{200, 100});
+	REQUIRE(column3->layout(maxSize2, {0, 0}, {}, true) == vec2{150, 150});
+	REQUIRE(column4->layout(maxSize2, {0, 0}, {}, true) == vec2{200, 100});
+	REQUIRE(column5->layout(maxSize2, {0, 0}, {}, true) == vec2{200, 110});
 }

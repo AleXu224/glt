@@ -10,7 +10,7 @@
     },
     "openssl",
     "skyr-url",
-    "gtest",
+    "catch2",
     "utfcpp",
     "glm",
     "sail"
