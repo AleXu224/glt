@@ -4,10 +4,8 @@
   "dependencies": [
     "glfw3",
     "freetype",
-    {
-      "name": "asio",
-      "features": ["openssl"]
-    },
+    "asio",
+    "wolfssl",
     "openssl",
     "skyr-url",
     "catch2",
