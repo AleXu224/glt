@@ -31,7 +31,7 @@ namespace squi::utils {
 	template<template<class...> class, class>
 	struct TransferParams;
 
-    // Transfer the template parameters to another template
+	// Transfer the template parameters to another template
 	template<template<class...> class To, class... Args>
 	struct TransferParams<To, std::tuple<Args...>> {
 		using type = To<Args...>;
@@ -40,7 +40,7 @@ namespace squi::utils {
 	template<template<class...> class, template<class...> class, class>
 	struct TransferWrapParams;
 
-    // Wrap the template parameters and transfer to another template
+	// Wrap the template parameters and transfer to another template
 	template<template<class...> class To, template<class...> class Wrapper, class... Args>
 	struct TransferWrapParams<To, Wrapper, std::tuple<Args...>> {
 		using type = To<Wrapper<Args>...>;
@@ -70,4 +70,46 @@ namespace squi::utils {
 	constexpr void iterateTuple(const T &tuple, Fn fn) {
 		_iterateTuple(tuple, fn, std::make_index_sequence<std::tuple_size_v<T>>());
 	}
-}
+
+	template<class RetType, std::ranges::range... Ranges>
+	consteval auto mergeRanges(Ranges ...ranges) {
+		constexpr size_t totalSize = (ranges.size() + ...);
+		std::array<RetType, totalSize> ret{};
+		size_t it = 0;
+		(
+			[&]() {
+				for (const auto &elem: ranges) {
+					ret[it++] = elem;
+				}
+			}(),
+			...
+		);
+
+		return ret;
+	}
+
+	template<std::ranges::range Range>
+	consteval auto evalRange(Range range) {
+		constexpr size_t totalSize = range.size();
+		std::array<std::decay_t<decltype(range[0])>, totalSize> ret{};
+		size_t it = 0;
+		for (const auto &elem: range) {
+			ret[it++] = elem;
+		}
+
+		return ret;
+	}
+
+	template<std::ranges::range Range, class Fn>
+	consteval auto transformRange(Range range, Fn fn) {
+		constexpr size_t totalSize = range.size();
+		using T = std::decay_t<decltype(fn(range[0]))>;
+		std::array<T, totalSize> ret{};
+		size_t it = 0;
+		for (const auto &elem: range) {
+			ret[it++] = fn(elem);
+		}
+
+		return ret;
+	}
+}// namespace squi::utils
