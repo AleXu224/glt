@@ -7,7 +7,7 @@ namespace squi {
 	struct NavigationView {
 		struct Page {
 			std::string_view name;
-			char32_t icon = 0xEA3A;
+			std::variant<int32_t, Child> icon = 0xEA3A;
 			Child content;
 		};
 

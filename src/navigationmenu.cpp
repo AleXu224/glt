@@ -18,7 +18,7 @@ struct MenuItem {
 	// Args
 	Widget::Args widget{};
 	std::string_view name = "Menu Item";
-	char32_t icon;
+	std::variant<int32_t, Child> icon;
 	Observable<bool> isExpandedEvent;
 	VoidObservable selectionEvent;
 	std::function<void()> onClick;
@@ -77,10 +77,15 @@ struct MenuItem {
 						.alignment = Row::Alignment::center,
 						.spacing = 16.f,
 						.children{
-							FontIcon{
-								.icon = icon,
-								.size = 16.f,
-							},
+							[&]() -> Child {
+								if (icon.index() == 0) {
+									return FontIcon{
+										.icon = std::get<0>(icon),
+										.size = 16.f,
+									};
+								}
+								return std::get<1>(icon);
+							}(),
 							Text{
 								.widget{
 									.onInit = [storage, isExpandedEvent = isExpandedEvent, isExpanded = isExpanded](Widget &widget) {
