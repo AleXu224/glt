@@ -80,7 +80,7 @@ struct MenuItem {
 							[&]() -> Child {
 								if (icon.index() == 0) {
 									return FontIcon{
-										.icon = std::get<0>(icon),
+										.icon = static_cast<char32_t>(std::get<0>(icon)),
 										.size = 16.f,
 									};
 								}
