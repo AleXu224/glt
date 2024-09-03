@@ -1,5 +1,6 @@
 #include "box.hpp"
 #include "column.hpp"
+#include "dropdownButton.hpp"
 #include "expander.hpp"
 #include "gestureDetector.hpp"
 #include "text.hpp"
@@ -35,44 +36,13 @@ int main(int /*unused*/, char ** /*unused*/) {
 			// 		.color = 0xFF0000FF,
 			// 	},
 			// },
-			GestureDetector{
-				.onUpdate = [sizeChange, &str](GestureDetector::Event) {
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_DOWN)) {
-						if (offset < str.size()) {
-							++offset;
-							sizeChange.notify();
-						}
-					}
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_UP)) {
-						if (offset > 0) {
-							--offset;
-							sizeChange.notify();
-						}
-					}
-				},
-				.child = Column{
-					.widget{
-						.width = 559.f,
-						.height = Size::Shrink,
-					},
-					.children{
-						Box{
-							.widget{
-								.width = Size::Wrap,
-								.height = Size::Shrink,
-							},
-							.color{1.f, 0.f, 1.f, 1.f},
-							.child = Text{
-								.widget{
-									.onInit = [sizeChange, &str](Widget &w) {
-										w.customState.add(sizeChange.observe([&w, &str]() {
-											w.as<Text::Impl>().setText(std::string_view(str.begin(), str.end() - static_cast<int64_t>(offset)));
-										}));
-									},
-								},
-								.text = str,
-								.lineWrap = true,
-							},
+			Align{
+				.child = DropdownButton{
+					.style = ButtonStyle::Standard(),
+					.text = "some text",
+					.items{
+						ContextMenu::Item{
+							.text = "asd",
 						},
 					},
 				},
