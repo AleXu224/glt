@@ -88,7 +88,7 @@ if (WIN32)
 endif()
 
 file(GLOB_RECURSE all_test_files CONFIGURE_DEPENDS "tests/*.cc")
-add_executable(gltTest ${all_test_files})
+add_executable(gltTest EXCLUDE_FROM_ALL ${all_test_files})
 find_package(Catch2 CONFIG REQUIRED)
 target_link_libraries(gltTest PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(gltTest PRIVATE glt)
