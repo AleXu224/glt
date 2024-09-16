@@ -31,10 +31,11 @@ Scrollable::Impl::Impl(const Scrollable &args)
 }
 
 void Scrollable::Impl::onUpdate() {
-	GestureDetector::g_activeArea.emplace_back(getRect());
+	auto &inputState = InputState::of(this);
+	inputState.g_activeArea.emplace_back(getRect());
 
-	if (GestureDetector::canClick(*this) && GestureDetector::g_scrollDelta.y != 0.f) {
-		scroll += GestureDetector::g_scrollDelta.y * -40.f;
+	if (GestureDetector::canClick(*this) && inputState.g_scrollDelta.y != 0.f) {
+		scroll += inputState.g_scrollDelta.y * -40.f;
 	}
 
 	if (controller->viewHeight > controller->contentHeight) {
@@ -51,7 +52,7 @@ void Scrollable::Impl::onUpdate() {
 }
 
 void squi::Scrollable::Impl::afterUpdate() {
-	GestureDetector::g_activeArea.pop_back();
+	InputState::of(this).g_activeArea.pop_back();
 }
 
 vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) {

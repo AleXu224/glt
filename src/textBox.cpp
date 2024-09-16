@@ -1,4 +1,5 @@
 #include "textBox.hpp"
+#include "GLFW/glfw3.h"
 #include "box.hpp"
 #include "column.hpp"
 #include "gestureDetector.hpp"
@@ -6,12 +7,12 @@
 #include "stack.hpp"
 #include "text.hpp"
 #include "textInput.hpp"
-#include "GLFW/glfw3.h"
+
 
 using namespace squi;
 
-using InputState = TextBox::InputState;
-using StObs = Observable<InputState>;
+using BoxInputState = TextBox::InputState;
+using StObs = Observable<BoxInputState>;
 
 struct Body {
 	// Args
@@ -28,7 +29,7 @@ struct Body {
 		return Box{
 			.widget{
 				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
-					w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+					w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
 						auto &box = w.as<Box::Impl>();
 						switch (state) {
 							case squi::TextBox::InputState::resting: {
@@ -60,7 +61,7 @@ struct Body {
 				.widget{
 					.padding = Padding{11.f, 0.f},
 					.onInit = [stateUpdateObs = stateUpdateObs, textUpdateObs = textUpdateObs, reqOnSubmitObs = requestOnSubmitCall, onSubmit = onSubmit](Widget &w) {
-						w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+						w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
 							auto &input = w.as<TextInput::Impl>();
 							switch (state) {
 								case squi::TextBox::InputState::focused: {
@@ -114,7 +115,7 @@ struct Underline {
 			.widget{
 				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
 					w.flags.isInteractive = false;
-					w.customState.add(stateUpdateObs.observe([&w](InputState state) {
+					w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
 						auto &box = w.as<Box::Impl>();
 						switch (state) {
 							case squi::TextBox::InputState::resting:
@@ -178,12 +179,12 @@ squi::TextBox::operator squi::Child() const {
 				storage->stateObserver.notify(storage->getState());
 			},
 			.onUpdate = [storage](GestureDetector::Event event) {
-				if (GestureDetector::isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) {
+				if (event.state.isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) {
 					if (event.state.focused) storage->focusObs.notifyOthers(true);
 					if (event.state.focusedOutside) storage->focusObs.notifyOthers(false);
 				}
 
-				if (storage->focused && (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_ENTER) || GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_ESCAPE))) {
+				if (storage->focused && (event.state.isKeyPressedOrRepeat(GLFW_KEY_ENTER) || event.state.isKeyPressedOrRepeat(GLFW_KEY_ESCAPE))) {
 					storage->focusObs.notifyOthers(false);
 				}
 			},
@@ -200,7 +201,7 @@ squi::TextBox::operator squi::Child() const {
 								.textUpdateObs = controller.updateText,
 								.requestOnSubmitCall = storage->requestOnSubmitCall,
 								.selectAll = controller.selectAll,
-								.onChange = [onChangeObs, onChange = controller.onChange](std::string_view str){
+								.onChange = [onChangeObs, onChange = controller.onChange](std::string_view str) {
 									onChangeObs.notify(str);
 									if (onChange) onChange(str);
 								},
@@ -215,9 +216,9 @@ squi::TextBox::operator squi::Child() const {
 					// Error text
 					Text{
 						.widget{
-							.onInit = [onChangeObs, validator = controller.validator](Widget &w){
+							.onInit = [onChangeObs, validator = controller.validator](Widget &w) {
 								w.flags.visible = false;
-								w.customState.add(onChangeObs.observe([&w, validator](std::string_view str){
+								w.customState.add(onChangeObs.observe([&w, validator](std::string_view str) {
 									if (!validator) return;
 									auto ret = validator(str);
 									auto &text = w.as<Text::Impl>();
@@ -225,7 +226,7 @@ squi::TextBox::operator squi::Child() const {
 										text.flags.visible = false;
 										return;
 									}
-									
+
 									text.flags.visible = true;
 									text.setText(ret.message);
 								}));
@@ -241,9 +242,9 @@ squi::TextBox::operator squi::Child() const {
 	};
 }
 
-InputState squi::TextBox::Storage::getState() const {
-	if (disabled) return InputState::disabled;
-	if (focused) return InputState::focused;
-	if (hovered) return InputState::hovered;
-	return InputState::resting;
+BoxInputState squi::TextBox::Storage::getState() const {
+	if (disabled) return BoxInputState::disabled;
+	if (focused) return BoxInputState::focused;
+	if (hovered) return BoxInputState::hovered;
+	return BoxInputState::resting;
 }

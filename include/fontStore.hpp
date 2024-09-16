@@ -1,16 +1,21 @@
 #pragma once
 
-#include "engine/instance.hpp"
-#include "engine/samplerUniform.hpp"
-#include "engine/textQuad.hpp"
-#include <freetype/fttypes.h>
-#include <optional>
-#include <span>
-#include <tuple>
-#include FT_FREETYPE_H
 #include "atlas.hpp"
 #include "color.hpp"
+#include "engine/textQuad.hpp"
+#include "text/provider.hpp"
+
+#include <freetype/fttypes.h>
+#include FT_FREETYPE_H
+
 #include "unordered_map"
+#include <optional>
+#include <tuple>
+
+#include "roboto-bold.hpp"
+#include "roboto-bolditalic.hpp"
+#include "roboto-italic.hpp"
+#include "roboto-regular.hpp"
 
 namespace squi {
 	struct FontStore {
@@ -38,11 +43,13 @@ namespace squi {
 			};
 
 			bool loaded{true};
+
 		private:
 			Atlas atlas;
 			//
 			std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
 
+			std::vector<char> fontData{};
 			FT_Face face{};
 
 			/**
@@ -70,27 +77,44 @@ namespace squi {
 			std::unordered_map<char32_t, CharInfo> &getSizeMap(float size);
 
 		public:
-			explicit Font(std::string_view fontPath, Engine::Instance &instance);
-			explicit Font(std::span<const char> fontData, Engine::Instance &instance);
+			Font(const FontProvider &provider);
 
 			[[nodiscard]] uint32_t getLineHeight(float size);
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
 			[[nodiscard]] std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
-			[[nodiscard]] Engine::SamplerUniform &getSampler();
+			[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
+			static inline std::mutex fontMtx{};
 		};
 
-		static std::shared_ptr<Font> getFont(std::string_view fontPath, Engine::Instance &instance);
-		static std::optional<std::shared_ptr<Font>> getFontOptional(std::string_view fontPath);
+		static inline std::mutex fontsMtx{};
+		static std::shared_ptr<Font> getFont(const FontProvider &provider);
 
-		static bool init;
-		static FT_Library ftLibrary;
-		static std::unordered_map<std::string, std::weak_ptr<Font>> fonts;
+		static FT_Library &ftLibrary();
+		static std::unordered_map<std::string, std::weak_ptr<Font>> &fonts();
 
-		static std::shared_ptr<Font> defaultFont;
-		static std::shared_ptr<Font> defaultFontBold;
-		static std::shared_ptr<Font> defaultFontItalic;
-		static std::shared_ptr<Font> defaultFontBoldItalic;
-
-		static void initializeDefaultFont(Engine::Instance &instance);
+		static inline FontProvider defaultFont = FontProvider{
+			.key = "default",
+			.provider = []() {
+				return std::vector(Fonts::roboto.begin(), Fonts::roboto.end());
+			},
+		};
+		static inline FontProvider defaultFontBold = FontProvider{
+			.key = "defaultBold",
+			.provider = []() {
+				return std::vector(Fonts::robotoBold.begin(), Fonts::robotoBold.end());
+			},
+		};
+		static inline FontProvider defaultFontItalic = FontProvider{
+			.key = "defaultItalic",
+			.provider = []() {
+				return std::vector(Fonts::robotoItalic.begin(), Fonts::robotoItalic.end());
+			},
+		};
+		static inline FontProvider defaultFontBoldItalic = FontProvider{
+			.key = "defaultBoldItalic",
+			.provider = []() {
+				return std::vector(Fonts::robotoBoldItalic.begin(), Fonts::robotoBoldItalic.end());
+			},
+		};
 	};
 }// namespace squi

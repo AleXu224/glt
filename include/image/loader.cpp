@@ -1,4 +1,4 @@
-#include "imageLoader.hpp"
+#include "loader.hpp"
 
 #include "cstring"
 #include "sail-c++/image_input.h"

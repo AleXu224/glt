@@ -7,6 +7,7 @@
 #include "stateContainer.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include <atomic>
 #include <optional>
 #include <print>
 #include <type_traits>
@@ -143,7 +144,7 @@ namespace squi {
 		};
 
 		enum class StateImpact {
-			NoImpact,            // By itself may not change anything but the callback could
+			NoImpact,        // By itself may not change anything but the callback could
 			RedrawNeeded,    // Eg: changing the color of a box
 			RepositionNeeded,// Changing the scroll on a scrollable
 			RelayoutNeeded,  // Size change
@@ -280,8 +281,8 @@ namespace squi {
 		vec2 pos{};
 		std::vector<std::shared_ptr<Widget>> children{};
 		std::vector<std::shared_ptr<Widget>> childrenToAdd{};
-		static uint64_t idCounter;
-		static uint32_t widgetCount;
+		static inline std::atomic<uint64_t> idCounter = 1;
+		static inline std::atomic<uint32_t> widgetCount = 0;
 
 		void insertChildren();
 

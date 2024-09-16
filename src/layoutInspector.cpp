@@ -26,7 +26,6 @@
 
 
 using namespace squi;
-LayoutInspector::InspectorPipeline *LayoutInspector::pipeline = nullptr;
 
 struct TextItem {
 	// Args
@@ -148,14 +147,14 @@ struct TextItems {
 struct LayoutItem {
 	// Args
 	ChildRef widget;
-	std::shared_ptr<LayoutInspector::Storage> state;
+	std::weak_ptr<LayoutInspector::Storage> state;
 	float depth = 0;
 
 	struct Storage {
 		// Data
 		ChildRef widget;
 		float depth;
-		std::shared_ptr<LayoutInspector::Storage> state;
+		std::weak_ptr<LayoutInspector::Storage> state;
 		std::chrono::time_point<std::chrono::steady_clock> timeCreated = std::chrono::steady_clock::now();
 		bool expanded = false;
 		bool hovered = false;
@@ -190,7 +189,6 @@ struct LayoutItem {
 										.child{
 											FontIcon{
 												.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
-												.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 												.size = 12.f,
 											},
 										},
@@ -214,14 +212,13 @@ struct LayoutItem {
 							.child{
 								FontIcon{
 									.widget{
-										.onInit = [setVisible](Widget &w){
-											w.customState.add(setVisible.observe([&w](bool visible){
+										.onInit = [setVisible](Widget &w) {
+											w.customState.add(setVisible.observe([&w](bool visible) {
 												w.flags.visible = visible;
 											}));
 										},
 									},
 									.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
-									.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 									.size = 12.f,
 								},
 							},
@@ -252,21 +249,25 @@ struct LayoutItem {
 			.children{
 				GestureDetector{
 					.onEnter = [storage, state = state](GestureDetector::Event event) {
-						state->hoveredWidget = storage->widget;
+						state.lock()->hoveredWidget = storage->widget;
 						storage->hovered = true;
 						event.widget.reDraw();
 					},
 					.onLeave = [storage, state = state](GestureDetector::Event event) {
-						storage->hovered = false;
-						if (state->hoveredWidget.lock() == storage->widget.lock()) {
-							state->hoveredWidget.reset();
+						if (auto shared = state.lock()) {
+							storage->hovered = false;
+							if (shared->hoveredWidget.lock() == storage->widget.lock()) {
+								shared->hoveredWidget.reset();
+							}
+							event.widget.reDraw();
 						}
-						event.widget.reDraw();
 					},
 					.onClick = [storage](auto event) {
-						storage->state->selectedWidget = storage->widget;
-						storage->state->selectedWidgetChanged = true;
-						storage->state->activeButton = event.widget.shared_from_this();
+						if (auto shared = storage->state.lock()) {
+							shared->selectedWidget = storage->widget;
+							shared->selectedWidgetChanged = true;
+							shared->activeButton = event.widget.weak_from_this();
+						}
 					},
 					.child{
 						Box{
@@ -277,7 +278,7 @@ struct LayoutItem {
 								.padding = Padding{0.f, 0.f, 0.f, depth * 16.f},
 								.onUpdate = [storage = storage, state = state](Widget &w) {
 									Color outputColor = [&]() {
-										if (storage->hovered || state->activeButton.lock() == w.shared_from_this())
+										if (storage->hovered || state.lock()->activeButton.lock() == w.shared_from_this())
 											return Color(0xFFFFFF0D);
 
 										return Color(0x00000000);
@@ -360,13 +361,15 @@ struct LayoutItem {
 };
 
 struct LayoutInspectorActionButton {
-	std::shared_ptr<LayoutInspector::Storage> storage;
+	std::weak_ptr<LayoutInspector::Storage> storage;
 	// Args
 	operator Child() const {
 		return GestureDetector{
 			.onClick = [storage = storage](auto) {
-				storage->pauseUpdates = !storage->pauseUpdates;
-				storage->pauseUpdatesChanged = true;
+				if (auto shared = storage.lock()) {
+					shared->pauseUpdates = !shared->pauseUpdates;
+					shared->pauseUpdatesChanged = true;
+				}
 			},
 			.onUpdate = [](auto event) {
 				auto &box = dynamic_cast<Box::Impl &>(event.widget);
@@ -383,19 +386,20 @@ struct LayoutInspectorActionButton {
 						.height = 36.f,
 						.margin = 2.f,
 						.onUpdate = [storage = storage](Widget &w) {
-							if (storage->pauseUpdatesChanged) {
-								w.setChildren(Children{
-									Align{
-										.child{
-											FontIcon{
-												.icon = storage->pauseUpdates ? char32_t{0xE768} : char32_t{0xE769},
-												.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
-												.size = 16.f,
+							if (auto shared = storage.lock()) {
+								if (shared->pauseUpdatesChanged) {
+									w.setChildren(Children{
+										Align{
+											.child{
+												FontIcon{
+													.icon = shared->pauseUpdates ? char32_t{0xE768} : char32_t{0xE769},
+													.size = 16.f,
+												},
 											},
 										},
-									},
-								});
-								storage->pauseUpdatesChanged = false;
+									});
+									shared->pauseUpdatesChanged = false;
+								}
 							}
 						},
 					},
@@ -405,7 +409,6 @@ struct LayoutInspectorActionButton {
 						.child{
 							FontIcon{
 								.icon = 0xE769,
-								.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 								.size = 16.f,
 							},
 						},
@@ -418,7 +421,7 @@ struct LayoutInspectorActionButton {
 
 struct LayoutInspectorContent {
 	// Args
-	std::shared_ptr<LayoutInspector::Storage> storage;
+	std::weak_ptr<LayoutInspector::Storage> storage;
 
 	operator Child() const {
 		return Column{
@@ -435,8 +438,10 @@ struct LayoutInspectorContent {
 							.text{"Pause Layout"},
 							.style = ButtonStyle::Standard(),
 							.onClick = [storage = storage](auto) {
-								storage->pauseLayout = !storage->pauseLayout;
-								storage->pauseLayoutChanged = true;
+								if (auto shared = storage.lock()) {
+									shared->pauseLayout = !shared->pauseLayout;
+									shared->pauseLayoutChanged = true;
+								}
 							},
 						},
 					},
@@ -462,17 +467,19 @@ struct LayoutInspectorContent {
 										});
 										return result == children.end();
 									};
-									if (auto content = storage->contentStack.lock()) {
-										for (auto &child: content->getChildren()) {
-											if (test(child)) {
-												w.addChild(LayoutItem{child->shared_from_this(), storage});
+									if (auto shared = storage.lock()) {
+										if (auto content = shared->contentStack.lock()) {
+											for (auto &child: content->getChildren()) {
+												if (test(child)) {
+													w.addChild(LayoutItem{child->shared_from_this(), shared});
+												}
 											}
 										}
-									}
-									if (auto overlays = storage->overlayStack.lock()) {
-										for (auto &child: overlays->getChildren()) {
-											if (test(child)) {
-												w.addChild(LayoutItem{child->shared_from_this(), storage});
+										if (auto overlays = shared->overlayStack.lock()) {
+											for (auto &child: overlays->getChildren()) {
+												if (test(child)) {
+													w.addChild(LayoutItem{child->shared_from_this(), shared});
+												}
 											}
 										}
 									}
@@ -492,9 +499,11 @@ struct LayoutInspectorContent {
 					.widget{
 						.height = 256.f,
 						.onUpdate = [storage = storage](Widget &w) {
-							if (!storage->selectedWidget.expired() && storage->selectedWidgetChanged) {
-								w.setChildren(Children{TextItems{storage->selectedWidget}});
-								storage->selectedWidgetChanged = false;
+							if (auto shared = storage.lock()) {
+								if (!shared->selectedWidget.expired() && shared->selectedWidgetChanged) {
+									w.setChildren(Children{TextItems{shared->selectedWidget}});
+									shared->selectedWidgetChanged = false;
+								}
 							}
 						},
 					},
@@ -515,15 +524,19 @@ LayoutInspector::operator Child() const {
 
 	return Row{
 		.widget{
-			.onDraw = [](Widget &w) {
-				if (LayoutInspector::pipeline == nullptr) {
-					pipeline = &Window::of(&w).engine.instance.createPipeline<InspectorPipeline>(InspectorPipeline::Args{
-						.vertexShader = Engine::Shaders::inspectorQuadvert,
-						.fragmentShader = Engine::Shaders::inspectorQuadfrag,
-						.instance = Window::of(&w).engine.instance,
-					});
-				}
-			}
+			.onInit = [storage](Widget &w) {
+				auto &window = Window::of(&w);
+				storage->pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<InspectorPipeline>{
+					.key = "squiInspectorPipeline",
+					.provider = [&]() {
+						return InspectorPipeline::Args{
+							.vertexShader = Engine::Shaders::inspectorQuadvert,
+							.fragmentShader = Engine::Shaders::inspectorQuadfrag,
+							.instance = window.engine.instance,
+						};
+					},
+				});
+			},
 		},
 		.children{
 			Stack{
@@ -531,9 +544,10 @@ LayoutInspector::operator Child() const {
 					.width = Size::Expand,
 					.height = Size::Expand,
 					.onUpdate = [storage](Widget &w) {
-						w.flags.shouldUpdateChildren = !storage->pauseUpdates || GestureDetector::isKey(GLFW_KEY_F10, GLFW_PRESS);
-						w.flags.shouldLayoutChildren = !storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS);
-						w.flags.shouldArrangeChildren = !storage->pauseLayout || GestureDetector::isKey(GLFW_KEY_F11, GLFW_PRESS);
+						auto &inputState = InputState::of(&w);
+						w.flags.shouldUpdateChildren = !storage->pauseUpdates || inputState.isKey(GLFW_KEY_F10, GLFW_PRESS);
+						w.flags.shouldLayoutChildren = !storage->pauseLayout || inputState.isKey(GLFW_KEY_F11, GLFW_PRESS);
+						w.flags.shouldArrangeChildren = !storage->pauseLayout || inputState.isKey(GLFW_KEY_F11, GLFW_PRESS);
 					},
 				},
 				.children{
@@ -545,14 +559,16 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedChildren = addedChildren, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->contentStack = shared;
-								storage->addedChildrenObserver = addedChildren.observe([storage](const Child &child) {
-									if (auto content = storage->contentStack.lock()) {
-										content->addChild(child);
+								storage->addedChildrenObserver = addedChildren.observe([weakStorage = std::weak_ptr<Storage>(storage)](const Child &child) {
+									if (auto storage = weakStorage.lock()) {
+										if (auto content = storage->contentStack.lock()) {
+											content->addChild(child);
+										}
 									}
 								});
 							},
 							.onUpdate = [storage](Widget &w) {
-								if (GestureDetector::isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {}, {}, true);
+								if (InputState::of(&w).isKey(GLFW_KEY_F9, GLFW_PRESS)) w.layout(w.getLayoutSize(), {}, {}, true);
 							},
 						},
 					},
@@ -564,9 +580,11 @@ LayoutInspector::operator Child() const {
 							.onInit = [addedOverlays = addedOverlays, storage](Widget &w) {
 								auto shared = w.weak_from_this();
 								storage->overlayStack = shared;
-								storage->addedOverlaysObserver = addedOverlays.observe([storage](const Child &child) {
-									if (auto overlays = storage->overlayStack.lock()) {
-										overlays->addChild(child);
+								storage->addedOverlaysObserver = addedOverlays.observe([weakStorage = std::weak_ptr<Storage>(storage)](const Child &child) {
+									if (auto storage = weakStorage.lock()) {
+										if (auto overlays = storage->overlayStack.lock()) {
+											overlays->addChild(child);
+										}
 									}
 								});
 							},
@@ -580,17 +598,17 @@ LayoutInspector::operator Child() const {
 					event.widget.reDraw();
 				},
 				.onUpdate = [storage](auto event) {
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F5)) {
+					if (event.state.isKeyPressedOrRepeat(GLFW_KEY_F5)) {
 						storage->pauseUpdates = !storage->pauseUpdates;
 						storage->pauseUpdatesChanged = true;
 					}
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F6)) {
+					if (event.state.isKeyPressedOrRepeat(GLFW_KEY_F6)) {
 						storage->pauseLayout = !storage->pauseLayout;
 					}
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F12)) {
+					if (event.state.isKeyPressedOrRepeat(GLFW_KEY_F12)) {
 						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
-					if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_I, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
+					if (event.state.isKeyPressedOrRepeat(GLFW_KEY_I, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) {
 						event.widget.flags.visible = !*event.widget.flags.visible;
 					}
 				},
@@ -608,15 +626,16 @@ LayoutInspector::operator Child() const {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
 								if (*widget->flags.visible) {
+									if (!storage->pipeline) return;
 									Engine::InspectorQuad quad{Engine::InspectorQuad::Args{
 										.position = widget->getPos(),
 										.size = widget->getLayoutSize(),
 										.margins = *widget->state.margin,
 										.paddings = *widget->state.padding,
 									}};
-									LayoutInspector::pipeline->bind();
-									auto [vi, ii] = LayoutInspector::pipeline->getIndexes();
-									LayoutInspector::pipeline->addData(quad.getData(vi, ii));
+									storage->pipeline->bind();
+									auto [vi, ii] = storage->pipeline->getIndexes();
+									storage->pipeline->addData(quad.getData(vi, ii));
 								}
 							},
 						},

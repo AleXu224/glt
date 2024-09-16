@@ -5,14 +5,14 @@
 // #endif
 
 #include "window.hpp"
+#include "GLFW/glfw3.h"
+#include "GLFW/glfw3native.h"
 #include "fontStore.hpp"
-#include "gestureDetector.hpp"
 #include "layoutInspector.hpp"
 #include "widget.hpp"
 #include <print>
 #include <stdexcept>
-#include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
+
 
 #ifdef _WIN32
 #include "dwmapi.h"
@@ -25,60 +25,109 @@ void squi::Window::glfwError(int id, const char *description) {
 	std::print("GLFW Error {}: {}\n", id, description);
 }
 
-std::unordered_map<GLFWwindow *, squi::Window *> squi::Window::windowMap{};
-
-squi::Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
-											  .shouldLayoutChildren = false,
-											  .shouldArrangeChildren = false,
-											  .isInteractive = false,
-										  }),
-				   engine() {
+squi::Window::Window()
+	: Widget(
+		  Widget::Args{},
+		  Widget::FlagsArgs{
+			  .shouldLayoutChildren = false,
+			  .shouldArrangeChildren = false,
+			  .isInteractive = false,
+		  }
+	  ),
+	  engine() {
+	windowCount++;
 	auto &window = engine.instance.window.ptr;
 	state.root = this;
-
-	windowMap[window] = this;
-
-	glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int /*width*/, int /*height*/) {
-		auto *window = windowMap[windowPtr];
-		window->engine.resized = true;
-		window->engine.draw();
-	});
-	glfwSetCursorPosCallback(window, [](GLFWwindow * /*m_window*/, double xpos, double ypos) {
-		auto dpiScale = GestureDetector::g_dpi / vec2{96};
-		GestureDetector::setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
-	});
-	glfwSetCharCallback(window, [](GLFWwindow * /*m_window*/, unsigned int codepoint) {
-		GestureDetector::g_textInput.append(1, static_cast<char>(codepoint));
-	});
-	glfwSetScrollCallback(window, [](GLFWwindow * /*m_window*/, double xoffset, double yoffset) {
-		GestureDetector::g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
-	});
-	glfwSetKeyCallback(window, [](GLFWwindow * /*m_window*/, int key, int /*scancode*/, int action, int mods) {
-		//		Screen::getCurrentScreen()->animationRunning();
-		if (!GestureDetector::g_keys.contains(key))
-			GestureDetector::g_keys.insert({key, {action, mods}});
-		else
-			GestureDetector::g_keys.at(key) = {action, mods};
-	});
-	glfwSetMouseButtonCallback(window, [](GLFWwindow * /*m_window*/, int button, int action, int mods) {
-		//		Screen::getCurrentScreen()->animationRunning();
-		if (!GestureDetector::g_keys.contains(button))
-			GestureDetector::g_keys.insert({button, {action, mods}});
-		else
-			GestureDetector::g_keys.at(button) = {action, mods};
-	});
-	glfwSetCursorEnterCallback(window, [](GLFWwindow * /*m_window*/, int entered) {
-		GestureDetector::g_cursorInside = static_cast<bool>(entered);
-	});
-
-	FontStore::initializeDefaultFont(engine.instance);
+	{
+		std::scoped_lock lock{Engine::Window::_windowMtx};
+		windowMap[window] = this;
+		glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int /*width*/, int /*height*/) {
+			std::scoped_lock wnd{windowMapMtx};
+			auto *window = windowMap[windowPtr];
+			std::scoped_lock swp{window->engine.swapChainMtx};
+			std::scoped_lock inp{window->inputMtx};
+			window->engine.resized = true;
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetCursorPosCallback(window, [](GLFWwindow *m_window, double xpos, double ypos) {
+			std::scoped_lock _{windowMapMtx};
+			auto *window = Window::windowMap.at(m_window);
+			auto dpiScale = window->inputState.g_dpi / vec2{96};
+			std::scoped_lock inp{window->inputMtx};
+			window->inputState.setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetCharCallback(window, [](GLFWwindow *m_window, unsigned int codepoint) {
+			std::scoped_lock _{windowMapMtx};
+			auto &window = Window::windowMap.at(m_window);
+			std::scoped_lock inp{window->inputMtx};
+			window->inputState.g_textInput.append(1, static_cast<char>(codepoint));
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
+			std::scoped_lock _{windowMapMtx};
+			auto &window = Window::windowMap.at(m_window);
+			std::scoped_lock inp{window->inputMtx};
+			window->inputState.g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetKeyCallback(window, [](GLFWwindow *m_window, int key, int /*scancode*/, int action, int mods) {
+			std::scoped_lock _{windowMapMtx};
+			//		Screen::getCurrentScreen()->animationRunning();
+			auto &window = Window::windowMap.at(m_window);
+			std::scoped_lock inp{window->inputMtx};
+			if (!window->inputState.g_keys.contains(key))
+				window->inputState.g_keys.insert({key, {action, mods}});
+			else
+				window->inputState.g_keys.at(key) = {action, mods};
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetMouseButtonCallback(window, [](GLFWwindow *m_window, int button, int action, int mods) {
+			std::scoped_lock _{windowMapMtx};
+			//		Screen::getCurrentScreen()->animationRunning();
+			auto &window = Window::windowMap.at(m_window);
+			std::scoped_lock inp{window->inputMtx};
+			if (!window->inputState.g_keys.contains(button))
+				window->inputState.g_keys.insert({button, {action, mods}});
+			else
+				window->inputState.g_keys.at(button) = {action, mods};
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+		glfwSetCursorEnterCallback(window, [](GLFWwindow *m_window, int entered) {
+			std::scoped_lock _{windowMapMtx};
+			auto &window = Window::windowMap.at(m_window);
+			std::scoped_lock inp{window->inputMtx};
+			window->inputState.g_cursorInside = static_cast<bool>(entered);
+			if (!window->inputTriggered) {
+				window->inputTriggered = true;
+				window->inputReady.set_value();
+			}
+		});
+	}
 
 #ifdef _WIN32
 	bool supportsNewMica = false;
 	const auto *const system = L"kernel32.dll";
 	DWORD dummy = 0;
-	const auto cbInfo =
-		::GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, system, &dummy);
+	const auto cbInfo = ::GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, system, &dummy);
 	std::vector<char> buffer(cbInfo);
 	::GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, system, dummy, buffer.size(), buffer.data());
 	void *p = nullptr;
@@ -119,107 +168,128 @@ squi::Window::Window() : Widget(Widget::Args{}, Widget::FlagsArgs{
 	});
 	content->state.parent = this;
 	content->state.root = this;
+	bool firstRun = true;
+	std::thread([&]() {
+		engine.run(
+			[&]() -> bool {
+				{
+					if (!firstRun)
+						inputReady.get_future().wait_for(100ms);
+					firstRun = false;
+					std::scoped_lock lock{inputMtx};
+					inputTriggered = false;
+					inputReady = std::promise<void>{};
+				}
+				if (engine.resized || engine.outdatedFramebuffer) {
+					engine.recreateSwapChain();
+					needsRelayout = true;
+				}
+				drewLastFrame = false;
+
+				auto &children = getChildren();
+				const auto &width = engine.instance.swapChainExtent.width;
+				const auto &height = engine.instance.swapChainExtent.height;
+				state.width = static_cast<float>(width);
+				state.height = static_cast<float>(height);
+				state.root = this;
+
+				for (auto &child: children) {
+					addedChildren.notify(child);
+				}
+				children.clear();
+
+				inputState.g_activeArea.emplace_back(
+					vec2{0.0f, 0.0f},
+					vec2{static_cast<float>(width), static_cast<float>(height)}
+				);
+
+
+				content->state.parent = this;
+				content->state.root = this;
+				content->update();
+
+				if (needsRelayout) {
+					content->layout({static_cast<float>(width), static_cast<float>(height)}, {}, {}, true);
+					// std::println("Relayout counter:");
+					// for (const auto &[key, value]: relayoutCounter) {
+					// 	std::println("{} - {} layouts", key, value);
+					// }
+					relayoutCounter.clear();
+				}
+
+				if (needsRelayout || needsReposition) {
+					content->arrange({0.0f, 0.0f});
+				}
+
+				inputState.g_activeArea.pop_back();
+				if (!inputState.g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
+
+				bool forceRedraw = inputState.isKeyPressedOrRepeat(GLFW_KEY_F9);
+
+				{
+					std::scoped_lock lock{Engine::Window::_windowMtx};
+					inputState.frameEnd();
+				}
+
+				if (needsRedraw || needsRelayout || needsReposition || forceRedraw) {
+					needsRedraw = false;
+					needsRelayout = false;
+					needsReposition = false;
+
+					drewLastFrame = true;
+					return true;
+				}
+
+				return false;
+			},
+			[&]() {
+				content->draw();
+			},
+			[&]() {
+				std::println("Cleaning up!");
+				this->getPendingChildren().clear();
+				this->getChildren().clear();
+				this->content.reset();
+			}
+		);
+
+		std::println("Cleaned up!");
+		std::scoped_lock _{windowMapMtx};
+		windowsToDestroy.emplace_back(this);
+		// Wake up the main thread in order to get it to close the window
+		// Otherwise it will just wait until there is another input before doing so
+		// leading to a circumstance where you can click the close button but the window stays
+		glfwPostEmptyEvent();
+	}).detach();
 }
 
 squi::Window::~Window() {
-	windowMap.erase(engine.instance.window.ptr);
+	windowCount--;
 }
 
 void squi::Window::run() {
-	content->state.parent = this;
-	content->state.root = this;
-	engine.run(
-		[&]() -> bool {
-			if (drewLastFrame) {
-				glfwPollEvents();
-			} else {
-				glfwWaitEventsTimeout(1.0 / 10.0);// Run at 10 fps
+	while (!windowMap.empty()) {
+		{
+			std::scoped_lock _{windowMapMtx};
+			for (auto *window: windowsToDestroy) {
+				windowMap.erase(window->engine.instance.window.ptr);
+				// glfwHideWindow(engine.instance.window.ptr);
+				window->engine.instance.window.destroy();
 			}
-			drewLastFrame = false;
-
-			auto &children = getChildren();
-			if (engine.resized) {
-				needsRelayout = true;
-				engine.resized = false;
-				// FIXME: Might want to look an alternative way of resizing
-				// Recreating the swap chain is way too costly and will result in a laggy resize
-				engine.recreateSwapChain();
-			}
-			const auto &width = engine.instance.swapChainExtent.width;
-			const auto &height = engine.instance.swapChainExtent.height;
-			state.width = static_cast<float>(width);
-			state.height = static_cast<float>(height);
-			state.root = this;
-
-			for (auto &child: children) {
-				addedChildren.notify(child);
-			}
-			children.clear();
-
-			GestureDetector::g_activeArea.emplace_back(
-				vec2{0.0f, 0.0f},
-				vec2{static_cast<float>(width), static_cast<float>(height)}
-			);
-
-
-			content->state.parent = this;
-			content->state.root = this;
-			content->update();
-
-			if (needsRelayout) {
-				content->layout({static_cast<float>(width), static_cast<float>(height)}, {}, {}, true);
-				// std::println("Relayout counter:");
-				// for (const auto &[key, value]: relayoutCounter) {
-				// 	std::println("{} - {} layouts", key, value);
-				// }
-				relayoutCounter.clear();
-			}
-
-			if (needsRelayout || needsReposition) {
-				content->arrange({0.0f, 0.0f});
-			}
-
-			GestureDetector::g_activeArea.pop_back();
-			if (!GestureDetector::g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
-
-			bool forceRedraw = GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_F9);
-
-			GestureDetector::frameEnd();
-
-			if (needsRedraw || needsRelayout || needsReposition || forceRedraw) {
-				needsRedraw = false;
-				needsRelayout = false;
-				needsReposition = false;
-
-				drewLastFrame = true;
-				return true;
-			}
-
-			return false;
-		},
-		[&]() {
-			content->draw();
-		},
-		[&]() {
-			std::println("Cleaning up!");
-			this->getPendingChildren().clear();
-			this->getChildren().clear();
-			this->content.reset();
-
-			if (Widget::getCount() != 1) {
-				std::println("Widgets still alive: {} (should be 1)", Widget::getCount());
-			}
-
-			for (const auto &[key, font]: FontStore::fonts) {
-				if (!font.expired()) {
-					std::println("Found non expired font, {} uses", font.use_count());
-				}
-			}
-
-			FontStore::defaultFont.reset();
-			FontStore::defaultFontBold.reset();
-			FontStore::defaultFontItalic.reset();
-			FontStore::defaultFontBoldItalic.reset();
 		}
-	);
+		glfwWaitEvents();
+	}
+
+	if (Widget::getCount() != windowCount) {
+		std::println("Widgets still alive: {} (should be 1)", Widget::getCount());
+	}
+	// FontStore::defaultFont.reset();
+	// FontStore::defaultFontBold.reset();
+	// FontStore::defaultFontItalic.reset();
+	// FontStore::defaultFontBoldItalic.reset();
+	for (const auto &[key, font]: FontStore::fonts()) {
+		if (!font.expired()) {
+			std::println("Found non expired font, {} uses", font.use_count());
+		}
+	}
 }

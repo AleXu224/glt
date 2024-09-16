@@ -15,9 +15,6 @@
 
 using namespace squi;
 
-// std::unique_ptr<Text::TextPipeline> Text::Impl::pipeline = nullptr;
-Text::TextPipeline *Text::Impl::pipeline = nullptr;
-
 Text::Impl::Impl(const Text &args)
 	: Widget(
 		  args.widget
@@ -27,29 +24,46 @@ Text::Impl::Impl(const Text &args)
 			  .shouldDrawChildren = false,
 		  }
 	  ),
-	  text(args.text), fontSrc([&]() -> std::string_view {
-		  if (std::holds_alternative<std::string_view>(args.font)) {
-			  return std::get<std::string_view>(args.font);
-		  }
-		  return "";
-	  }()),
-	  fontSize(args.fontSize), lineWrap(args.lineWrap), color(args.color) {
-	if (std::holds_alternative<std::shared_ptr<FontStore::Font>>(args.font)) {
-		font = std::get<std::shared_ptr<FontStore::Font>>(args.font);
-		forceRegen = true;
-	}
+	  text(args.text),
+	  fontSize(args.fontSize),
+	  lineWrap(args.lineWrap),
+	  color(args.color) {
+	std::visit(
+		[&](auto &&val) {
+			using T = std::remove_cvref_t<decltype(val)>;
+			if constexpr (std::is_same_v<T, FontProvider>) {
+				font = FontStore::getFont(val);
+			} else if constexpr (std::is_same_v<T, std::shared_ptr<FontStore::Font>>) {
+				font = val;
+			}
+		},
+		args.font
+	);
+	funcs().onInit.emplace_back([font = args.font](Widget &w) {
+		auto &text = w.as<Text::Impl>();
+		auto &window = Window::of(&w);
+
+		text.pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<TextPipeline>{
+			.key = "squiTextPipeline",
+			.provider = [&]() {
+				return TextPipeline::Args{
+					.vertexShader = Engine::Shaders::textRectvert,
+					.fragmentShader = Engine::Shaders::textRectfrag,
+					.instance = window.engine.instance,
+				};
+			},
+		});
+
+		text.sampler = window.samplerStore.getSampler(window.engine.instance, text.font->getTexture());
+		text.forceRegen = true;
+	});
 }
 
 // The text characters are considered to be the children of the text widget
 vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink shouldShrink, bool /*final*/) {
-	if (!font.has_value()) {
-		font = FontStore::getFont(fontSrc, Window::of(this).engine.instance);
-		forceRegen = true;
-	}
-	if (!font.value()) return {};
 	if (shouldShrink.width && lineWrap) maxSize.x = 0;
 	if (lineWrap || forceRegen) {
-		const auto &[width, height] = font.value()->getTextSizeSafe(
+		const auto &[width, height] = font->getTextSizeSafe(
 			text,
 			fontSize,
 			lineWrap ? std::optional<float>(maxSize.x) : std::nullopt
@@ -61,18 +75,16 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink sho
 }
 
 void squi::Text::Impl::postLayout(vec2 &size) {
-	if (!font.has_value() || !font.value()) return;
-
 	if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
 		lastAvailableSpace = size.x;
-		const auto lineHeight = font.value()->getLineHeight(fontSize);
+		const auto lineHeight = font->getLineHeight(fontSize);
 
 		// Will only recalculate the text layout under the following circumstances:
 		// 1. The available width is smaller than the cached text width
 		// 2. The cached text is wrapping (the text is occupying more than one line)
 		// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
 		if (size.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
-			std::tie(quads, textSize.x, textSize.y) = font.value()->generateQuads(
+			std::tie(quads, textSize.x, textSize.y) = font->generateQuads(
 				text,
 				fontSize,
 				vec2(lastX, lastY).rounded(),
@@ -105,20 +117,12 @@ void Text::Impl::updateSize() {
 }
 
 void Text::Impl::onDraw() {
-	if (!font.has_value() || !font.value()) return;
-
-	if (!pipeline) {
-		auto &instance = Window::of(this).engine.instance;
-		pipeline = &instance.createPipeline<TextPipeline>(TextPipeline::Args{
-			.vertexShader = Engine::Shaders::textRectvert,
-			.fragmentShader = Engine::Shaders::textRectfrag,
-			.instance = Window::of(this).engine.instance,
-		});
-	}
+	if (!pipeline) return;
+	if (!sampler) return;
 
 	const auto pos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
 
-	pipeline->bindWithSampler(font.value()->getSampler());
+	pipeline->bindWithSampler(*sampler);
 	const auto clipRect = Window::of(this).engine.instance.scissorStack.back();
 	const auto minOffsetX = clipRect.left - pos.x;
 	// const auto minOffsetY = clipRect.top - pos.y;
@@ -161,7 +165,7 @@ std::string_view Text::Impl::getText() const {
 }
 
 std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &text) const {
-	return font.value()->getTextSizeSafe(text, fontSize, lineWrap ? std::optional<float>(getContentSize().x) : std::nullopt);
+	return font->getTextSizeSafe(text, fontSize, lineWrap ? std::optional<float>(getContentSize().x) : std::nullopt);
 }
 
 void squi::Text::Impl::setColor(const Color &newColor) {
@@ -180,6 +184,5 @@ const std::vector<std::vector<Engine::TextQuad>> &squi::Text::Impl::getQuads() c
 }
 
 uint32_t squi::Text::Impl::getLineHeight() const {
-	if (!font.has_value()) return 0;
-	return font.value()->getLineHeight(fontSize);
+	return font->getLineHeight(fontSize);
 }

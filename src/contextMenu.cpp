@@ -163,7 +163,6 @@ ContextMenuButton::operator Child() const {
 										return FontIcon{
 											.margin{0.f, 14.f, 0.f, 9.f},
 											.icon = 0xF78C,
-											.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 											.size = 12.f,
 										};
 									}
@@ -190,7 +189,6 @@ ContextMenuButton::operator Child() const {
 										return FontIcon{
 											.margin{7.f, 0.f},
 											.icon = 0xE974,
-											.font{R"(C:\Windows\Fonts\segmdl2.ttf)"},
 											.size = 12.f,
 										};
 									}

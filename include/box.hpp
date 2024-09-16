@@ -27,7 +27,7 @@ namespace squi {
 			Engine::Quad quad;
 			BorderPosition borderPosition;
 			bool shouldClipContent;
-			static BoxPipeline *pipeline;
+			std::shared_ptr<BoxPipeline> pipeline;
 
 		public:
 

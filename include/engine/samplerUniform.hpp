@@ -18,10 +18,10 @@ namespace Engine {
 	struct SamplerUniform {
 		struct Args {
 			Instance &instance;
-			Texture::Args textureArgs;
+			std::shared_ptr<Texture> texture;
 		};
 
-		Texture texture;
+		std::shared_ptr<Texture> texture;
 
 		vk::raii::DescriptorSetLayout descriptorSetLayout;
 
@@ -35,15 +35,15 @@ namespace Engine {
 		SamplerUniform &operator=(const SamplerUniform &) = delete;
 		SamplerUniform &operator=(SamplerUniform &&) = delete;
 		SamplerUniform(const Args &args)
-			: texture(args.textureArgs),
-			  descriptorSetLayout(createSetLayout(args)),
-			  descriptorPool(createDescriptorPool(args)),
-			  descriptorSets(createDescriptorSets(args)),
+			: texture(args.texture),
+			  descriptorSetLayout(createSetLayout()),
+			  descriptorPool(createDescriptorPool()),
+			  descriptorSets(createDescriptorSets()),
 			  instance(args.instance) {
 			for (auto i: std::views::iota(0ULL, FrameBuffer)) {
 				vk::DescriptorImageInfo bufferInfo{
-					.sampler = *texture.sampler,
-					.imageView = *texture.view,
+					.sampler = *texture->sampler,
+					.imageView = *texture->view,
 					.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
 				};
 
@@ -56,15 +56,15 @@ namespace Engine {
 					.pImageInfo = &bufferInfo,
 				};
 
-				args.instance.device.updateDescriptorSets(descriptorWrite, {});
+				Vulkan::device().resource.updateDescriptorSets(descriptorWrite, {});
 			}
 		}
 
 		~SamplerUniform() {
-			auto thread = std::thread([&instance = instance, texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
+			auto thread = std::thread([texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
 				// Wait for the device to be done with the descriptor sets
 				graphicsQueueMutex.lock();
-				instance.device.waitIdle();
+				Vulkan::device().resource.waitIdle();
 				graphicsQueueMutex.unlock();
 			});
 			thread.detach();
@@ -78,7 +78,7 @@ namespace Engine {
 			instance.currentFrame.get().commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, 0, *descriptorSets.at(instance.currentFrame.get().index), {});
 		}
 
-		static vk::raii::DescriptorSetLayout createSetLayout(const Args &args) {
+		static vk::raii::DescriptorSetLayout createSetLayout() {
 			auto layoutBinding = getDescriptorSetLayout();
 
 			vk::DescriptorSetLayoutCreateInfo createInfo{
@@ -87,7 +87,7 @@ namespace Engine {
 			};
 
 			return vk::raii::DescriptorSetLayout{
-				args.instance.device,
+				Vulkan::device().resource,
 				createInfo,
 			};
 		}
@@ -102,7 +102,7 @@ namespace Engine {
 			};
 		}
 
-		static vk::raii::DescriptorPool createDescriptorPool(const Args &args) {
+		static vk::raii::DescriptorPool createDescriptorPool() {
 			vk::DescriptorPoolSize size{
 				.type = vk::DescriptorType::eCombinedImageSampler,
 				.descriptorCount = FrameBuffer,
@@ -115,10 +115,10 @@ namespace Engine {
 				.pPoolSizes = &size,
 			};
 
-			return args.instance.device.createDescriptorPool(createInfo);
+			return Vulkan::device().resource.createDescriptorPool(createInfo);
 		}
 
-		[[nodiscard]] std::vector<vk::raii::DescriptorSet> createDescriptorSets(const Args &args) const {
+		[[nodiscard]] std::vector<vk::raii::DescriptorSet> createDescriptorSets() const {
 			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t /*i*/) -> vk::DescriptorSetLayout {
 				return *descriptorSetLayout;
 			});
@@ -129,7 +129,7 @@ namespace Engine {
 				.pSetLayouts = setLayouts.data(),
 			};
 
-			return args.instance.device.allocateDescriptorSets(allocInfo);
+			return Vulkan::device().resource.allocateDescriptorSets(allocInfo);
 		}
 	};
 }// namespace Engine

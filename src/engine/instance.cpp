@@ -1,41 +1,20 @@
 #include "instance.hpp"
 #include "ranges"
-#include "set"
+#include "vulkanIncludes.hpp"
+#include <print>
+
+#include "vulkan.hpp"
+
 #include "GLFW/glfw3.h"
 #include <GLFW/glfw3native.h>
-#include <print>
-#include "vulkanIncludes.hpp"
 
 using namespace Engine;
 
-#if NDEBUG
-constexpr bool debugBuild = false;
-#else
-constexpr bool debugBuild = true;
-#endif
-
-static bool validationLayersAvailable = true;
-
-static const std::vector<const char *> validationLayers{
-	"VK_LAYER_KHRONOS_validation",
-};
-
-const std::vector<const char *> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-};
-
 Instance::Instance() : window(800, 600, "Vulkan window"),
-					   dynamicLoader(createDynamicLoader()),
-					   context(createContext()),
-					   instance(createInstance()),
 					   surface(createSurface()),
-					   physicalDevice(selectPhysicalDevice()),
-					   device(createLogicalDevice()),
-					   graphicsQueue(createGraphicsQueue()),
-					   presentQueue(createPresentQueue()),
+					   swapChainExtent(createExtent()),
 					   swapChain(createSwapChain(false)),
 					   swapChainImageFormat(createSwapChainImageFormat()),
-					   swapChainExtent(createExtent()),
 					   swapChainImages(createSwapChainImages()),
 					   swapChainImageViews(createImageViews()),
 					   renderPass(createRenderPass()),
@@ -43,9 +22,9 @@ Instance::Instance() : window(800, 600, "Vulkan window"),
 					   frames{[&] {
 						   std::vector<Frame> ret{};
 						   ret.reserve(FrameBuffer);
-						   auto props = findQueueFamilies(physicalDevice);
+						   auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 						   for (size_t i = 0; i < FrameBuffer; i++) {
-							   ret.emplace_back(i, device, props.graphicsFamily.value());
+							   ret.emplace_back(i, Vulkan::device().resource, props.graphicsFamily.value());
 						   }
 
 						   return ret;
@@ -56,76 +35,31 @@ void Engine::Instance::recreateSwapChain() {
 	int width = 0;
 	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
-	while (width == 0 || height == 0) {
-		glfwGetFramebufferSize(window.ptr, &width, &height);
-		glfwWaitEvents();
-	}
-	device.waitIdle();
+	if (width == 0 || height == 0) return;
+	Vulkan::device().resource.waitIdle();
 
+	swapChainExtent = createExtent();
 	swapChain = createSwapChain(true);
 	swapChainImageFormat = createSwapChainImageFormat();
-	swapChainExtent = createExtent();
 	swapChainImages = createSwapChainImages();
 	swapChainImageViews = createImageViews();
 	renderPass = createRenderPass();
 	swapChainFramebuffers = createFramebuffers();
 
 	for (auto &frame: frames) {
-		frame.recreateCommandBuffer(device);
-	}
-}
-
-vk::raii::Instance Engine::Instance::createInstance() {
-	if (debugBuild && !checkValidationLayers()) {
-		std::println("The required validation layers are not available, proceeding without them");
-		validationLayersAvailable = false;
-	}
-
-	vk::ApplicationInfo appInfo{
-		.pApplicationName = "App name",
-		.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-		.pEngineName = "EngineVK",
-		.engineVersion = VK_MAKE_VERSION(1, 0, 0),
-		.apiVersion = VK_API_VERSION_1_3,
-	};
-
-	uint32_t glfwExtCount{};
-	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtCount);
-
-	vk::InstanceCreateInfo createInfo{
-		.pApplicationInfo = &appInfo,
-		.enabledLayerCount = 0,
-		.enabledExtensionCount = glfwExtCount,
-		.ppEnabledExtensionNames = glfwExtensions,
-	};
-
-	if (debugBuild && validationLayersAvailable) {
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-		createInfo.enabledLayerCount = validationLayers.size();
-	}
-	try {
-		vk::raii::Instance ret{context, createInfo};
-		return ret;
-	} catch (std::exception &) {
-		std::println("Instance creation failed, falling back to swiftshader");
-		dynamicLoader = createDynamicLoader(true);
-		context = vk::raii::Context{
-			dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr")
-		};
-		vk::raii::Instance ret{context, createInfo};
-		return ret;
+		frame.recreateCommandBuffer(Vulkan::device().resource);
 	}
 }
 
 vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
 #ifdef _WIN32
 	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo{
-		.hinstance = dynamicLoader.m_library,
+		.hinstance = Vulkan::loader().has_value() ? Vulkan::loader()->m_library : Vulkan::fallbackLoader()->m_library,
 		.hwnd = glfwGetWin32Window(window.ptr),
 	};
-	return instance.createWin32SurfaceKHR(surfaceCreateInfo);
+	return Vulkan::instance().createWin32SurfaceKHR(surfaceCreateInfo);
 #else
-// #error "Platform not supported"
+	// #error "Platform not supported"
 	// vk::WaylandSurfaceCreateInfoKHR surfaceCreateInfo{
 	// 	.display = glfwGetWaylandDisplay(),
 	// 	.surface = glfwGetWaylandWindow(window.ptr),
@@ -133,93 +67,16 @@ vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
 	// return instance.createWaylandSurfaceKHR(surfaceCreateInfo);
 
 	VkSurfaceKHR _surface = nullptr;
-	glfwCreateWindowSurface(*instance, window.ptr, nullptr, &_surface);
-	return {instance, _surface};
+	glfwCreateWindowSurface(*Vulkan::instance(), window.ptr, nullptr, &_surface);
+	return {Vulkan::instance(), _surface};
 #endif
 }
 
-vk::raii::PhysicalDevice Engine::Instance::selectPhysicalDevice() const {
-	auto devices = instance.enumeratePhysicalDevices();
-
-	if (devices.empty()) {
-		throw std::runtime_error("No GPUs with Vulkan support found");
-	}
-
-	for (const auto &device: devices) {
-		auto extensions = device.enumerateDeviceExtensionProperties();
-		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-		for (const auto &extension: extensions) {
-			requiredExtensions.erase(extension.extensionName);
-		}
-
-		if (!requiredExtensions.empty()) continue;
-
-		auto formats = device.getSurfaceFormatsKHR(*surface);
-		auto presentModes = device.getSurfacePresentModesKHR(*surface);
-
-		if (formats.empty() || presentModes.empty()) continue;
-
-		if (!findQueueFamilies(device).isComplete()) continue;
-
-		return device;
-	}
-
-	throw std::runtime_error("Failed to find a suitable GPU");
-}
-
-vk::raii::Device Engine::Instance::createLogicalDevice() const {
-	auto indices = findQueueFamilies(physicalDevice);
-
-	constexpr float queuePriority = 1.f;
-
-	vk::PhysicalDeviceFeatures deviceFeatures;
-
-	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{};
-	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-	queueCreateInfos.reserve(uniqueQueueFamilies.size());
-	for (uint32_t queueFamily: uniqueQueueFamilies) {
-		queueCreateInfos.emplace_back(vk::DeviceQueueCreateInfo{
-			.queueFamilyIndex = queueFamily,
-			.queueCount = 1,
-			.pQueuePriorities = &queuePriority,
-		});
-	}
-
-	vk::DeviceCreateInfo createInfo{
-		.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
-		.pQueueCreateInfos = queueCreateInfos.data(),
-		.enabledLayerCount = 0,
-		.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
-		.ppEnabledExtensionNames = deviceExtensions.data(),
-		.pEnabledFeatures = &deviceFeatures,
-	};
-
-	if (debugBuild && validationLayersAvailable) {
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-	}
-
-	return {physicalDevice, createInfo};
-}
-
-vk::raii::Queue Engine::Instance::createGraphicsQueue() const {
-	auto indices = findQueueFamilies(physicalDevice);
-	return device.getQueue(indices.graphicsFamily.value(), 0);
-}
-
-vk::raii::Queue Engine::Instance::createPresentQueue() const {
-	auto indices = findQueueFamilies(physicalDevice);
-	return device.getQueue(indices.presentFamily.value(), 0);
-}
-
 vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	vk::PresentModeKHR presentMode = chooseSwapPresentMode();
-	vk::Extent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -227,12 +84,17 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
+	vk::SwapchainPresentScalingCreateInfoEXT presentScalingCreateInfo {
+		.scalingBehavior = vk::PresentScalingFlagBitsEXT::eStretch,
+	};
+
 	vk::SwapchainCreateInfoKHR createInfo{
+		.pNext = &presentScalingCreateInfo,
 		.surface = *surface,
 		.minImageCount = imageCount,
 		.imageFormat = surfaceFormat.format,
 		.imageColorSpace = surfaceFormat.colorSpace,
-		.imageExtent = extent,
+		.imageExtent = swapChainExtent,
 		.imageArrayLayers = 1,
 		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
 		.preTransform = swapChainSupport.capabilities.currentTransform,
@@ -244,7 +106,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 
 	if (recreating) createInfo.setOldSwapchain(*swapChain);
 
-	auto indices = findQueueFamilies(physicalDevice);
+	auto indices = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 	std::array<uint32_t, 2> queueFamilyIndices{indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 	if (indices.graphicsFamily != indices.presentFamily) {
@@ -257,7 +119,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 		createInfo.pQueueFamilyIndices = nullptr;// Optional
 	}
 
-	return device.createSwapchainKHR(createInfo);
+	return Vulkan::device().resource.createSwapchainKHR(createInfo);
 }
 
 std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
@@ -265,13 +127,13 @@ std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
 }
 
 vk::Format Engine::Instance::createSwapChainImageFormat() {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	return surfaceFormat.format;
 }
 
 vk::Extent2D Engine::Instance::createExtent() {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	vk::Extent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 	return extent;
 }
@@ -300,7 +162,7 @@ std::vector<vk::raii::ImageView> Engine::Instance::createImageViews() {
 			},
 		};
 
-		ret.emplace_back(device.createImageView(createInfo));
+		ret.emplace_back(Vulkan::device().resource.createImageView(createInfo));
 	}
 
 	return ret;
@@ -347,7 +209,7 @@ vk::raii::RenderPass Engine::Instance::createRenderPass() {
 		.pDependencies = &dependency,
 	};
 
-	return device.createRenderPass(renderPassInfo);
+	return Vulkan::device().resource.createRenderPass(renderPassInfo);
 }
 
 std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
@@ -364,80 +226,10 @@ std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 			.layers = 1,
 		};
 
-		ret.emplace_back(device.createFramebuffer(framebufferInfo));
+		ret.emplace_back(Vulkan::device().resource.createFramebuffer(framebufferInfo));
 	}
 
 	return ret;
-}
-
-bool Engine::Instance::checkValidationLayers() const {
-	auto availableLayers = context.enumerateInstanceLayerProperties();
-
-	for (const auto &layer: validationLayers) {
-		bool layerFound = false;
-		for (const auto &layerProps: availableLayers) {
-			if (strcmp(layer, layerProps.layerName) == 0) {
-				layerFound = true;
-				break;
-			}
-		}
-
-		if (!layerFound) return false;
-	}
-
-	return true;
-}
-
-Engine::Instance::QueueFamilyIndices Engine::Instance::findQueueFamilies(const vk::raii::PhysicalDevice &device) const {
-	QueueFamilyIndices indices{};
-
-	auto queueFamilies = device.getQueueFamilyProperties();
-
-	for (size_t index = 0; queueFamilies.size(); index++) {
-		auto &queueFamily = queueFamilies.at(index);
-
-		if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
-			indices.graphicsFamily = index;
-		}
-
-		if (device.getSurfaceSupportKHR(index, *surface)) {
-			indices.presentFamily = index;
-		}
-
-		if (indices.isComplete()) break;
-	}
-
-	return indices;
-}
-
-DynamicLoader Engine::Instance::createDynamicLoader(bool useFallback) {
-	const std::string fallbackLoader{
-#ifdef _WIN32
-		"vk_swiftshader.dll"
-#else
-// #error "Platform not supported"
-		"vk_swiftshader.dll"
-#endif
-	};
-
-	DynamicLoader loader = std::invoke([&]() -> DynamicLoader {
-		if (useFallback) {
-			return DynamicLoader{fallbackLoader};
-		}
-
-		try {
-			DynamicLoader dynamicLoader{};
-			return dynamicLoader;
-		} catch (std::exception &) {
-			std::println("System doesn't have a vulkan loader, falling back to swiftshader: {}", fallbackLoader);
-			return DynamicLoader{fallbackLoader};
-		}
-	});
-	return loader;
-}
-
-vk::raii::Context Engine::Instance::createContext() const {
-	return {dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr")};
 }
 
 Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) const {

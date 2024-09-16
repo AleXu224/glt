@@ -1,8 +1,8 @@
 #pragma once
 
-#include "instance.hpp"
 #include "buffer.hpp"
 #include "frame.hpp"
+#include "instance.hpp"
 #include "utils.hpp"
 #include "vulkanIncludes.hpp"
 #include <array>
@@ -11,7 +11,6 @@
 #include <print>
 #include <ranges>
 #include <vulkan/vulkan_enums.hpp>
-
 
 
 namespace Engine {
@@ -40,16 +39,15 @@ namespace Engine {
 		Instance &instance;
 
 		Uniform(const Args &args)
-			: descriptorSetLayout(createSetLayout(args)),
+			: descriptorSetLayout(createSetLayout()),
 			  buffers(generateArray<Buffer, FrameBuffer>([&](auto) {
 				  return Buffer{Buffer::Args{
-					  .instance = args.instance,
 					  .size = sizeof(T),
 					  .usage = vk::BufferUsageFlagBits::eUniformBuffer,
 				  }};
 			  })),
-			  descriptorPool(createDescriptorPool(args)),
-			  descriptorSets(createDescriptorSets(args)),
+			  descriptorPool(createDescriptorPool()),
+			  descriptorSets(createDescriptorSets()),
 			  instance(args.instance) {
 			for (auto i: std::views::iota(0ull, FrameBuffer)) {
 				auto &buffer = buffers.at(i).buffer;
@@ -69,7 +67,7 @@ namespace Engine {
 					.pBufferInfo = &bufferInfo,
 				};
 
-				args.instance.device.updateDescriptorSets(descriptorWrite, {});
+				Vulkan::device().resource.updateDescriptorSets(descriptorWrite, {});
 			}
 		}
 
@@ -78,11 +76,7 @@ namespace Engine {
 		}
 
 		void bind(vk::raii::PipelineLayout &layout) {
-			instance.currentFrame.get().commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-																*layout,
-																0,
-																*descriptorSets.at(instance.currentFrame.get().index),
-																{});
+			instance.currentFrame.get().commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, 0, *descriptorSets.at(instance.currentFrame.get().index), {});
 		}
 
 		T &getData() {
@@ -99,7 +93,7 @@ namespace Engine {
 		}
 
 	private:
-		static vk::raii::DescriptorSetLayout createSetLayout(const Args &args) {
+		static vk::raii::DescriptorSetLayout createSetLayout() {
 			auto layoutBinding = getDescriptorSetLayout();
 
 			vk::DescriptorSetLayoutCreateInfo createInfo{
@@ -108,7 +102,7 @@ namespace Engine {
 			};
 
 			return vk::raii::DescriptorSetLayout{
-				args.instance.device,
+				Vulkan::device().resource,
 				createInfo,
 			};
 		}
@@ -122,7 +116,7 @@ namespace Engine {
 			};
 		}
 
-		static vk::raii::DescriptorPool createDescriptorPool(const Args &args) {
+		static vk::raii::DescriptorPool createDescriptorPool() {
 			vk::DescriptorPoolSize size{
 				.type = vk::DescriptorType::eUniformBuffer,
 				.descriptorCount = FrameBuffer,
@@ -135,11 +129,11 @@ namespace Engine {
 				.pPoolSizes = &size,
 			};
 
-			return args.instance.device.createDescriptorPool(createInfo);
+			return Vulkan::device().resource.createDescriptorPool(createInfo);
 		}
 
-		std::vector<vk::raii::DescriptorSet> createDescriptorSets(const Args &args) {
-			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t  /*i*/) -> vk::DescriptorSetLayout {
+		std::vector<vk::raii::DescriptorSet> createDescriptorSets() {
+			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t /*i*/) -> vk::DescriptorSetLayout {
 				return *descriptorSetLayout;
 			});
 
@@ -149,7 +143,7 @@ namespace Engine {
 				.pSetLayouts = setLayouts.data(),
 			};
 
-			return args.instance.device.allocateDescriptorSets(allocInfo);
+			return Vulkan::device().resource.allocateDescriptorSets(allocInfo);
 		}
 	};
 }// namespace Engine

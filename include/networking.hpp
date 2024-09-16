@@ -1,9 +1,11 @@
 #pragma once
 
 #include "asio/io_context.hpp"
+#include "thread"
 #include "vector"
 #include <unordered_map>
-#include "thread"
+
+#include "skyr/v1/url.hpp"
 
 
 namespace squi {
@@ -28,6 +30,6 @@ namespace squi {
 			std::string error;
 		};
 
-		static Response get(std::string_view url);
+		static Response get(const skyr::url &url);
 	};
 }// namespace squi

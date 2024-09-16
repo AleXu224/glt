@@ -17,7 +17,7 @@ namespace squi {
 		std::string_view text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
-		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
+		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
 		Color color{0xFFFFFFFF};
 		using TextPipeline = Engine::Pipeline<Engine::TextQuad::Vertex, true>;
 
@@ -27,16 +27,15 @@ namespace squi {
 			float lastY{0};
 			float lastAvailableSpace{0};
 			std::string text;
-			std::string fontSrc;
 			float fontSize;
 			bool lineWrap;
 			bool forceRegen = false;
-			std::optional<std::shared_ptr<FontStore::Font>> font{};
+			std::shared_ptr<FontStore::Font> font{};
+			std::shared_ptr<Engine::SamplerUniform> sampler{};
 			Color color;
 			vec2 textSize;
 			std::vector<std::vector<Engine::TextQuad>> quads{};
-			// static std::unique_ptr<TextPipeline> pipeline;
-			static TextPipeline *pipeline;
+			std::shared_ptr<TextPipeline> pipeline;
 
 		public:
 			Impl(const Text &args);

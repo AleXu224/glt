@@ -12,10 +12,10 @@ namespace squi {
 		Observable<Child> addedOverlays;
 
 		using InspectorPipeline = Engine::Pipeline<Engine::InspectorQuad::Vertex>;
-		static InspectorPipeline *pipeline;
 
 		struct Storage {
 			// Data
+			std::shared_ptr<InspectorPipeline> pipeline;
 			Observer<Child> addedChildrenObserver{};
 			Observer<Child> addedOverlaysObserver{};
 

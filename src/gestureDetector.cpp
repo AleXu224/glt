@@ -1,123 +1,83 @@
 #include "gestureDetector.hpp"
 #include "GLFW/glfw3.h"
 #include "widget.hpp"
+#include "window.hpp"
 #include <memory>
-#include <optional>
+
 
 using namespace squi;
 
-vec2 GestureDetector::lastCursorPos{};
-vec2 GestureDetector::mouseDelta{0};
+bool GestureDetector::State::isKey(int key, int action, int mods) const {
+	auto inputState = getInputState();
+	if (!inputState) return false;
+	if (!inputState->get().g_keys.contains(key)) return false;
 
-vec2 GestureDetector::g_cursorPos{0};
-std::unordered_map<int, KeyState> GestureDetector::g_keys{};
-std::string GestureDetector::g_textInput{};
-vec2 GestureDetector::g_scrollDelta{0};
-std::vector<Rect> GestureDetector::g_hitCheckRects{};
-std::vector<Rect> GestureDetector::g_activeArea{};
-vec2 GestureDetector::g_dpi{96};
-bool GestureDetector::g_cursorInside{false};
-
-void GestureDetector::setCursorPos(const vec2 &pos) {
-	lastCursorPos = g_cursorPos;
-	g_cursorPos = pos;
-	mouseDelta += g_cursorPos - lastCursorPos;
-}
-
-void GestureDetector::frameEnd() {
-	lastCursorPos = g_cursorPos;
-	mouseDelta = vec2{0};
-	g_scrollDelta = vec2{0};
-	g_textInput.clear();
-	g_keys.clear();
-}
-
-std::optional<KeyState> GestureDetector::getKey(int key) {
-	if (!g_keys.contains(key)) return std::nullopt;
-
-	return g_keys.at(key);
-}
-
-std::optional<KeyState> GestureDetector::getKeyPressedOrRepeat(int key) {
-	if (!g_keys.contains(key)) return std::nullopt;
-
-	auto &keyInput = g_keys.at(key);
-	if (keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) return keyInput;
-
-	return std::nullopt;
-}
-
-bool GestureDetector::isKey(int key, int action, int mods) {
-	if (!g_keys.contains(key)) return false;
-
-	auto &keyInput = g_keys.at(key);
+	auto &keyInput = inputState->get().g_keys.at(key);
 	return (keyInput.action == action && keyInput.mods == mods);
 }
 
-bool GestureDetector::isKeyPressedOrRepeat(int key, int mods) {
-	if (!g_keys.contains(key)) return false;
+bool GestureDetector::State::isKeyPressedOrRepeat(int key, int mods) const {
+	auto inputState = getInputState();
+	if (!inputState) return false;
 
-	auto &keyInput = g_keys.at(key);
+	if (!inputState->get().g_keys.contains(key)) return false;
+
+	auto &keyInput = inputState->get().g_keys.at(key);
 	return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
 }
 
-void GestureDetector::Storage::update(Widget &widget) {
-	if (GestureDetector::canClick(widget)) {
-		state.scrollDelta = g_scrollDelta;
+void GestureDetector::Storage::update(State &state) {
+	auto inputStateOpt = state.getInputState();
+	if (!inputStateOpt) return;
+	auto &inputState = inputStateOpt->get();
+	if (GestureDetector::canClick(*state.child.lock())) {
+		state.scrollDelta = inputState.g_scrollDelta;
 
-		if (!state.hovered && onEnter) onEnter(Event{widget, state});
+		if (!state.hovered && onEnter) onEnter(Event{*state.child.lock(), state});
 		state.hovered = true;
 
-		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focusedOutside) {
+		if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focusedOutside) {
 			if (!state.focused) {
-				state.dragStart = g_cursorPos;
-				if (onPress) onPress({widget, state});
-				if (onFocus) onFocus({widget, state});
+				state.dragStart = inputState.g_cursorPos;
+				if (onPress) onPress({*state.child.lock(), state});
+				if (onFocus) onFocus({*state.child.lock(), state});
 			}
 			state.focused = true;
-			if (!state.active && onActive) onActive({widget, state});
+			if (!state.active && onActive) onActive({*state.child.lock(), state});
 			state.active = true;
-		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
+		} else if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
 			if (state.focused && !state.focusedOutside) {
-				if (onClick) onClick({widget, state});
-				if (onRelease) onRelease({widget, state});
+				if (onClick) onClick({*state.child.lock(), state});
+				if (onRelease) onRelease({*state.child.lock(), state});
 			}
-			if (state.focused && onFocusLoss) onFocusLoss({widget, state});
+			if (state.focused && onFocusLoss) onFocusLoss({*state.child.lock(), state});
 			state.focused = false;
 			state.focusedOutside = false;
 		}
 	} else {
 		state.scrollDelta = vec2{0};
 
-		if (state.hovered && onLeave) onLeave({widget, state});
+		if (state.hovered && onLeave) onLeave({*state.child.lock(), state});
 		state.hovered = false;
 
-		if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focused) {
+		if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focused) {
 			state.focusedOutside = true;
-			if (state.active && onInactive) onInactive({widget, state});
+			if (state.active && onInactive) onInactive({*state.child.lock(), state});
 			state.active = false;
-		} else if (isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
-			if (state.focused && onFocusLoss) onFocusLoss({widget, state});
+		} else if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
+			if (state.focused && onFocusLoss) onFocusLoss({*state.child.lock(), state});
 			state.focused = false;
 			state.focusedOutside = false;
 		}
 	}
 
 	if (state.active && onDrag)
-		onDrag({widget, state});
+		onDrag({*state.child.lock(), state});
 
 	if (state.active)
-		state.textInput = g_textInput;
+		state.textInput = inputState.g_textInput;
 	else
 		state.textInput.clear();
-}
-
-const vec2 &GestureDetector::getMousePos() {
-	return g_cursorPos;
-}
-
-vec2 GestureDetector::getMouseDelta() {
-	return mouseDelta;
 }
 
 const vec2 &GestureDetector::State::getScroll() const {
@@ -125,13 +85,19 @@ const vec2 &GestureDetector::State::getScroll() const {
 }
 
 vec2 GestureDetector::State::getDragDelta() const {
-	if (!focused || g_cursorPos == dragStart) return vec2{0};
-	return mouseDelta;
+	auto inputStateOpt = getInputState();
+	if (!inputStateOpt) return {};
+	auto &inputState = inputStateOpt->get();
+	if (!focused || inputState.g_cursorPos == dragStart) return vec2{0};
+	return inputState.mouseDelta;
 }
 
 vec2 GestureDetector::State::getDragOffset() const {
+	auto inputStateOpt = getInputState();
+	if (!inputStateOpt) return {};
+	auto &inputState = inputStateOpt->get();
 	if (!focused) return vec2{0};
-	return g_cursorPos - dragStart;
+	return inputState.g_cursorPos - dragStart;
 }
 
 const vec2 &GestureDetector::State::getDragStartPos() const {
@@ -148,6 +114,9 @@ GestureDetector::operator Child() const {
 
 GestureDetector::State &GestureDetector::mount(Widget &widget) const {
 	auto storage = std::make_shared<Storage>(Storage{
+		.state{
+			widget.weak_from_this(),
+		},
 		.onEnter = onEnter,
 		.onLeave = onLeave,
 		.onFocus = onFocus,
@@ -161,7 +130,7 @@ GestureDetector::State &GestureDetector::mount(Widget &widget) const {
 		.onUpdate = onUpdate,
 	});
 	widget.funcs().onUpdate.emplace(widget.funcs().onUpdate.begin(), [storage](Widget &widget) mutable {
-		storage->update(widget);
+		storage->update(storage->state);
 		if (storage->onUpdate) storage->onUpdate({widget, storage->state});
 		if (storage->state.forceActive) {
 			if (!storage->state.active && storage->onActive) storage->onActive({widget, storage->state});
@@ -185,18 +154,26 @@ void squi::GestureDetector::State::setInactive() {
 	forceInactive = true;
 }
 
+std::optional<std::reference_wrapper<InputState>> squi::GestureDetector::State::getInputState() const {
+	auto widget = child.lock();
+	if (!widget) return {};
+	return Window::of(widget).inputState;
+}
+
 bool squi::GestureDetector::canClick(Widget &widget) {
+	auto &inputState = Window::of(&widget).inputState;
+
 	bool cursorInsideAnotherWidget = false;
-	const bool cursorInsideWidget = widget.getRect().contains(g_cursorPos);
-	const bool cursorInsideActiveArea = g_activeArea.back().contains(g_cursorPos);
+	const bool cursorInsideWidget = widget.getRect().contains(inputState.g_cursorPos);
+	const bool cursorInsideActiveArea = inputState.g_activeArea.back().contains(inputState.g_cursorPos);
 	if (widget.flags.isInteractive && cursorInsideWidget && cursorInsideActiveArea) {
-		for (auto &widgetRect: g_hitCheckRects) {
-			if (widgetRect.contains(g_cursorPos)) {
+		for (auto &widgetRect: inputState.g_hitCheckRects) {
+			if (widgetRect.contains(inputState.g_cursorPos)) {
 				cursorInsideAnotherWidget = true;
 				break;
 			}
 		}
 	}
 
-	return (widget.flags.isInteractive && g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea);
+	return (widget.flags.isInteractive && inputState.g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea);
 }

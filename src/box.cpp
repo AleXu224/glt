@@ -10,8 +10,6 @@
 
 using namespace squi;
 
-Box::BoxPipeline *Box::Impl::pipeline = nullptr;
-
 Box::Impl::Impl(const Box &args)
 	: Widget(args.widget, Widget::FlagsArgs{
 							  .isInteractive = true,
@@ -25,18 +23,26 @@ Box::Impl::Impl(const Box &args)
 	  }),
 	  borderPosition(args.borderPosition), shouldClipContent(args.shouldClipContent) {
 	addChild(args.child);
+
+	funcs().onInit.emplace_back([](Widget &w) {
+		auto &box = w.as<Box::Impl>();
+		auto &window = Window::of(&w);
+
+		box.pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<BoxPipeline>{
+			.key = "squiBoxPipeline",
+			.provider = [&]() {
+				return BoxPipeline::Args{
+					.vertexShader = Engine::Shaders::rectvert,
+					.fragmentShader = Engine::Shaders::rectfrag,
+					.instance = window.engine.instance,
+				};
+			},
+		});
+	});
 }
 
 void Box::Impl::onDraw() {
-	if (!pipeline) {
-		Engine::Instance &instance = Window::of(this).engine.instance;
-
-		pipeline = &instance.createPipeline<BoxPipeline>(BoxPipeline::Args{
-			.vertexShader = Engine::Shaders::rectvert,
-			.fragmentShader = Engine::Shaders::rectfrag,
-			.instance = instance,
-		});
-	}
+	if (!pipeline) return;
 	pipeline->bind();
 	auto index = pipeline->getIndexes();
 	pipeline->addData(quad.getData(index.first, index.second));
@@ -90,10 +96,7 @@ void Box::Impl::setBorderColor(const Color &color) {
 }
 
 void Box::Impl::setBorderWidth(glm::vec4 width) {
-	if (width.x == quad.borderSizes.top &&
-		width.y == quad.borderSizes.right &&
-		width.z == quad.borderSizes.bottom &&
-		width.w == quad.borderSizes.left) return;
+	if (width.x == quad.borderSizes.top && width.y == quad.borderSizes.right && width.z == quad.borderSizes.bottom && width.w == quad.borderSizes.left) return;
 	quad.borderSizes.top = width.x;
 	quad.borderSizes.right = width.t;
 	quad.borderSizes.bottom = width.z;
@@ -102,10 +105,7 @@ void Box::Impl::setBorderWidth(glm::vec4 width) {
 }
 
 void Box::Impl::setBorderRadius(glm::vec4 radius) {
-	if (radius.x == quad.borderRadiuses.topLeft &&
-		radius.y == quad.borderRadiuses.topRight &&
-		radius.z == quad.borderRadiuses.bottomRight &&
-		radius.w == quad.borderRadiuses.bottomLeft) return;
+	if (radius.x == quad.borderRadiuses.topLeft && radius.y == quad.borderRadiuses.topRight && radius.z == quad.borderRadiuses.bottomRight && radius.w == quad.borderRadiuses.bottomLeft) return;
 	quad.borderRadiuses.topLeft = radius.x;
 	quad.borderRadiuses.topRight = radius.t;
 	quad.borderRadiuses.bottomRight = radius.z;

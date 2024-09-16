@@ -1,6 +1,7 @@
 #pragma once
 
-#include "instance.hpp"
+#include "vulkan.hpp"
+
 #include "ranges"
 #include <array>
 #include <functional>
@@ -9,8 +10,8 @@
 
 
 namespace Engine {
-	[[maybe_unused]] static uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties, Instance &instance) {
-		auto memProperties = instance.physicalDevice.getMemoryProperties();
+	[[maybe_unused]] static uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
+		auto memProperties = Vulkan::physicalDevice().getMemoryProperties();
 
 		for (auto i: std::views::iota(0u, memProperties.memoryTypeCount)) {
 			if (typeFilter & (1U << i) && (memProperties.memoryTypes.at(i).propertyFlags & properties) == properties) {
@@ -25,7 +26,7 @@ namespace Engine {
 	static inline std::array<T, N> _generateArray(const std::function<T(size_t)> &generator, const std::index_sequence<I...> & /*unused*/) {
 		return {((void) I, generator(I))...};
 	}
-	
+
 	template<class T, size_t N>
 	static inline std::array<T, N> generateArray(const std::function<T(size_t)> &generator) {
 		return _generateArray<T, N>(generator, std::make_index_sequence<N>{});

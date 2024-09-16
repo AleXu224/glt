@@ -1,15 +1,12 @@
 #pragma once
 
-#include "rect.hpp"
+#include <utility>
+
+#include "inputState.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
-#include <optional>
 
 namespace squi {
-	struct KeyState {
-		int action;
-		int mods;
-	};
 	struct GestureDetector {
 		// Args
 		struct Storage;
@@ -34,9 +31,14 @@ namespace squi {
 			[[nodiscard]] vec2 getDragOffset() const;
 			// Get the location of where the drag began
 			[[nodiscard]] const vec2 &getDragStartPos() const;
+			[[nodiscard]] std::optional<std::reference_wrapper<InputState>> getInputState() const;
+			[[nodiscard]] bool isKey(int key, int action, int mods = 0) const;
+			[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
 
 			void setActive();
 			void setInactive();
+
+			State(ChildRef child) : child(std::move(child)) {};
 
 		private:
 			friend GestureDetector;
@@ -44,6 +46,7 @@ namespace squi {
 			bool forceInactive = false;
 			vec2 scrollDelta{};
 			vec2 dragStart{};
+			ChildRef child{};
 		};
 
 		struct Event {
@@ -65,40 +68,14 @@ namespace squi {
 		std::function<void(Event)> onRelease{};
 		std::function<void(Event)> onDrag{};
 		std::function<void(Event)> onUpdate{};
-		/**
-		 * @brief Called on initalization. Use this to store the state of the GestureDetector.
-		 */
-		Child child{};
 
-	private:
-		static vec2 lastCursorPos;
-		static vec2 mouseDelta;
-
-	public:
-		static vec2 g_cursorPos;
-		static std::unordered_map<int, KeyState> g_keys;
-		static std::string g_textInput;
-		static vec2 g_scrollDelta;
-		static std::vector<Rect> g_hitCheckRects;
-		static std::vector<Rect> g_activeArea;
-		static vec2 g_dpi;
-		static bool g_cursorInside;
-
-		static void setCursorPos(const vec2 &pos);
-		static void frameEnd();
-		[[nodiscard]] static const vec2 &getMousePos();
-		// Get how much the cursor has moved since the last frame
-		[[nodiscard]] static vec2 getMouseDelta();
-
-		[[nodiscard]] static std::optional<KeyState> getKey(int key);
-		[[nodiscard]] static std::optional<KeyState> getKeyPressedOrRepeat(int key);
-		[[nodiscard]] static bool isKey(int key, int action, int mods = 0);
-		[[nodiscard]] static bool isKeyPressedOrRepeat(int key, int mods = 0);
 		[[nodiscard]] static bool canClick(Widget &widget);
+
+		Child child{};
 
 		struct Storage {
 			// Data
-			State state{};
+			State state;
 			std::function<void(Event)> onEnter{};
 			std::function<void(Event)> onLeave{};
 			std::function<void(Event)> onFocus{};
@@ -111,7 +88,7 @@ namespace squi {
 			std::function<void(Event)> onDrag{};
 			std::function<void(Event)> onUpdate{};
 
-			void update(Widget &widget);
+			void update(State &state);
 		};
 
 		operator Child() const;

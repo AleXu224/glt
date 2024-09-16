@@ -1,5 +1,5 @@
 #include "stack.hpp"
-#include "gestureDetector.hpp"
+#include "inputState.hpp"
 #include "ranges"
 #include <algorithm>
 #include <vector>
@@ -13,19 +13,20 @@ Stack::Impl::Impl(const Stack &args)
 
 void Stack::Impl::updateChildren() {
 	auto &children = getChildren();
+	auto &inputState = InputState::of(this);
 
-	GestureDetector::g_hitCheckRects.reserve(GestureDetector::g_hitCheckRects.size() + children.size());
+	inputState.g_hitCheckRects.reserve(inputState.g_hitCheckRects.size() + children.size());
 	uint32_t addedRects = 0;
 
 	for (auto &child: std::views::reverse(children)) {
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
-		GestureDetector::g_hitCheckRects.insert(GestureDetector::g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());
+		inputState.g_hitCheckRects.insert(inputState.g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());
 		addedRects += childHitcheckRect.size();
 	}
 
 	for ([[maybe_unused]] uint32_t i = 0; i < addedRects; ++i) {
-		GestureDetector::g_hitCheckRects.pop_back();
+		inputState.g_hitCheckRects.pop_back();
 	}
 }
 

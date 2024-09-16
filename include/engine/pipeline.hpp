@@ -18,7 +18,6 @@
 
 
 namespace Engine {
-
 	template<class Vertex, bool hasTexture = false, class... Uniforms>
 	struct Pipeline {
 		struct Args {
@@ -68,8 +67,8 @@ namespace Engine {
 		~Pipeline() = default;
 
 		Pipeline(const Args &args)
-			: fragmentShader(args.instance.device, args.fragmentShader),
-			  vertexShader(args.instance.device, args.vertexShader),
+			: fragmentShader(Vulkan::device().resource, args.fragmentShader),
+			  vertexShader(Vulkan::device().resource, args.vertexShader),
 			  basicUniform({.instance = args.instance}),
 			  uniforms([&]() -> std::tuple<Uniform<Uniforms>...> {
 				  return [&]<size_t... I>(const std::index_sequence<I...> &) {
@@ -113,12 +112,10 @@ namespace Engine {
 				binds = 0;
 			});
 			vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-				.instance = args.instance,
 				.size = sizeof(Vertex) * args.vertexBufferSize,
 				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
 			}));
 			indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-				.instance = args.instance,
 				.size = sizeof(uint16_t) * args.IndexBufferSize,
 				.usage = vk::BufferUsageFlagBits::eIndexBuffer,
 			}));
@@ -231,27 +228,23 @@ namespace Engine {
 				}},
 			};
 
-			auto samplerUniformLayout = SamplerUniform::createSetLayout(SamplerUniform::Args{
-				.instance = args.instance,
-				.textureArgs{
-					.instance = args.instance,
-					.width = 1,
-					.height = 1,
-					.channels = 1,
-				},
-			});
+			auto samplerUniformLayout = SamplerUniform::createSetLayout();
 
 			auto setLayouts = [&] {
 				if constexpr (hasTexture) {
-					return std::apply([&](auto &&...U) {
-						return std::array{*basicUniform.descriptorSetLayout, *samplerUniformLayout, (*U.descriptorSetLayout)...};
-					},
-									  uniforms);
+					return std::apply(
+						[&](auto &&...U) {
+							return std::array{*basicUniform.descriptorSetLayout, *samplerUniformLayout, (*U.descriptorSetLayout)...};
+						},
+						uniforms
+					);
 				} else {
-					return std::apply([&](auto &&...U) {
-						return std::array{*basicUniform.descriptorSetLayout, (*U.descriptorSetLayout)...};
-					},
-									  uniforms);
+					return std::apply(
+						[&](auto &&...U) {
+							return std::array{*basicUniform.descriptorSetLayout, (*U.descriptorSetLayout)...};
+						},
+						uniforms
+					);
 				}
 			}();
 
@@ -263,7 +256,7 @@ namespace Engine {
 				.pPushConstantRanges = nullptr,
 			};
 
-			layout = instance.device.createPipelineLayout(pipelineLayoutInfo);
+			layout = Vulkan::device().resource.createPipelineLayout(pipelineLayoutInfo);
 
 			vk::GraphicsPipelineCreateInfo pipelineInfo{
 				.stageCount = 2,
@@ -283,7 +276,7 @@ namespace Engine {
 				.basePipelineIndex = -1,
 			};
 
-			pipeline = instance.device.createGraphicsPipeline(nullptr, pipelineInfo);
+			pipeline = Vulkan::device().resource.createGraphicsPipeline(nullptr, pipelineInfo);
 		}
 
 		std::function<void()> currentPipelineFlush = [&] {
@@ -411,7 +404,6 @@ namespace Engine {
 				vertexArrIndex++;
 				if (vertexArrIndex == vertexBuffers.size()) {
 					vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-						.instance = instance,
 						.size = sizeof(Vertex) * vertexBufferSize,
 						.usage = vk::BufferUsageFlagBits::eVertexBuffer,
 					}));
@@ -423,7 +415,6 @@ namespace Engine {
 				indexArrIndex++;
 				if (indexArrIndex == indexBuffers.size()) {
 					indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-						.instance = instance,
 						.size = sizeof(uint16_t) * indexBufferSize,
 						.usage = vk::BufferUsageFlagBits::eIndexBuffer,
 					}));
@@ -445,7 +436,7 @@ namespace Engine {
 				.sharingMode = vk::SharingMode::eExclusive,
 			};
 
-			auto buffer = instance.device.createBuffer(bufferInfo);
+			auto buffer = Vulkan::device().resource.createBuffer(bufferInfo);
 
 			vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
@@ -454,7 +445,7 @@ namespace Engine {
 				.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties),
 			};
 
-			auto bufferMemory = instance.device.allocateMemory(allocInfo);
+			auto bufferMemory = Vulkan::device().resource.allocateMemory(allocInfo);
 
 			buffer.bindMemory(*bufferMemory, 0);
 
@@ -462,7 +453,7 @@ namespace Engine {
 		}
 
 		uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
-			auto memProperties = instance.physicalDevice.getMemoryProperties();
+			auto memProperties = Vulkan::physicalDevice().getMemoryProperties();
 
 			for (auto i: std::views::iota(0u, memProperties.memoryTypeCount)) {
 				if (typeFilter & (1u << i) && (memProperties.memoryTypes.at(i).propertyFlags & properties) == properties) {
@@ -480,7 +471,7 @@ namespace Engine {
 				.commandBufferCount = 1,
 			};
 
-			auto cmdBuffers = instance.device.allocateCommandBuffers(allocInfo);
+			auto cmdBuffers = Vulkan::device().resource.allocateCommandBuffers(allocInfo);
 			auto &cmdBuffer = cmdBuffers.front();
 
 			vk::CommandBufferBeginInfo beginInfo{
@@ -503,10 +494,10 @@ namespace Engine {
 				.pCommandBuffers = &*cmdBuffer,
 			};
 
-			graphicsQueueMutex.lock();
-			instance.graphicsQueue.submit(submitInfo);
-			instance.graphicsQueue.waitIdle();
-			graphicsQueueMutex.unlock();
+			auto graphicsQueue = Vulkan::getGraphicsQueue();
+
+			graphicsQueue.resource.submit(submitInfo);
+			graphicsQueue.resource.waitIdle();
 		}
 	};
 }// namespace Engine

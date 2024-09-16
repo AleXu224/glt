@@ -4,42 +4,44 @@
 #include "instance.hpp"
 #include "iostream"
 #include "stdexcept"
+#include "vulkan.hpp"
 #include "vulkanIncludes.hpp"
 #include <print>
 #include <vector>
+
 #include "GLFW/glfw3.h"
 
+Engine::Runner::Runner() = default;
 
-Engine::Vulkan::Vulkan() = default;
-
-Engine::Frame &Engine::Vulkan::getCurrentFrame() {
+Engine::Frame &Engine::Runner::getCurrentFrame() {
 	return instance.frames.at(frameNumber % FrameBuffer);
 }
 
-void Engine::Vulkan::recreateSwapChain() {
+void Engine::Runner::recreateSwapChain() {
 	instance.recreateSwapChain();
+	resized = false;
+	outdatedFramebuffer = false;
 }
 
-void Engine::Vulkan::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
+void Engine::Runner::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
 	this->preDraw = preDraw;
 	this->drawFunc = drawFunc;
 	try {
 		while (!glfwWindowShouldClose(instance.window.ptr)) {
 			draw();
 		}
-		instance.device.waitIdle();
+		Vulkan::device().resource.waitIdle();
 		cleanupFunc();
 	} catch (const std::exception &e) {
 		std::println("Error: {}", e.what());
-		
-		instance.device.waitIdle();
+
+		Vulkan::device().resource.waitIdle();
 		cleanupFunc();
 		return;
 	}
 }
 
-void Engine::Vulkan::draw() {
-	auto &device = instance.device;
+void Engine::Runner::draw() {
 	auto newFrameStartTime = std::chrono::steady_clock::now();
 	deltaTime = newFrameStartTime - frameStartTime;
 	frameStartTime = newFrameStartTime;
@@ -48,16 +50,26 @@ void Engine::Vulkan::draw() {
 
 	if (!preDraw()) return;
 
-	auto resFence = device.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
+	auto resFence = Vulkan::device().resource.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
 	if (resFence != vk::Result::eSuccess) throw std::runtime_error("Timeout waiting for render fence");
 
-	auto [resNextImage, swapchainImageIndex] = instance.swapChain.acquireNextImage(1000000000, *instance.currentFrame.get().swapchainSemaphore);
-	if (resNextImage == vk::Result::eErrorOutOfDateKHR) {
-		recreateSwapChain();
+	std::scoped_lock lock{swapChainMtx};
+
+	uint32_t swapchainImageIndex = 0;
+	if (!outdatedFramebuffer) {
+		auto [resNextImage, swapchainImageIndexVal] = instance.swapChain.acquireNextImage(1000000000, *instance.currentFrame.get().swapchainSemaphore);
+		if (resNextImage == vk::Result::eErrorOutOfDateKHR) {
+			outdatedFramebuffer = true;
+		} else if (resNextImage != vk::Result::eSuccess && resNextImage != vk::Result::eSuboptimalKHR) {
+			return;
+		}
+		swapchainImageIndex = swapchainImageIndexVal;
+	}
+	if (outdatedFramebuffer) {
 		return;
 	}
 
-	device.resetFences(*instance.currentFrame.get().renderFence);
+	Vulkan::device().resource.resetFences(*instance.currentFrame.get().renderFence);
 
 	auto &cmd = instance.currentFrame.get().commandBuffer;
 	cmd.reset();
@@ -121,9 +133,7 @@ void Engine::Vulkan::draw() {
 		.pSignalSemaphores = &*instance.currentFrame.get().renderSemaphore,
 	};
 
-	graphicsQueueMutex.lock();
-	instance.graphicsQueue.submit(submitInfo, *instance.currentFrame.get().renderFence);
-	graphicsQueueMutex.unlock();
+	Vulkan::getGraphicsQueue().resource.submit(submitInfo, *instance.currentFrame.get().renderFence);
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
@@ -134,21 +144,11 @@ void Engine::Vulkan::draw() {
 	};
 
 	try {
-		graphicsQueueMutex.lock();
-		auto res2 = instance.graphicsQueue.presentKHR(presentInfo);
-		graphicsQueueMutex.unlock();
-		if (res2 == vk::Result::eErrorOutOfDateKHR || res2 == vk::Result::eSuboptimalKHR) {
-			recreateSwapChain();
-			instance.frameEnd();
-			return;
-		}
-		if (res2 != vk::Result::eSuccess) throw std::runtime_error("Failed to present\n");
-
+		auto res2 = Vulkan::getGraphicsQueue().resource.presentKHR(presentInfo);
+		if (res2 != vk::Result::eSuccess) outdatedFramebuffer = true;
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << std::endl;
-		recreateSwapChain();
-		instance.frameEnd();
-		return;
+		outdatedFramebuffer = true;
 	}
 	instance.frameEnd();
 	frameNumber++;

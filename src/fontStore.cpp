@@ -1,83 +1,62 @@
+#include "fontStore.hpp"
+
 #include "atlas.hpp"
 #include <cstdint>
-#include <freetype/fttypes.h>
-#include <memory>
-#include <print>
-
-#include "fontStore.hpp"
-#include "roboto-bold.hpp"
-#include "roboto-bolditalic.hpp"
-#include "roboto-italic.hpp"
-#include "roboto-regular.hpp"
 #include <limits>
+#include <memory>
 #include <optional>
+#include <print>
 #include <string>
+
+#include <freetype/freetype.h>
+#include <freetype/fttypes.h>
 #include <utf8/cpp17.h>
 
 
-
-#include <freetype/freetype.h>
-
 using namespace squi;
 
-std::shared_ptr<FontStore::Font> FontStore::defaultFont{};
-std::shared_ptr<FontStore::Font> FontStore::defaultFontBold{};
-std::shared_ptr<FontStore::Font> FontStore::defaultFontItalic{};
-std::shared_ptr<FontStore::Font> FontStore::defaultFontBoldItalic{};
-
-FT_Library FontStore::ftLibrary{};
-
-bool FontStore::init = []() {
-	if (FT_Init_FreeType(&ftLibrary)) {
-		std::println("Failed to initialize FreeType");
-		exit(1);
-	}
-	return true;
-}();
-
-FontStore::Font::Font(std::string_view fontPath, Engine::Instance &instance) : atlas(instance) {
-	const std::string fontPathStr(fontPath);
-	if (FT_New_Face(ftLibrary, fontPathStr.c_str(), 0, &face)) {
-		std::println("Failed to load font: {}", fontPathStr);
-		loaded = false;
-	}
+FT_Library &FontStore::ftLibrary() {
+	static FT_Library _{};
+	[[maybe_unused]] static bool init = []() {
+		if (FT_Init_FreeType(&_)) {
+			std::println("Failed to initialize FreeType");
+			exit(1);
+		}
+		return true;
+	}();
+	return _;
 }
 
-FontStore::Font::Font(std::span<const char> fontData, Engine::Instance &instance) : atlas(instance) {
-	if (FT_New_Memory_Face(ftLibrary, reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
+FontStore::Font::Font(const FontProvider &provider) : atlas(provider.key), fontData(provider.provider()) {
+	if (FT_New_Memory_Face(ftLibrary(), reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
 		std::println("Failed to load font from memory");
 		loaded = false;
 	}
 }
 
-std::shared_ptr<FontStore::Font> FontStore::getFont(std::string_view fontPath, Engine::Instance &instance) {
-	const std::string fontPathStr(fontPath);
-	if (fonts.contains(fontPathStr)) {
-		if (auto font = fonts[fontPathStr].lock()) {
-			return font;
+std::shared_ptr<FontStore::Font> FontStore::getFont(const FontProvider &provider) {
+	std::scoped_lock lock{fontsMtx};
+	if (auto it = fonts().find(provider.key); it != fonts().end()) {
+		if (it->second.expired()) {
+			it->second = std::make_shared<FontStore::Font>(provider);
 		}
+		return it->second.lock();
 	}
-	auto font = std::make_shared<Font>(fontPath, instance);
-	if (!font->loaded) return {};
-	fonts[fontPathStr] = font;
+
+	auto font = std::make_shared<Font>(provider);
+	fonts().insert({provider.key, font});
 	return font;
 }
 
-std::optional<std::shared_ptr<FontStore::Font>> squi::FontStore::getFontOptional(std::string_view fontPath) {
-	const std::string fontPathStr(fontPath);
-	if (fonts.contains(fontPathStr)) {
-		if (auto font = fonts[fontPathStr].lock()) {
-			return font;
-		}
-	}
-	return {};
-}
+std::unordered_map<std::string, std::weak_ptr<FontStore::Font>> &FontStore::fonts() {
+	// Make sure device is constructed before the font store
+	[[maybe_unused]] static bool pre = []() {
+		[[maybe_unused]] auto val = Engine::Vulkan::device();
+		return true;
+	}();
 
-void squi::FontStore::initializeDefaultFont(Engine::Instance &instance) {
-	defaultFont = std::make_shared<Font>(Fonts::roboto, instance);
-	defaultFontBold = std::make_shared<Font>(Fonts::robotoBold, instance);
-	defaultFontItalic = std::make_shared<Font>(Fonts::robotoItalic, instance);
-	defaultFontBoldItalic = std::make_shared<Font>(Fonts::robotoBoldItalic, instance);
+	static std::unordered_map<std::string, std::weak_ptr<FontStore::Font>> _{};
+	return _;
 }
 
 bool FontStore::Font::generateTexture(char32_t character, float size) {
@@ -159,15 +138,16 @@ std::unordered_map<char32_t, FontStore::Font::CharInfo> &FontStore::Font::getSiz
 	return chars[size];
 }
 
-std::unordered_map<std::string, std::weak_ptr<FontStore::Font>> FontStore::fonts{};
-
 uint32_t FontStore::Font::getLineHeight(float size) {
+	if (!face) return 0;
 	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(size));
 
 	return (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
 }
 
 std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth) {
+	std::lock_guard lock{fontMtx};
+	if (!face) return {0, 0};
 	const int32_t maxWidthClamped = [&]() -> int32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
@@ -230,6 +210,8 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 }
 
 std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
+	std::lock_guard lock{fontMtx};
+	if (!face) return {{}, 0.f, 0.f};
 	const int32_t maxWidthClamped = [&]() -> int32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
@@ -348,6 +330,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 
 	return {quads, widestLine, quads.size() * lineHeight};
 }
-Engine::SamplerUniform &squi::FontStore::Font::getSampler() {
-	return atlas.sampler;
+
+std::shared_ptr<Engine::Texture> squi::FontStore::Font::getTexture() const {
+	return atlas.getTexture();
 }

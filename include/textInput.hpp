@@ -16,7 +16,7 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		float fontSize = 14.0f;
-		std::variant<std::string_view, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
+		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
 		std::string_view text{};
 		std::function<void(std::string_view)> onTextChanged{};
 		Color color{0xFFFFFFFF};

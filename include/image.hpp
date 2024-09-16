@@ -1,40 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include "engine/pipeline.hpp"
 #include "engine/samplerUniform.hpp"
-#include "engine/texture.hpp"
 #include "engine/texturedQuad.hpp"
-#include "instance.hpp"
-#include "vector"
+#include "image/provider.hpp"
 #include "widget.hpp"
-#include <future>
-#include <memory>
-#include <optional>
-#include <string_view>
-#include <variant>
 
 namespace squi {
 	struct Image {
-		struct Data {
-			std::vector<uint8_t> data;
-			uint32_t width;
-			uint32_t height;
-			uint32_t channels;
-
-			Data(std::vector<uint8_t> data, uint32_t width, uint32_t height, uint32_t channels)
-				: data(std::move(data)),
-				  width(static_cast<int32_t>(width)),
-				  height(static_cast<int32_t>(height)),
-				  channels(static_cast<int32_t>(channels)){};
-			Data(unsigned char *bytes, uint32_t length);
-			static Data fromUrl(std::string_view url);
-			static Data fromFile(std::string_view path);
-			static std::future<Data> fromUrlAsync(std::string_view url);
-			static std::future<Data> fromFileAsync(std::string_view path);
-
-			[[nodiscard]] Engine::Texture createTexture(Engine::Instance &instance) const;
-		};
-
 		enum class Fit {
 			// The image will be displayed at its original size.
 			none,
@@ -50,7 +25,7 @@ namespace squi {
 		Widget::Args widget{};
 		Fit fit = Fit::none;
 		// FIXME: add the ability to provide a sampler shared reference
-		std::variant<Data, std::shared_future<Data>> image;
+		ImageProvider image;
 		using ImagePipeline = Engine::Pipeline<Engine::TexturedQuad::Vertex, true>;
 
 		class Impl : public Widget {
@@ -60,11 +35,12 @@ namespace squi {
 				.position{0, 0},
 				.size{0, 0},
 			}};
-			std::optional<Engine::SamplerUniform> sampler;
+			std::shared_ptr<Engine::SamplerUniform> sampler;
 			bool relayoutNextFrame = false;
 
 		public:
-			static ImagePipeline *pipeline;
+			// static ImagePipeline *pipeline;
+			std::shared_ptr<ImagePipeline> pipeline;
 			Impl(const Image &args);
 
 			void onUpdate() override;

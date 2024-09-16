@@ -1,15 +1,11 @@
 #pragma once
 
-#include "any"
 #include "frame.hpp"
-#include "loader.hpp"
 #include "rect.hpp"
 #include "vulkanIncludes.hpp"
 #include "window.hpp"
 #include <functional>
-#include <memory>
 #include <mutex>
-#include <utility>
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
@@ -21,18 +17,11 @@ inline std::mutex graphicsQueueMutex;
 namespace Engine {
 	struct Instance {
 		Window window;
-		DynamicLoader dynamicLoader;
-		vk::raii::Context context;
-		vk::raii::Instance instance;
 		vk::raii::SurfaceKHR surface;
-		vk::raii::PhysicalDevice physicalDevice;
-		vk::raii::Device device;
-		vk::raii::Queue graphicsQueue;
-		vk::raii::Queue presentQueue;
 
+		vk::Extent2D swapChainExtent;
 		vk::raii::SwapchainKHR swapChain;
 		vk::Format swapChainImageFormat;
-		vk::Extent2D swapChainExtent;
 
 		std::vector<vk::Image> swapChainImages;
 		std::vector<vk::raii::ImageView> swapChainImageViews;
@@ -44,14 +33,6 @@ namespace Engine {
 
 		void *currentPipeline = nullptr;
 		std::function<void()> *currentPipelineFlush = nullptr;
-
-		std::vector<std::any> pipelines{};
-
-		template<class T, class U>
-		T &createPipeline(U &&args) {
-			auto &val = pipelines.emplace_back(std::make_any<std::shared_ptr<T>>(std::make_shared<T>(std::forward<U>(args))));
-			return *std::any_cast<std::shared_ptr<T> &>(val);
-		}
 
 		std::vector<squi::Rect> scissorStack{};
 		void pushScissor(const squi::Rect &rect) {
@@ -101,15 +82,7 @@ namespace Engine {
 		Instance();
 
 		void recreateSwapChain();
-		struct QueueFamilyIndices {
-			std::optional<uint32_t> graphicsFamily;
-			std::optional<uint32_t> presentFamily;
 
-			[[nodiscard]] bool isComplete() const {
-				return graphicsFamily.has_value() && presentFamily.has_value();
-			}
-		};
-		[[nodiscard]] Engine::Instance::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &device) const;
 		void frameEnd() {
 			for (auto &listener: frameEndListeners) listener();
 		}
@@ -128,15 +101,7 @@ namespace Engine {
 		std::vector<std::function<void(void)>> frameEndListeners{};
 		std::vector<std::function<void(void)>> frameBeginListeners{};
 
-		[[nodiscard]] static DynamicLoader createDynamicLoader(bool useFallback = false);
-		[[nodiscard]] vk::raii::Context createContext() const;
-		[[nodiscard]] vk::raii::Instance createInstance();
 		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
-		[[nodiscard]] vk::raii::PhysicalDevice selectPhysicalDevice() const;
-		[[nodiscard]] vk::raii::Device createLogicalDevice() const;
-		[[nodiscard]] vk::raii::Queue createGraphicsQueue() const;
-		[[nodiscard]] vk::raii::Queue createPresentQueue() const;
-
 
 		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating);
 		[[nodiscard]] std::vector<vk::Image> createSwapChainImages() const;

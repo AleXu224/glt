@@ -1,8 +1,7 @@
 #pragma once
-#include "instance.hpp"
 #include "utils.hpp"
+#include "vulkan.hpp"
 #include "vulkanIncludes.hpp"
-#include <mutex>
 #include <stdexcept>
 #include <vulkan/vulkan_enums.hpp>
 
@@ -20,7 +19,6 @@ namespace Engine {
 		uint32_t channels;
 
 		struct Args {
-			Instance &instance;
 			uint32_t width;
 			uint32_t height;
 			uint32_t channels;
@@ -28,8 +26,8 @@ namespace Engine {
 
 		Texture(const Args &args)
 			: image(createImage(args)),
-			  memory(createMemory(args)),
-			  sampler(createSampler(args)),
+			  memory(createMemory()),
+			  sampler(createSampler()),
 			  view(createImageView(args)),
 			  width(args.width),
 			  height(args.height),
@@ -37,21 +35,25 @@ namespace Engine {
 			auto reqs = image.getMemoryRequirements();
 			mappedMemory = memory.mapMemory(0, reqs.size);
 
-			auto props = args.instance.findQueueFamilies(args.instance.physicalDevice);
+			auto props = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 
 			vk::CommandPoolCreateInfo poolInfo{
 				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
 				.queueFamilyIndex = props.graphicsFamily.value(),
 			};
 
-			auto commandPool = args.instance.device.createCommandPool(poolInfo);
+			auto commandPool = Vulkan::device().resource.createCommandPool(poolInfo);
 
-			vk::raii::CommandBuffer cmd = std::move(args.instance.device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-																									.commandPool = *commandPool,
-																									.level = vk::CommandBufferLevel::ePrimary,
-																									.commandBufferCount = 1,
-																								})
-														.front());
+			vk::raii::CommandBuffer cmd = std::move(
+				Vulkan::device().resource.allocateCommandBuffers(
+											 vk::CommandBufferAllocateInfo{
+												 .commandPool = *commandPool,
+												 .level = vk::CommandBufferLevel::ePrimary,
+												 .commandBufferCount = 1,
+											 }
+				)
+					.front()
+			);
 
 			cmd.begin({});
 
@@ -82,16 +84,15 @@ namespace Engine {
 				.pCommandBuffers = &*cmd,
 			};
 
-			vk::raii::Fence fence{args.instance.device, vk::FenceCreateInfo{}};
+			vk::raii::Fence fence{Vulkan::device().resource, vk::FenceCreateInfo{}};
 
-			graphicsQueueMutex.lock();
-			args.instance.graphicsQueue.submit(submitInfo, *fence);
+			auto graphicsQueue = Vulkan::getGraphicsQueue();
+			graphicsQueue.resource.submit(submitInfo, *fence);
 
-			auto res = args.instance.device.waitForFences(*fence, true, 100000000);
+			auto res = Vulkan::device().resource.waitForFences(*fence, true, 100000000);
 			if (res != vk::Result::eSuccess) {
 				throw std::runtime_error("Texture creation failed :(");
 			}
-			graphicsQueueMutex.unlock();
 		}
 
 		vk::raii::ImageView createImageView(const Args &args) const {
@@ -114,10 +115,10 @@ namespace Engine {
 				},
 			};
 
-			return {args.instance.device, createInfo};
+			return {Vulkan::device().resource, createInfo};
 		}
 
-		vk::raii::Sampler createSampler(const Args &args) const {
+		vk::raii::Sampler createSampler() const {
 			image.bindMemory(*memory, 0);
 
 			vk::SamplerCreateInfo createInfo{
@@ -136,18 +137,18 @@ namespace Engine {
 				.borderColor = vk::BorderColor::eFloatTransparentBlack,
 			};
 
-			return {args.instance.device, createInfo};
+			return {Vulkan::device().resource, createInfo};
 		}
 
-		vk::raii::DeviceMemory createMemory(const Args &args) const {
+		vk::raii::DeviceMemory createMemory() const {
 			auto reqs = image.getMemoryRequirements();
 
 			vk::MemoryAllocateInfo allocInfo{
 				.allocationSize = reqs.size,
-				.memoryTypeIndex = findMemoryType(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, args.instance),
+				.memoryTypeIndex = findMemoryType(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
 			};
 
-			return {args.instance.device, allocInfo};
+			return {Vulkan::device().resource, allocInfo};
 		}
 
 		static vk::raii::Image createImage(const Args &args) {
@@ -169,7 +170,7 @@ namespace Engine {
 				.initialLayout = vk::ImageLayout::ePreinitialized,
 			};
 
-			return {args.instance.device, createInfo};
+			return {Vulkan::device().resource, createInfo};
 		}
 
 		static vk::Format formatFromChannels(uint32_t channels) {

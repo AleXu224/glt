@@ -121,12 +121,13 @@ void TextInput::Impl::onUpdate() {
 
 	clampCursors();
 
-	if (!GestureDetector::g_textInput.empty()) {
+	auto &inputState = InputState::of(this);
+	if (!inputState.g_textInput.empty()) {
 		clearSelection();
 		const auto textValue = text.getText();
-		setText(std::format("{}{}{}", textValue.substr(0, cursor), GestureDetector::g_textInput, textValue.substr(cursor)));
-		cursor += static_cast<int64_t>(GestureDetector::g_textInput.size());
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_BACKSPACE)) {
+		setText(std::format("{}{}{}", textValue.substr(0, cursor), inputState.g_textInput, textValue.substr(cursor)));
+		cursor += static_cast<int64_t>(inputState.g_textInput.size());
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_BACKSPACE)) {
 		if (selectionStart.has_value()) {
 			clearSelection();
 		} else {
@@ -143,7 +144,7 @@ void TextInput::Impl::onUpdate() {
 				--cursor;
 			}
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_DELETE)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_DELETE)) {
 		if (selectionStart.has_value()) {
 			clearSelection();
 		} else {
@@ -158,7 +159,7 @@ void TextInput::Impl::onUpdate() {
 				setText(std::format("{}{}", textValue.substr(0, cursor), textValue.substr(cursor + 1)));
 			}
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_LEFT)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_LEFT)) {
 		bool removedSelection = false;
 		if (key->mods & GLFW_MOD_SHIFT && cursor > 0) {
 			if (!selectionStart.has_value()) selectionStart = cursor;
@@ -179,7 +180,7 @@ void TextInput::Impl::onUpdate() {
 				--cursor;
 			}
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_RIGHT)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_RIGHT)) {
 		const auto textValue = text.getText();
 		bool removedSelection = false;
 		if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(textValue.size())) {
@@ -200,14 +201,14 @@ void TextInput::Impl::onUpdate() {
 				++cursor;
 			}
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_HOME)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_HOME)) {
 		if (key->mods & GLFW_MOD_SHIFT && cursor > 0 && !selectionStart.has_value())
 			selectionStart = cursor;
 		else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
 			selectionStart = std::nullopt;
 
 		if (cursor > 0) cursor = 0;
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_END)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_END)) {
 		const auto textValue = text.getText();
 		if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(textValue.size()) && !selectionStart.has_value())
 			selectionStart = cursor;
@@ -216,26 +217,26 @@ void TextInput::Impl::onUpdate() {
 
 		if (cursor < static_cast<int64_t>(textValue.size()))
 			cursor = static_cast<int64_t>(textValue.size());
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_ESCAPE)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_ESCAPE)) {
 		selectionStart = std::nullopt;
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_A)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_A)) {
 		if (key->mods & GLFW_MOD_CONTROL) {
 			selectionStart = 0;
 			const auto textValue = text.getText();
 			cursor = static_cast<int64_t>(textValue.size());
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_C)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_C)) {
 		if (key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
 			const std::string textToCopy = std::string(getText().substr(getSelectionMin(), getSelectionMax() - getSelectionMin()));
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_X)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_X)) {
 		if (key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
 			const std::string textToCopy = std::string(getText().substr(getSelectionMin(), getSelectionMax() - getSelectionMin()));
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 			clearSelection();
 		}
-	} else if (const auto key = GestureDetector::getKeyPressedOrRepeat(GLFW_KEY_V)) {
+	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_V)) {
 		if (key->mods & GLFW_MOD_CONTROL) {
 			const auto *const clipboardText = glfwGetClipboardString(nullptr);
 			if (clipboardText) {
@@ -316,10 +317,11 @@ void squi::TextInput::Impl::setActive(bool active) {
 
 void squi::TextInput::Impl::handleMouseInput() {
 	if (!GestureDetector::canClick(*this)) return;
-	if (!GestureDetector::isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) return;
+	auto &inputState = InputState::of(this);
+	if (!inputState.isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) return;
 	auto &textWidget = this->textWidget->as<Text::Impl>();
 	const auto &quads = textWidget.getQuads();
-	const auto mousePos = GestureDetector::getMousePos();
+	const auto mousePos = inputState.getMousePos();
 	const auto lineHeight = textWidget.getLineHeight();
 	const auto textPos = textWidget.getPos();
 

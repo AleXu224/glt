@@ -1,9 +1,12 @@
 #include "numberBox.hpp"
-#include "gestureDetector.hpp"
+
+#include "inputState.hpp"
 #include "registerEvent.hpp"
 #include "textBox.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+
+
 using namespace squi;
 
 NumberBox::operator Child() const {
@@ -23,19 +26,20 @@ NumberBox::operator Child() const {
 
 
 	return RegisterEvent{
-		.onInit = [storage, stateObserver = controller.stateObserver](Widget &w){
-			w.customState.add("_stateObservable", stateObserver.observe([storage](TextBox::InputState state){
+		.onInit = [storage, stateObserver = controller.stateObserver](Widget &w) {
+			w.customState.add("_stateObservable", stateObserver.observe([storage](TextBox::InputState state) {
 				storage->focused = (state == TextBox::InputState::focused);
 			}));
 		},
-		.onUpdate = [storage, updateText = controller.updateText](Widget &) {
+		.onUpdate = [storage, updateText = controller.updateText](Widget &w) {
 			if (!storage->focused) return;
-			if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_UP)) {
+			auto &inputState = InputState::of(&w);
+			if (inputState.isKeyPressedOrRepeat(GLFW_KEY_UP)) {
 				storage->value += storage->step;
 				storage->clampValue();
 				updateText.notify(std::format("{}", storage->value));
 			}
-			if (GestureDetector::isKeyPressedOrRepeat(GLFW_KEY_DOWN)) {
+			if (inputState.isKeyPressedOrRepeat(GLFW_KEY_DOWN)) {
 				storage->value -= storage->step;
 				storage->clampValue();
 				updateText.notify(std::format("{}", storage->value));
@@ -65,12 +69,12 @@ NumberBox::operator Child() const {
 					} catch (const std::out_of_range &) {
 						return {.valid = false, .message = "Number too big/small"};
 					}
-					
+
 					if (numValidator) {
 						auto _ = numValidator(storage->value);
 						if (!_.valid) return _;
 					}
-					
+
 					return {.valid = true};
 				},
 				.updateText = controller.updateText,

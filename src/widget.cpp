@@ -10,9 +10,6 @@
 
 using namespace squi;
 
-uint64_t Widget::idCounter = 1;// 0 is reserved for exceptions
-uint32_t Widget::widgetCount = 0;
-
 Widget::Widget(const Args &args, const FlagsArgs &flags)
 	: flags(this, flags),
 	  id(idCounter++),
