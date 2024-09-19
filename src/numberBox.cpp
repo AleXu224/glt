@@ -52,26 +52,30 @@ NumberBox::operator Child() const {
 			.controller{
 				.disable = controller.disable,
 				.focus = controller.focus,
-				.onChange = controller.onChange,
+				.onChange = [onChange = onChange, controllerOnChange = controller.onChange](std::string_view newText) {
+					if (controllerOnChange) controllerOnChange(newText);
+					if (onChange) onChange(std::stof(std::string{newText}));
+				},
 				.onSubmit = controller.onSubmit,
 				.validator = [storage, textValidator = controller.validator, numValidator = validator](std::string_view str) -> TextBox::Controller::ValidatorResponse {
 					if (textValidator) {
 						auto _ = textValidator(str);
 						if (!_.valid) return _;
 					}
+					float val{};
 					try {
-						auto _ = std::stof(std::string(str));
-						if (_ < storage->min) return {.valid = false, .message = "Value is too small"};
-						if (_ > storage->max) return {.valid = false, .message = "Value is too big"};
-						if (storage->onChange) storage->onChange(_);
+						val = std::stof(std::string(str));
 					} catch (const std::invalid_argument &) {
 						return {.valid = false, .message = "Invalid number"};
 					} catch (const std::out_of_range &) {
 						return {.valid = false, .message = "Number too big/small"};
 					}
 
+					if (val < storage->min) return {.valid = false, .message = "Value is too small"};
+					if (val > storage->max) return {.valid = false, .message = "Value is too big"};
+
 					if (numValidator) {
-						auto _ = numValidator(storage->value);
+						auto _ = numValidator(val);
 						if (!_.valid) return _;
 					}
 

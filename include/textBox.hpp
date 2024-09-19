@@ -1,8 +1,9 @@
 #pragma once
 
+#include "color.hpp"
 #include "observer.hpp"
 #include "widget.hpp"
-#include "color.hpp"
+
 
 namespace squi {
 	namespace Theme {
@@ -22,16 +23,16 @@ namespace squi {
 			static inline Color textDisabled{0xFFFFFF5D};
 			static inline Color textHint{0xFFFFFFC8};
 		};
-	}
+	}// namespace Theme
 	struct TextBox {
-		enum class InputState {
+		enum class InputState : uint8_t {
 			resting,
 			hovered,
 			focused,
 			disabled,
 		};
 		struct Controller {
-			struct ValidatorResponse{
+			struct ValidatorResponse {
 				bool valid = true;
 				std::string message = "Invalid input";
 			};

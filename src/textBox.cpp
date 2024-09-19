@@ -201,8 +201,9 @@ squi::TextBox::operator squi::Child() const {
 								.textUpdateObs = controller.updateText,
 								.requestOnSubmitCall = storage->requestOnSubmitCall,
 								.selectAll = controller.selectAll,
-								.onChange = [onChangeObs, onChange = controller.onChange](std::string_view str) {
+								.onChange = [onChangeObs, onChange = controller.onChange, validator = controller.validator](std::string_view str) {
 									onChangeObs.notify(str);
+									if (validator && !validator(str).valid) return;
 									if (onChange) onChange(str);
 								},
 								.onSubmit = controller.onSubmit,
