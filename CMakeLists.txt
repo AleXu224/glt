@@ -34,6 +34,20 @@ foreach(shader_file ${shader_files})
     COMMAND ShaderHeaderGenerator "${PROJECT_BINARY_DIR}/compiledShaders" ${fileDir} ${fileName} "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
 endforeach()
 
+add_library(gltPCH INTERFACE)
+target_precompile_headers(gltPCH INTERFACE 
+    [["window.hpp"]]
+    [["vec2.hpp"]]
+    [["rect.hpp"]]
+    [["box.hpp"]]
+    [["column.hpp"]]
+    [["row.hpp"]]
+    [["stack.hpp"]]
+    [["gestureDetector.hpp"]]
+    [["align.hpp"]]
+)
+
+
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS "src/*.cpp" "include/*.h" "include/*.cpp" "external/*.h")
 add_library(glt STATIC ${all_files})
 target_compile_features(glt PUBLIC cxx_std_23)
@@ -47,6 +61,7 @@ ENDIF()
 IF (UNIX)
     target_compile_definitions(glt PRIVATE GLFW_EXPOSE_NATIVE_X11 VK_USE_PLATFORM_XLIB_KHR)
 ENDIF()
+target_link_libraries(glt PUBLIC gltPCH)
 target_include_directories(glt PUBLIC include)
 target_include_directories(glt PUBLIC include/engine)
 target_include_directories(glt PUBLIC external/fonts)
@@ -57,7 +72,7 @@ if (MSVC)
     # target_compile_options(glt PUBLIC /fsanitize=address)
     target_compile_definitions(glt PUBLIC _DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION)
 else()
-    target_compile_options(glt PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-c++11-narrowing -Wno-narrowing -Werror)
+    target_compile_options(glt PRIVATE -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-c++11-narrowing -Wno-narrowing -Werror -ftime-trace)
     # target_link_options(glt PUBLIC -fsanitize=address,undefined)
     # target_link_options(glt PUBLIC -fsanitize=undefined,thread)
 endif()
