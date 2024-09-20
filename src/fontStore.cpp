@@ -8,12 +8,48 @@
 #include <print>
 #include <string>
 
+#include "engine/textQuad.hpp"
+
 #include <freetype/freetype.h>
 #include <freetype/fttypes.h>
 #include <utf8/cpp17.h>
 
+#include "roboto-bold.hpp"
+#include "roboto-bolditalic.hpp"
+#include "roboto-italic.hpp"
+#include "roboto-regular.hpp"
+
 
 using namespace squi;
+
+FontProvider FontStore::defaultFont = FontProvider{
+	.key = "default",
+	.provider = []() {
+		return std::vector(Fonts::roboto.begin(), Fonts::roboto.end());
+	},
+};
+FontProvider FontStore::defaultFontBold = FontProvider{
+	.key = "defaultBold",
+	.provider = []() {
+		return std::vector(Fonts::robotoBold.begin(), Fonts::robotoBold.end());
+	},
+};
+FontProvider FontStore::defaultFontItalic = FontProvider{
+	.key = "defaultItalic",
+	.provider = []() {
+		return std::vector(Fonts::robotoItalic.begin(), Fonts::robotoItalic.end());
+	},
+};
+FontProvider FontStore::defaultFontBoldItalic = FontProvider{
+	.key = "defaultBoldItalic",
+	.provider = []() {
+		return std::vector(Fonts::robotoBoldItalic.begin(), Fonts::robotoBoldItalic.end());
+	},
+};
+
+struct squi::FontStore::Font::Impl {
+	Atlas atlas;
+};
 
 FT_Library &FontStore::ftLibrary() {
 	static FT_Library _{};
@@ -27,7 +63,9 @@ FT_Library &FontStore::ftLibrary() {
 	return _;
 }
 
-FontStore::Font::Font(const FontProvider &provider) : atlas(provider.key), fontData(provider.provider()) {
+FontStore::Font::Font(const FontProvider &provider)
+	: impl(std::make_unique<Impl>(std::string_view(provider.key))),
+	  fontData(provider.provider()) {
 	if (FT_New_Memory_Face(ftLibrary(), reinterpret_cast<const FT_Byte *>(fontData.data()), static_cast<FT_Long>(fontData.size()), 0, &face)) {
 		std::println("Failed to load font from memory");
 		loaded = false;
@@ -84,7 +122,7 @@ bool FontStore::Font::generateTexture(char32_t character, std::unordered_map<cha
 	}
 
 	// Add the character to the atlas
-	auto [uvTopLeft, uvBottomRight, success] = atlas.add(face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+	auto [uvTopLeft, uvBottomRight, success] = impl->atlas.add(face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
 	if (!success) {
 		// TODO: Add a way to have multiple atlases
 		std::println("Failed to add glyph to atlas: ({:#08x})", static_cast<uint32_t>(character));
@@ -251,7 +289,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 				.position{pos},
 				.size{charData.charInfo.size},
 				.offset{
-					toFloat(static_cast<int32_t>(currentLineWidth) + charData.offsetX) + charData.charInfo.offset.x,
+					toFloat(currentLineWidth + charData.offsetX) + charData.charInfo.offset.x,
 					toFloat(static_cast<int32_t>(yOffset) + charData.offsetY) + charData.charInfo.offset.y,
 				},
 				.uvTopLeft = charData.charInfo.uvTopLeft,
@@ -279,7 +317,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 				.position{pos},
 				.size{charData.charInfo.size},
 				.offset{
-					toFloat(static_cast<int32_t>(currentLineWidth) + charData.offsetX) + charData.charInfo.offset.x,
+					toFloat(currentLineWidth + charData.offsetX) + charData.charInfo.offset.x,
 					toFloat(static_cast<int32_t>(yOffset) + charData.offsetY) + charData.charInfo.offset.y,
 				},
 				.uvTopLeft = charData.charInfo.uvTopLeft,
@@ -309,7 +347,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 
 		currentWordCharData.emplace_back(CharData{
 			.charInfo = charInfo,
-			.offsetX = static_cast<int32_t>(currentWordWidth),
+			.offsetX = currentWordWidth,
 			.offsetY = face->size->metrics.ascender >> 6,
 			.character = character,
 		});
@@ -332,5 +370,5 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 }
 
 std::shared_ptr<Engine::Texture> squi::FontStore::Font::getTexture() const {
-	return atlas.getTexture();
+	return impl->atlas.getTexture();
 }

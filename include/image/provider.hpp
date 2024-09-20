@@ -10,21 +10,7 @@ namespace squi {
 		std::string key;
 		std::function<ImageData(void)> provider;
 
-		[[nodiscard]] static inline ImageProvider fromFile(const std::filesystem::path &path) {
-			return ImageProvider{
-				.key = path.string(),
-				.provider = [path] {
-					return ImageData::fromFile(path);
-				},
-			};
-		}
-		[[nodiscard]] static inline ImageProvider fromUrl(const skyr::url &url) {
-			return ImageProvider{
-				.key = url.href(),
-				.provider = [url] {
-					return ImageData::fromUrl(url);
-				},
-			};
-		}
+		[[nodiscard]] static ImageProvider fromFile(const std::filesystem::path &path);
+		[[nodiscard]] static ImageProvider fromUrl(const skyr::url &url);
 	};
 }// namespace squi

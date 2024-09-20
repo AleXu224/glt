@@ -15,6 +15,8 @@ namespace squi {
 		bool disabled = false;
 		std::function<void(float)> onChange{};
 		std::function<TextBox::Controller::ValidatorResponse(float)> validator{};
+		std::function<std::string(float)> formatter{};
+		Observable<float> valueUpdater{};
 		TextBox::Controller controller{};
 
 		struct Storage {

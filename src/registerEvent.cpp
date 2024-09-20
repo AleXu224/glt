@@ -7,7 +7,7 @@ squi::RegisterEvent::operator squi::Child() const {
 	auto &funcs = child->funcs();
 
 	if (onInit) funcs.onInit.emplace_back(onInit);
-	if (afterInit) funcs.onInit.emplace_back(afterInit);
+	if (afterInit) funcs.afterInit.emplace_back(afterInit);
 	if (onUpdate) funcs.onUpdate.emplace_back(onUpdate);
 	if (afterUpdate) funcs.afterUpdate.emplace_back(afterUpdate);
 	if (beforeLayout) funcs.beforeLayout.emplace_back(beforeLayout);

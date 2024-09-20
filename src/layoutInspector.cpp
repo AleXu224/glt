@@ -9,6 +9,7 @@
 #include "fontIcon.hpp"
 #include "gestureDetector.hpp"
 #include "inspectorQuad.hpp"
+#include "layoutInspectorData.hpp"
 #include "row.hpp"
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
@@ -333,7 +334,7 @@ struct LayoutItem {
 							};
 							for (auto &child: widget->getChildren()) {
 								if (test(child)) {
-									w.addChild(LayoutItem{child->shared_from_this(), storage->state, storage->depth + 1});
+									w.addChild(LayoutItem{.widget = child->shared_from_this(), .state = storage->state, .depth = storage->depth + 1});
 								}
 							}
 						},
@@ -348,7 +349,7 @@ struct LayoutItem {
 							result.reserve(children.size());
 
 							for (auto &child: children) {
-								result.push_back(LayoutItem{child->shared_from_this(), state, depth + 1});
+								result.push_back(LayoutItem{.widget = child->shared_from_this(), .state = state, .depth = depth + 1});
 							}
 
 							return Children(std::move(result));
@@ -471,14 +472,14 @@ struct LayoutInspectorContent {
 										if (auto content = shared->contentStack.lock()) {
 											for (auto &child: content->getChildren()) {
 												if (test(child)) {
-													w.addChild(LayoutItem{child->shared_from_this(), shared});
+													w.addChild(LayoutItem{.widget = child->shared_from_this(), .state = shared});
 												}
 											}
 										}
 										if (auto overlays = shared->overlayStack.lock()) {
 											for (auto &child: overlays->getChildren()) {
 												if (test(child)) {
-													w.addChild(LayoutItem{child->shared_from_this(), shared});
+													w.addChild(LayoutItem{.widget = child->shared_from_this(), .state = shared});
 												}
 											}
 										}
@@ -520,13 +521,17 @@ struct LayoutInspectorContent {
 };
 
 LayoutInspector::operator Child() const {
-	auto storage = std::make_shared<Storage>();
+	auto storage = std::make_shared<Storage>(
+		Storage{
+			.data = std::make_unique<LayoutInspectorData>(),
+		}
+	);
 
 	return Row{
 		.widget{
 			.onInit = [storage](Widget &w) {
 				auto &window = Window::of(&w);
-				storage->pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<InspectorPipeline>{
+				storage->data->pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<InspectorPipeline>{
 					.key = "squiInspectorPipeline",
 					.provider = [&]() {
 						return InspectorPipeline::Args{
@@ -626,16 +631,16 @@ LayoutInspector::operator Child() const {
 								Child widget = storage->hoveredWidget.lock();
 								if (!widget) return;
 								if (*widget->flags.visible) {
-									if (!storage->pipeline) return;
+									if (!storage->data->pipeline) return;
 									Engine::InspectorQuad quad{Engine::InspectorQuad::Args{
 										.position = widget->getPos(),
 										.size = widget->getLayoutSize(),
 										.margins = *widget->state.margin,
 										.paddings = *widget->state.padding,
 									}};
-									storage->pipeline->bind();
-									auto [vi, ii] = storage->pipeline->getIndexes();
-									storage->pipeline->addData(quad.getData(vi, ii));
+									storage->data->pipeline->bind();
+									auto [vi, ii] = storage->data->pipeline->getIndexes();
+									storage->data->pipeline->addData(quad.getData(vi, ii));
 								}
 							},
 						},

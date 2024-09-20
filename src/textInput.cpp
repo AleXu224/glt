@@ -3,6 +3,7 @@
 #include "cstdint"
 #include "gestureDetector.hpp"
 #include "text.hpp"
+#include "textData.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
 #include "window.hpp"
@@ -207,7 +208,7 @@ void TextInput::Impl::onUpdate() {
 		else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
 			selectionStart = std::nullopt;
 
-		if (cursor > 0) cursor = 0;
+		cursor = std::min<int64_t>(cursor, 0);
 	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_END)) {
 		const auto textValue = text.getText();
 		if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(textValue.size()) && !selectionStart.has_value())
@@ -215,8 +216,7 @@ void TextInput::Impl::onUpdate() {
 		else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
 			selectionStart = std::nullopt;
 
-		if (cursor < static_cast<int64_t>(textValue.size()))
-			cursor = static_cast<int64_t>(textValue.size());
+		cursor = std::max(cursor, static_cast<int64_t>(textValue.size()));
 	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_ESCAPE)) {
 		selectionStart = std::nullopt;
 	} else if (const auto key = inputState.getKeyPressedOrRepeat(GLFW_KEY_A)) {
@@ -320,7 +320,7 @@ void squi::TextInput::Impl::handleMouseInput() {
 	auto &inputState = InputState::of(this);
 	if (!inputState.isKey(GLFW_MOUSE_BUTTON_1, GLFW_PRESS)) return;
 	auto &textWidget = this->textWidget->as<Text::Impl>();
-	const auto &quads = textWidget.getQuads();
+	const auto &quads = textWidget.getData().quads;
 	const auto mousePos = inputState.getMousePos();
 	const auto lineHeight = textWidget.getLineHeight();
 	const auto textPos = textWidget.getPos();

@@ -2,10 +2,12 @@
 
 #include <utility>
 
+#include "align.hpp"
 #include "container.hpp"
 #include "fontIcon.hpp"
 #include "registerEvent.hpp"
 #include "row.hpp"
+#include "text.hpp"
 #include "window.hpp"
 
 using namespace squi;
@@ -29,7 +31,7 @@ squi::DropdownButton::operator squi::Child() const {
 				});
 			},
 			.child = Row{
-				.spacing = 4.f,
+				.spacing = 6.f,
 				.children{
 					Container{
 						.child = Align{
@@ -51,6 +53,7 @@ squi::DropdownButton::operator squi::Child() const {
 						.child = Align{
 							.child = FontIcon{
 								.icon = 0xE972,
+								.size = 8.f,
 							},
 						},
 					},

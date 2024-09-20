@@ -1,21 +1,21 @@
 #pragma once
 
-#include "engine/inspectorQuad.hpp"
-#include "engine/pipeline.hpp"
 #include "observer.hpp"
-#include "widget.hpp"
+#include "widgetArgs.hpp"
+
 
 namespace squi {
+	struct LayoutInspectorData;
+	
 	struct LayoutInspector {
 		// Args
 		Observable<Child> addedChildren;
 		Observable<Child> addedOverlays;
 
-		using InspectorPipeline = Engine::Pipeline<Engine::InspectorQuad::Vertex>;
-
 		struct Storage {
 			// Data
-			std::shared_ptr<InspectorPipeline> pipeline;
+			std::unique_ptr<LayoutInspectorData> data{};
+
 			Observer<Child> addedChildrenObserver{};
 			Observer<Child> addedOverlaysObserver{};
 

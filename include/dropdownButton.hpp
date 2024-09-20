@@ -2,6 +2,7 @@
 
 #include "button.hpp"
 #include "contextMenu.hpp"
+#include "observer.hpp"
 #include "widget.hpp"
 
 

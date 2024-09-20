@@ -16,6 +16,13 @@ NumberBox::operator Child() const {
 		.max = max,
 		.step = step,
 	});
+
+	auto formatVal = [storage, formatter = formatter]() {
+		if (formatter) return formatter(storage->value);
+
+		return std::format("{}", storage->value);
+	};
+
 	storage->onChange = [onChange = onChange, storage = std::weak_ptr<Storage>(storage)](float val) {
 		if (storage.expired()) return;
 		auto &storageRef = *storage.lock();
@@ -24,37 +31,42 @@ NumberBox::operator Child() const {
 		if (onChange) onChange(storageRef.value);
 	};
 
-
 	return RegisterEvent{
-		.onInit = [storage, stateObserver = controller.stateObserver](Widget &w) {
+		.onInit = [storage, stateObserver = controller.stateObserver, updateText = controller.updateText, valueUpdater = valueUpdater, formatVal](Widget &w) {
 			w.customState.add("_stateObservable", stateObserver.observe([storage](TextBox::InputState state) {
 				storage->focused = (state == TextBox::InputState::focused);
 			}));
+			w.customState.add(valueUpdater.observe([updateText, formatVal, storage](float newVal) {
+				storage->value = newVal;
+				updateText.notify(formatVal());
+			}));
 		},
-		.onUpdate = [storage, updateText = controller.updateText](Widget &w) {
+		.onUpdate = [storage, updateText = controller.updateText, formatVal](Widget &w) {
 			if (!storage->focused) return;
 			auto &inputState = InputState::of(&w);
 			if (inputState.isKeyPressedOrRepeat(GLFW_KEY_UP)) {
 				storage->value += storage->step;
 				storage->clampValue();
-				updateText.notify(std::format("{}", storage->value));
+				updateText.notify(formatVal());
 			}
 			if (inputState.isKeyPressedOrRepeat(GLFW_KEY_DOWN)) {
 				storage->value -= storage->step;
 				storage->clampValue();
-				updateText.notify(std::format("{}", storage->value));
+				updateText.notify(formatVal());
 			}
 		},
 		.child = TextBox{
 			.widget{widget},
 			.disabled = disabled,
-			.text = std::format("{}", value),
+			.text = formatVal(),
 			.controller{
 				.disable = controller.disable,
 				.focus = controller.focus,
-				.onChange = [onChange = onChange, controllerOnChange = controller.onChange](std::string_view newText) {
+				.onChange = [onChange = onChange, controllerOnChange = controller.onChange, storage](std::string_view newText) {
 					if (controllerOnChange) controllerOnChange(newText);
-					if (onChange) onChange(std::stof(std::string{newText}));
+					float val = std::stof(std::string{newText});
+					storage->value = val;
+					if (onChange) onChange(val);
 				},
 				.onSubmit = controller.onSubmit,
 				.validator = [storage, textValidator = controller.validator, numValidator = validator](std::string_view str) -> TextBox::Controller::ValidatorResponse {

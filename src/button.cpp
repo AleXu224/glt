@@ -1,7 +1,9 @@
 #include "button.hpp"
+#include "align.hpp"
 #include "box.hpp"
 #include "gestureDetector.hpp"
 #include "memory"
+#include "text.hpp"
 
 using namespace squi;
 
@@ -40,7 +42,7 @@ Button::operator squi::Child() const {
 				.borderWidth{style.borderWidth},
 				.borderRadius{style.borderRadius},
 				.borderPosition = style.borderPosition,
-				.child = child,
+				.child = child ? child : Align{.child = Text{.text = text}},
 			},
 		},
 	};

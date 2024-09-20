@@ -1,5 +1,7 @@
 #include "align.hpp"
 
+#include "widget.hpp"
+
 using namespace squi;
 
 Align::operator Child() {

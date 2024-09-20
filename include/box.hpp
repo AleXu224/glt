@@ -2,19 +2,19 @@
 
 #include "color.hpp"
 #include "widget.hpp"
-#include "engine/quad.hpp"
-#include "engine/pipeline.hpp"
 #include <glm/fwd.hpp>
 #include <memory>
 
+
 namespace squi {
+	struct BoxData;
 	struct Box {
-		enum class BorderPosition {
+		enum class BorderPosition : uint8_t {
 			inset,
 			outset,
 		};
 
-		Widget::Args widget{};
+		Args widget{};
 		Color color{0xFFFFFFFF};
 		Color borderColor{0x000000FF};
 		glm::vec4 borderWidth{0.0f};
@@ -22,16 +22,20 @@ namespace squi {
 		BorderPosition borderPosition{BorderPosition::inset};
 		bool shouldClipContent = true;
 		Child child{};
-		using BoxPipeline = Engine::Pipeline<Engine::Quad::Vertex>;
 		class Impl : public Widget {
-			Engine::Quad quad;
+			// pimpl for the pipeline since it is an expensive header
+			std::unique_ptr<BoxData> data;
+
 			BorderPosition borderPosition;
 			bool shouldClipContent;
-			std::shared_ptr<BoxPipeline> pipeline;
 
 		public:
-
+			Impl(const Impl &) = delete;
+			Impl(Impl &&) = delete;
+			Impl &operator=(const Impl &) = delete;
+			Impl &operator=(Impl &&) = delete;
 			explicit Impl(const Box &args);
+			~Impl() override;
 
 			void onDraw() final;
 			void drawChildren() final;
@@ -48,7 +52,7 @@ namespace squi {
 			[[nodiscard]] Color getBorderColor() const;
 			[[nodiscard]] glm::vec4 getBorderWidth() const;
 			[[nodiscard]] glm::vec4 getBorderRadius() const;
-			[[nodiscard]] Engine::Quad &getQuad();
+			[[nodiscard]] BoxData &getData();
 		};
 
 		operator Child() {

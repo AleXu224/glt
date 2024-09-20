@@ -42,7 +42,7 @@ namespace squi {
 			// Called whenever the input loses focus or when pressing enter
 			std::function<void(std::string_view)> onSubmit{};
 			std::function<ValidatorResponse(std::string_view)> validator{};
-			Observable<std::string_view> updateText{};
+			Observable<std::string> updateText{};
 			Observable<InputState> stateObserver{};
 			VoidObservable selectAll{};
 		};

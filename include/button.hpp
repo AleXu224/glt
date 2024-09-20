@@ -1,11 +1,9 @@
 #pragma once
 
-#include "align.hpp"
 #include "box.hpp"
 #include "color.hpp"
 #include "gestureDetector.hpp"
-#include "text.hpp"
-#include "widget.hpp"
+#include "widgetArgs.hpp"
 #include <functional>
 
 namespace squi {
@@ -66,7 +64,7 @@ namespace squi {
 		ButtonStyle style{};
 		bool disabled = false;
 		std::function<void(GestureDetector::Event)> onClick{};
-		Child child = Align{.child = Text{.text = text}};
+		Child child{};
 
 		operator Child() const;
 	};

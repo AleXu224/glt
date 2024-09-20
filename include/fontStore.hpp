@@ -1,21 +1,21 @@
 #pragma once
 
-#include "atlas.hpp"
 #include "color.hpp"
-#include "engine/textQuad.hpp"
 #include "text/provider.hpp"
+#include "vec2.hpp"
 
 #include <freetype/fttypes.h>
 #include FT_FREETYPE_H
 
+#include "mutex"
 #include "unordered_map"
 #include <optional>
 #include <tuple>
 
-#include "roboto-bold.hpp"
-#include "roboto-bolditalic.hpp"
-#include "roboto-italic.hpp"
-#include "roboto-regular.hpp"
+namespace Engine {
+	struct TextQuad;
+	struct Texture;
+}// namespace Engine
 
 namespace squi {
 	struct FontStore {
@@ -45,7 +45,8 @@ namespace squi {
 			bool loaded{true};
 
 		private:
-			Atlas atlas;
+			struct Impl;
+			std::unique_ptr<Impl> impl;
 			//
 			std::unordered_map<float, std::unordered_map<char32_t, CharInfo>> chars{};
 
@@ -92,29 +93,9 @@ namespace squi {
 		static FT_Library &ftLibrary();
 		static std::unordered_map<std::string, std::weak_ptr<Font>> &fonts();
 
-		static inline FontProvider defaultFont = FontProvider{
-			.key = "default",
-			.provider = []() {
-				return std::vector(Fonts::roboto.begin(), Fonts::roboto.end());
-			},
-		};
-		static inline FontProvider defaultFontBold = FontProvider{
-			.key = "defaultBold",
-			.provider = []() {
-				return std::vector(Fonts::robotoBold.begin(), Fonts::robotoBold.end());
-			},
-		};
-		static inline FontProvider defaultFontItalic = FontProvider{
-			.key = "defaultItalic",
-			.provider = []() {
-				return std::vector(Fonts::robotoItalic.begin(), Fonts::robotoItalic.end());
-			},
-		};
-		static inline FontProvider defaultFontBoldItalic = FontProvider{
-			.key = "defaultBoldItalic",
-			.provider = []() {
-				return std::vector(Fonts::robotoBoldItalic.begin(), Fonts::robotoBoldItalic.end());
-			},
-		};
+		static FontProvider defaultFont;
+		static FontProvider defaultFontBold;
+		static FontProvider defaultFontItalic;
+		static FontProvider defaultFontBoldItalic;
 	};
 }// namespace squi

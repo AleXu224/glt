@@ -1,8 +1,6 @@
 #pragma once
 
 #include "color.hpp"
-#include "engine/pipeline.hpp"
-#include "engine/textQuad.hpp"
 #include "fontStore.hpp"
 #include "vec2.hpp"
 #include "widget.hpp"
@@ -11,6 +9,8 @@
 
 
 namespace squi {
+	struct TextData;
+	
 	struct Text {
 		// Args
 		Widget::Args widget{};
@@ -19,7 +19,6 @@ namespace squi {
 		bool lineWrap{false};
 		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
 		Color color{0xFFFFFFFF};
-		using TextPipeline = Engine::Pipeline<Engine::TextQuad::Vertex, true>;
 
 		class Impl : public Widget {
 			// Data
@@ -31,14 +30,18 @@ namespace squi {
 			bool lineWrap;
 			bool forceRegen = false;
 			std::shared_ptr<FontStore::Font> font{};
-			std::shared_ptr<Engine::SamplerUniform> sampler{};
 			Color color;
 			vec2 textSize;
-			std::vector<std::vector<Engine::TextQuad>> quads{};
-			std::shared_ptr<TextPipeline> pipeline;
+
+			std::unique_ptr<TextData> data;
 
 		public:
+			Impl(const Impl &) = delete;
+			Impl(Impl &&) = delete;
+			Impl &operator=(const Impl &) = delete;
+			Impl &operator=(Impl &&) = delete;
 			Impl(const Text &args);
+			~Impl() override;
 
 			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) final;
 			void postLayout(vec2 &size) override;
@@ -55,7 +58,7 @@ namespace squi {
 
 			[[nodiscard]] std::string_view getText() const;
 
-			[[nodiscard]] const std::vector<std::vector<Engine::TextQuad>> &getQuads() const;
+			[[nodiscard]] const TextData &getData() const;
 
 			[[nodiscard]] uint32_t getLineHeight() const;
 		};

@@ -1,5 +1,4 @@
 #include "textBox.hpp"
-#include "GLFW/glfw3.h"
 #include "box.hpp"
 #include "column.hpp"
 #include "gestureDetector.hpp"
@@ -8,6 +7,7 @@
 #include "text.hpp"
 #include "textInput.hpp"
 
+#include "GLFW/glfw3.h"
 
 using namespace squi;
 
@@ -18,7 +18,7 @@ struct Body {
 	// Args
 	squi::Widget::Args widget{};
 	StObs stateUpdateObs;
-	Observable<std::string_view> textUpdateObs{};
+	Observable<std::string> textUpdateObs{};
 	VoidObservable requestOnSubmitCall{};
 	VoidObservable selectAll{};
 	std::function<void(std::string_view)> onChange{};
@@ -144,6 +144,7 @@ struct Underline {
 
 squi::TextBox::operator squi::Child() const {
 	auto storage = std::make_shared<Storage>();
+	storage->disabled = disabled;
 	storage->stateObserver = controller.stateObserver;
 	storage->disableObs = controller.disable.observe([&storage = *storage](bool newDisabled) {
 		if (storage.disabled != newDisabled) {
@@ -165,9 +166,10 @@ squi::TextBox::operator squi::Child() const {
 	Observable<std::string_view> onChangeObs{};
 
 	return RegisterEvent{
-		.onInit = [storage](Widget &w) {
+		.afterInit = [storage](Widget &w) {
 			// For outside use
 			w.customState.add(storage);
+			storage->stateObserver.notify(storage->getState());
 		},
 		.child = GestureDetector{
 			.onEnter = [storage](auto) {

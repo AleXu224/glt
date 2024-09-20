@@ -86,13 +86,13 @@ namespace Engine {
 			vertices[2].color = newColor;
 			vertices[3].color = newColor;
 		}
-		squi::vec2 getPos() const {
+		[[nodiscard]] squi::vec2 getPos() const {
 			return vertices[0].pos;
 		}
-		squi::vec2 getSize() const {
+		[[nodiscard]] squi::vec2 getSize() const {
 			return vertices[0].size;
 		}
-		squi::vec2 getOffset() const {
+		[[nodiscard]] squi::vec2 getOffset() const {
 			return vertices[0].offset;
 		}
 

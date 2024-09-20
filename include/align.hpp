@@ -1,6 +1,6 @@
 #pragma once
 
-#include "widget.hpp"
+#include "widgetArgs.hpp"
 
 namespace squi {
 	struct Align {

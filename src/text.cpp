@@ -1,8 +1,11 @@
 #include "text.hpp"
 #include "engine/compiledShaders/textRectfrag.hpp"
 #include "engine/compiledShaders/textRectvert.hpp"
+#include "engine/pipeline.hpp"
+#include "engine/textQuad.hpp"
 #include "fontStore.hpp"
 #include "ranges"
+#include "textData.hpp"
 #include "textQuad.hpp"
 #include "widget.hpp"
 #include "window.hpp"
@@ -27,7 +30,8 @@ Text::Impl::Impl(const Text &args)
 	  text(args.text),
 	  fontSize(args.fontSize),
 	  lineWrap(args.lineWrap),
-	  color(args.color) {
+	  color(args.color),
+	  data(std::make_unique<TextData>()) {
 	std::visit(
 		[&](auto &&val) {
 			using T = std::remove_cvref_t<decltype(val)>;
@@ -43,7 +47,7 @@ Text::Impl::Impl(const Text &args)
 		auto &text = w.as<Text::Impl>();
 		auto &window = Window::of(&w);
 
-		text.pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<TextPipeline>{
+		text.data->pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<TextPipeline>{
 			.key = "squiTextPipeline",
 			.provider = [&]() {
 				return TextPipeline::Args{
@@ -54,7 +58,7 @@ Text::Impl::Impl(const Text &args)
 			},
 		});
 
-		text.sampler = window.samplerStore.getSampler(window.engine.instance, text.font->getTexture());
+		text.data->sampler = window.samplerStore.getSampler(window.engine.instance, text.font->getTexture());
 		text.forceRegen = true;
 	});
 }
@@ -74,6 +78,8 @@ vec2 Text::Impl::layoutChildren(vec2 maxSize, vec2 /*minSize*/, ShouldShrink sho
 	return textSize + state.padding->getSizeOffset();
 }
 
+squi::Text::Impl::~Impl() = default;
+
 void squi::Text::Impl::postLayout(vec2 &size) {
 	if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
 		lastAvailableSpace = size.x;
@@ -84,7 +90,7 @@ void squi::Text::Impl::postLayout(vec2 &size) {
 		// 2. The cached text is wrapping (the text is occupying more than one line)
 		// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
 		if (size.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
-			std::tie(quads, textSize.x, textSize.y) = font->generateQuads(
+			std::tie(data->quads, textSize.x, textSize.y) = font->generateQuads(
 				text,
 				fontSize,
 				vec2(lastX, lastY).rounded(),
@@ -102,7 +108,7 @@ void Text::Impl::onArrange(vec2 &pos) {
 	const auto textPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	if (textPos.x != lastX || textPos.y != lastY) {
 		const vec2 roundedPos = textPos.rounded();
-		for (auto &quadVec: quads) {
+		for (auto &quadVec: data->quads) {
 			for (auto &quad: quadVec) {
 				quad.setPos(roundedPos);
 			}
@@ -117,19 +123,19 @@ void Text::Impl::updateSize() {
 }
 
 void Text::Impl::onDraw() {
-	if (!pipeline) return;
-	if (!sampler) return;
+	if (!data->pipeline) return;
+	if (!data->sampler) return;
 
 	const auto pos = (getPos() + state.margin->getPositionOffset() + state.padding->getPositionOffset()).rounded();
 
-	pipeline->bindWithSampler(*sampler);
+	data->pipeline->bindWithSampler(*data->sampler);
 	const auto clipRect = Window::of(this).engine.instance.scissorStack.back();
 	const auto minOffsetX = clipRect.left - pos.x;
 	// const auto minOffsetY = clipRect.top - pos.y;
 	const auto maxOffsetX = clipRect.right - pos.x;
 	// const auto maxOffsetY = clipRect.bottom - pos.y;
 
-	for (auto &quadVec: quads) {
+	for (auto &quadVec: data->quads) {
 		auto it = std::lower_bound(
 			quadVec.begin(),
 			quadVec.end(),
@@ -147,8 +153,8 @@ void Text::Impl::onDraw() {
 			}
 		);
 		for (auto &quad: std::ranges::subrange(it, it2)) {
-			auto [vi, ii] = pipeline->getIndexes();
-			pipeline->addData(quad.getData(vi, ii));
+			auto [vi, ii] = data->pipeline->getIndexes();
+			data->pipeline->addData(quad.getData(vi, ii));
 		}
 	}
 }
@@ -171,7 +177,7 @@ std::tuple<uint32_t, uint32_t> Text::Impl::getTextSize(const std::string_view &t
 void squi::Text::Impl::setColor(const Color &newColor) {
 	if (color == newColor) return;
 	color = newColor;
-	for (auto &quadVec: quads) {
+	for (auto &quadVec: data->quads) {
 		for (auto &quad: quadVec) {
 			quad.setColor(newColor);
 		}
@@ -179,8 +185,8 @@ void squi::Text::Impl::setColor(const Color &newColor) {
 	reDraw();
 }
 
-const std::vector<std::vector<Engine::TextQuad>> &squi::Text::Impl::getQuads() const {
-	return quads;
+const TextData &squi::Text::Impl::getData() const {
+	return *data;
 }
 
 uint32_t squi::Text::Impl::getLineHeight() const {

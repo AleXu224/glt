@@ -2,6 +2,7 @@
 
 #include "engine/compiledShaders/texturedRectfrag.hpp"
 #include "engine/compiledShaders/texturedRectvert.hpp"
+#include "imageData.hpp"
 #include "pipeline.hpp"
 #include "samplerUniform.hpp"
 #include "store/texture.hpp"
@@ -27,12 +28,13 @@ Image::Impl::Impl(const Image &args)
 			  .shouldLayoutChildren = false,
 		  }
 	  ),
-	  fit(args.fit) {
+	  fit(args.fit),
+	  data(std::make_unique<ImageDataImpl>()) {
 	funcs().onInit.emplace_back([img = args.image](Widget &w) {
 		auto &image = w.as<Image::Impl>();
 		auto &window = Window::of(&w);
 
-		image.pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<ImagePipeline>{
+		image.data->pipeline = window.pipelineStore.getPipeline(Store::PipelineProvider<ImagePipeline>{
 			.key = "squiImagePipeline",
 			.provider = [&]() {
 				return ImagePipeline::Args{
@@ -43,7 +45,7 @@ Image::Impl::Impl(const Image &args)
 			},
 		});
 
-		image.sampler = window.samplerStore.getSampler(window.engine.instance, Store::Texture::getTexture(img));
+		image.data->sampler = window.samplerStore.getSampler(window.engine.instance, Store::Texture::getTexture(img));
 	});
 }
 
@@ -55,10 +57,10 @@ void Image::Impl::onUpdate() {
 }
 
 void Image::Impl::onLayout(vec2 &maxSize, vec2 & /*minSize*/) {
-	if (!sampler) {
+	if (!data->sampler) {
 		return;
 	}
-	const auto &properties = *sampler->texture;
+	const auto &properties = *data->sampler->texture;
 	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
 	switch (this->fit) {
 		case Fit::none: {
@@ -82,6 +84,8 @@ void Image::Impl::onLayout(vec2 &maxSize, vec2 & /*minSize*/) {
 }
 
 void Image::Impl::postLayout(vec2 &size) {
+	auto &sampler = data->sampler;
+	auto &quad = data->quad;
 	if (!sampler) {
 		return;
 	}
@@ -119,6 +123,8 @@ void Image::Impl::postLayout(vec2 &size) {
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
+	auto &sampler = data->sampler;
+	auto &quad = data->quad;
 	if (!sampler) {
 		return;
 	}
@@ -141,6 +147,9 @@ void Image::Impl::postArrange(vec2 &pos) {
 }
 
 void Image::Impl::onDraw() {
+	auto &pipeline = data->pipeline;
+	auto &sampler = data->sampler;
+	auto &quad = data->quad;
 	if (!pipeline) return;
 
 	if (!sampler) return;
@@ -154,3 +163,5 @@ void Image::Impl::onDraw() {
 
 	window.engine.instance.popScissor();
 }
+
+squi::Image::Impl::~Impl() = default;

@@ -3,6 +3,14 @@ set(VCPKG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(CMAKE_CXX_STANDARD 23)
 
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    message(STATUS "Found ccache in ${CCACHE_PROGRAM}")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+else()
+    message(STATUS "No ccache")
+endif()
+
 project(glt VERSION 0.1.0)
 
 # Shader compilation:
@@ -34,18 +42,18 @@ foreach(shader_file ${shader_files})
     COMMAND ShaderHeaderGenerator "${PROJECT_BINARY_DIR}/compiledShaders" ${fileDir} ${fileName} "${PROJECT_SOURCE_DIR}/include/engine/compiledShaders")
 endforeach()
 
-add_library(gltPCH INTERFACE)
-target_precompile_headers(gltPCH INTERFACE 
-    [["window.hpp"]]
-    [["vec2.hpp"]]
-    [["rect.hpp"]]
-    [["box.hpp"]]
-    [["column.hpp"]]
-    [["row.hpp"]]
-    [["stack.hpp"]]
-    [["gestureDetector.hpp"]]
-    [["align.hpp"]]
-)
+# add_library(gltPCH INTERFACE)
+# target_precompile_headers(gltPCH INTERFACE 
+#     [["window.hpp"]]
+#     [["vec2.hpp"]]
+#     [["rect.hpp"]]
+#     [["box.hpp"]]
+#     [["column.hpp"]]
+#     [["row.hpp"]]
+#     [["stack.hpp"]]
+#     [["gestureDetector.hpp"]]
+#     [["align.hpp"]]
+# )
 
 
 file(GLOB_RECURSE all_files CONFIGURE_DEPENDS "src/*.cpp" "include/*.h" "include/*.cpp" "external/*.h")
@@ -61,7 +69,7 @@ ENDIF()
 IF (UNIX)
     target_compile_definitions(glt PRIVATE GLFW_EXPOSE_NATIVE_X11 VK_USE_PLATFORM_XLIB_KHR)
 ENDIF()
-target_link_libraries(glt PUBLIC gltPCH)
+# target_link_libraries(glt PUBLIC gltPCH)
 target_include_directories(glt PUBLIC include)
 target_include_directories(glt PUBLIC include/engine)
 target_include_directories(glt PUBLIC external/fonts)

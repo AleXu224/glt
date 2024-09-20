@@ -173,7 +173,7 @@ namespace Engine {
 			};
 
 			vk::Rect2D scissor{
-				.offset = {0, 0},
+				.offset{.x = 0, .y = 0},
 				.extent = instance.swapChainExtent,
 			};
 

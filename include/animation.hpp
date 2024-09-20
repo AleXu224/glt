@@ -19,7 +19,7 @@ namespace squi {
 			}
 
 			static float easeInOutCubic(float t) {
-				return t < 0.5f ? easeInCubic(t * 2.0f) / 2.0f : 1.0f - easeInCubic((1.0f - t) * 2.0f) / 2.0f;
+				return t < 0.5f ? easeInCubic(t * 2.0f) / 2.0f : 1.0f - (easeInCubic((1.0f - t) * 2.0f) / 2.0f);
 			}
 		};
 

@@ -2,6 +2,7 @@
 
 #include "any"
 #include "string"
+#include "vector"
 #include <stdexcept>
 #include <unordered_map>
 
@@ -42,19 +43,9 @@ namespace squi {
 			throw std::runtime_error("State of this type already in widget");
 		}
 
-		void add(const StateContainer &state) {
-			if (auto iterator = states.find(state.name); iterator == states.end()) {
-				states.insert(std::pair(state.name, state.value));
-				return;
-			}
-			throw std::runtime_error("State of this type already in widget");
-		}
+		void add(const StateContainer &state);
 
-		void add(const std::vector<StateContainer> &states) {
-			for (const auto &state: states) {
-				add(state);
-			}
-		}
+		void add(const std::vector<StateContainer> &states);
 
 	private:
 		std::unordered_map<std::string, std::any> states{};

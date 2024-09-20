@@ -1,6 +1,8 @@
 #include "widget.hpp"
+
 #include "functional"
 #include "ranges"
+#include "utils.hpp"
 #include "window.hpp"
 #include <algorithm>
 #include <memory>
@@ -169,18 +171,16 @@ void Widget::update() {
 	if (flags.shouldUpdateChildren && *flags.visible) {
 		updateChildren();
 	}
-	children.erase(
-		std::remove_if(children.begin(), children.end(), [&](const Child &child) -> bool {
-			if (child->shouldDelete) {
-				for (auto &func: m_funcs.onChildRemoved) {
-					if (func) func(*this, child);
-				}
-				reLayout();
+	auto [eraseFirst, eraseLast] = std::ranges::remove_if(children, [&](const Child &child) -> bool {
+		if (child->shouldDelete) {
+			for (auto &func: m_funcs.onChildRemoved) {
+				if (func) func(*this, child);
 			}
-			return child->shouldDelete;
-		}),
-		children.end()
-	);
+			reLayout();
+		}
+		return child->shouldDelete;
+	});
+	children.erase(eraseFirst, eraseLast);
 
 	insertChildren();
 
@@ -243,41 +243,43 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 	ShouldShrink shouldShrink = forceShrink;
 
 	// Handle the size mode constraints
-	switch (state.width->index()) {
-		case 0: {
-			minSize.x = padding.x;
-			maxSize.x = std::clamp(std::get<0>(*state.width), minSize.x, maxSize.x);
-			shouldShrink.width = false;
-			break;
-		}
-		case 1: {
-			const auto &size = std::get<1>(*state.width);
-			if (size == Size::Shrink) {
-				shouldShrink.width = true;
+	std::visit(
+		utils::overloaded{
+			[&](const float &val) {
 				minSize.x = padding.x;
-			} else {
-				minSize.x = std::clamp(minSize.x - margin.x, padding.x, maxSize.x);
-			}
-		}
-	}
+				maxSize.x = std::clamp(val, minSize.x, maxSize.x);
+				shouldShrink.width = false;
+			},
+			[&](const Size &size) {
+				if (size == Size::Shrink) {
+					shouldShrink.width = true;
+					minSize.x = padding.x;
+				} else {
+					minSize.x = std::clamp(minSize.x - margin.x, padding.x, maxSize.x);
+				}
+			},
+		},
+		*state.width
+	);
 
-	switch (state.height->index()) {
-		case 0: {
-			minSize.y = padding.y;
-			maxSize.y = std::clamp(std::get<0>(*state.height), minSize.y, maxSize.y);
-			shouldShrink.height = false;
-			break;
-		}
-		case 1: {
-			const auto &size = std::get<1>(*state.height);
-			if (size == Size::Shrink) {
-				shouldShrink.height = true;
+	std::visit(
+		utils::overloaded{
+			[&](const float &val) {
 				minSize.y = padding.y;
-			} else {
-				minSize.y = std::clamp(minSize.y - margin.y, padding.y, maxSize.y);
-			}
-		}
-	}
+				maxSize.y = std::clamp(val, minSize.y, maxSize.y);
+				shouldShrink.height = false;
+			},
+			[&](const Size &size) {
+				if (size == Size::Shrink) {
+					shouldShrink.height = true;
+					minSize.y = padding.y;
+				} else {
+					minSize.y = std::clamp(minSize.y - margin.y, padding.y, maxSize.y);
+				}
+			},
+		},
+		*state.height
+	);
 
 	// Handle the min size constraints
 	if (constraints.minWidth.has_value()) {
@@ -305,50 +307,55 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 		minSize.y = std::clamp(contentSize.y + padding.y, minSize.y, maxSize.y);
 	}
 
-	switch (state.width->index()) {
-		case 0: {
-			size.x = std::clamp(std::get<0>(*state.width), minSize.x, maxSize.x);
-			break;
-		}
-		case 1: {
-			switch (std::get<1>(*state.width)) {
-				case Size::Expand: {
-					if (shouldShrink.width)
+	std::visit(
+		utils::overloaded{
+			[&](const float &val) {
+				size.x = std::clamp(val, minSize.x, maxSize.x);
+			},
+			[&](const Size &val) {
+				switch (val) {
+					case Size::Expand: {
+						if (shouldShrink.width)
+							size.x = minSize.x;
+						else
+							size.x = maxSize.x;
+						break;
+					}
+					case Size::Wrap:
+					case Size::Shrink: {
 						size.x = minSize.x;
-					else
-						size.x = maxSize.x;
-					break;
+						break;
+					}
 				}
-				case Size::Wrap:
-				case Size::Shrink: {
-					size.x = minSize.x;
-					break;
-				}
-			}
-		}
-	}
-	switch (state.height->index()) {
-		case 0: {
-			size.y = std::clamp(std::get<0>(*state.height), minSize.y, maxSize.y);
-			break;
-		}
-		case 1: {
-			switch (std::get<1>(*state.height)) {
-				case Size::Expand: {
-					if (shouldShrink.height)
+			},
+		},
+		*state.width
+	);
+
+	std::visit(
+		utils::overloaded{
+			[&](const float &val) {
+				size.y = std::clamp(val, minSize.y, maxSize.y);
+			},
+			[&](const Size &val) {
+				switch (val) {
+					case Size::Expand: {
+						if (shouldShrink.height)
+							size.y = minSize.y;
+						else
+							size.y = maxSize.y;
+						break;
+					}
+					case Size::Wrap:
+					case Size::Shrink: {
 						size.y = minSize.y;
-					else
-						size.y = maxSize.y;
-					break;
+						break;
+					}
 				}
-				case Size::Wrap:
-				case Size::Shrink: {
-					size.y = minSize.y;
-					break;
-				}
-			}
-		}
-	}
+			},
+		},
+		*state.height
+	);
 
 	if (final) {
 		for (auto &func: m_funcs.afterLayout) {

@@ -112,4 +112,9 @@ namespace squi::utils {
 
 		return ret;
 	}
+
+	template<class... Ts>
+	struct overloaded : Ts... {
+		using Ts::operator()...;
+	};
 }// namespace squi::utils
