@@ -7,10 +7,12 @@
 #include <freetype/fttypes.h>
 #include FT_FREETYPE_H
 
+#include "memory"
 #include "mutex"
 #include "unordered_map"
 #include <optional>
 #include <tuple>
+
 
 namespace Engine {
 	struct TextQuad;
