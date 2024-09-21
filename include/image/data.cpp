@@ -6,6 +6,7 @@
 #include "loader.hpp"
 #include "networking.hpp"
 
+#include "engine/texture.hpp"
 
 using namespace squi;
 
@@ -30,7 +31,7 @@ squi::ImageData ImageData::fromUrl(const skyr::url &url) {
 
 squi::ImageData ImageData::fromFile(const std::filesystem::path &path) {
 	auto getEmptyImage = []() {
-		return squi::ImageData{{0, 0, 0, 0}, 1, 1, 4};
+		return squi::ImageData{.data = {0, 0, 0, 0}, .width = 1, .height = 1, .channels = 4};
 	};
 
 	std::ifstream s{path, std::ios::binary};
@@ -72,7 +73,7 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 	});
 	for (uint32_t row = 0; row < height; row++) {
 		memcpy(
-			reinterpret_cast<uint8_t *>(texture->mappedMemory) + row * layout.rowPitch,
+			reinterpret_cast<uint8_t *>(texture->mappedMemory) + (row * layout.rowPitch),
 			data.data() + static_cast<ptrdiff_t>(row * width * channels),
 			static_cast<size_t>(width) * static_cast<size_t>(channels)
 		);

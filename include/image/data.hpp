@@ -5,9 +5,11 @@
 #include "future"
 #include "vector"
 
-#include "engine/texture.hpp"
-
 #include "skyr/v1/url.hpp"
+
+namespace Engine {
+	struct Texture;
+}
 
 namespace squi {
 	struct ImageData {

@@ -3,7 +3,6 @@
 #include "vulkan.hpp"
 #include "vulkanIncludes.hpp"
 #include <stdexcept>
-#include <vulkan/vulkan_enums.hpp>
 
 
 namespace Engine {
@@ -95,16 +94,16 @@ namespace Engine {
 			}
 		}
 
-		vk::raii::ImageView createImageView(const Args &args) const {
+		[[nodiscard]] vk::raii::ImageView createImageView(const Args &args) const {
 			vk::ImageViewCreateInfo createInfo{
 				.image = *image,
 				.viewType = vk::ImageViewType::e2D,
 				.format = formatFromChannels(args.channels),
 				.components = {
-					vk::ComponentSwizzle::eR,
-					vk::ComponentSwizzle::eG,
-					vk::ComponentSwizzle::eB,
-					vk::ComponentSwizzle::eA,
+					.r = vk::ComponentSwizzle::eR,
+					.g = vk::ComponentSwizzle::eG,
+					.b = vk::ComponentSwizzle::eB,
+					.a = vk::ComponentSwizzle::eA,
 				},
 				.subresourceRange{
 					.aspectMask = vk::ImageAspectFlagBits::eColor,
@@ -118,7 +117,7 @@ namespace Engine {
 			return {Vulkan::device().resource, createInfo};
 		}
 
-		vk::raii::Sampler createSampler() const {
+		[[nodiscard]] vk::raii::Sampler createSampler() const {
 			image.bindMemory(*memory, 0);
 
 			vk::SamplerCreateInfo createInfo{
@@ -140,7 +139,7 @@ namespace Engine {
 			return {Vulkan::device().resource, createInfo};
 		}
 
-		vk::raii::DeviceMemory createMemory() const {
+		[[nodiscard]] vk::raii::DeviceMemory createMemory() const {
 			auto reqs = image.getMemoryRequirements();
 
 			vk::MemoryAllocateInfo allocInfo{

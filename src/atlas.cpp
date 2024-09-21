@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "store/texture.hpp"
+#include "texture.hpp"
 
 using namespace squi;
 
@@ -57,7 +58,7 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	});
 	for (int y = 0; y < height; y++) {
 		auto *textureData = reinterpret_cast<unsigned char *>(this->texture->mappedMemory);
-		auto yOffset = static_cast<ptrdiff_t>(y * layout.rowPitch + usedRow->yOffset);
+		auto yOffset = static_cast<ptrdiff_t>((y * layout.rowPitch) + usedRow->yOffset);
 		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
 		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
 	}
