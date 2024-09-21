@@ -91,7 +91,7 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 	return ret;
 }
 
-Networking::Response Networking::get(std::string_view url) {
+Networking::Response Networking::get(const std::string &url) {
 	auto parsedUrl = skyr::url{url};
 	bool isHttps = parsedUrl.protocol().starts_with("https");
 	asio::ip::tcp::resolver resolver(ioContext);

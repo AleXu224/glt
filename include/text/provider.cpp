@@ -5,9 +5,9 @@
 #include "networking.hpp"
 
 
-squi::FontProvider squi::FontProvider::fromFile(std::string_view path) {
+squi::FontProvider squi::FontProvider::fromFile(const std::string &path) {
 	return squi::FontProvider{
-		.key = std::string{path},
+		.key = path,
 		.provider = [path = std::filesystem::path(path)] {
 			std::ifstream input(path, std::ifstream::binary);
 			if (!input.is_open()) {
@@ -25,9 +25,9 @@ squi::FontProvider squi::FontProvider::fromFile(std::string_view path) {
 	};
 }
 
-squi::FontProvider squi::FontProvider::fromUrl(std::string_view url) {
+squi::FontProvider squi::FontProvider::fromUrl(const std::string &url) {
 	return FontProvider{
-		.key = std::string{url},
+		.key = url,
 		.provider = [url] {
 			auto data = Networking::get(url);
 			if (!data.success) return std::vector<char>{};

@@ -24,6 +24,6 @@ namespace squi {
 			std::string error;
 		};
 
-		static Response get(std::string_view url);
+		static Response get(const std::string &url);
 	};
 }// namespace squi

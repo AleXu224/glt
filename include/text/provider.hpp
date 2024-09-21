@@ -9,7 +9,7 @@ namespace squi {
 		std::string key;
 		std::function<std::vector<char>(void)> provider;
 
-		[[nodiscard]] static FontProvider fromFile(std::string_view path);
-		[[nodiscard]] static FontProvider fromUrl(std::string_view url);
+		[[nodiscard]] static FontProvider fromFile(const std::string &path);
+		[[nodiscard]] static FontProvider fromUrl(const std::string &url);
 	};
 }// namespace squi

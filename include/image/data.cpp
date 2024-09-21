@@ -22,7 +22,7 @@ squi::ImageData ImageData::fromBytes(unsigned char *bytes, uint32_t length) {
 	};
 }
 
-squi::ImageData ImageData::fromUrl(std::string_view url) {
+squi::ImageData ImageData::fromUrl(const std::string &url) {
 	auto response = Networking::get(url);
 	if (!response.success) {
 		throw std::runtime_error(std::format("Failed to load image: {}", response.error));
@@ -30,7 +30,7 @@ squi::ImageData ImageData::fromUrl(std::string_view url) {
 	return fromBytes(reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t) response.body.size());
 }
 
-squi::ImageData ImageData::fromFile(std::string_view path) {
+squi::ImageData ImageData::fromFile(const std::string &path) {
 	auto getEmptyImage = []() {
 		return squi::ImageData{.data = {0, 0, 0, 0}, .width = 1, .height = 1, .channels = 4};
 	};
@@ -49,13 +49,13 @@ squi::ImageData ImageData::fromFile(std::string_view path) {
 	return ImageData::fromBytes(reinterpret_cast<unsigned char *>(str.data()), static_cast<uint32_t>(str.size()));
 }
 
-std::future<ImageData> ImageData::fromUrlAsync(std::string_view url) {
+std::future<ImageData> ImageData::fromUrlAsync(const std::string &url) {
 	return std::async(std::launch::async, [url]() {
 		return ImageData::fromUrl(url);
 	});
 }
 
-std::future<ImageData> ImageData::fromFileAsync(std::string_view path) {
+std::future<ImageData> ImageData::fromFileAsync(const std::string &path) {
 	return std::async(std::launch::async, [path = path]() {
 		return ImageData::fromFile(path);
 	});

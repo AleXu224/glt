@@ -1,17 +1,17 @@
 #include "provider.hpp"
 
-squi::ImageProvider squi::ImageProvider::fromFile(std::string_view path) {
+squi::ImageProvider squi::ImageProvider::fromFile(const std::string &path) {
 	return squi::ImageProvider{
-		.key = std::string{path},
+		.key = path,
 		.provider = [path] {
 			return ImageData::fromFile(path);
 		},
 	};
 }
 
-squi::ImageProvider squi::ImageProvider::fromUrl(std::string_view url) {
+squi::ImageProvider squi::ImageProvider::fromUrl(const std::string &url) {
 	return squi::ImageProvider{
-		.key = std::string{url},
+		.key = url,
 		.provider = [url] {
 			return squi::ImageData::fromUrl(url);
 		},

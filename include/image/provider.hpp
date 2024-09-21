@@ -7,7 +7,7 @@ namespace squi {
 		std::string key;
 		std::function<ImageData(void)> provider;
 
-		[[nodiscard]] static ImageProvider fromFile(std::string_view path);
-		[[nodiscard]] static ImageProvider fromUrl(std::string_view url);
+		[[nodiscard]] static ImageProvider fromFile(const std::string &path);
+		[[nodiscard]] static ImageProvider fromUrl(const std::string &url);
 	};
 }// namespace squi
