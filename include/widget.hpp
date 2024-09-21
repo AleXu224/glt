@@ -11,8 +11,11 @@
 #include <atomic>
 
 namespace squi {
+	class Window;
+
 	class Widget : public std::enable_shared_from_this<Widget> {
 	public:
+		friend Window;
 		using Args = ::squi::Args;
 
 		struct FlagsArgs {
@@ -173,6 +176,7 @@ namespace squi {
 
 		// Methods
 		void addChild(const std::shared_ptr<Widget> &child);
+		void addOverlay(const std::shared_ptr<Widget> &child);
 		void update();
 		struct ShouldShrink {
 			bool width = false;

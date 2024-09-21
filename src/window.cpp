@@ -89,9 +89,9 @@ squi::Window::Window()
 			auto &window = Window::windowMap.at(m_window);
 			std::scoped_lock inp{window->inputMtx};
 			if (!window->inputState.g_keys.contains(key))
-				window->inputState.g_keys.insert({key, {action, mods}});
+				window->inputState.g_keys.insert({key, {.action=action, .mods=mods}});
 			else
-				window->inputState.g_keys.at(key) = {action, mods};
+				window->inputState.g_keys.at(key) = {.action=action, .mods=mods};
 			if (!window->inputTriggered) {
 				window->inputTriggered = true;
 				window->inputReady.set_value();
@@ -103,9 +103,9 @@ squi::Window::Window()
 			auto &window = Window::windowMap.at(m_window);
 			std::scoped_lock inp{window->inputMtx};
 			if (!window->inputState.g_keys.contains(button))
-				window->inputState.g_keys.insert({button, {action, mods}});
+				window->inputState.g_keys.insert({button, {.action=action, .mods=mods}});
 			else
-				window->inputState.g_keys.at(button) = {action, mods};
+				window->inputState.g_keys.at(button) = {.action=action, .mods=mods};
 			if (!window->inputTriggered) {
 				window->inputTriggered = true;
 				window->inputReady.set_value();
@@ -186,17 +186,14 @@ squi::Window::Window()
 				}
 				drewLastFrame = false;
 
-				auto &children = getChildren();
 				const auto &width = engine.instance.swapChainExtent.width;
 				const auto &height = engine.instance.swapChainExtent.height;
 				state.width = static_cast<float>(width);
 				state.height = static_cast<float>(height);
 				state.root = this;
 
-				for (auto &child: children) {
-					addedChildren.notify(child);
-				}
-				children.clear();
+				getChildren().clear();
+				childrenToAdd.clear();
 
 				inputState.g_activeArea.emplace_back(
 					vec2{0.0f, 0.0f},

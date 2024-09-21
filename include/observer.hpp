@@ -83,7 +83,7 @@ namespace squi {
 		};
 
 		[[nodiscard]] static Observer _observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
-			Observer ret{controlBlock, std::make_shared<UpdateFunc>(updateFunc)};
+			Observer ret{._controlBlock=controlBlock, ._update=std::make_shared<UpdateFunc>(updateFunc)};
 			controlBlock->updateFuncs.emplace_back(ret._update);
 			return ret;
 		}

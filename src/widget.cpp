@@ -203,6 +203,10 @@ vec2 Widget::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrin
 	return contentSize;
 }
 
+void squi::Widget::addOverlay(const std::shared_ptr<Widget> &child) {
+	Window::of(this).addOverlay(child);
+}
+
 vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, bool final) {
 #ifndef NDEBUG
 	for (auto &func: m_funcs.onDebugLayout) {
