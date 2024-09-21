@@ -2,15 +2,12 @@
 
 #include "data.hpp"
 
-#include "filesystem"
-#include "skyr/v1/url.hpp"
-
 namespace squi {
 	struct ImageProvider {
 		std::string key;
 		std::function<ImageData(void)> provider;
 
-		[[nodiscard]] static ImageProvider fromFile(const std::filesystem::path &path);
-		[[nodiscard]] static ImageProvider fromUrl(const skyr::url &url);
+		[[nodiscard]] static ImageProvider fromFile(std::string_view path);
+		[[nodiscard]] static ImageProvider fromUrl(std::string_view url);
 	};
 }// namespace squi

@@ -1,5 +1,6 @@
 #include "data.hpp"
 
+#include "filesystem"
 #include "fstream"
 #include "print"
 
@@ -21,7 +22,7 @@ squi::ImageData ImageData::fromBytes(unsigned char *bytes, uint32_t length) {
 	};
 }
 
-squi::ImageData ImageData::fromUrl(const skyr::url &url) {
+squi::ImageData ImageData::fromUrl(std::string_view url) {
 	auto response = Networking::get(url);
 	if (!response.success) {
 		throw std::runtime_error(std::format("Failed to load image: {}", response.error));
@@ -29,15 +30,15 @@ squi::ImageData ImageData::fromUrl(const skyr::url &url) {
 	return fromBytes(reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t) response.body.size());
 }
 
-squi::ImageData ImageData::fromFile(const std::filesystem::path &path) {
+squi::ImageData ImageData::fromFile(std::string_view path) {
 	auto getEmptyImage = []() {
 		return squi::ImageData{.data = {0, 0, 0, 0}, .width = 1, .height = 1, .channels = 4};
 	};
 
-	std::ifstream s{path, std::ios::binary};
+	auto s = std::ifstream(std::filesystem::path{path}, std::ios::binary);
 
 	if (!s) {
-		std::println("Failed to open file {}", path.string());
+		std::println("Failed to open file {}", path);
 		return getEmptyImage();
 	}
 
@@ -48,13 +49,13 @@ squi::ImageData ImageData::fromFile(const std::filesystem::path &path) {
 	return ImageData::fromBytes(reinterpret_cast<unsigned char *>(str.data()), static_cast<uint32_t>(str.size()));
 }
 
-std::future<ImageData> ImageData::fromUrlAsync(const skyr::url &url) {
+std::future<ImageData> ImageData::fromUrlAsync(std::string_view url) {
 	return std::async(std::launch::async, [url]() {
 		return ImageData::fromUrl(url);
 	});
 }
 
-std::future<ImageData> ImageData::fromFileAsync(const std::filesystem::path &path) {
+std::future<ImageData> ImageData::fromFileAsync(std::string_view path) {
 	return std::async(std::launch::async, [path = path]() {
 		return ImageData::fromFile(path);
 	});

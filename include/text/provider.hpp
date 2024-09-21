@@ -1,19 +1,15 @@
 #pragma once
 
-#include "filesystem"
 #include "functional"
 #include "string"
 #include "vector"
-
-
-#include "skyr/v1/url.hpp"
 
 namespace squi {
 	struct FontProvider {
 		std::string key;
 		std::function<std::vector<char>(void)> provider;
 
-		[[nodiscard]] static FontProvider fromFile(const std::filesystem::path &path);
-		[[nodiscard]] static FontProvider fromUrl(const skyr::url &url);
+		[[nodiscard]] static FontProvider fromFile(std::string_view path);
+		[[nodiscard]] static FontProvider fromUrl(std::string_view url);
 	};
 }// namespace squi

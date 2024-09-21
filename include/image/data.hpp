@@ -1,11 +1,8 @@
 #pragma once
 
 #include "cstdint"
-#include "filesystem"
 #include "future"
 #include "vector"
-
-#include "skyr/v1/url.hpp"
 
 namespace Engine {
 	struct Texture;
@@ -19,10 +16,10 @@ namespace squi {
 		uint32_t channels;
 
 		static ImageData fromBytes(unsigned char *bytes, uint32_t length);
-		static ImageData fromUrl(const skyr::url &url);
-		static ImageData fromFile(const std::filesystem::path &path);
-		static std::future<ImageData> fromUrlAsync(const skyr::url &url);
-		static std::future<ImageData> fromFileAsync(const std::filesystem::path &path);
+		static ImageData fromUrl(std::string_view url);
+		static ImageData fromFile(std::string_view path);
+		static std::future<ImageData> fromUrlAsync(std::string_view url);
+		static std::future<ImageData> fromFileAsync(std::string_view path);
 
 		[[nodiscard]] std::shared_ptr<Engine::Texture> createTexture() const;
 	};

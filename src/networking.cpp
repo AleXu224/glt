@@ -3,29 +3,33 @@
 #include "asio/ip/tcp.hpp"
 #include "asio/ssl/context.hpp"
 #include "asio/ssl/stream.hpp"
+#include "print"
+#include "skyr/v1/url.hpp"
+#include "thread"
 #include <algorithm>
 #include <asio/error_code.hpp>
 #include <asio/ssl/verify_mode.hpp>
 #include <charconv>
-#include <iostream>
-#include <skyr/v1/url.hpp>
 #include <sstream>
 #include <string>
 
 
 using namespace squi;
 
-asio::io_context Networking::ioContext;
-std::vector<std::thread> Networking::threads;
+namespace {
+	asio::io_context ioContext;
+	std::vector<std::thread> threads;
 
-std::string toLowerCase(std::string_view str) {
-	std::string ret;
-	ret.reserve(str.size());
-	for (const auto c: str) {
-		ret.push_back(static_cast<char>(std::tolower(c)));
+	std::string toLowerCase(std::string_view str) {
+		std::string ret;
+		ret.reserve(str.size());
+		for (const auto c: str) {
+			ret.push_back(static_cast<char>(std::tolower(c)));
+		}
+		return ret;
 	}
-	return ret;
-}
+}// namespace
+
 
 Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 	ResponseBody ret;
@@ -80,15 +84,15 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 			}
 			ret.body = ss.str();
 		} else {
-			std::cout << "Unknown transfer encoding: " << encoding << std::endl;
+			std::println("Unknown transfer encoding: {}", encoding);
 		}
 	}
 
 	return ret;
 }
 
-Networking::Response Networking::get(const skyr::url &url) {
-	const auto parsedUrl = skyr::url{url};
+Networking::Response Networking::get(std::string_view url) {
+	auto parsedUrl = skyr::url{url};
 	bool isHttps = parsedUrl.protocol().starts_with("https");
 	asio::ip::tcp::resolver resolver(ioContext);
 	asio::ip::tcp::socket socket(ioContext);

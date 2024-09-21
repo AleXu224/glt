@@ -1,18 +1,11 @@
 #pragma once
 
-#include "asio/io_context.hpp"
-#include "thread"
-#include "vector"
+#include "string"
 #include <unordered_map>
-
-#include "skyr/v1/url.hpp"
 
 
 namespace squi {
 	class Networking {
-		static asio::io_context ioContext;
-		static std::vector<std::thread> threads;
-
 		struct ResponseBody {
 			std::string body;
 			uint32_t statusCode;
@@ -30,6 +23,6 @@ namespace squi {
 			std::string error;
 		};
 
-		static Response get(const skyr::url &url);
+		static Response get(std::string_view url);
 	};
 }// namespace squi
