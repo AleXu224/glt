@@ -2,9 +2,11 @@
 
 #include "box.hpp"
 #include "color.hpp"
+#include "cstdint"
 #include "gestureDetector.hpp"
 #include "widgetArgs.hpp"
 #include <functional>
+
 
 namespace squi {
 	struct ButtonStyle {
@@ -20,6 +22,9 @@ namespace squi {
 		float borderRadius{4.0f};
 		float borderWidth{1.0f};
 		Color textColor{0x000000FF};
+		Color textColorHover{0x000000FF};
+		Color textColorActive{0.f, 0.f, 0.f, 0.5f};
+		Color textColorDisabled{1.f, 1.f, 1.f, 0.5f};
 		float textSize{14.0f};
 
 		static ButtonStyle Accent() {
@@ -38,6 +43,9 @@ namespace squi {
 				.borderColorDisabled{0xFFFFFF12},
 				.borderPosition = Box::BorderPosition::outset,
 				.textColor{0xFFFFFFFF},
+				.textColorHover{0xFFFFFFFF},
+				.textColorActive{1.f, 1.f, 1.f, 0.78f},
+				.textColorDisabled{1.f, 1.f, 1.f, 0.36},
 			};
 		}
 
@@ -48,9 +56,18 @@ namespace squi {
 				.colorActive{0xFFFFFF0B},
 				.colorDisabled{0xFFFFFF00},
 				.borderWidth = 0.0f,
-				.textColor{0xFFFFFFFF},
+				.textColorHover{0xFFFFFFFF},
+				.textColorActive{1.f, 1.f, 1.f, 0.78f},
+				.textColorDisabled{1.f, 1.f, 1.f, 0.36},
 			};
 		}
+	};
+
+	enum class ButtonState : uint8_t {
+		resting,
+		hovered,
+		active,
+		disabled,
 	};
 
 	struct Button {

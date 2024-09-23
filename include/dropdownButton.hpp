@@ -12,6 +12,7 @@ namespace squi {
 		squi::Widget::Args widget{};
 		ButtonStyle style{};
 		std::string_view text{};
+		bool disabled = false;
 		std::vector<ContextMenu::Item> items{};
 
 		Observable<const std::string &> textUpdater{};
