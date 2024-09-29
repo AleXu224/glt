@@ -36,6 +36,7 @@ squi::DropdownButton::operator squi::Child() const {
 							case ButtonState::disabled:
 								return style.textColorDisabled;
 						}
+						std::unreachable();
 					}();
 					w.as<Text::Impl>().setColor(color);
 				}));
@@ -59,6 +60,7 @@ squi::DropdownButton::operator squi::Child() const {
 							case ButtonState::disabled:
 								return style.textColorDisabled;
 						}
+						std::unreachable();
 					}();
 					w.as<Text::Impl>().setColor(color);
 				}));
