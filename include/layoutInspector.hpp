@@ -14,7 +14,7 @@ namespace squi {
 
 		struct Storage {
 			// Data
-			std::unique_ptr<LayoutInspectorData> data{};
+			std::unique_ptr<LayoutInspectorData> data;
 
 			Observer<Child> addedChildrenObserver{};
 			Observer<Child> addedOverlaysObserver{};

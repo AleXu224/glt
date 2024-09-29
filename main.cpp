@@ -4,6 +4,7 @@
 #include "window.hpp"
 #include <GLFW/glfw3.h>
 #include <print>
+#include <align.hpp>
 
 
 int main(int /*unused*/, char ** /*unused*/) {
