@@ -14,9 +14,13 @@ namespace squi {
 		Widget::Args textWidget{};
 		Margin margin{};
 		char32_t icon = U'\0';
-		// FIXME: add a default Icon font
-		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontProvider::fromFile(R"(C:\Windows\Fonts\segmdl2.ttf)");
-		float size = 14.f;
+		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultIconsFilled;
+		// The size the icon will take
+		float size = 16.f;
+		// Some fonts are not sized too well and may require a different size
+		// to fit nicely. An example of this is Material Icons, which in order
+		// to get a 16x16px icon you actually need a font size of 24px
+		float iconSize = 24.f;
 		Color color = 0xFFFFFFFF;
 
 		operator Child() const;

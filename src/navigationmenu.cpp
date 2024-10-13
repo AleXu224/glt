@@ -132,7 +132,7 @@ NavigationMenu::operator Child() const {
 							 },
 							 .child = Align{
 								 .child = FontIcon{
-									 .icon = 0xE830,
+									 .icon = 0xe5c4,
 									 .size = 12.f,
 								 },
 							 },
@@ -150,7 +150,7 @@ NavigationMenu::operator Child() const {
 					storage->isExpandedEvent.notify(storage->isExpanded = !storage->isExpanded);
 				},
 				.child = FontIcon{
-					.icon = 0xE700,
+					.icon = 0xe5d2,
 					.size = 16.f,
 				},
 			},

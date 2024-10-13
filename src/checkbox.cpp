@@ -16,7 +16,7 @@ Checkbox::operator Child() const {
 	if (value.has_value()) storage->internalValue = value.value().get();
 
 	return GestureDetector{
-		.onClick = [storage, onChange = onChange](GestureDetector::Event  /*event*/) {
+		.onClick = [storage, onChange = onChange](GestureDetector::Event /*event*/) {
 			if (storage->value.has_value()) {
 				bool &value = storage->value.value().get();
 				value = !value;
@@ -56,7 +56,7 @@ Checkbox::operator Child() const {
 									w.flags.visible = storage->internalValue;
 								},
 							},
-							.icon = 0xF78C,
+							.icon = 0xe5ca,
 							.size = 12.f,
 							.color = Color(0.f, 0.f, 0.f),
 						},

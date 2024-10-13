@@ -1,5 +1,7 @@
 #pragma once
 
+#include "borderRadius.hpp"
+#include "borderWidth.hpp"
 #include "color.hpp"
 #include "widget.hpp"
 #include <glm/fwd.hpp>
@@ -17,8 +19,8 @@ namespace squi {
 		Args widget{};
 		Color color{0xFFFFFFFF};
 		Color borderColor{0x000000FF};
-		glm::vec4 borderWidth{0.0f};
-		glm::vec4 borderRadius{0.0f};
+		BorderWidth borderWidth{0.0f};
+		BorderRadius borderRadius{0.0f};
 		BorderPosition borderPosition{BorderPosition::inset};
 		bool shouldClipContent = true;
 		Child child{};

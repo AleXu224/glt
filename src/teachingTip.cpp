@@ -40,7 +40,7 @@ squi::TeachingTip::operator squi::Child() const {
 				.onClick = [closeEvent](GestureDetector::Event) {
 					closeEvent.notify();
 				},
-				.child = Align{.child = FontIcon{.icon = 0xE8BB, .size = 10.f}},
+				.child = Align{.child = FontIcon{.icon = 0xe5cd, .size = 10.f}},
 			},
 		},
 	};

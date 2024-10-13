@@ -15,6 +15,17 @@ namespace squi {
 	using ChildRef = std::weak_ptr<Widget>;
 	using Children = std::vector<Child>;
 
+	Children childrenFactory(size_t count, auto child) {
+		Children ret{};
+		ret.reserve(count);
+
+		for (size_t i = 0; i < count; i++) {
+			ret.emplace_back(child);
+		}
+
+		return ret;
+	}
+
 	enum class Size : uint8_t {
 		// Will expand to fill all the available space
 		Expand,

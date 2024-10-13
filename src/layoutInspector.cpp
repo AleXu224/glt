@@ -189,7 +189,7 @@ struct LayoutItem {
 									Align{
 										.child{
 											FontIcon{
-												.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
+												.icon = storage->expanded ? char32_t{0xe313} : char32_t{0xe5cc},
 												.size = 12.f,
 											},
 										},
@@ -219,7 +219,7 @@ struct LayoutItem {
 											}));
 										},
 									},
-									.icon = storage->expanded ? char32_t{0xE972} : char32_t{0xE974},
+									.icon = storage->expanded ? char32_t{0xe313} : char32_t{0xe5cc},
 									.size = 12.f,
 								},
 							},
@@ -393,7 +393,7 @@ struct LayoutInspectorActionButton {
 										Align{
 											.child{
 												FontIcon{
-													.icon = shared->pauseUpdates ? char32_t{0xE768} : char32_t{0xE769},
+													.icon = shared->pauseUpdates ? char32_t{0xe037} : char32_t{0xe034},
 													.size = 16.f,
 												},
 											},
@@ -409,7 +409,7 @@ struct LayoutInspectorActionButton {
 					.child = Align{
 						.child{
 							FontIcon{
-								.icon = 0xE769,
+								.icon = 0xe034,
 								.size = 16.f,
 							},
 						},

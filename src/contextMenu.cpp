@@ -162,7 +162,7 @@ ContextMenuButton::operator Child() const {
 									case 2: {// Toggle
 										return FontIcon{
 											.margin{0.f, 14.f, 0.f, 9.f},
-											.icon = 0xF78C,
+											.icon = 0xe5ca,
 											.size = 12.f,
 										};
 									}

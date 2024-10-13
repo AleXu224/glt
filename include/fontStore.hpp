@@ -99,5 +99,7 @@ namespace squi {
 		static FontProvider defaultFontBold;
 		static FontProvider defaultFontItalic;
 		static FontProvider defaultFontBoldItalic;
+		static FontProvider defaultIcons;
+		static FontProvider defaultIconsFilled;
 	};
 }// namespace squi

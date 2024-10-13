@@ -1,8 +1,8 @@
 #pragma once
+#include "vector"
 #include <functional>
 #include <memory>
 #include <print>
-#include "vector"
 namespace squi {
 	template<typename T>
 	struct Observable {
@@ -83,7 +83,7 @@ namespace squi {
 		};
 
 		[[nodiscard]] static Observer _observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
-			Observer ret{._controlBlock=controlBlock, ._update=std::make_shared<UpdateFunc>(updateFunc)};
+			Observer ret{._controlBlock = controlBlock, ._update = std::make_shared<UpdateFunc>(updateFunc)};
 			controlBlock->updateFuncs.emplace_back(ret._update);
 			return ret;
 		}
@@ -139,4 +139,12 @@ namespace squi {
 	private:
 		std::shared_ptr<ControlBlock> _controlBlock{};
 	};
+
+	template<class W, class O, class F>
+	void observe(W &&widget, O &&observable, F &&func) {
+		if constexpr (std::is_pointer_v<std::decay_t<W>>)
+			widget->customState.add(observable.observe(func));
+		else
+			widget.customState.add(observable.observe(func));
+	}
 }// namespace squi

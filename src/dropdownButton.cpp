@@ -66,7 +66,7 @@ squi::DropdownButton::operator squi::Child() const {
 				}));
 			},
 		},
-		.icon = 0xE972,
+		.icon = 0xe313,
 		.size = 8.f,
 	};
 
