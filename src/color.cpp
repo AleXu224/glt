@@ -62,7 +62,7 @@ Color Color::css(int r, int g, int b, float a) {
 }
 
 Color Color::css(int rgb, float a) {
-	return {(rgb << 8) + static_cast<uint8_t>(a * 255.f)};
+	return {static_cast<uint32_t>((rgb << 8) + static_cast<uint8_t>(a * 255.f))};
 }
 
 Color::operator glm::vec4() const {

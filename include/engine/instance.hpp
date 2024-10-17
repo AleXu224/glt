@@ -48,12 +48,12 @@ namespace Engine {
 			currentFrame.get().commandBuffer.setScissor(
 				0, vk::Rect2D{
 					   .offset{
-						   static_cast<int32_t>(pos.x),
-						   static_cast<int32_t>(pos.y),
+						   .x=static_cast<int32_t>(pos.x),
+						   .y=static_cast<int32_t>(pos.y),
 					   },
 					   .extent{
-						   static_cast<uint32_t>(std::max(sz.x, 0.f)),
-						   static_cast<uint32_t>(std::max(sz.y, 0.f)),
+						   .width=static_cast<uint32_t>(std::max(sz.x, 0.f)),
+						   .height=static_cast<uint32_t>(std::max(sz.y, 0.f)),
 					   },
 				   }
 			);
@@ -68,12 +68,12 @@ namespace Engine {
 			currentFrame.get().commandBuffer.setScissor(
 				0, vk::Rect2D{
 					   .offset{
-						   static_cast<int32_t>(pos.x),
-						   static_cast<int32_t>(pos.y),
+						   .x=static_cast<int32_t>(pos.x),
+						   .y=static_cast<int32_t>(pos.y),
 					   },
 					   .extent{
-						   static_cast<uint32_t>(sz.x),
-						   static_cast<uint32_t>(sz.y),
+						   .width=static_cast<uint32_t>(sz.x),
+						   .height=static_cast<uint32_t>(sz.y),
 					   },
 				   }
 			);
@@ -112,7 +112,7 @@ namespace Engine {
 		[[nodiscard]] vk::raii::RenderPass createRenderPass();
 		[[nodiscard]] std::vector<vk::raii::Framebuffer> createFramebuffers();
 
-		bool checkValidationLayers() const;
+		[[nodiscard]] bool checkValidationLayers() const;
 
 
 		struct SwapChainSupportDetails {

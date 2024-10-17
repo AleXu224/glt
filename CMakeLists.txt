@@ -76,7 +76,6 @@ target_include_directories(glt PUBLIC external/fonts)
 
 if (MSVC)
     # add_compile_options(/W4 /WX)
-    # add_compile_options(/fsanitize=address)
     # target_compile_options(glt PUBLIC /fsanitize=address)
     target_compile_definitions(glt PUBLIC _DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION)
 else()

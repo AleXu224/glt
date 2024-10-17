@@ -168,10 +168,10 @@ squi::Window::Window()
 	});
 	content->state.parent = this;
 	content->state.root = this;
-	bool firstRun = true;
 	std::thread([&]() {
 		engine.run(
 			[&]() -> bool {
+				thread_local bool firstRun = true;
 				{
 					if (!firstRun)
 						inputReady.get_future().wait_for(100ms);

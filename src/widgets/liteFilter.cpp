@@ -73,9 +73,9 @@ squi::LiteFilter::operator squi::Child() const {
 							for (const auto &event: storage->events) {
 								event.notify(false);
 							}
-                            for (const auto &item : storage->items) {
-                                item.onUpdate(true);
-                            }
+							for (const auto &item: storage->items) {
+								if (item.onUpdate) item.onUpdate(true);
+							}
 						} else if (multiSelect) {
 							storage->allSelected = false;
 							allSelectedEvent.notify(false);
@@ -101,13 +101,13 @@ squi::LiteFilter::operator squi::Child() const {
 								if (storage->selectedItemsCount == 0) {
 									storage->allSelected = true;
 									allSelectedEvent.notify(true);
-                                    for (const auto &item : storage->items) {
-                                        item.onUpdate(true);
-                                    }
+									for (const auto &item: storage->items) {
+										if (item.onUpdate) item.onUpdate(true);
+									}
 								}
 
 								selectedEvent.notify(false);
-                                if (!storage->allSelected) onUpdate(false);
+								if (!storage->allSelected && onUpdate) onUpdate(false);
 							} else {
 								if (!multiSelect) {
 									for (const auto &event: storage->events) {
@@ -120,13 +120,13 @@ squi::LiteFilter::operator squi::Child() const {
 								if (storage->allSelected) {
 									storage->allSelected = false;
 									allSelectedEvent.notify(false);
-                                    for (const auto &item : storage->items) {
-                                        item.onUpdate(false);
-                                    }
+									for (const auto &item: storage->items) {
+										if (item.onUpdate) item.onUpdate(false);
+									}
 								}
 
 								selectedEvent.notify(true);
-                                onUpdate(true);
+								if (onUpdate) onUpdate(true);
 							}
 						},
 					});
