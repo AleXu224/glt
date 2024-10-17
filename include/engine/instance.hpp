@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frame.hpp"
+#include "observer.hpp"
 #include "rect.hpp"
 #include "vulkanIncludes.hpp"
 #include "window.hpp"
@@ -34,6 +35,9 @@ namespace Engine {
 		void *currentPipeline = nullptr;
 		std::function<void()> *currentPipelineFlush = nullptr;
 
+		squi::VoidObservable frameEndEvent{};
+		squi::VoidObservable frameBeginEvent{};
+
 		std::vector<squi::Rect> scissorStack{};
 		void pushScissor(const squi::Rect &rect) {
 			if (currentPipelineFlush) (*currentPipelineFlush)();
@@ -48,12 +52,12 @@ namespace Engine {
 			currentFrame.get().commandBuffer.setScissor(
 				0, vk::Rect2D{
 					   .offset{
-						   .x=static_cast<int32_t>(pos.x),
-						   .y=static_cast<int32_t>(pos.y),
+						   .x = static_cast<int32_t>(pos.x),
+						   .y = static_cast<int32_t>(pos.y),
 					   },
 					   .extent{
-						   .width=static_cast<uint32_t>(std::max(sz.x, 0.f)),
-						   .height=static_cast<uint32_t>(std::max(sz.y, 0.f)),
+						   .width = static_cast<uint32_t>(std::max(sz.x, 0.f)),
+						   .height = static_cast<uint32_t>(std::max(sz.y, 0.f)),
 					   },
 				   }
 			);
@@ -68,12 +72,12 @@ namespace Engine {
 			currentFrame.get().commandBuffer.setScissor(
 				0, vk::Rect2D{
 					   .offset{
-						   .x=static_cast<int32_t>(pos.x),
-						   .y=static_cast<int32_t>(pos.y),
+						   .x = static_cast<int32_t>(pos.x),
+						   .y = static_cast<int32_t>(pos.y),
 					   },
 					   .extent{
-						   .width=static_cast<uint32_t>(sz.x),
-						   .height=static_cast<uint32_t>(sz.y),
+						   .width = static_cast<uint32_t>(sz.x),
+						   .height = static_cast<uint32_t>(sz.y),
 					   },
 				   }
 			);
@@ -83,24 +87,15 @@ namespace Engine {
 
 		void recreateSwapChain();
 
-		void frameEnd() {
-			for (auto &listener: frameEndListeners) listener();
-		}
-		void listenFrameEnd(const std::function<void(void)> &callback) {
-			frameEndListeners.push_back(callback);
+		void frameEnd() const {
+			frameEndEvent.notify();
 		}
 
-		void frameBegin() {
-			for (auto &listener: frameBeginListeners) listener();
-		}
-		void listenFrameBegin(const std::function<void(void)> &callback) {
-			frameBeginListeners.push_back(callback);
+		void frameBegin() const {
+			frameBeginEvent.notify();
 		}
 
 	private:
-		std::vector<std::function<void(void)>> frameEndListeners{};
-		std::vector<std::function<void(void)>> frameBeginListeners{};
-
 		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
 
 		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating);

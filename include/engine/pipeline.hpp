@@ -35,6 +35,9 @@ namespace Engine {
 		Uniform<Ubo> basicUniform;
 		std::tuple<Uniform<Uniforms>...> uniforms;
 
+		squi::VoidObserver frameBeginListener;
+		squi::VoidObserver frameEndListener;
+
 		template<size_t Ind>
 		constexpr auto &getUniform() {
 			return std::get<Ind>(uniforms);
@@ -77,20 +80,31 @@ namespace Engine {
 					  };
 				  }(std::make_index_sequence<sizeof...(Uniforms)>());
 			  }()),
+			  frameBeginListener(args.instance.frameBeginEvent.observe([this] {
+				  float width = instance.swapChainExtent.width;
+				  float height = instance.swapChainExtent.height;
+
+				  basicUniform.getData().view = glm::mat4{
+					  1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
+					  0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
+					  -1.0f, -1.0f, 1.0f, 0.0f,
+					  0.0f, 0.0f, 0.0f, 1.0f
+				  };
+			  })),
+			  frameEndListener(args.instance.frameEndEvent.observe([this] {
+				  lastVertexBufferIndex = 0;
+				  vertexBufferIndex = 0;
+				  vertexArrIndex = 0;
+
+				  lastIndexBufferIndex = 0;
+				  indexBufferIndex = 0;
+				  indexArrIndex = 0;
+
+				  binds = 0;
+			  })),
 			  vertexBufferSize(args.vertexBufferSize),
 			  indexBufferSize(args.IndexBufferSize),
 			  instance(args.instance) {
-			instance.listenFrameBegin([&] {
-				float width = instance.swapChainExtent.width;
-				float height = instance.swapChainExtent.height;
-
-				basicUniform.getData().view = glm::mat4{
-					1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
-					0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
-					-1.0f, -1.0f, 1.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 1.0f
-				};
-			});
 			float width = instance.swapChainExtent.width;
 			float height = instance.swapChainExtent.height;
 
@@ -100,17 +114,6 @@ namespace Engine {
 				-1.0f, -1.0f, 1.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 1.0f
 			};
-			instance.listenFrameEnd([&] {
-				lastVertexBufferIndex = 0;
-				vertexBufferIndex = 0;
-				vertexArrIndex = 0;
-
-				lastIndexBufferIndex = 0;
-				indexBufferIndex = 0;
-				indexArrIndex = 0;
-
-				binds = 0;
-			});
 			vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
 				.size = sizeof(Vertex) * args.vertexBufferSize,
 				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
