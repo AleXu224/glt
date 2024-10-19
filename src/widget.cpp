@@ -171,16 +171,6 @@ void Widget::update() {
 	if (flags.shouldUpdateChildren && *flags.visible) {
 		updateChildren();
 	}
-	auto [eraseFirst, eraseLast] = std::ranges::remove_if(children, [&](const Child &child) -> bool {
-		if (child->shouldDelete) {
-			for (auto &func: m_funcs.onChildRemoved) {
-				if (func) func(*this, child);
-			}
-			reLayout();
-		}
-		return child->shouldDelete;
-	});
-	children.erase(eraseFirst, eraseLast);
 
 	insertChildren();
 
@@ -371,6 +361,16 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 	return size + state.margin->getSizeOffset();
 }
 
+/**
+ * @brief Mark the widget for deletion
+ */
+void squi::Widget::deleteLater() {
+	shouldDelete = true;
+	if (state.parent) {
+		Window::of(this).queueCleanup(state.parent);
+	}
+}
+
 void Widget::arrangeChildren(vec2 &pos) {
 	const auto childPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	for (auto &child: children) {
@@ -416,6 +416,8 @@ void Widget::draw() {
 	}
 #endif
 
+	if (shouldDelete) return;
+
 	for (auto &func: m_funcs.beforeDraw) {
 		if (func) func(*this);
 	}
@@ -460,4 +462,30 @@ void Widget::reArrange() const {
 	if (*state.root == nullptr) return;
 	auto *window = reinterpret_cast<Window *>(*state.root);
 	window->shouldReposition();
+}
+void squi::Widget::pruneChildren() {
+	{
+		auto [eraseFirst, eraseLast] = std::ranges::remove_if(children, [&](const Child &child) -> bool {
+			if (child->shouldDelete) {
+				for (auto &func: m_funcs.onChildRemoved) {
+					if (func) func(*this, child);
+				}
+				reLayout();
+			}
+			return child->shouldDelete;
+		});
+		children.erase(eraseFirst, eraseLast);
+	}
+	{
+		auto [eraseFirst, eraseLast] = std::ranges::remove_if(childrenToAdd, [&](const Child &child) -> bool {
+			if (child->shouldDelete) {
+				for (auto &func: m_funcs.onChildRemoved) {
+					if (func) func(*this, child);
+				}
+				reLayout();
+			}
+			return child->shouldDelete;
+		});
+		childrenToAdd.erase(eraseFirst, eraseLast);
+	}
 }

@@ -47,12 +47,12 @@ void Engine::Runner::draw() {
 	frameStartTime = newFrameStartTime;
 
 	instance.currentFrame = getCurrentFrame();
-	instance.currentFrame.get().resourceLock.clear();
 
 	if (!preDraw()) return;
 
 	auto resFence = Vulkan::device().resource.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
 	if (resFence != vk::Result::eSuccess) throw std::runtime_error("Timeout waiting for render fence");
+	instance.currentFrame.get().resourceLock.clear();
 
 	std::scoped_lock lock{swapChainMtx};
 

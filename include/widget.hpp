@@ -197,12 +197,7 @@ namespace squi {
 		void arrange(vec2 pos);
 		void draw();
 		void initialize();
-		/**
-		 * @brief Mark the widget for deletion
-		 */
-		void deleteLater() {
-			shouldDelete = true;
-		}
+		void deleteLater();
 
 		// Virtual methods
 		virtual void onUpdate() {};
@@ -223,5 +218,7 @@ namespace squi {
 		void reDraw() const;
 		void reLayout() const;
 		void reArrange() const;
+
+		void pruneChildren();
 	};
 }// namespace squi

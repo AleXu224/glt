@@ -5,6 +5,7 @@
 #include <future>
 #include <memory>
 #include <stdexcept>
+#include <unordered_set>
 
 #include "engine/engine.hpp"
 #include "store/pipeline.hpp"
@@ -35,6 +36,8 @@ namespace squi {
 		bool drewLastFrame = false;
 		Observable<Child> addedChildren{};
 		Observable<Child> addedOverlays{};
+
+		std::unordered_set<Widget *> cleanupQueue{};
 
 		static inline std::atomic<uint32_t> windowCount = 0;
 
@@ -90,5 +93,7 @@ namespace squi {
 		void shouldReposition() {
 			needsReposition = true;
 		}
+
+		void queueCleanup(Widget *w);
 	};
 }// namespace squi

@@ -171,7 +171,7 @@ squi::Window::Window()
 	std::thread([&]() {
 		engine.run(
 			[&]() -> bool {
-				thread_local bool firstRun = true;
+				static thread_local bool firstRun = true;
 				{
 					if (!firstRun)
 						inputReady.get_future().wait_for(100ms);
@@ -204,6 +204,12 @@ squi::Window::Window()
 				content->state.parent = this;
 				content->state.root = this;
 				content->update();
+				for (const auto &w: cleanupQueue) {
+					if (w) {
+						w->pruneChildren();
+					}
+				}
+				cleanupQueue.clear();
 
 				if (needsRelayout) {
 					content->layout({static_cast<float>(width), static_cast<float>(height)}, {}, {}, true);
@@ -289,4 +295,7 @@ void squi::Window::run() {
 			std::println("Found non expired font, {} uses", font.use_count());
 		}
 	}
+}
+void squi::Window::queueCleanup(Widget *w) {
+	cleanupQueue.insert(w);
 }

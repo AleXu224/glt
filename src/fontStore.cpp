@@ -12,7 +12,7 @@
 
 #include <freetype/freetype.h>
 #include <freetype/fttypes.h>
-#include "utf8.h"
+#include "utf8/cpp20.h"
 
 using namespace squi;
 
