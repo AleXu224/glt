@@ -1,5 +1,6 @@
 #pragma once
 
+#include "any"
 #include "vulkanIncludes.hpp"
 #include <print>
 #include <vulkan/vulkan_raii.hpp>
@@ -13,6 +14,8 @@ namespace Engine {
 		vk::raii::Fence renderFence = nullptr;
 		vk::raii::Semaphore swapchainSemaphore = nullptr;
 		vk::raii::Semaphore renderSemaphore = nullptr;
+
+		std::vector<std::any> resourceLock{};
 
 		Frame(size_t index, vk::raii::Device &device, uint32_t graphicsFamily);
 

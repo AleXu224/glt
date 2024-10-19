@@ -15,7 +15,7 @@
 
 
 namespace Engine {
-	struct SamplerUniform {
+	struct SamplerUniform : public std::enable_shared_from_this<SamplerUniform> {
 		struct Args {
 			Instance &instance;
 			std::shared_ptr<Texture> texture;

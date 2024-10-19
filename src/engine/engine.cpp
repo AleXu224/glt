@@ -47,6 +47,7 @@ void Engine::Runner::draw() {
 	frameStartTime = newFrameStartTime;
 
 	instance.currentFrame = getCurrentFrame();
+	instance.currentFrame.get().resourceLock.clear();
 
 	if (!preDraw()) return;
 
@@ -83,7 +84,7 @@ void Engine::Runner::draw() {
 		.renderPass = *instance.renderPass,
 		.framebuffer = *instance.swapChainFramebuffers.at(swapchainImageIndex),
 		.renderArea{
-			.offset = {0, 0},
+			.offset = {.x = 0, .y = 0},
 			.extent = instance.swapChainExtent,
 		},
 		.clearValueCount = 1,
@@ -147,7 +148,7 @@ void Engine::Runner::draw() {
 		auto res2 = Vulkan::getGraphicsQueue().resource.presentKHR(presentInfo);
 		if (res2 != vk::Result::eSuccess) outdatedFramebuffer = true;
 	} catch (const std::exception &e) {
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what() << '\n';
 		outdatedFramebuffer = true;
 	}
 	instance.frameEnd();

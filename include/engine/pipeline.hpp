@@ -19,7 +19,7 @@
 
 namespace Engine {
 	template<class Vertex, bool hasTexture = false, class... Uniforms>
-	struct Pipeline {
+	struct Pipeline : public std::enable_shared_from_this<Pipeline<Vertex, hasTexture, Uniforms...>> {
 		struct Args {
 			size_t vertexBufferSize = 1024ull * 4;
 			size_t IndexBufferSize = 1024ull * 6;
@@ -312,6 +312,9 @@ namespace Engine {
 
 			instance.currentPipeline = this;
 			instance.currentPipelineFlush = &currentPipelineFlush;
+			if (binds == 0) {
+				instance.currentFrame.get().resourceLock.emplace_back(this->shared_from_this());
+			}
 			binds++;
 		}
 
@@ -337,6 +340,10 @@ namespace Engine {
 					{}
 				);
 				lastBoundSampler = &sampler;
+				if (binds == 0) {
+					instance.currentFrame.get().resourceLock.emplace_back(this->shared_from_this());
+				}
+				instance.currentFrame.get().resourceLock.emplace_back(sampler.shared_from_this());
 				binds++;
 			}
 			instance.currentPipeline = this;
