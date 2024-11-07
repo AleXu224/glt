@@ -10,8 +10,16 @@ using namespace squi;
 
 Button::operator squi::Child() const {
 	Observable<ButtonState> stateEvent;
+	Observable<std::string> updateTextEvent;
 
 	Child textW = Text{
+		.widget{
+			.onInit = [updateTextEvent](Widget &w) {
+				observe(w, updateTextEvent, [&w](const std::string &text) {
+					w.as<Text::Impl>().setText(text);
+				});
+			},
+		},
 		.text = text,
 		.color = disabled ? style.textColorDisabled : style.textColor,
 	};
@@ -75,6 +83,7 @@ Button::operator squi::Child() const {
 	ret->customState.add("disabled", disabled);
 	ret->customState.add("state", ButtonState::resting);
 	ret->customState.add("stateEvent", stateEvent);
+	ret->customState.add("updateText", updateTextEvent);
 
 	return ret;
 }
