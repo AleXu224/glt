@@ -14,7 +14,7 @@ namespace squi {
 		Color colorHover{color * 0.9f};
 		Color colorActive{color * 0.8f};
 		Color colorDisabled{0xFFFFFF28};
-		Color borderColor{0x00000024};
+		Color borderColor{Color::css(0xFFFFFF, 0.08f)};
 		Color borderColorHover{borderColor};
 		Color borderColorActive{0xFFFFFF14};
 		Color borderColorDisabled{0};
