@@ -1,10 +1,9 @@
 #include "navigationView.hpp"
 
-#include "container.hpp"
 #include "navigationMenu.hpp"
 #include "row.hpp"
+#include "stack.hpp"
 #include <functional>
-#include <utility>
 #include <vector>
 
 
@@ -27,23 +26,28 @@ NavigationView::operator Child() const {
 							.name = page.name,
 							.icon = page.icon,
 							.onClick = [w = page.content, storage]() {
-								storage->contentChangeEvent.notify(w);
+								if (storage->currentPage) storage->currentPage->flags.visible = false;
+								w->flags.visible = true;
+								storage->currentPage = w.get();
 							},
 						});
 					}
 					return items;
 				}),
 			},
-			Container{
+			Stack{
 				.widget{
-					.onInit = [storage](Widget &widget) {
-						storage->contentChangeObserver = storage->contentChangeEvent.observe([w = widget.weak_from_this()](Child content) {
-							if (auto widget = w.lock())
-								widget->setChildren({std::move(content)});
-						});
+					.onInit = [pages = pages, storage](Widget &w) {
+						for (const auto &page: pages) {
+							page.content->flags.visible = false;
+							w.addChild(page.content);
+						}
+						if (!pages.empty()) {
+							pages.front().content->flags.visible = true;
+							storage->currentPage = pages.front().content.get();
+						}
 					},
 				},
-				.child = pages.empty() ? Child{} : pages.front().content,
 			},
 		},
 	};

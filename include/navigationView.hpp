@@ -21,6 +21,7 @@ namespace squi {
 			// Data
 			Observable<Child> contentChangeEvent{};
 			Observer<Child> contentChangeObserver;
+			Widget *currentPage = nullptr;
 		};
 
 		operator Child() const;
