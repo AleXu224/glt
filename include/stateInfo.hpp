@@ -6,6 +6,8 @@ namespace squi {
 
 	template<class T>
 	struct StateInfo {
+		using Type = T;
+		
 		std::string name = typeid(T).name();
 
 		T &of(Widget *w) const {

@@ -33,9 +33,9 @@ struct LiteFilterButton {
 					observe(w, selectedEvent, [&w](bool selected) {
 						w.customState.get<bool>("active") = selected;
 						if (selected) {
-							w.customState.get<ButtonStyle>("style") = activeStyle;
+							Button::State::style.of(w) = activeStyle;
 						} else {
-							w.customState.get<ButtonStyle>("style") = inActiveStyle;
+							Button::State::style.of(w) = inActiveStyle;
 						}
 					});
 				},

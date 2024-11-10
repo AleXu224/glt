@@ -63,6 +63,26 @@ namespace squi {
 				.textColorDisabled{1.f, 1.f, 1.f, 0.36},
 			};
 		}
+
+		bool operator==(const ButtonStyle &other) const {
+			return color == other.color
+				&& colorHover == other.colorHover
+				&& colorActive == other.colorActive
+				&& colorDisabled == other.colorDisabled
+				&& borderColor == other.borderColor
+				&& borderColorHover == other.borderColorHover
+				&& borderColorActive == other.borderColorActive
+				&& borderColorDisabled == other.borderColorDisabled
+				&& borderPosition == other.borderPosition
+				&& borderRadius == other.borderRadius
+				&& borderWidth == other.borderWidth
+				&& textColor == other.textColor
+				&& textColorHover == other.textColorHover
+				&& textColorActive == other.textColorActive
+				&& textColorDisabled == other.textColorDisabled
+				&& textSize == other.textSize;
+		}
+		bool operator!=(const ButtonStyle &other) const { return !(*this == other); }
 	};
 
 	enum class ButtonState : uint8_t {
@@ -74,13 +94,13 @@ namespace squi {
 
 	struct Button {
 		struct State {
-			static inline StateInfo<ButtonStyle> style{.name = "style"};
+			static inline StateInfo<Stateful<ButtonStyle, StateImpact::RedrawNeeded>> style{.name = "style"};
 			static inline StateInfo<bool> disabled{.name = "disabled"};
 			static inline StateInfo<ButtonState> state{.name = "state"};
 			static inline StateInfo<Observable<ButtonState>> stateEvent{.name = "stateEvent"};
 			static inline StateInfo<Observable<std::string>> updateText{.name = "updateText"};
 		};
-		
+
 		// Args
 		Widget::Args widget{};
 		std::variant<float, Size> width = Size::Shrink;

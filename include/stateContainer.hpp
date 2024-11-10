@@ -14,6 +14,8 @@ namespace squi {
 
 		template<class T>
 		StateContainer(T &&state) : name(typeid(T).name()), value(std::forward<T>(state)) {}
+		template<class T>
+		StateContainer(std::string_view name, T &&state) : name(name), value(std::forward<T>(state)) {}
 	};
 
 	struct CustomState {

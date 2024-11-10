@@ -19,6 +19,7 @@ void Stack::Impl::updateChildren() {
 	uint32_t addedRects = 0;
 
 	for (auto &child: std::views::reverse(children)) {
+		if (!child->flags.visible) continue;
 		child->update();
 		const auto childHitcheckRect = child->getHitcheckRect();
 		inputState.g_hitCheckRects.insert(inputState.g_hitCheckRects.end(), childHitcheckRect.begin(), childHitcheckRect.end());

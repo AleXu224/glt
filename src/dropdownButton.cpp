@@ -100,14 +100,14 @@ squi::DropdownButton::operator squi::Child() const {
 	};
 	return RegisterEvent{
 		.onInit = [itemsUpdater = itemsUpdater, storage](Widget &w) {
-			w.customState.add(itemsUpdater.observe([storage](std::vector<ContextMenu::Item> newItems) {
+			observe(w, itemsUpdater, [storage](std::vector<ContextMenu::Item> newItems) {
 				storage->items = std::move(newItems);
-			}));
+			});
 		},
 		.afterInit = [stateEvent](Widget &w) {
-			w.customState.add(w.customState.get<Observable<ButtonState>>("stateEvent").observe([stateEvent](ButtonState state) {
+			observe(w, Button::State::stateEvent.of(w), [stateEvent](ButtonState state) {
 				stateEvent.notify(state);
-			}));
+			});
 		},
 		.child = button,
 	};

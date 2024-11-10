@@ -147,4 +147,11 @@ namespace squi {
 		else
 			widget.customState.add(observable.observe(func));
 	}
+	template<class W, class O, class F>
+	void observe(std::string_view name, W &&widget, O &&observable, F &&func) {
+		if constexpr (std::is_pointer_v<std::decay_t<W>>)
+			widget->customState.add(StateContainer(name, observable.observe(func)));
+		else
+			widget.customState.add(StateContainer(name, observable.observe(func)));
+	}
 }// namespace squi
