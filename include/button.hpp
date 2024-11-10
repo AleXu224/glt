@@ -4,6 +4,8 @@
 #include "color.hpp"
 #include "cstdint"
 #include "gestureDetector.hpp"
+#include "observer.hpp"
+#include "stateInfo.hpp"
 #include "widgetArgs.hpp"
 #include <functional>
 
@@ -71,6 +73,14 @@ namespace squi {
 	};
 
 	struct Button {
+		struct State {
+			static inline StateInfo<ButtonStyle> style{.name = "style"};
+			static inline StateInfo<bool> disabled{.name = "disabled"};
+			static inline StateInfo<ButtonState> state{.name = "state"};
+			static inline StateInfo<Observable<ButtonState>> stateEvent{.name = "stateEvent"};
+			static inline StateInfo<Observable<std::string>> updateText{.name = "updateText"};
+		};
+		
 		// Args
 		Widget::Args widget{};
 		std::variant<float, Size> width = Size::Shrink;

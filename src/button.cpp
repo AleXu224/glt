@@ -79,11 +79,11 @@ Button::operator squi::Child() const {
 		},
 	};
 
-	ret->customState.add("style", style);
-	ret->customState.add("disabled", disabled);
-	ret->customState.add("state", ButtonState::resting);
-	ret->customState.add("stateEvent", stateEvent);
-	ret->customState.add("updateText", updateTextEvent);
+	Button::State::style.bind(ret, style);
+	Button::State::disabled.bind(ret, disabled);
+	Button::State::state.bind(ret, ButtonState::resting);
+	Button::State::stateEvent.bind(ret, stateEvent);
+	Button::State::updateText.bind(ret, updateTextEvent);
 
 	return ret;
 }
