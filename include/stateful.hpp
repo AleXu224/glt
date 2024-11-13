@@ -35,7 +35,13 @@ namespace squi {
 		template<class... Args>
 		Stateful(std::function<void(Widget &, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
 
-		Stateful &operator=(const T &other) {
+		Stateful &operator=(const T&other) {
+			*this << other;
+			return *this;
+		}
+
+		template<class V>
+		void operator<<(const V &other) {
 			if (item != other) {
 				item = other;
 				if constexpr (stateImpact == StateImpact::RedrawNeeded) {
@@ -47,7 +53,6 @@ namespace squi {
 				}
 				if (callback) callback(*parent, item);
 			}
-			return *this;
 		}
 
 		const T &operator->() const

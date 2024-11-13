@@ -33,6 +33,33 @@ NumberBox::operator Child() const {
 
 	return RegisterEvent{
 		.onInit = [storage, stateObserver = controller.stateObserver, updateText = controller.updateText, valueUpdater = valueUpdater, formatVal](Widget &w) {
+			auto refreshVal = [storage, updateText, formatVal]() {
+				auto lastValue = storage->value;
+				storage->clampValue();
+				if (lastValue != storage->value) {
+					storage->onChange(storage->value);
+					updateText.notify(formatVal());
+				}
+			};
+			State::min.bind(
+				w,
+				decltype(State::min)::Type(
+					[refreshVal](Widget &, const float &) {
+						refreshVal();
+					},
+					&w, Ref(storage->min)
+				)
+			);
+			State::max.bind(
+				w,
+				decltype(State::max)::Type(
+					[refreshVal](Widget &, const float &) {
+						refreshVal();
+					},
+					&w, Ref(storage->max)
+				)
+			);
+			State::step.bind(w, storage->step);
 			w.customState.add("_stateObservable", stateObserver.observe([storage](TextBox::InputState state) {
 				storage->focused = (state == TextBox::InputState::focused);
 			}));

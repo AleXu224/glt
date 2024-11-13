@@ -7,7 +7,7 @@ namespace squi {
 	template<class T>
 	struct StateInfo {
 		using Type = T;
-		
+
 		std::string name = typeid(T).name();
 
 		T &of(Widget *w) const {
@@ -21,13 +21,13 @@ namespace squi {
 		}
 
 		void bind(Widget *w, T val) {
-			w->customState.add<T>(name, std::move(val));
+			w->customState.add<T>(name, val);
 		}
 		void bind(Widget &w, T val) {
-			w.customState.add<T>(name, std::move(val));
+			w.customState.add<T>(name, val);
 		}
 		void bind(const Child &w, T val) {
-			w->customState.add<T>(name, std::move(val));
+			w->customState.add<T>(name, val);
 		}
 	};
 }// namespace squi

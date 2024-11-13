@@ -37,9 +37,9 @@ namespace squi {
 		}
 
 		template<class T>
-		void add(const std::string &name, T &&state) {
+		void add(const std::string &name, T state) {
 			if (auto iterator = states.find(name); iterator == states.end()) {
-				states.insert(std::pair(name, std::forward<T>(state)));
+				states.insert(std::pair(name, std::make_any<T>(state)));
 				return;
 			}
 			throw std::runtime_error("State of this type already in widget");
