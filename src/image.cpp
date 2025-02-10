@@ -23,10 +23,10 @@ using namespace squi;
 
 Image::Impl::Impl(const Image &args)
 	: Widget(
-		  args.widget,
-		  Widget::FlagsArgs{
-			  .shouldLayoutChildren = false,
-		  }
+		  args.widget
+			  .withDefaultWidth(args.fit == Fit::none || args.fit == Fit::contain ? Size::Wrap : Size::Expand)
+			  .withDefaultHeight(args.fit == Fit::none || args.fit == Fit::contain ? Size::Wrap : Size::Expand),
+		  Widget::FlagsArgs::Default()
 	  ),
 	  fit(args.fit),
 	  data(std::make_unique<ImageDataImpl>()) {
@@ -56,29 +56,35 @@ void Image::Impl::onUpdate() {
 	}
 }
 
-void Image::Impl::onLayout(vec2 &maxSize, vec2 & /*minSize*/) {
-	if (!data->sampler) {
-		return;
-	}
+vec2 squi::Image::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool) {
+	if (!data->sampler) return {};
+
 	const auto &properties = *data->sampler->texture;
 	const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
+
 	switch (this->fit) {
 		case Fit::none: {
-			maxSize.x = std::min(maxSize.x, static_cast<float>(properties.width));
-			maxSize.y = std::min(maxSize.y, static_cast<float>(properties.height));
-			break;
+			return vec2{
+				static_cast<float>(properties.width),
+				static_cast<float>(properties.height),
+			};
 		}
 		case Fit::fill:
 		case Fit::cover: {
-			break;
+			return {};
 		}
 		case Fit::contain: {
 			if (maxSize.x / maxSize.y > aspectRatio) {
-				maxSize.x = maxSize.y * aspectRatio;
+				return vec2{
+					maxSize.y * aspectRatio,
+					maxSize.y,
+				};
 			} else {
-				maxSize.y = maxSize.x / aspectRatio;
+				return vec2{
+					maxSize.x,
+					maxSize.x / aspectRatio,
+				};
 			}
-			break;
 		}
 	}
 }

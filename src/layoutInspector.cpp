@@ -4,6 +4,7 @@
 #include "button.hpp"
 #include "column.hpp"
 #include "container.hpp"
+#include "dialog.hpp"
 #include "engine/compiledShaders/inspectorQuadfrag.hpp"
 #include "engine/compiledShaders/inspectorQuadvert.hpp"
 #include "fontIcon.hpp"
@@ -21,7 +22,6 @@
 #include <format>
 #include <functional>
 #include <memory>
-#include <print>
 #include <string_view>
 #include <utility>
 
@@ -62,6 +62,86 @@ struct TextItem {
 										}
 									}
 								},
+							},
+						},
+					},
+				},
+			},
+		};
+	}
+};
+
+struct HistoryItem {
+	// Args
+	squi::Widget::Args widget{};
+	Widget::LayoutHistory item;
+
+	struct Storage {
+		// Data
+	};
+
+	operator squi::Child() const {
+		auto storage = std::make_shared<Storage>();
+
+		return Column{
+			.children{
+				Box{
+					.widget{
+						.padding = 8.f,
+					},
+					.color = Color(0x00000040),
+					.child = Text{
+						.text = "item",
+					},
+				},
+				Column{
+					.widget{
+						.padding = Padding{}.withLeft(16.f),
+					},
+					.children{
+						Box{
+							.widget{
+								.padding = 8.f,
+							},
+							.color = Color::transparent,
+							.child = Text{
+								.text = std::format("Max Size: [{} {}]", item.maxSize.x, item.maxSize.y),
+							},
+						},
+						Box{
+							.widget{
+								.padding = 8.f,
+							},
+							.color = Color::transparent,
+							.child = Text{
+								.text = std::format("Min Size: [{} {}]", item.minSize.x, item.minSize.y),
+							},
+						},
+						Box{
+							.widget{
+								.padding = 8.f,
+							},
+							.color = Color::transparent,
+							.child = Text{
+								.text = std::format("Shrink: [x:{}, y:{}]", item.shrinkwidth, item.shrinkheight),
+							},
+						},
+						Box{
+							.widget{
+								.padding = 8.f,
+							},
+							.color = Color::transparent,
+							.child = Text{
+								.text = std::format("Final: {}", item.final),
+							},
+						},
+						Box{
+							.widget{
+								.padding = 8.f,
+							},
+							.color = Color::transparent,
+							.child = Text{
+								.text = std::format("Result: [{} {}]", item.result.x, item.result.y),
 							},
 						},
 					},
@@ -140,6 +220,44 @@ struct TextItems {
 					},
 					.darkenedBackground = true,
 				},
+#ifndef NDEBUG
+				Button{
+					.widget{.width = Size::Expand, .margin = 4.f},
+					.text = "Get layout history",
+					.style = ButtonStyle::Standard(),
+					.onClick = [widget = widget](GestureDetector::Event event) {
+						Observable<Widget::LayoutHistory> layoutHistoryEvent{};
+
+						if (auto w = widget.lock()) {
+							w->layoutHistoryEvent = layoutHistoryEvent;
+						}
+
+						VoidObservable closeEvent{};
+						event.widget.addOverlay(Dialog{
+							.closeEvent = closeEvent,
+							.content = Column{
+								.widget{
+									.height = Size::Shrink,
+									.onInit = [layoutHistoryEvent](Widget &w) {
+										observe(w, layoutHistoryEvent, [&w](Widget::LayoutHistory item) {
+											w.addChild(HistoryItem{.widget{.height = Size::Shrink}, .item = item});
+										});
+									},
+								},
+							},
+							.buttons{
+								Button{
+									.text = "Close",
+									.style = ButtonStyle::Standard(),
+									.onClick = [closeEvent](GestureDetector::Event evnet) {
+										closeEvent.notify();
+									},
+								},
+							},
+						});
+					},
+				},
+#endif
 			},
 		};
 	}

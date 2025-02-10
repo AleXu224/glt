@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
-#include <print>
 
 
 using namespace squi;
@@ -199,6 +198,13 @@ void squi::Widget::addOverlay(const std::shared_ptr<Widget> &child) {
 
 vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, bool final) {
 #ifndef NDEBUG
+	LayoutHistory historyInstance{
+		.maxSize = maxSize,
+		.minSize = minSize,
+		.shrinkwidth = forceShrink.width,
+		.shrinkheight = forceShrink.height,
+		.final = final,
+	};
 	for (auto &func: m_funcs.onDebugLayout) {
 		if (func) func();
 	}
@@ -357,6 +363,15 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 		}
 		postLayout(size);
 	}
+
+#ifndef NDEBUG
+	historyInstance.result = size + state.margin->getSizeOffset();
+
+	if (layoutHistoryEvent.has_value()) {
+		layoutHistoryEvent->notify(historyInstance);
+		if (final) layoutHistoryEvent.reset();
+	}
+#endif
 
 	return size + state.margin->getSizeOffset();
 }

@@ -57,6 +57,7 @@ TextInput::Impl::Impl(const TextInput &args)
 	addChild(selectionWidget);
 	addChild(selectionTextWidget);
 	addChild(cursorWidget);
+	cursorWidget->flags.visible = false;
 }
 
 void TextInput::Impl::clampCursors() {

@@ -25,11 +25,11 @@ namespace squi {
 		Store::Pipeline pipelineStore{};
 		InputState inputState{};
 
+	private:
 		std::mutex inputMtx{};
 		bool inputTriggered = false;
 		std::promise<void> inputReady{};
 
-	private:
 		bool needsRedraw = true;
 		bool needsRelayout = true;
 		bool needsReposition = true;

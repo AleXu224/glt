@@ -4,21 +4,22 @@
 #include "column.hpp"
 #include "modal.hpp"
 #include "row.hpp"
+#include "scrollableFrame.hpp"
 #include "text.hpp"
 
 using namespace squi;
 
 squi::Dialog::operator Child() const {
 	auto titleText = Text{
+		.widget{
+			.padding = Padding(24.f).withBottom(0.f),
+		},
 		.text = title,
 		.fontSize = 20.f,
 		.font = FontStore::defaultFontBold,
 	};
 
 	auto contentBox = Box{
-		.widget{
-			.padding = 24.f,
-		},
 		.color = Color::css(255, 255, 255, 0.0538f),
 		.borderColor = Color::css(0, 0, 0, 0.1f),
 		.borderWidth = BorderWidth::Bottom(1.f),
@@ -28,7 +29,13 @@ squi::Dialog::operator Child() const {
 			.spacing = 12.f,
 			.children{
 				titleText,
-				content,
+				ScrollableFrame{
+					.scrollableWidget{
+						.padding = Padding(24.f, 0.f).withBottom(24.f),
+					},
+					.spacing = 12.f,
+					.children{content}
+				},
 			},
 		},
 	};

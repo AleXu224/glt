@@ -23,7 +23,6 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		Fit fit = Fit::none;
-		// FIXME: add the ability to provide a sampler shared reference
 		ImageProvider image;
 
 		class Impl : public Widget {
@@ -41,7 +40,7 @@ namespace squi {
 			~Impl() override;
 
 			void onUpdate() override;
-			void onLayout(vec2 &maxSize, vec2 &minSize) override;
+			vec2 layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldShrink, bool final) override;
 			void postLayout(vec2 &size) override;
 			void postArrange(vec2 &pos) override;
 			void onDraw() override;

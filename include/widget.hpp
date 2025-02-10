@@ -2,6 +2,7 @@
 
 #include "functional"
 #include "memory"
+#include "observer.hpp"
 #include "rect.hpp"
 #include "stateContainer.hpp"
 #include "stateful.hpp"
@@ -98,6 +99,16 @@ namespace squi {
 		void insertChildren();
 
 	public:
+		struct LayoutHistory{
+			vec2 maxSize;
+			vec2 minSize;
+			bool shrinkwidth;
+			bool shrinkheight;
+			bool final;
+			vec2 result;
+		};
+		std::optional<Observable<LayoutHistory>> layoutHistoryEvent;
+
 		static uint32_t getCount() {
 			return widgetCount;
 		}
