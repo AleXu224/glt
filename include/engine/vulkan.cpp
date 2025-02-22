@@ -61,6 +61,44 @@ Engine::LockedResource<vk::raii::Queue> Engine::Vulkan::getPresentQueue() {
 	return {std::scoped_lock{mtx}, Vulkan::device().resource.getQueue(indices.presentFamily.value(), 0)};
 }
 
+std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCommandBuffer() {
+	auto props = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
+
+	vk::CommandPoolCreateInfo poolInfo{
+		.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		.queueFamilyIndex = props.graphicsFamily.value(),
+	};
+
+	auto commandPool = Vulkan::device().resource.createCommandPool(poolInfo);
+
+	return {
+		std::move(commandPool),
+		std::move(Vulkan::device().resource.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+																	   .commandPool = *commandPool,
+																	   .level = vk::CommandBufferLevel::ePrimary,
+																	   .commandBufferCount = 1,
+																   })
+					  .front())
+	};
+}
+
+void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
+	vk::SubmitInfo submitInfo{
+		.commandBufferCount = 1,
+		.pCommandBuffers = &*cmd,
+	};
+
+	vk::raii::Fence fence{Vulkan::device().resource, vk::FenceCreateInfo{}};
+
+	auto graphicsQueue = Vulkan::getGraphicsQueue();
+	graphicsQueue.resource.submit(submitInfo, *fence);
+
+	auto res = Vulkan::device().resource.waitForFences(*fence, true, 100000000);
+	if (res != vk::Result::eSuccess) {
+		throw std::runtime_error("Failed finishing the command buffer");
+	}
+}
+
 std::optional<Engine::DynamicLoader> &Engine::Vulkan::loader() {
 	static std::optional<DynamicLoader> _ = []() {
 		try {

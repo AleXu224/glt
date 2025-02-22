@@ -10,7 +10,7 @@ namespace Engine {
 		std::scoped_lock<std::mutex> mtx;
 		T resource;
 	};
-    struct Vulkan{
+	struct Vulkan {
 		static inline bool validationLayersAvailable = true;
 
 		struct QueueFamilyIndices {
@@ -25,15 +25,17 @@ namespace Engine {
 
 		[[nodiscard]] static LockedResource<vk::raii::Queue> getGraphicsQueue();
 		[[nodiscard]] static LockedResource<vk::raii::Queue> getPresentQueue();
+		[[nodiscard]] static std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> makeCommandBuffer();
+		static void finishCommandBuffer(vk::raii::CommandBuffer &cmd);
 
 		static inline std::mutex graphicsQueueMtx;
 
 		static std::optional<DynamicLoader> &loader();
 		static std::optional<DynamicLoader> &fallbackLoader();
 		static vk::raii::Context &context();
-        static bool checkValidationLayers();
+		static bool checkValidationLayers();
 		static vk::raii::Instance &instance();
 		static vk::raii::PhysicalDevice &physicalDevice();
-		static LockedResource<vk::raii::Device&> device();
+		static LockedResource<vk::raii::Device &> device();
 	};
-}
+}// namespace Engine

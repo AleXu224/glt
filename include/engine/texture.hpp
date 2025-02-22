@@ -16,50 +16,24 @@ namespace Engine {
 		uint32_t width;
 		uint32_t height;
 		uint32_t channels;
+		uint32_t mipLevels;
 
 		struct Args {
 			uint32_t width;
 			uint32_t height;
 			uint32_t channels;
+			uint32_t mipLevels = 1;
 		};
 
-		Texture(const Args &args)
-			: image(createImage(args)),
-			  memory(createMemory()),
-			  sampler(createSampler()),
-			  view(createImageView(args)),
-			  width(args.width),
-			  height(args.height),
-			  channels(args.channels) {
-			auto reqs = image.getMemoryRequirements();
-			mappedMemory = memory.mapMemory(0, reqs.size);
-
-			auto props = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
-
-			vk::CommandPoolCreateInfo poolInfo{
-				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-				.queueFamilyIndex = props.graphicsFamily.value(),
-			};
-
-			auto commandPool = Vulkan::device().resource.createCommandPool(poolInfo);
-
-			vk::raii::CommandBuffer cmd = std::move(
-				Vulkan::device().resource.allocateCommandBuffers(
-											 vk::CommandBufferAllocateInfo{
-												 .commandPool = *commandPool,
-												 .level = vk::CommandBufferLevel::ePrimary,
-												 .commandBufferCount = 1,
-											 }
-				)
-					.front()
-			);
+		void transitionLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
+			auto [pool, cmd] = Vulkan::makeCommandBuffer();
 
 			cmd.begin({});
 
 			vk::ImageSubresourceRange subresourceRange{
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,
-				.levelCount = 1,
+				.levelCount = mipLevels,
 				.baseArrayLayer = 0,
 				.layerCount = 1,
 			};
@@ -67,31 +41,39 @@ namespace Engine {
 			vk::ImageMemoryBarrier imageMemBarrier{
 				.srcAccessMask = vk::AccessFlagBits::eHostWrite,
 				.dstAccessMask = vk::AccessFlagBits::eShaderRead,
-				.oldLayout = vk::ImageLayout::ePreinitialized,
-				.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+				.oldLayout = oldLayout,
+				.newLayout = newLayout,
 				.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 				.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 				.image = *image,
 				.subresourceRange = subresourceRange,
 			};
 
-			cmd.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, imageMemBarrier);
+			cmd.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, imageMemBarrier);
+
 			cmd.end();
 
-			vk::SubmitInfo submitInfo{
-				.commandBufferCount = 1,
-				.pCommandBuffers = &*cmd,
-			};
+			Vulkan::finishCommandBuffer(cmd);
+		}
 
-			vk::raii::Fence fence{Vulkan::device().resource, vk::FenceCreateInfo{}};
+		Texture(const Args &args)
+			: image(createImage(args)),
+			  memory(createMemory()),
+			  sampler(createSampler(args)),
+			  view(createImageView(args)),
+			  width(args.width),
+			  height(args.height),
+			  channels(args.channels),
+			  mipLevels(args.mipLevels) {
+			auto reqs = image.getMemoryRequirements();
+			mappedMemory = memory.mapMemory(0, reqs.size);
 
-			auto graphicsQueue = Vulkan::getGraphicsQueue();
-			graphicsQueue.resource.submit(submitInfo, *fence);
-
-			auto res = Vulkan::device().resource.waitForFences(*fence, true, 100000000);
-			if (res != vk::Result::eSuccess) {
-				throw std::runtime_error("Texture creation failed :(");
-			}
+			transitionLayout(
+				vk::ImageLayout::ePreinitialized,
+				vk::ImageLayout::eShaderReadOnlyOptimal,
+				vk::PipelineStageFlagBits::eHost,
+				vk::PipelineStageFlagBits::eFragmentShader
+			);
 		}
 
 		[[nodiscard]] vk::raii::ImageView createImageView(const Args &args) const {
@@ -108,7 +90,7 @@ namespace Engine {
 				.subresourceRange{
 					.aspectMask = vk::ImageAspectFlagBits::eColor,
 					.baseMipLevel = 0,
-					.levelCount = 1,
+					.levelCount = args.mipLevels,
 					.baseArrayLayer = 0,
 					.layerCount = 1,
 				},
@@ -117,7 +99,7 @@ namespace Engine {
 			return {Vulkan::device().resource, createInfo};
 		}
 
-		[[nodiscard]] vk::raii::Sampler createSampler() const {
+		[[nodiscard]] vk::raii::Sampler createSampler(const Args &args) const {
 			image.bindMemory(*memory, 0);
 
 			vk::SamplerCreateInfo createInfo{
@@ -132,7 +114,7 @@ namespace Engine {
 				.maxAnisotropy = 1.f,
 				.compareOp = vk::CompareOp::eNever,
 				.minLod = 0.f,
-				.maxLod = 0.f,
+				.maxLod = static_cast<float>(args.mipLevels),
 				.borderColor = vk::BorderColor::eFloatTransparentBlack,
 			};
 
@@ -150,6 +132,104 @@ namespace Engine {
 			return {Vulkan::device().resource, allocInfo};
 		}
 
+		void generateMipmaps() {
+			int32_t mipWidth = width;
+			int32_t mipHeight = height;
+
+			auto [pool, cmd] = Vulkan::makeCommandBuffer();
+
+			cmd.begin({});
+
+
+			vk::ImageSubresourceRange subresourceRange{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			};
+
+			vk::ImageMemoryBarrier imageMemBarrier{
+				.srcAccessMask = vk::AccessFlagBits::eHostWrite,
+				.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+				.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+				.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+				.image = *image,
+				.subresourceRange = subresourceRange,
+			};
+
+			for (uint32_t i = 1; i < mipLevels; i++) {
+				imageMemBarrier.subresourceRange.baseMipLevel = i - 1;
+				imageMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				imageMemBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+				imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+				imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+				cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+
+				imageMemBarrier.subresourceRange.baseMipLevel = i;
+				imageMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
+				imageMemBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+				imageMemBarrier.srcAccessMask = static_cast<vk::AccessFlags>(0);
+				imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+				cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+
+				vk::ImageBlit blit{
+					.srcSubresource{
+						.aspectMask = vk::ImageAspectFlagBits::eColor,
+						.mipLevel = i - 1,
+						.baseArrayLayer = 0,
+						.layerCount = 1,
+					},
+					.srcOffsets = std::array{
+						vk::Offset3D{0, 0, 0},
+						vk::Offset3D{mipWidth, mipHeight, 1},
+					},
+					.dstSubresource{
+						.aspectMask = vk::ImageAspectFlagBits::eColor,
+						.mipLevel = i,
+						.baseArrayLayer = 0,
+						.layerCount = 1,
+					},
+					.dstOffsets = std::array{
+						vk::Offset3D{0, 0, 0},
+						vk::Offset3D{mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1},
+					},
+				};
+
+				cmd.blitImage(
+					*this->image,
+					vk::ImageLayout::eTransferSrcOptimal,
+					*this->image,
+					vk::ImageLayout::eTransferDstOptimal,
+					std::array{
+						blit
+					},
+					vk::Filter::eLinear
+				);
+
+				imageMemBarrier.subresourceRange.baseMipLevel = i - 1;
+				imageMemBarrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+				imageMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+				imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+				cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
+
+				imageMemBarrier.subresourceRange.baseMipLevel = i;
+				imageMemBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+				imageMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+				imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+				cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
+
+				if (mipWidth > 1) mipWidth /= 2;
+				if (mipHeight > 1) mipHeight /= 2;
+			}
+
+			cmd.end();
+
+			Vulkan::finishCommandBuffer(cmd);
+		}
+
 		static vk::raii::Image createImage(const Args &args) {
 			vk::ImageCreateInfo createInfo{
 				.imageType = vk::ImageType::e2D,
@@ -159,12 +239,12 @@ namespace Engine {
 					.height = args.height,
 					.depth = 1,
 				},
-				.mipLevels = 1,
+				.mipLevels = args.mipLevels,
 				.arrayLayers = 1,
 				// Using linear since we won't be using a staging buffer
 				.samples = vk::SampleCountFlagBits::e1,
 				.tiling = vk::ImageTiling::eLinear,
-				.usage = vk::ImageUsageFlagBits::eSampled,
+				.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
 				.sharingMode = vk::SharingMode::eExclusive,
 				.initialLayout = vk::ImageLayout::ePreinitialized,
 			};

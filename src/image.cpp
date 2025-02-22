@@ -45,7 +45,12 @@ Image::Impl::Impl(const Image &args)
 			},
 		});
 
-		image.data->sampler = window.samplerStore.getSampler(window.engine.instance, Store::Texture::getTexture(img));
+		auto imageLoadingThread = std::thread([widget = w.shared_from_this(), &image = image, &window = window, img]() {
+			image.data->sampler = window.samplerStore.getSampler(window.engine.instance, Store::Texture::getTexture(img));
+			image.relayoutNextFrame = true;
+		});
+
+		imageLoadingThread.detach();
 	});
 }
 
@@ -90,6 +95,7 @@ vec2 squi::Image::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink 
 }
 
 void Image::Impl::postLayout(vec2 &size) {
+	if (!data->sampler) return;
 	auto &sampler = data->sampler;
 	auto &quad = data->quad;
 	if (!sampler) {
@@ -129,6 +135,7 @@ void Image::Impl::postLayout(vec2 &size) {
 }
 
 void Image::Impl::postArrange(vec2 &pos) {
+	if (!data->sampler) return;
 	auto &sampler = data->sampler;
 	auto &quad = data->quad;
 	if (!sampler) {
@@ -153,6 +160,7 @@ void Image::Impl::postArrange(vec2 &pos) {
 }
 
 void Image::Impl::onDraw() {
+	if (!data->sampler) return;
 	auto &pipeline = data->pipeline;
 	auto &sampler = data->sampler;
 	auto &quad = data->quad;
