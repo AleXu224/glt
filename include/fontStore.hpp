@@ -1,6 +1,7 @@
 #pragma once
 
 #include "color.hpp"
+#include "image/provider.hpp"
 #include "text/provider.hpp"
 #include "vec2.hpp"
 
@@ -86,6 +87,7 @@ namespace squi {
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
 			[[nodiscard]] std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
 			[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
+			[[nodiscard]] ImageProvider getImageProvider() const;
 			static inline std::mutex fontMtx{};
 		};
 

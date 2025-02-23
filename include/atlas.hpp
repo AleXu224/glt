@@ -32,14 +32,14 @@ namespace squi {
 
 		std::shared_ptr<Engine::Texture> texture;
 
-		[[nodiscard]] ImageProvider getProvier();
-
-	public:
+		
+		public:
 		Atlas(std::string_view key);
-
+		
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
 		add(const uint16_t &width, const uint16_t &height, unsigned char *data);
-
+		
 		[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
+		[[nodiscard]] ImageProvider getProvier();
 	};
 }// namespace squi

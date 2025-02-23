@@ -341,3 +341,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 std::shared_ptr<Engine::Texture> squi::FontStore::Font::getTexture() const {
 	return impl->atlas.getTexture();
 }
+
+ImageProvider squi::FontStore::Font::getImageProvider() const {
+	return impl->atlas.getProvier();
+}

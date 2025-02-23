@@ -15,8 +15,8 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 		if (row.availableWidth >= width) {
 			if (row.height < height) {
 				if (row.canBeMadeTaller && availableHeight >= static_cast<size_t>(height - row.height)) {
-					row.height = height;
 					availableHeight -= static_cast<size_t>(height - row.height);
+					row.height = height;
 				} else {
 					continue;
 				}
@@ -47,10 +47,11 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	usedRow->elements.emplace_back(Atlas::Element{
 		.xOffset = static_cast<uint16_t>(AtlasSize - usedRow->availableWidth),
 		.width = static_cast<uint16_t>(width),
-		.height = static_cast<uint16_t>(height)
+		.height = static_cast<uint16_t>(height),
 	});
 
 	// Copy data to atlas
+	texture->makeTextureWriteable();
 	auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
 		.aspectMask = vk::ImageAspectFlagBits::eColor,
 		.mipLevel = 0,
@@ -58,10 +59,11 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	});
 	for (int y = 0; y < height; y++) {
 		auto *textureData = reinterpret_cast<unsigned char *>(this->texture->mappedMemory);
-		auto yOffset = static_cast<ptrdiff_t>((y * layout.rowPitch) + usedRow->yOffset);
+		auto yOffset = static_cast<ptrdiff_t>((y * layout.rowPitch) + usedRow->yOffset * layout.rowPitch);
 		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
 		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
 	}
+	texture->returnTexture();
 
 	// Prepare return values
 	vec2 uvTopLeft{
