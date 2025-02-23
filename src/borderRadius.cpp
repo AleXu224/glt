@@ -22,6 +22,19 @@ squi::BorderRadius squi::BorderRadius::BottomLeft(float value) {
 	return {0.f, 0.f, 0.f, value};
 }
 
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withTopLeft(float value) {
+	return {value, topRight, bottomRight, bottomLeft};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withTopRight(float value) {
+	return {topLeft, value, bottomRight, bottomLeft};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withBottomRight(float value) {
+	return {topLeft, topRight, value, bottomLeft};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withBottomLeft(float value) {
+	return {topLeft, topRight, bottomRight, value};
+}
+
 squi::BorderRadius squi::BorderRadius::Top(float value) {
 	return {value, value, 0.f, 0.f};
 }
@@ -33,6 +46,19 @@ squi::BorderRadius squi::BorderRadius::Left(float value) {
 }
 squi::BorderRadius squi::BorderRadius::Right(float value) {
 	return {0.f, value, value, 0.f};
+}
+
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withTop(float value) {
+	return {value, value, bottomRight, bottomLeft};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withBottom(float value) {
+	return {topLeft, topRight, value, value};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withLeft(float value) {
+	return {value, topRight, bottomRight, value};
+}
+[[nodiscard]] squi::BorderRadius squi::BorderRadius::withRight(float value) {
+	return {topLeft, value, value, bottomLeft};
 }
 
 squi::BorderRadius::operator glm::vec4() const {

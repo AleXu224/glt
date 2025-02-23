@@ -21,7 +21,7 @@ namespace squi {
 		Color borderColorActive{0xFFFFFF14};
 		Color borderColorDisabled{0};
 		Box::BorderPosition borderPosition = Box::BorderPosition::inset;
-		float borderRadius{4.0f};
+		BorderRadius borderRadius{4.0f};
 		float borderWidth{1.0f};
 		Color textColor{0x000000FF};
 		Color textColorHover{0x000000FF};
