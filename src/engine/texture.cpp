@@ -43,6 +43,9 @@ Engine::Texture::Texture(const Args &args)
 	  height(args.height),
 	  channels(args.channels),
 	  mipLevels(args.mipLevels) {
+	auto reqs = image.getMemoryRequirements();
+	mappedMemory = memory.mapMemory(0, reqs.size);
+
 	transitionLayout(
 		vk::ImageLayout::ePreinitialized,
 		vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -199,71 +202,6 @@ void Engine::Texture::generateMipmaps() {
 		if (mipWidth > 1) mipWidth /= 2;
 		if (mipHeight > 1) mipHeight /= 2;
 	}
-
-	cmd.end();
-
-	Vulkan::finishCommandBuffer(cmd);
-}
-
-void Engine::Texture::makeTextureWriteable() {
-	auto [pool, cmd] = Vulkan::makeCommandBuffer();
-
-	cmd.begin({});
-
-	vk::ImageSubresourceRange subresourceRange{
-		.aspectMask = vk::ImageAspectFlagBits::eColor,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1,
-	};
-
-	vk::ImageMemoryBarrier imageMemBarrier{
-		.srcAccessMask = vk::AccessFlagBits::eShaderRead,
-		.dstAccessMask = vk::AccessFlagBits::eHostWrite,
-		.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-		.newLayout = vk::ImageLayout::eGeneral,
-		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.image = *image,
-		.subresourceRange = subresourceRange,
-	};
-
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eHost, {}, nullptr, nullptr, imageMemBarrier);
-
-	cmd.end();
-
-	Vulkan::finishCommandBuffer(cmd);
-	auto reqs = image.getMemoryRequirements();
-	mappedMemory = memory.mapMemory(0, reqs.size);
-}
-
-void Engine::Texture::returnTexture() {
-	auto [pool, cmd] = Vulkan::makeCommandBuffer();
-	memory.unmapMemory();
-
-	cmd.begin({});
-
-	vk::ImageSubresourceRange subresourceRange{
-		.aspectMask = vk::ImageAspectFlagBits::eColor,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1,
-	};
-
-	vk::ImageMemoryBarrier imageMemBarrier{
-		.srcAccessMask = vk::AccessFlagBits::eHostWrite,
-		.dstAccessMask = vk::AccessFlagBits::eShaderRead,
-		.oldLayout = vk::ImageLayout::eGeneral,
-		.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.image = *image,
-		.subresourceRange = subresourceRange,
-	};
-
-	cmd.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, imageMemBarrier);
 
 	cmd.end();
 

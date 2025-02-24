@@ -68,7 +68,6 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 		.channels = channels,
 		.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
 	});
-	texture->makeTextureWriteable();
 	auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
 		.aspectMask = vk::ImageAspectFlagBits::eColor,
 		.mipLevel = 0,
@@ -81,7 +80,6 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 			static_cast<size_t>(width) * static_cast<size_t>(channels)
 		);
 	}
-	texture->returnTexture();
 	texture->generateMipmaps();
 	return texture;
 }

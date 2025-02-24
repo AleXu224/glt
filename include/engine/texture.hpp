@@ -34,10 +34,6 @@ namespace Engine {
 
 		void generateMipmaps();
 
-		void makeTextureWriteable();
-
-		void returnTexture();
-
 		static vk::raii::Image createImage(const Args &args);
 
 		static vk::Format formatFromChannels(uint32_t channels);

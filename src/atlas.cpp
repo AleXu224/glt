@@ -51,7 +51,6 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	});
 
 	// Copy data to atlas
-	texture->makeTextureWriteable();
 	auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
 		.aspectMask = vk::ImageAspectFlagBits::eColor,
 		.mipLevel = 0,
@@ -63,7 +62,6 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
 		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
 	}
-	texture->returnTexture();
 
 	// Prepare return values
 	vec2 uvTopLeft{
