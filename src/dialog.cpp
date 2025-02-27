@@ -50,7 +50,7 @@ squi::Dialog::operator Child() const {
 
 	auto dialog = Box{
 		.widget{
-			.width = 540.f,
+			.width = width,
 			.height = Size::Shrink,
 			.padding = 1.f,
 		},

@@ -7,6 +7,7 @@ namespace squi {
 	struct Dialog {
 		// Args
 		squi::Widget::Args widget{};
+		float width = 540.f;
 		VoidObservable closeEvent{};
         std::string_view title;
 		Child content{};
