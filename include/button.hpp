@@ -58,6 +58,7 @@ namespace squi {
 				.colorActive{0xFFFFFF0B},
 				.colorDisabled{0xFFFFFF00},
 				.borderWidth = 0.0f,
+				.textColor{0xFFFFFFFF},
 				.textColorHover{0xFFFFFFFF},
 				.textColorActive{1.f, 1.f, 1.f, 0.78f},
 				.textColorDisabled{1.f, 1.f, 1.f, 0.36},

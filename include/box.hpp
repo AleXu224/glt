@@ -47,8 +47,8 @@ namespace squi {
 
 			void setColor(const Color &color);
 			void setBorderColor(const Color &color);
-			void setBorderWidth(glm::vec4 width);
-			void setBorderRadius(glm::vec4 radius);
+			void setBorderWidth(BorderWidth width);
+			void setBorderRadius(BorderRadius radius);
 
 			[[nodiscard]] Color getColor() const;
 			[[nodiscard]] Color getBorderColor() const;

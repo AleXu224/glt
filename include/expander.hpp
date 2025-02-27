@@ -6,13 +6,15 @@ namespace squi {
 	struct Expander {
 		// Args
 		Widget::Args widget{};
-        std::optional<char32_t> icon{};
-        std::string_view heading = "Heading";
-        std::optional<std::string_view> caption{};
-        Child child{};
+		std::optional<char32_t> icon{};
+		std::string_view heading = "Heading";
+		std::optional<std::string_view> caption{};
+		Children actions{};
+		Child expandedContent{};
 
 		struct Storage {
 			// Data
+			bool expanded = false;
 		};
 
 		operator Child() const;

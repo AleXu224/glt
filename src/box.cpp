@@ -95,21 +95,29 @@ void Box::Impl::setBorderColor(const Color &color) {
 	reDraw();
 }
 
-void Box::Impl::setBorderWidth(glm::vec4 width) {
-	if (width.x == data->quad.borderSizes.top && width.y == data->quad.borderSizes.right && width.z == data->quad.borderSizes.bottom && width.w == data->quad.borderSizes.left) return;
-	data->quad.borderSizes.top = width.x;
-	data->quad.borderSizes.right = width.t;
-	data->quad.borderSizes.bottom = width.z;
-	data->quad.borderSizes.left = width.w;
+void Box::Impl::setBorderWidth(BorderWidth width) {
+	auto &qWidth = data->quad.borderSizes;
+	if (width.top == qWidth.top
+		&& width.right == qWidth.right
+		&& width.bottom == qWidth.bottom
+		&& width.left == qWidth.left) return;
+	qWidth.top = width.top;
+	qWidth.right = width.right;
+	qWidth.bottom = width.bottom;
+	qWidth.left = width.left;
 	reDraw();
 }
 
-void Box::Impl::setBorderRadius(glm::vec4 radius) {
-	if (radius.x == data->quad.borderRadiuses.topLeft && radius.y == data->quad.borderRadiuses.topRight && radius.z == data->quad.borderRadiuses.bottomRight && radius.w == data->quad.borderRadiuses.bottomLeft) return;
-	data->quad.borderRadiuses.topLeft = radius.x;
-	data->quad.borderRadiuses.topRight = radius.t;
-	data->quad.borderRadiuses.bottomRight = radius.z;
-	data->quad.borderRadiuses.bottomLeft = radius.w;
+void Box::Impl::setBorderRadius(BorderRadius radius) {
+	auto &qRadius = data->quad.borderRadiuses;
+	if (radius.topLeft == qRadius.topLeft
+		&& radius.topRight == qRadius.topRight
+		&& radius.bottomRight == qRadius.bottomRight
+		&& radius.bottomLeft == qRadius.bottomLeft) return;
+	qRadius.topLeft = radius.topLeft;
+	qRadius.topRight = radius.topRight;
+	qRadius.bottomRight = radius.bottomRight;
+	qRadius.bottomLeft = radius.bottomLeft;
 	reDraw();
 }
 

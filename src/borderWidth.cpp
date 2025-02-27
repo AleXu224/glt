@@ -18,6 +18,19 @@ squi::BorderWidth squi::BorderWidth::Left(float width) {
 	return {0.f, 0.f, 0.f, width};
 };
 
+squi::BorderWidth squi::BorderWidth::withTop(float width) const {
+	return {width, right, bottom, left};
+}
+squi::BorderWidth squi::BorderWidth::withRight(float width) const {
+	return {top, width, bottom, left};
+}
+squi::BorderWidth squi::BorderWidth::withBottom(float width) const {
+	return {top, right, width, left};
+}
+squi::BorderWidth squi::BorderWidth::withLeft(float width) const {
+	return {top, right, bottom, width};
+}
+
 squi::BorderWidth::operator glm::vec4() const {
 	return {top, right, bottom, left};
 }

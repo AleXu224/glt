@@ -18,6 +18,11 @@ namespace squi {
 		static BorderWidth Bottom(float width);
 		static BorderWidth Left(float width);
 
+		[[nodiscard]] BorderWidth withTop(float width) const;
+		[[nodiscard]] BorderWidth withRight(float width) const;
+		[[nodiscard]] BorderWidth withBottom(float width) const;
+		[[nodiscard]] BorderWidth withLeft(float width) const;
+
 		operator glm::vec4() const;
 	};
 }// namespace squi
