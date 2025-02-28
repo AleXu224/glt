@@ -7,7 +7,7 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		std::optional<char32_t> icon{};
-		std::string_view heading = "Heading";
+		std::variant<std::string_view, Child> heading = "Heading";
 		std::optional<std::string_view> caption{};
 		Children actions{};
 		Child expandedContent{};

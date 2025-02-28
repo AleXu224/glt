@@ -6,7 +6,9 @@
 #include "fontIcon.hpp"
 #include "row.hpp"
 #include "text.hpp"
+#include "utils.hpp"
 #include <utf8/cpp20.h>
+
 
 using namespace squi;
 
@@ -99,10 +101,18 @@ Expander::operator Child() const {
 								.height = Size::Shrink,
 							},
 							.children{
-								Text{
-									.text = heading,
-									.fontSize = 14.f,
-								},
+								std::visit(utils::overloaded{
+											   [](std::string_view str) -> Child {
+												   return Text{
+													   .text = str,
+													   .fontSize = 14.f,
+												   };
+											   },
+											   [](const Child &child) {
+												   return child;
+											   },
+										   },
+										   heading),
 								caption.has_value()//
 									? Text{
 										  .text = caption.value(),
