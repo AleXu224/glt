@@ -1,5 +1,6 @@
 #pragma once
 
+#include "inputQueue.hpp"
 #include "optional"
 #include "rect.hpp"
 #include "unordered_map"
@@ -26,6 +27,8 @@ namespace squi {
 		std::vector<Rect> g_activeArea{};
 		vec2 g_dpi{96};
 		bool g_cursorInside{false};
+
+		void parseInput(const std::optional<InputTypes> &input);
 
 		void setCursorPos(const vec2 &pos);
 		void frameEnd();
