@@ -74,7 +74,6 @@ void squi::InputState::parseInput(const std::optional<InputTypes> &input) {
 				g_textInput.append(1, input.character);
 			},
 			[&](const ScrollInput &input) {
-				std::println("Time processed: {}", std::chrono::steady_clock::now().time_since_epoch());
 				g_scrollDelta += vec2{input.xOffset, input.yOffset};
 			},
 			[&](const KeyInput &input) {

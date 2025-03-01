@@ -64,10 +64,8 @@ squi::Window::Window()
 			});
 		});
 		glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
-			std::println("Time got      : {}", std::chrono::steady_clock::now().time_since_epoch());
 			std::scoped_lock _{windowMapMtx};
 			auto &window = Window::windowMap.at(m_window);
-			std::println("Time sent     : {}", std::chrono::steady_clock::now().time_since_epoch());
 			window->inputQueue.push(ScrollInput{
 				.xOffset = static_cast<float>(xoffset),
 				.yOffset = static_cast<float>(yoffset),

@@ -1,8 +1,31 @@
 #include "inputQueue.hpp"
 
+#include "chrono"
+#include "utils.hpp"
+
+
+using namespace squi;
+
 void squi::InputQueue::push(const InputTypes &item) {
 	std::scoped_lock lock{inputMtx};
-	inputQueue.push(item);
+	bool handled = false;
+	std::visit(
+		utils::overloaded{
+			[&](const CursorPosInput &input) {
+				if (!inputQueue.empty() && std::holds_alternative<CursorPosInput>(inputQueue.back())) {
+					auto &entry = std::get<CursorPosInput>(inputQueue.back());
+					entry.xPos = input.xPos;
+					entry.yPos = input.yPos;
+					handled = true;
+				}
+			},
+			[](auto &&) {},
+		},
+		item
+	);
+	if (!handled)
+		inputQueue.push(item);
+
 	if (!promiseRetrieved)
 		inputPromise.set_value();
 }
