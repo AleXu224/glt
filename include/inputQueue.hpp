@@ -50,8 +50,10 @@ namespace squi {
 	private:
 		std::mutex inputMtx{};
 		std::queue<InputTypes> inputQueue{};
+		void resetInputPromise();
 
-		bool promiseRetrieved = false;
+		bool inputNotified = false;
 		std::promise<void> inputPromise;
+		std::future<void> inputFuture = inputPromise.get_future();
 	};
 }// namespace squi

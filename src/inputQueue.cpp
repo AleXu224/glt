@@ -26,8 +26,10 @@ void squi::InputQueue::push(const InputTypes &item) {
 	if (!handled)
 		inputQueue.push(item);
 
-	if (!promiseRetrieved)
+	if (!inputNotified) {
 		inputPromise.set_value();
+		inputNotified = true;
+	}
 }
 
 std::optional<squi::InputTypes> squi::InputQueue::pop() {
@@ -37,10 +39,8 @@ std::optional<squi::InputTypes> squi::InputQueue::pop() {
 
 	auto item = inputQueue.front();
 	inputQueue.pop();
-	if (inputQueue.empty()) {
-		inputPromise = std::promise<void>{};
-		promiseRetrieved = true;
-	}
+	if (inputQueue.empty())
+		resetInputPromise();
 	return item;
 }
 
@@ -52,14 +52,19 @@ bool squi::InputQueue::waitForInput() {
 
 	using namespace std::chrono_literals;
 
-	inputPromise.get_future().wait_for(100ms);
+	inputFuture.wait_for(100ms);
 
 	{
 		std::scoped_lock lock{inputMtx};
-		inputPromise = std::promise<void>{};
-		promiseRetrieved = true;
+		resetInputPromise();
 		if (!inputQueue.empty()) return true;
 	}
 
 	return false;
+}
+
+void squi::InputQueue::resetInputPromise() {
+	inputPromise = std::promise<void>{};
+	inputFuture = inputPromise.get_future();
+	inputNotified = false;
 }
