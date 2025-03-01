@@ -2,7 +2,6 @@
 
 #include "inputState.hpp"
 #include "observer.hpp"
-#include <future>
 #include <memory>
 #include <stdexcept>
 #include <unordered_set>
@@ -26,9 +25,7 @@ namespace squi {
 		InputState inputState{};
 
 	private:
-		std::mutex inputMtx{};
-		bool inputTriggered = false;
-		std::promise<void> inputReady{};
+		InputQueue inputQueue{};
 
 		bool needsRedraw = true;
 		bool needsRelayout = true;

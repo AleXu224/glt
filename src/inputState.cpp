@@ -1,6 +1,7 @@
 #include "inputState.hpp"
 
 #include "GLFW/glfw3.h"
+#include "utils.hpp"
 #include "window.hpp"
 
 
@@ -59,4 +60,38 @@ bool InputState::isKeyPressedOrRepeat(int key, int mods) const {
 
 InputState &squi::InputState::of(Widget *widget) {
 	return Window::of(widget).inputState;
+}
+
+void squi::InputState::parseInput(const std::optional<InputTypes> &input) {
+	if (!input) return;
+	std::visit(
+		utils::overloaded{
+			[&](const StateChange &) {},
+			[&](const CursorPosInput &input) {
+				setCursorPos(vec2{input.xPos, input.yPos} / (g_dpi / 96.f));
+			},
+			[&](const CodepointInput &input) {
+				g_textInput.append(1, input.character);
+			},
+			[&](const ScrollInput &input) {
+				g_scrollDelta += vec2{input.xOffset, input.yOffset};
+			},
+			[&](const KeyInput &input) {
+				if (!g_keys.contains(input.key))
+					g_keys.insert({input.key, {.action = input.action, .mods = input.mods}});
+				else
+					g_keys.at(input.key) = {.action = input.action, .mods = input.mods};
+			},
+			[&](const MouseInput &input) {
+				if (!g_keys.contains(input.button))
+					g_keys.insert({input.button, {.action = input.action, .mods = input.mods}});
+				else
+					g_keys.at(input.button) = {.action = input.action, .mods = input.mods};
+			},
+			[&](const CursorEntered &input) {
+				g_cursorInside = input.entered;
+			},
+		},
+		input.value()
+	);
 }

@@ -45,81 +45,58 @@ squi::Window::Window()
 			std::scoped_lock wnd{windowMapMtx};
 			auto *window = windowMap[windowPtr];
 			std::scoped_lock swp{window->engine.swapChainMtx};
-			std::scoped_lock inp{window->inputMtx};
 			window->engine.resized = true;
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(StateChange{});
 		});
 		glfwSetCursorPosCallback(window, [](GLFWwindow *m_window, double xpos, double ypos) {
 			std::scoped_lock _{windowMapMtx};
 			auto *window = Window::windowMap.at(m_window);
-			auto dpiScale = window->inputState.g_dpi / vec2{96};
-			std::scoped_lock inp{window->inputMtx};
-			window->inputState.setCursorPos(vec2{(float) (xpos), (float) (ypos)} / dpiScale);
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(CursorPosInput{
+				.xPos = static_cast<float>(xpos),
+				.yPos = static_cast<float>(ypos),
+			});
 		});
 		glfwSetCharCallback(window, [](GLFWwindow *m_window, unsigned int codepoint) {
 			std::scoped_lock _{windowMapMtx};
 			auto &window = Window::windowMap.at(m_window);
-			std::scoped_lock inp{window->inputMtx};
-			window->inputState.g_textInput.append(1, static_cast<char>(codepoint));
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(CodepointInput{
+				.character = static_cast<char>(codepoint),
+			});
 		});
 		glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
 			std::scoped_lock _{windowMapMtx};
 			auto &window = Window::windowMap.at(m_window);
-			std::scoped_lock inp{window->inputMtx};
-			window->inputState.g_scrollDelta += vec2{static_cast<float>(xoffset), static_cast<float>(yoffset)};
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(ScrollInput{
+				.xOffset = static_cast<float>(xoffset),
+				.yOffset = static_cast<float>(yoffset),
+			});
 		});
 		glfwSetKeyCallback(window, [](GLFWwindow *m_window, int key, int /*scancode*/, int action, int mods) {
 			std::scoped_lock _{windowMapMtx};
 			//		Screen::getCurrentScreen()->animationRunning();
 			auto &window = Window::windowMap.at(m_window);
-			std::scoped_lock inp{window->inputMtx};
-			if (!window->inputState.g_keys.contains(key))
-				window->inputState.g_keys.insert({key, {.action=action, .mods=mods}});
-			else
-				window->inputState.g_keys.at(key) = {.action=action, .mods=mods};
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(KeyInput{
+				.key = key,
+				.action = action,
+				.mods = mods,
+			});
 		});
 		glfwSetMouseButtonCallback(window, [](GLFWwindow *m_window, int button, int action, int mods) {
 			std::scoped_lock _{windowMapMtx};
 			//		Screen::getCurrentScreen()->animationRunning();
 			auto &window = Window::windowMap.at(m_window);
-			std::scoped_lock inp{window->inputMtx};
-			if (!window->inputState.g_keys.contains(button))
-				window->inputState.g_keys.insert({button, {.action=action, .mods=mods}});
-			else
-				window->inputState.g_keys.at(button) = {.action=action, .mods=mods};
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(MouseInput{
+				.button = button,
+				.action = action,
+				.mods = mods,
+			});
 		});
 		glfwSetCursorEnterCallback(window, [](GLFWwindow *m_window, int entered) {
 			std::scoped_lock _{windowMapMtx};
 			auto &window = Window::windowMap.at(m_window);
-			std::scoped_lock inp{window->inputMtx};
-			window->inputState.g_cursorInside = static_cast<bool>(entered);
-			if (!window->inputTriggered) {
-				window->inputTriggered = true;
-				window->inputReady.set_value();
-			}
+			window->inputQueue.push(CursorEntered{
+				.entered = static_cast<bool>(entered),
+			});
 		});
 	}
 
@@ -172,14 +149,9 @@ squi::Window::Window()
 		engine.run(
 			[&]() -> bool {
 				static thread_local bool firstRun = true;
-				{
-					if (!firstRun)
-						inputReady.get_future().wait_for(100ms);
-					firstRun = false;
-					std::scoped_lock lock{inputMtx};
-					inputTriggered = false;
-					inputReady = std::promise<void>{};
-				}
+				if (!firstRun && inputQueue.waitForInput())
+					inputState.parseInput(inputQueue.pop());
+				firstRun = false;
 				if (engine.resized || engine.outdatedFramebuffer) {
 					engine.recreateSwapChain();
 					needsRelayout = true;
