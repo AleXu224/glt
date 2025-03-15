@@ -382,7 +382,7 @@ vec2 squi::Widget::layout(vec2 maxSize, vec2 minSize, ShouldShrink forceShrink, 
 void squi::Widget::deleteLater() {
 	shouldDelete = true;
 	if (state.parent) {
-		Window::of(this).queueCleanup(state.parent);
+		Window::of(this).queueCleanup(state.parent, state.parent->weak_from_this());
 	}
 }
 
@@ -479,7 +479,7 @@ void Widget::reArrange() const {
 	window->shouldReposition();
 }
 void squi::Widget::pruneChildren() {
-	{
+	if (!children.empty()) {
 		auto [eraseFirst, eraseLast] = std::ranges::remove_if(children, [&](const Child &child) -> bool {
 			if (child->shouldDelete) {
 				for (auto &func: m_funcs.onChildRemoved) {
@@ -491,7 +491,7 @@ void squi::Widget::pruneChildren() {
 		});
 		children.erase(eraseFirst, eraseLast);
 	}
-	{
+	if (!childrenToAdd.empty()) {
 		auto [eraseFirst, eraseLast] = std::ranges::remove_if(childrenToAdd, [&](const Child &child) -> bool {
 			if (child->shouldDelete) {
 				for (auto &func: m_funcs.onChildRemoved) {

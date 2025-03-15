@@ -19,6 +19,14 @@ void squi::InputQueue::push(const InputTypes &item) {
 					handled = true;
 				}
 			},
+			[&](const ScrollInput &input) {
+				if (!inputQueue.empty() && std::holds_alternative<ScrollInput>(inputQueue.back())) {
+					auto &entry = std::get<ScrollInput>(inputQueue.back());
+					entry.xOffset += input.xOffset;
+					entry.yOffset += input.yOffset;
+					handled = true;
+				}
+			},
 			[](auto &&) {},
 		},
 		item

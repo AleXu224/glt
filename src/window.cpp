@@ -176,7 +176,8 @@ squi::Window::Window()
 				content->state.parent = this;
 				content->state.root = this;
 				content->update();
-				for (const auto &w: cleanupQueue) {
+				for (const auto &[_, ptr]: cleanupQueue) {
+					auto w = ptr.lock();
 					if (w) {
 						w->pruneChildren();
 					}
@@ -268,6 +269,6 @@ void squi::Window::run() {
 		}
 	}
 }
-void squi::Window::queueCleanup(Widget *w) {
-	cleanupQueue.insert(w);
+void squi::Window::queueCleanup(Widget *ptr, ChildRef w) {
+	cleanupQueue.emplace(ptr, w);
 }

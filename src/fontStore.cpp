@@ -10,9 +10,10 @@
 
 #include "engine/textQuad.hpp"
 
+#include "utf8/cpp20.h"// IWYU pragma: keep
 #include <freetype/freetype.h>
 #include <freetype/fttypes.h>
-#include "utf8/cpp20.h"
+
 
 using namespace squi;
 
@@ -44,10 +45,12 @@ FontStore::Font::Font(const FontProvider &provider)
 std::shared_ptr<FontStore::Font> FontStore::getFont(const FontProvider &provider) {
 	std::scoped_lock lock{fontsMtx};
 	if (auto it = fonts().find(provider.key); it != fonts().end()) {
-		if (it->second.expired()) {
-			it->second = std::make_shared<FontStore::Font>(provider);
+		auto font = it->second.lock();
+		if (!font) {
+			font = std::make_shared<FontStore::Font>(provider);
+			it->second = font;
 		}
-		return it->second.lock();
+		return font;
 	}
 
 	auto font = std::make_shared<Font>(provider);

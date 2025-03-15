@@ -68,18 +68,20 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 		.channels = channels,
 		.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
 	});
-	auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
-		.aspectMask = vk::ImageAspectFlagBits::eColor,
-		.mipLevel = 0,
-		.arrayLayer = 0,
-	});
+	// auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
+	// 	.aspectMask = vk::ImageAspectFlagBits::eColor,
+	// 	.mipLevel = 0,
+	// 	.arrayLayer = 0,
+	// });
+	auto writer = texture->getWriter();
 	for (uint32_t row = 0; row < height; row++) {
 		memcpy(
-			reinterpret_cast<uint8_t *>(texture->mappedMemory) + (row * layout.rowPitch),
+			reinterpret_cast<uint8_t *>(writer.memory) + row * width * channels,
 			data.data() + static_cast<ptrdiff_t>(row * width * channels),
 			static_cast<size_t>(width) * static_cast<size_t>(channels)
 		);
 	}
+	writer.write();
 	texture->generateMipmaps();
 	return texture;
 }

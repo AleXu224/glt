@@ -4,7 +4,6 @@
 #include "observer.hpp"
 #include <memory>
 #include <stdexcept>
-#include <unordered_set>
 
 #include "engine/engine.hpp"
 #include "store/pipeline.hpp"
@@ -34,7 +33,7 @@ namespace squi {
 		Observable<Child> addedChildren{};
 		Observable<Child> addedOverlays{};
 
-		std::unordered_set<Widget *> cleanupQueue{};
+		std::unordered_map<Widget *, ChildRef> cleanupQueue{};
 
 		static inline std::atomic<uint32_t> windowCount = 0;
 
@@ -91,6 +90,6 @@ namespace squi {
 			needsReposition = true;
 		}
 
-		void queueCleanup(Widget *w);
+		void queueCleanup(Widget *ptr, ChildRef w);
 	};
 }// namespace squi

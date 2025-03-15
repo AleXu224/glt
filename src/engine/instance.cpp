@@ -1,7 +1,6 @@
 #include "instance.hpp"
 #include "ranges"
 #include "vulkanIncludes.hpp"
-#include <print>
 
 #include "vulkan.hpp"
 
@@ -84,12 +83,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
-	vk::SwapchainPresentScalingCreateInfoEXT presentScalingCreateInfo {
-		.scalingBehavior = vk::PresentScalingFlagBitsEXT::eStretch,
-	};
-
 	vk::SwapchainCreateInfoKHR createInfo{
-		.pNext = &presentScalingCreateInfo,
 		.surface = *surface,
 		.minImageCount = imageCount,
 		.imageFormat = surfaceFormat.format,

@@ -21,12 +21,12 @@ namespace squi::Store {
 			};
 
 			if (auto it = self._data.find(provider.key); it != self._data.end()) {
-				if (it->second.expired()) {
-					auto ret = createTexture();
-					it->second = ret;
-					return ret;
+				auto val = it->second.lock();
+				if (!val) {
+					val = createTexture();
+					it->second = val;
 				}
-				return it->second.lock();
+				return val;
 			}
 
 			auto ret = createTexture();

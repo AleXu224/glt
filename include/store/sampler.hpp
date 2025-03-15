@@ -22,12 +22,12 @@ namespace squi::Store {
 			};
 
 			if (auto it = _data.find(&*texture); it != _data.end()) {
-				if (it->second.expired()) {
-					auto ret = createSampler();
-					it->second = ret;
-					return ret;
+				auto val = it->second.lock();
+				if (!val) {
+					val = createSampler();
+					it->second = val;
 				}
-				return it->second.lock();
+				return val;
 			}
 
 			auto ret = createSampler();

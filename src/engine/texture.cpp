@@ -16,9 +16,24 @@ void Engine::Texture::transitionLayout(vk::ImageLayout oldLayout, vk::ImageLayou
 		.layerCount = 1,
 	};
 
+	auto layoutToAccessMask = [](vk::ImageLayout layout) -> vk::AccessFlags {
+		switch (layout) {
+			case vk::ImageLayout::eTransferDstOptimal:
+				return vk::AccessFlagBits::eTransferWrite;
+			case vk::ImageLayout::eTransferSrcOptimal:
+				return vk::AccessFlagBits::eTransferRead;
+			case vk::ImageLayout::eShaderReadOnlyOptimal:
+				return vk::AccessFlagBits::eShaderRead;
+			case vk::ImageLayout::eUndefined:
+				return vk::AccessFlags{};
+			default:
+				throw std::runtime_error("Unsupported layout transition");
+		}
+	};
+
 	vk::ImageMemoryBarrier imageMemBarrier{
-		.srcAccessMask = vk::AccessFlagBits::eHostWrite,
-		.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+		.srcAccessMask = layoutToAccessMask(oldLayout),
+		.dstAccessMask = layoutToAccessMask(newLayout),
 		.oldLayout = oldLayout,
 		.newLayout = newLayout,
 		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
@@ -43,15 +58,16 @@ Engine::Texture::Texture(const Args &args)
 	  height(args.height),
 	  channels(args.channels),
 	  mipLevels(args.mipLevels) {
-	auto reqs = image.getMemoryRequirements();
-	mappedMemory = memory.mapMemory(0, reqs.size);
 
-	transitionLayout(
-		vk::ImageLayout::ePreinitialized,
-		vk::ImageLayout::eShaderReadOnlyOptimal,
-		vk::PipelineStageFlagBits::eHost,
-		vk::PipelineStageFlagBits::eFragmentShader
-	);
+	auto writer = getWriter({
+		.first = true,
+	});
+	memset(writer.memory, 0, width * height * channels);
+	writer.write();
+
+	if (mipLevels > 1) {
+		generateMipmaps();
+	}
 }
 
 vk::raii::ImageView Engine::Texture::createImageView(const Args &args) const {
@@ -104,7 +120,7 @@ vk::raii::DeviceMemory Engine::Texture::createMemory() const {
 
 	vk::MemoryAllocateInfo allocInfo{
 		.allocationSize = reqs.size,
-		.memoryTypeIndex = findMemoryType(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
+		.memoryTypeIndex = findMemoryType(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal),
 	};
 
 	return {Vulkan::device().resource, allocInfo};
@@ -128,8 +144,6 @@ void Engine::Texture::generateMipmaps() {
 	};
 
 	vk::ImageMemoryBarrier imageMemBarrier{
-		.srcAccessMask = vk::AccessFlagBits::eHostWrite,
-		.dstAccessMask = vk::AccessFlagBits::eShaderRead,
 		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 		.image = *image,
@@ -147,7 +161,7 @@ void Engine::Texture::generateMipmaps() {
 		imageMemBarrier.subresourceRange.baseMipLevel = i;
 		imageMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
 		imageMemBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-		imageMemBarrier.srcAccessMask = static_cast<vk::AccessFlags>(0);
+		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 		cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
 
@@ -219,12 +233,11 @@ vk::raii::Image Engine::Texture::createImage(const Args &args) {
 		},
 		.mipLevels = args.mipLevels,
 		.arrayLayers = 1,
-		// Using linear since we won't be using a staging buffer
 		.samples = vk::SampleCountFlagBits::e1,
-		.tiling = vk::ImageTiling::eLinear,
+		.tiling = vk::ImageTiling::eOptimal,
 		.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
 		.sharingMode = vk::SharingMode::eExclusive,
-		.initialLayout = vk::ImageLayout::ePreinitialized,
+		.initialLayout = vk::ImageLayout::eUndefined,
 	};
 
 	return {Vulkan::device().resource, createInfo};
@@ -249,4 +262,113 @@ vk::Format Engine::Texture::formatFromChannels(uint32_t channels) {
 			throw std::runtime_error("Unsupported number of channels specified");
 		}
 	}
+}
+
+Engine::TextureWriter Engine::Texture::getWriter(Engine::TextureWriter::Args args) {
+	return Engine::TextureWriter(
+		width, height, image,
+		[this](vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
+			transitionLayout(oldLayout, newLayout, srcStageMask, dstStageMask);
+		},
+		args
+	);
+}
+
+Engine::TextureWriter::TextureWriter(uint32_t width, uint32_t height, vk::raii::Image &image, std::function<void(vk::ImageLayout, vk::ImageLayout, vk::PipelineStageFlags, vk::PipelineStageFlags)> transitionFunc, Args args)
+	: width(width), height(height), image(&image), transitionFunc(transitionFunc) {
+	vk::ImageLayout srcLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	vk::PipelineStageFlags srcFlags = vk::PipelineStageFlagBits::eFragmentShader;
+	if (args.first) {
+		srcLayout = vk::ImageLayout::eUndefined;
+		srcFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+	}
+	if (!args.makeReadable) {
+		transitionFunc(srcLayout, vk::ImageLayout::eTransferDstOptimal, srcFlags, vk::PipelineStageFlagBits::eTransfer);
+	}
+
+	auto reqs = image.getMemoryRequirements();
+	vk::BufferCreateInfo bufferInfo{
+		.size = reqs.size,
+		.usage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+		.sharingMode = vk::SharingMode::eExclusive,
+	};
+
+	stagingBuffer = {Vulkan::device().resource, bufferInfo};
+
+	auto stagingBufferMemReqs = stagingBuffer.getMemoryRequirements();
+	vk::MemoryAllocateInfo stagingAllocInfo{
+		.allocationSize = stagingBufferMemReqs.size,
+		.memoryTypeIndex = findMemoryType(
+			stagingBufferMemReqs.memoryTypeBits,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+		),
+	};
+
+	stagingMemory = {Vulkan::device().resource, stagingAllocInfo};
+	stagingBuffer.bindMemory(*stagingMemory, 0);
+
+	// Map the staging buffer memory
+	memory = stagingMemory.mapMemory(0, reqs.size);
+	valid = true;
+
+	if (args.makeReadable) {
+		transitionFunc(srcLayout, vk::ImageLayout::eTransferSrcOptimal, srcFlags, vk::PipelineStageFlagBits::eTransfer);
+		auto [pool, cmd] = Vulkan::makeCommandBuffer();
+		cmd.begin({});
+
+		vk::BufferImageCopy region{
+			.bufferOffset = 0,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+			.imageOffset{0, 0, 0},
+			.imageExtent{width, height, 1},
+		};
+
+		cmd.copyImageToBuffer(*image, vk::ImageLayout::eTransferSrcOptimal, *stagingBuffer, region);
+		cmd.end();
+		Vulkan::finishCommandBuffer(cmd);
+		transitionFunc(vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer);
+	}
+}
+
+void Engine::TextureWriter::write() {
+	if (!valid) return;
+	valid = false;
+
+	stagingMemory.unmapMemory();
+
+	// Copy data from staging buffer to image
+	auto [pool, cmd] = Vulkan::makeCommandBuffer();
+	cmd.begin({});
+
+	vk::BufferImageCopy region{
+		.bufferOffset = 0,
+		.bufferRowLength = 0,  // Tightly packed
+		.bufferImageHeight = 0,// Tightly packed
+		.imageSubresource = {
+			.aspectMask = vk::ImageAspectFlagBits::eColor,
+			.mipLevel = 0,
+			.baseArrayLayer = 0,
+			.layerCount = 1,
+		},
+		.imageOffset = {0, 0, 0},
+		.imageExtent = {width, height, 1},
+	};
+
+	cmd.copyBufferToImage(*stagingBuffer, **image, vk::ImageLayout::eTransferDstOptimal, region);
+	cmd.end();
+
+	Vulkan::finishCommandBuffer(cmd);
+
+	transitionFunc(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader);
+}
+
+Engine::TextureWriter::~TextureWriter() {
+	write();
 }

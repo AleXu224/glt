@@ -51,17 +51,21 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	});
 
 	// Copy data to atlas
-	auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
-		.aspectMask = vk::ImageAspectFlagBits::eColor,
-		.mipLevel = 0,
-		.arrayLayer = 0,
+	// auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
+	// 	.aspectMask = vk::ImageAspectFlagBits::eColor,
+	// 	.mipLevel = 0,
+	// 	.arrayLayer = 0,
+	// });
+	auto writer = this->texture->getWriter({
+		.makeReadable = true,
 	});
 	for (int y = 0; y < height; y++) {
-		auto *textureData = reinterpret_cast<unsigned char *>(this->texture->mappedMemory);
-		auto yOffset = static_cast<ptrdiff_t>((y * layout.rowPitch) + usedRow->yOffset * layout.rowPitch);
+		auto *textureData = reinterpret_cast<unsigned char *>(writer.memory);
+		auto yOffset = static_cast<ptrdiff_t>(y * AtlasSize + usedRow->yOffset * AtlasSize);
 		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
 		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
 	}
+	writer.write();
 
 	// Prepare return values
 	vec2 uvTopLeft{

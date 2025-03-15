@@ -26,13 +26,12 @@ namespace squi::Store {
 			};
 
 			if (auto it = _data.find(provider.key); it != _data.end()) {
-				auto val = std::any_cast<std::weak_ptr<T>>(it->second);
-				if (val.expired()) {
-					auto ret = createPipeline();
-					val = ret;
-					return ret;
+				auto val = std::any_cast<std::weak_ptr<T>>(it->second).lock();
+				if (!val) {
+					val = createPipeline();
+					it->second = std::make_any<std::weak_ptr<T>>(val);
 				}
-				return val.lock();
+				return val;
 			}
 
 			auto ret = createPipeline();
