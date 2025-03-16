@@ -20,14 +20,16 @@ namespace squi {
 			return w->customState.get<T>(name);
 		}
 
-		void bind(Widget *w, T val) {
+		void bind(Widget *w, T val) const {
 			w->customState.add<T>(name, val);
 		}
-		void bind(Widget &w, T val) {
+		void bind(Widget &w, T val) const {
 			w.customState.add<T>(name, val);
 		}
-		void bind(const Child &w, T val) {
+		void bind(Child &w, T val) const {
 			w->customState.add<T>(name, val);
 		}
+		template<class V>
+		void bind(V &&, T val) const = delete;
 	};
 }// namespace squi

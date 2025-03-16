@@ -90,12 +90,18 @@ Expander::operator Child() const {
 					.alignment = Row::Alignment::center,
 					.spacing = 16.f,
 					.children{
-						icon.has_value()//
-							? FontIcon{
-								  .icon = icon.value(),
-								  .size = 16.f,
-							  }
-							: Child{},
+						std::visit(utils::overloaded{
+									   [](char32_t icon) -> Child {
+										   return FontIcon{
+											   .icon = icon,
+											   .size = 16.f,
+										   };
+									   },
+									   [](Child child) {
+										   return child;
+									   },
+								   },
+								   icon),
 						Column{
 							.widget{
 								.height = Size::Shrink,
@@ -117,6 +123,7 @@ Expander::operator Child() const {
 									? Text{
 										  .text = caption.value(),
 										  .fontSize = 12.f,
+										  .lineWrap = true,
 										  .color = 0xFFFFFFC8,
 									  }
 									: Child{},

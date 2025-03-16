@@ -32,6 +32,7 @@ namespace squi {
 		[[nodiscard]] Color operator*(const float &multiplier) const;
 
 		static Color transparent;
+		static Color black;
 
 		static Color khaki;
 		static Color lavender;

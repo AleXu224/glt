@@ -121,6 +121,7 @@ Color Color::operator*(const float &multiplier) const {
 }
 
 Color Color::transparent = Color::css(0x0, 0.f);
+Color Color::black = Color::css(0x0, 1.f);
 
 Color Color::khaki = Color::css(0xf0e68c);
 Color Color::lavender = Color::css(0xe6e6fa);

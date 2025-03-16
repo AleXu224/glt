@@ -6,7 +6,7 @@ namespace squi {
 	struct Expander {
 		// Args
 		Widget::Args widget{};
-		std::optional<char32_t> icon{};
+		std::variant<char32_t, Child> icon = Child{};
 		std::variant<std::string_view, Child> heading = "Heading";
 		std::optional<std::string_view> caption{};
 		Children actions{};
