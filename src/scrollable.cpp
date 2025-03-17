@@ -100,7 +100,7 @@ void Scrollable::Impl::arrangeChildren(vec2 &pos) {
 	auto &children = getChildren();
 	const auto childPos = pos + state.margin->getPositionOffset() + state.padding->getPositionOffset();
 	float cursor = 0.f;
-	const auto width = getSize().x;
+	const auto width = getContentSize().x;
 
 	for (auto &child: children) {
 		if (!child) continue;
