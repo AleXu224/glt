@@ -7,7 +7,9 @@ using namespace squi;
 squi::Rebuilder::operator squi::Child() const {
 	return RegisterEvent{
 		.onInit = [rebuildEvent = rebuildEvent, buildFunc = buildFunc, onRebuild = onRebuild](Widget &w) {
-			observe(w, rebuildEvent, [&w, buildFunc, onRebuild]() {
+			static uint32_t id = 0;
+			auto name = std::format("rebuilder_{}", id++);
+			observe(name, w, rebuildEvent, [&w, buildFunc, onRebuild]() {
 				if (buildFunc) w.setChildren({buildFunc()});
 				if (onRebuild) onRebuild();
 			});

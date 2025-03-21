@@ -3,6 +3,7 @@
 #include "vector"
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string_view>
 
 
@@ -14,16 +15,21 @@ namespace squi {
 		using WeakUpdateFunc = std::weak_ptr<UpdateFunc>;
 		struct Observer;
 		struct ControlBlock {
+			std::mutex mtx;
 			std::vector<WeakUpdateFunc> updateFuncs{};
+			std::vector<WeakUpdateFunc> updateFuncsQueue{};
 		};
 		using BlockPtr = std::shared_ptr<ControlBlock>;
 		BlockPtr _controlBlock = std::make_shared<ControlBlock>();
 
 		static void _notify(const BlockPtr &controlBlock, const T &t) {
+			std::scoped_lock _{controlBlock->mtx};
 			for (const auto &updateFunc: controlBlock->updateFuncs) {
-				if (updateFunc.expired()) continue;
-				(*updateFunc.lock())(t);
+				if (auto func = updateFunc.lock()) {
+					(*func)(t);
+				}
 			}
+			controlBlock->updateFuncs.insert(controlBlock->updateFuncs.end(), controlBlock->updateFuncsQueue.begin(), controlBlock->updateFuncsQueue.end());
 		}
 
 		struct Observer {
@@ -38,7 +44,12 @@ namespace squi {
 
 		[[nodiscard]] static Observer _observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
 			Observer ret{controlBlock, std::make_shared<UpdateFunc>(updateFunc)};
-			controlBlock->updateFuncs.emplace_back(ret.update);
+			if (controlBlock->mtx.try_lock()) {
+				controlBlock->updateFuncs.emplace_back(ret.update);
+				controlBlock->mtx.unlock();
+			} else {
+				controlBlock->updateFuncsQueue.emplace_back(ret.update);
+			}
 			return ret;
 		}
 
@@ -62,17 +73,22 @@ namespace squi {
 		using WeakUpdateFunc = std::weak_ptr<UpdateFunc>;
 		struct Observer;
 		struct ControlBlock {
+			std::mutex mtx;
 			std::vector<WeakUpdateFunc> updateFuncs{};
+			std::vector<WeakUpdateFunc> updateFuncsQueue{};
 		};
 
 		using BlockPtr = std::shared_ptr<ControlBlock>;
 		BlockPtr _controlBlock = std::make_shared<ControlBlock>();
 
 		static void _notify(const BlockPtr &controlBlock) {
+			std::scoped_lock _{controlBlock->mtx};
 			for (auto &updateFunc: controlBlock->updateFuncs) {
-				if (updateFunc.expired()) continue;
-				(*updateFunc.lock())();
+				if (auto func = updateFunc.lock()) {
+					(*func)();
+				}
 			}
+			controlBlock->updateFuncs.insert(controlBlock->updateFuncs.end(), controlBlock->updateFuncsQueue.begin(), controlBlock->updateFuncsQueue.end());
 		}
 
 		struct Observer {
@@ -87,7 +103,12 @@ namespace squi {
 
 		[[nodiscard]] static Observer _observe(const BlockPtr &controlBlock, const UpdateFunc &updateFunc) {
 			Observer ret{._controlBlock = controlBlock, ._update = std::make_shared<UpdateFunc>(updateFunc)};
-			controlBlock->updateFuncs.emplace_back(ret._update);
+			if (controlBlock->mtx.try_lock()) {
+				controlBlock->updateFuncs.emplace_back(ret._update);
+				controlBlock->mtx.unlock();
+			} else {
+				controlBlock->updateFuncsQueue.emplace_back(ret._update);
+			}
 			return ret;
 		}
 
