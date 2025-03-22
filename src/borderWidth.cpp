@@ -34,3 +34,9 @@ squi::BorderWidth squi::BorderWidth::withLeft(float width) const {
 squi::BorderWidth::operator glm::vec4() const {
 	return {top, right, bottom, left};
 }
+bool squi::BorderWidth::operator==(const BorderWidth &other) const {
+	return left == other.left
+		&& right == other.right
+		&& top == other.top
+		&& bottom == other.bottom;
+}

@@ -22,7 +22,7 @@ namespace squi {
 		Color borderColorDisabled{0};
 		Box::BorderPosition borderPosition = Box::BorderPosition::inset;
 		BorderRadius borderRadius{4.0f};
-		float borderWidth{1.0f};
+		BorderWidth borderWidth{1.0f};
 		Color textColor{0x000000FF};
 		Color textColorHover{0x000000FF};
 		Color textColorActive{0.f, 0.f, 0.f, 0.5f};

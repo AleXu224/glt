@@ -24,5 +24,7 @@ namespace squi {
 		[[nodiscard]] BorderWidth withLeft(float width) const;
 
 		operator glm::vec4() const;
+
+		bool operator==(const BorderWidth &other) const;
 	};
 }// namespace squi
