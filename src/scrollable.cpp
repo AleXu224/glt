@@ -61,10 +61,12 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 	float totalHeight = 0.f;
 	float maxWidth = 0.f;
 
+	shouldShrink.height = true;
+
 	for (auto &child: children) {
 		if (!child) continue;
 
-		const auto size = child->layout(maxSize.withY(std::numeric_limits<float>::max()), {minSize.x, 0}, shouldShrink, final);
+		const auto size = child->layout(maxSize.withY(std::numeric_limits<float>::max()), minSize.withY(0.f), shouldShrink, final);
 		totalHeight += size.y;
 		maxWidth = std::max(maxWidth, size.x);
 	}
@@ -72,7 +74,7 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 	totalSpacing = std::max(totalSpacing, 0.f);
 	contentHeight = totalHeight + totalSpacing;
 
-	return {maxWidth, contentHeight};
+	return {maxWidth, std::min(contentHeight, maxSize.y)};
 }
 
 void Scrollable::Impl::postLayout(vec2 & /*size*/) {

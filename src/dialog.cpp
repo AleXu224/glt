@@ -20,16 +20,19 @@ squi::Dialog::operator Child() const {
 	};
 
 	auto contentBox = Box{
+		.widget{.height = Size::Wrap},
 		.color = Color::css(255, 255, 255, 0.0538f),
 		.borderColor = Color::css(0, 0, 0, 0.1f),
 		.borderWidth = BorderWidth::Bottom(1.f),
 		.borderRadius = BorderRadius::Top(7.f),
 		.borderPosition = Box::BorderPosition::outset,
 		.child = Column{
+			.widget{.height = Size::Wrap},
 			.spacing = 12.f,
 			.children{
 				titleText,
 				ScrollableFrame{
+					.widget{.height = Size::Wrap},
 					.scrollableWidget{
 						.padding = Padding(24.f, 0.f).withBottom(24.f),
 					},
@@ -42,6 +45,7 @@ squi::Dialog::operator Child() const {
 
 	auto buttonContainer = Row{
 		.widget{
+			.height = Size::Shrink,
 			.padding = 24.f,
 		},
 		.spacing = 8.f,
@@ -51,7 +55,7 @@ squi::Dialog::operator Child() const {
 	auto dialog = Box{
 		.widget{
 			.width = width,
-			.height = Size::Shrink,
+			.height = Size::Wrap,
 			.padding = 1.f,
 		},
 		.color = Color::css(32, 32, 32, 1.f),
@@ -59,6 +63,7 @@ squi::Dialog::operator Child() const {
 		.borderWidth = 1.f,
 		.borderRadius = 8.f,
 		.child = Column{
+			.widget{.height = Size::Wrap},
 			.children{
 				contentBox,
 				buttonContainer,

@@ -1,8 +1,8 @@
 #include "column.hpp"
 #include "ranges"
+#include "window.hpp"
 #include <algorithm>
 #include <cmath>
-#include "window.hpp"
 
 
 using namespace squi;
@@ -25,6 +25,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 	float maxWidth = 0.0f;
 
 	std::vector<Child> expandedChildren{};
+	std::vector<Child> wrapedChildren{};
 
 	static bool ignoreWidth = false;
 	if (!ignoreWidth && shouldShrink.width) {
@@ -36,7 +37,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 	}
 
 	float spacingOffset = spacing * (static_cast<float>(childCount) - 1.f);
-	spacingOffset = (std::max)(0.0f, spacingOffset);
+	spacingOffset = (std::max) (0.0f, spacingOffset);
 
 	for (auto &child: children) {
 		if (!child) continue;
@@ -45,8 +46,22 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 
 		if (!shouldShrink.height && childState.height->index() == 1 && std::get<1>(*childState.height) == Size::Expand) {
 			expandedChildren.emplace_back(child);
+		} else if (childState.height->index() == 1 && std::get<1>(*childState.height) == Size::Wrap) {
+			wrapedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxSize.withYOffset(-spacingOffset), {minSize.x, 0}, shouldShrink, final);
+			totalHeight += childSize.y;
+			maxWidth = std::max(maxWidth, childSize.x);
+		}
+	}
+
+	if (!wrapedChildren.empty() && maxSize.y > totalHeight + spacingOffset) {
+		const vec2 maxChildSize = {
+			maxSize.x,
+			std::max(0.f, maxSize.y - spacingOffset - totalHeight) / static_cast<float>(wrapedChildren.size()),
+		};
+		for (auto &child: wrapedChildren) {
+			const auto childSize = child->layout(maxChildSize, {minSize.x, 0}, shouldShrink, final);
 			totalHeight += childSize.y;
 			maxWidth = std::max(maxWidth, childSize.x);
 		}

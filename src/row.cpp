@@ -25,6 +25,7 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 	float maxHeight = 0.0f;
 
 	std::vector<Child> expandedChildren{};
+	std::vector<Child> wrapedChildren{};
 
 	static bool ignoreHeight = false;
 	if (!ignoreHeight && shouldShrink.height) {
@@ -36,7 +37,7 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 	}
 
 	float spacingOffset = spacing * (static_cast<float>(childCount) - 1.f);
-	spacingOffset = (std::max)(0.0f, spacingOffset);
+	spacingOffset = (std::max) (0.0f, spacingOffset);
 
 	for (auto &child: children) {
 		if (!child) continue;
@@ -45,8 +46,22 @@ vec2 Row::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shouldSh
 
 		if (!shouldShrink.width && childState.width->index() == 1 && std::get<1>(*childState.width) == Size::Expand) {
 			expandedChildren.emplace_back(child);
+		} else if (childState.width->index() == 1 && std::get<1>(*childState.width) == Size::Wrap) {
+			wrapedChildren.emplace_back(child);
 		} else {
 			const auto childSize = child->layout(maxSize.withXOffset(-spacingOffset), {0, minSize.y}, shouldShrink, final);
+			totalWidth += childSize.x;
+			maxHeight = std::max(maxHeight, childSize.y);
+		}
+	}
+
+	if (!wrapedChildren.empty() && maxSize.x > totalWidth + spacingOffset) {
+		const vec2 maxChildSize = {
+			std::max(0.f, maxSize.x - spacingOffset - totalWidth) / static_cast<float>(wrapedChildren.size()),
+			maxSize.y,
+		};
+		for (auto &child: wrapedChildren) {
+			const auto childSize = child->layout(maxChildSize, {0, minSize.y}, shouldShrink, final);
 			totalWidth += childSize.x;
 			maxHeight = std::max(maxHeight, childSize.y);
 		}
