@@ -108,9 +108,9 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 
 	switch (direction) {
 		case Direction::vertical:
-			return {maxCrossAxis, std::min(totalMainAxis, maxSize.y)};
+			return {maxCrossAxis, std::min(contentMainAxis, maxSize.y)};
 		case Direction::horizontal:
-			return {std::min(totalMainAxis, maxSize.x), maxCrossAxis};
+			return {std::min(contentMainAxis, maxSize.x), maxCrossAxis};
 	}
 }
 
