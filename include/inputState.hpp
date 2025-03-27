@@ -21,6 +21,7 @@ namespace squi {
 		vec2 mouseDelta{};
 		vec2 g_cursorPos{0};
 		std::unordered_map<int, KeyState> g_keys{};
+		std::unordered_map<int, KeyState> g_keys_persistent{};
 		std::string g_textInput{};
 		vec2 g_scrollDelta{0};
 		std::vector<Rect> g_hitCheckRects{};
@@ -31,6 +32,7 @@ namespace squi {
 		void parseInput(const std::optional<InputTypes> &input);
 
 		void setCursorPos(const vec2 &pos);
+		void frameBegin();
 		void frameEnd();
 		[[nodiscard]] const vec2 &getMousePos() const;
 		// Get how much the cursor has moved since the last frame
@@ -40,6 +42,7 @@ namespace squi {
 		[[nodiscard]] std::optional<KeyState> getKeyPressedOrRepeat(int key) const;
 		[[nodiscard]] bool isKey(int key, int action, int mods = 0) const;
 		[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
+		[[nodiscard]] bool isKeyDown(int key) const;
 
 		[[nodiscard]] static InputState &of(Widget *widget);
 	};

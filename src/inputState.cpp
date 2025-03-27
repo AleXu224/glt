@@ -13,6 +13,12 @@ void InputState::setCursorPos(const vec2 &pos) {
 	mouseDelta += g_cursorPos - lastCursorPos;
 }
 
+void squi::InputState::frameBegin() {
+	for (const auto &[key, state]: g_keys) {
+		g_keys_persistent[key] = state;
+	}
+}
+
 void InputState::frameEnd() {
 	lastCursorPos = g_cursorPos;
 	mouseDelta = vec2{0};
@@ -56,6 +62,13 @@ bool InputState::isKeyPressedOrRepeat(int key, int mods) const {
 
 	const auto &keyInput = g_keys.at(key);
 	return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
+}
+
+bool squi::InputState::isKeyDown(int key) const {
+	if (!g_keys_persistent.contains(key)) return false;
+
+	const auto &keyInput = g_keys_persistent.at(key);
+	return keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT;
 }
 
 InputState &squi::InputState::of(Widget *widget) {

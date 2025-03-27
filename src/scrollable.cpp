@@ -5,6 +5,8 @@
 #include <cmath>
 #include <memory>
 
+#include "GLFW/glfw3.h"
+
 using namespace squi;
 
 Scrollable::Impl::Impl(const Scrollable &args)
@@ -35,14 +37,15 @@ void Scrollable::Impl::onUpdate() {
 	auto &inputState = InputState::of(this);
 	inputState.g_activeArea.emplace_back(getRect());
 
+	float dummy = 0.f;
 	auto &delta = [&]() -> float & {
 		switch (direction) {
 			case Direction::vertical:
+				if (inputState.isKeyDown(GLFW_KEY_LEFT_SHIFT)) return dummy;
 				return inputState.g_scrollDelta.y;
-				break;
 			case Direction::horizontal:
+				if (inputState.isKeyDown(GLFW_KEY_LEFT_SHIFT)) return inputState.g_scrollDelta.y;
 				return inputState.g_scrollDelta.x;
-				break;
 		}
 	}();
 	if (GestureDetector::canClick(*this) && delta != 0.f) {

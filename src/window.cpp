@@ -151,6 +151,8 @@ squi::Window::Window()
 				static thread_local bool firstRun = true;
 				if (!firstRun && inputQueue.waitForInput())
 					inputState.parseInput(inputQueue.pop());
+
+				inputState.frameBegin();
 				firstRun = false;
 				if (engine.resized || engine.outdatedFramebuffer) {
 					engine.recreateSwapChain();
