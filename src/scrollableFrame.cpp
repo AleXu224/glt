@@ -15,8 +15,16 @@ ScrollableFrame::operator squi::Child() const {
 		.widget{widget},
 		.children{
 			Scrollable{
-				.widget{scrollableWidget.withDefaultHeight(Size::Shrink)},
+				.widget = [&]() {
+					switch (direction) {
+						case Scrollable::Direction::vertical:
+							return scrollableWidget.withDefaultHeight(Size::Shrink);
+						case Scrollable::Direction::horizontal:
+							return scrollableWidget.withDefaultWidth(Size::Shrink);
+					}
+				}(),
 				.alignment = alignment,
+				.direction = direction,
 				.spacing = spacing,
 				.onScroll = [storage](auto scroll, auto contentHeight, auto viewHeight) {
 					storage->scroll = scroll;
@@ -28,12 +36,10 @@ ScrollableFrame::operator squi::Child() const {
 			},
 			Align{
 				.xAlign = 1,
-				.yAlign = 0,
+				.yAlign = 1,
 				.child{
 					Scrollbar{
-						.widget{
-							.height = Size::Expand,
-						},
+						.direction = direction,
 						.controller = controller,
 					},
 				},

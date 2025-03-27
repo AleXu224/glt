@@ -1,6 +1,5 @@
 #pragma once
 
-#include "column.hpp"
 #include "observer.hpp"
 #include "widget.hpp"
 #include <memory>
@@ -9,14 +8,24 @@
 namespace squi {
 	struct Scrollable {
 		struct Controller {
-			float viewHeight{0.0f};
-			float contentHeight{0.0f};
+			float viewMainAxis{0.0f};
+			float contentMainAxis{0.0f};
 			float scroll{0.0f};
 			Observable<float> onScrollChange{};
 		};
+		enum class Alignment {
+			begin,
+			center,
+			end,
+		};
+		enum class Direction {
+			vertical,
+			horizontal,
+		};
 		// Args
 		Widget::Args widget{};
-		Column::Alignment alignment{Column::Alignment::left};
+		Alignment alignment{Alignment::begin};
+		Direction direction = Direction::vertical;
 		float spacing{0.0f};
 		/**
          * @brief onScroll(float scroll, float contentHeight, float viewHeight)
@@ -30,7 +39,8 @@ namespace squi {
 			float scroll = 0;
 			float spacing;
 			float horizontalOffsetFactor;
-			float contentHeight = 0.f;
+			float contentMainAxis = 0.f;
+			Direction direction = Direction::vertical;
 			bool scrolled = false;
 			std::shared_ptr<Controller> controller;
 			std::function<void(float, float, float)> onScroll{};

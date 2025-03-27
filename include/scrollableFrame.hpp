@@ -1,6 +1,6 @@
 #pragma once
 
-#include "column.hpp"
+#include "scrollable.hpp"
 #include "widget.hpp"
 
 
@@ -9,7 +9,8 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		Widget::Args scrollableWidget{};
-		Column::Alignment alignment{Column::Alignment::left};
+		Scrollable::Alignment alignment{Scrollable::Alignment::begin};
+		Scrollable::Direction direction{Scrollable::Direction::vertical};
 		float spacing{0.0f};
 		Children children{};
 

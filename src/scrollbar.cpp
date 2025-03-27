@@ -15,7 +15,7 @@ Scrollbar::operator Child() const {
 
 	return RegisterEvent{
 		.beforeLayout = [storage](Widget &widget, auto, auto) {
-			if (storage->controller->contentHeight <= storage->controller->viewHeight)
+			if (storage->controller->contentMainAxis <= storage->controller->viewMainAxis)
 				widget.flags.visible = false;
 			else
 				widget.flags.visible = true;
@@ -38,56 +38,116 @@ Scrollbar::operator Child() const {
 			},
 			.child{
 				Box{
-					.widget = widget.withDefaultWidth(16.f).withDefaultPadding(3.f),
+					.widget = [&]() {
+						switch (direction) {
+							case Scrollable::Direction::vertical:
+								return widget.withDefaultWidth(16.f).withDefaultPadding(3.f);
+							case Scrollable::Direction::horizontal:
+								return widget.withDefaultHeight(16.f).withDefaultPadding(3.f);
+						}
+					}(),
 					.color{0},
 					.child{
 						GestureDetector{
 							.onPress = [storage](auto) {
 								storage->scrollDragStart = storage->scroll;
 							},
-							.onUpdate = [storage](GestureDetector::Event event) {
-								const float contentHeight = event.widget.state.parent->getContentRect().height() - event.widget.getSize().y;
+							.onUpdate = [storage, direction = direction](GestureDetector::Event event) {
+								const float contentMainAxisSize = [&]() {
+									switch (direction) {
+										case Scrollable::Direction::vertical:
+											return event.widget.state.parent->getContentRect().height() - event.widget.getSize().y;
+										case Scrollable::Direction::horizontal:
+											return event.widget.state.parent->getContentRect().width() - event.widget.getSize().x;
+									}
+								}();
 								if (event.state.focused && *event.widget.flags.visible) {
-									storage->scroll = storage->scrollDragStart + event.state.getDragOffset().y / contentHeight;
-									storage->scroll = (std::clamp)(storage->scroll, 0.f, 1.0f);
-									storage->controller->scroll = storage->scroll * (storage->controller->contentHeight - storage->controller->viewHeight);
+									switch (direction) {
+										case Scrollable::Direction::vertical:
+											storage->scroll = storage->scrollDragStart + event.state.getDragOffset().y / contentMainAxisSize;
+											break;
+										case Scrollable::Direction::horizontal:
+											storage->scroll = storage->scrollDragStart + event.state.getDragOffset().x / contentMainAxisSize;
+											break;
+									}
+									storage->scroll = (std::clamp) (storage->scroll, 0.f, 1.0f);
+									storage->controller->scroll = storage->scroll * (storage->controller->contentMainAxis - storage->controller->viewMainAxis);
 									storage->controller->onScrollChange.notify(storage->controller->scroll);
 								}
 
 								const auto currentTime = std::chrono::steady_clock::now();
 								if (currentTime - storage->lastHoverTime > 1s) {
-									event.widget.state.width = 2.0f;
-									event.widget.state.margin = event.widget.state.margin->withLeft(8.0f);
+									switch (direction) {
+										case Scrollable::Direction::vertical:
+											event.widget.state.width = 2.0f;
+											event.widget.state.margin = event.widget.state.margin->withLeft(8.0f);
+											break;
+										case Scrollable::Direction::horizontal:
+											event.widget.state.height = 2.0f;
+											event.widget.state.margin = event.widget.state.margin->withTop(8.0f);
+											break;
+									}
 								} else {
-									event.widget.state.width = 10.f;
-									event.widget.state.margin = event.widget.state.margin->withLeft(0);
+									switch (direction) {
+										case Scrollable::Direction::vertical:
+											event.widget.state.width = 10.f;
+											event.widget.state.margin = event.widget.state.margin->withLeft(0);
+											break;
+										case Scrollable::Direction::horizontal:
+											event.widget.state.height = 10.f;
+											event.widget.state.margin = event.widget.state.margin->withTop(0);
+											break;
+									}
 								}
 							},
 							.child{
 								Box{
 									.widget{
-										.width = 2.0f,
-										.height = Size::Expand,
-										.sizeConstraints{
-											.minHeight = 24.f,
+										.onInit = [direction = direction](Widget &w) {
+											switch (direction) {
+												case Scrollable::Direction::vertical:
+													w.state.width = 2.f;
+													w.state.margin = Margin{}.withLeft(8.f);
+													w.state.sizeConstraints.minHeight = 24.f;
+													break;
+												case Scrollable::Direction::horizontal:
+													w.state.height = 2.f;
+													w.state.margin = Margin{}.withTop(8.f);
+													w.state.sizeConstraints.minWidth = 24.f;
+													break;
+											}
 										},
-										.margin = Margin{}.withLeft(8.f),
-										.onLayout = [storage](Widget &, vec2 &maxSize, vec2 &minSize) {
-											if (storage->controller->contentHeight == 0.f) return;
-											maxSize.y *= (storage->controller->viewHeight / storage->controller->contentHeight);
-											minSize.y = std::min(minSize.y, maxSize.y);
+										.onLayout = [storage, direction = direction](Widget &, vec2 &maxSize, vec2 &minSize) {
+											if (storage->controller->contentMainAxis == 0.f) return;
+											switch (direction) {
+												case Scrollable::Direction::vertical:
+													maxSize.y *= (storage->controller->viewMainAxis / storage->controller->contentMainAxis);
+													minSize.y = std::min(minSize.y, maxSize.y);
+													break;
+												case Scrollable::Direction::horizontal:
+													maxSize.x *= (storage->controller->viewMainAxis / storage->controller->contentMainAxis);
+													minSize.x = std::min(minSize.x, maxSize.x);
+													break;
+											}
 										},
-										.onArrange = [storage](Widget &widget, vec2 &pos) {
+										.onArrange = [storage, direction = direction](Widget &widget, vec2 &pos) {
 											if (!*widget.state.parent) return;
 
 											auto &controller = *storage->controller;
-											if (controller.contentHeight <= controller.viewHeight)
+											if (controller.contentMainAxis <= controller.viewMainAxis)
 												storage->scroll = 0;
 											else
-												storage->scroll = controller.scroll / (controller.contentHeight - controller.viewHeight);
+												storage->scroll = controller.scroll / (controller.contentMainAxis - controller.viewMainAxis);
 											const auto maxOffset = widget.state.parent->getContentSize() - widget.getLayoutSize();
 
-											pos.y += maxOffset.y * storage->scroll;
+											switch (direction) {
+												case Scrollable::Direction::vertical:
+													pos.y += maxOffset.y * storage->scroll;
+													break;
+												case Scrollable::Direction::horizontal:
+													pos.x += maxOffset.x * storage->scroll;
+													break;
+											}
 										},
 									},
 									.color{0xFFFFFF8B},
