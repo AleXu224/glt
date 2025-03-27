@@ -8,7 +8,6 @@
 #include <array>
 #include <cstring>
 #include <functional>
-#include <print>
 #include <ranges>
 #include <thread>
 #include <utility>
@@ -62,10 +61,8 @@ namespace Engine {
 
 		~SamplerUniform() {
 			auto thread = std::thread([texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
-				// Wait for the device to be done with the descriptor sets
-				graphicsQueueMutex.lock();
+				// Wait for the device to be done using the descriptor sets
 				Vulkan::device().resource.waitIdle();
-				graphicsQueueMutex.unlock();
 			});
 			thread.detach();
 		}

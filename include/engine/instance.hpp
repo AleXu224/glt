@@ -6,14 +6,11 @@
 #include "vulkanIncludes.hpp"
 #include "window.hpp"
 #include <functional>
-#include <mutex>
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
-
-inline std::mutex graphicsQueueMutex;
 
 namespace Engine {
 	struct Instance {
