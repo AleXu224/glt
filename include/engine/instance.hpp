@@ -73,8 +73,8 @@ namespace Engine {
 						   .y = static_cast<int32_t>(pos.y),
 					   },
 					   .extent{
-						   .width = static_cast<uint32_t>(sz.x),
-						   .height = static_cast<uint32_t>(sz.y),
+						   .width = static_cast<uint32_t>(std::max(sz.x, 0.f)),
+						   .height = static_cast<uint32_t>(std::max(sz.y, 0.f)),
 					   },
 				   }
 			);
