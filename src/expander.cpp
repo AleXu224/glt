@@ -139,7 +139,7 @@ Expander::operator Child() const {
 								  .spacing = 4.f,
 								  .children = actions,
 							  },
-						expandedContent//
+						expandedContent && !alwaysExpanded//
 							? ExpanderButton{
 								  .expandedEvent = expandedEvent,
 								  .storage = storage,
@@ -150,11 +150,11 @@ Expander::operator Child() const {
 			},
 			Box{
 				.widget{
-					.onInit = [expandedEvent](Widget &w) {
+					.onInit = [expandedEvent, alwaysExpanded = alwaysExpanded, expandedContentExists = static_cast<bool>(expandedContent)](Widget &w) {
 						observe(w, expandedEvent, [&w](bool newVal) {
 							w.flags.visible = newVal;
 						});
-						w.flags.visible = false;
+						w.flags.visible = alwaysExpanded && expandedContentExists;
 					},
 				},
 				.color = Color::css(0xffffff, 0.0326f),

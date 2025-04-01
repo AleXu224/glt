@@ -9,6 +9,7 @@ namespace squi {
 		std::variant<char32_t, Child> icon = Child{};
 		std::variant<std::string_view, Child> heading = "Heading";
 		std::optional<std::string_view> caption{};
+		bool alwaysExpanded = false;
 		Children actions{};
 		Child expandedContent{};
 
