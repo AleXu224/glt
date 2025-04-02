@@ -8,9 +8,9 @@
 
 
 namespace squi {
-	template<typename T>
+	template<typename... T>
 	struct Observable {
-		using UpdateFunc = std::function<void(const T &)>;
+		using UpdateFunc = std::function<void(const T &...)>;
 		using SharedUpdateFunc = std::shared_ptr<UpdateFunc>;
 		using WeakUpdateFunc = std::weak_ptr<UpdateFunc>;
 		struct Observer;
@@ -22,11 +22,11 @@ namespace squi {
 		using BlockPtr = std::shared_ptr<ControlBlock>;
 		BlockPtr _controlBlock = std::make_shared<ControlBlock>();
 
-		static void _notify(const BlockPtr &controlBlock, const T &t) {
+		static void _notify(const BlockPtr &controlBlock, const T &...t) {
 			std::scoped_lock _{controlBlock->mtx};
 			for (const auto &updateFunc: controlBlock->updateFuncs) {
 				if (auto func = updateFunc.lock()) {
-					(*func)(t);
+					(*func)(t...);
 				}
 			}
 			controlBlock->updateFuncs.insert(controlBlock->updateFuncs.end(), controlBlock->updateFuncsQueue.begin(), controlBlock->updateFuncsQueue.end());
@@ -36,9 +36,9 @@ namespace squi {
 			std::shared_ptr<ControlBlock> _controlBlock;
 			SharedUpdateFunc update;
 
-			void notifyOthers(const T &t) const {
+			void notifyOthers(const T &...t) const {
 				if (!_controlBlock) return;
-				_notify(_controlBlock, t);
+				_notify(_controlBlock, t...);
 			}
 		};
 
@@ -53,8 +53,8 @@ namespace squi {
 			return ret;
 		}
 
-		void notify(const T &t) const {
-			_notify(_controlBlock, t);
+		void notify(const T &...t) const {
+			_notify(_controlBlock, t...);
 		}
 
 		[[nodiscard]] Observer observe(const UpdateFunc &updateFunc) const {
