@@ -1,8 +1,8 @@
 #include "numberBox.hpp"
 
 #include "inputState.hpp"
-#include "registerEvent.hpp"
 #include "textBox.hpp"
+#include "wrapper.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 
@@ -31,7 +31,7 @@ NumberBox::operator Child() const {
 		if (onChange) onChange(storageRef.value);
 	};
 
-	return RegisterEvent{
+	return Wrapper{
 		.onInit = [storage, stateObserver = controller.stateObserver, updateText = controller.updateText, valueUpdater = valueUpdater, formatVal](Widget &w) {
 			auto refreshVal = [storage, updateText, formatVal]() {
 				auto lastValue = storage->value;

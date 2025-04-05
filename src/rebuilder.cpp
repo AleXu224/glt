@@ -1,11 +1,11 @@
 #include "rebuilder.hpp"
 #include "container.hpp"
-#include "registerEvent.hpp"
+#include "wrapper.hpp"
 
 using namespace squi;
 
 squi::Rebuilder::operator squi::Child() const {
-	return RegisterEvent{
+	return Wrapper{
 		.onInit = [rebuildEvent = rebuildEvent, buildFunc = buildFunc, onRebuild = onRebuild](Widget &w) {
 			static uint32_t id = 0;
 			auto name = std::format("rebuilder_{}", id++);

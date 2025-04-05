@@ -104,10 +104,6 @@ namespace squi {
 
 		// Args
 		Widget::Args widget{};
-		std::variant<float, Size> width = Size::Shrink;
-		std::variant<float, Size> height = Size::Shrink;
-		Margin margin{};
-		Margin padding = {6, 12, 6, 12};
 		std::string_view text{"Button"};
 		ButtonStyle style{};
 		bool disabled = false;

@@ -107,8 +107,8 @@ Button::operator squi::Child() const {
 	Button::State::style.bind(
 		ret,
 		Stateful<ButtonStyle, StateImpact::RedrawNeeded>(
-			[textRef = ChildRef(textW)](Widget &w, ButtonStyle) {
-				updateStyle(w, textRef, State::state.of(w));
+			[textRef = ChildRef(textW), stateEvent](Widget &w, ButtonStyle) {
+				stateEvent.notify(State::state.of(w));
 			},
 			ret.get(), style
 		)

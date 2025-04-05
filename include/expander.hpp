@@ -1,5 +1,4 @@
 #include "widget.hpp"
-#include <optional>
 #include <string_view>
 
 namespace squi {
@@ -8,7 +7,7 @@ namespace squi {
 		Widget::Args widget{};
 		std::variant<char32_t, Child> icon = Child{};
 		std::variant<std::string_view, Child> heading = "Heading";
-		std::optional<std::string_view> caption{};
+		std::variant<std::string_view, Child> caption = Child{};
 		bool alwaysExpanded = false;
 		Children actions{};
 		Child expandedContent{};

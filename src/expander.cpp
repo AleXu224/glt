@@ -90,43 +90,56 @@ Expander::operator Child() const {
 					.alignment = Row::Alignment::center,
 					.spacing = 16.f,
 					.children{
-						std::visit(utils::overloaded{
-									   [](char32_t icon) -> Child {
-										   return FontIcon{
-											   .icon = icon,
-											   .size = 16.f,
-										   };
-									   },
-									   [](Child child) {
-										   return child;
-									   },
-								   },
-								   icon),
+						std::visit(//
+							utils::overloaded{
+								[](char32_t icon) -> Child {
+									return FontIcon{
+										.icon = icon,
+										.size = 16.f,
+									};
+								},
+								[](Child child) {
+									return child;
+								},
+							},
+							icon
+						),
 						Column{
 							.widget{
 								.height = Size::Shrink,
 							},
 							.children{
-								std::visit(utils::overloaded{
-											   [](std::string_view str) -> Child {
-												   return Text{
-													   .text = str,
-													   .fontSize = 14.f,
-												   };
-											   },
-											   [](const Child &child) {
-												   return child;
-											   },
-										   },
-										   heading),
-								caption.has_value()//
-									? Text{
-										  .text = caption.value(),
-										  .fontSize = 12.f,
-										  .lineWrap = true,
-										  .color = 0xFFFFFFC8,
-									  }
-									: Child{},
+								std::visit(//
+									utils::overloaded{
+										[](std::string_view str) -> Child {
+											return Text{
+												.text = str,
+												.fontSize = 14.f,
+											};
+										},
+										[](const Child &child) {
+											return child;
+										},
+									},
+									heading
+								),
+								std::visit(//
+									utils::overloaded{
+										[](std::string_view str) -> Child {
+											if (str.empty()) return Child{};
+											return Text{
+												.text = str,
+												.fontSize = 12.f,
+												.lineWrap = true,
+												.color = 0xFFFFFFC8,
+											};
+										},
+										[](const Child &child) -> Child {
+											return child;
+										},
+									},
+									caption
+								),
 							},
 						},
 						actions.empty()//

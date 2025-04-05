@@ -1,7 +1,7 @@
 #include "scrollbar.hpp"
 #include "box.hpp"
 #include "gestureDetector.hpp"
-#include "registerEvent.hpp"
+#include "wrapper.hpp"
 #include <algorithm>
 #include <memory>
 
@@ -13,7 +13,7 @@ Scrollbar::operator Child() const {
 		.controller = controller,
 	});
 
-	return RegisterEvent{
+	return Wrapper{
 		.beforeLayout = [storage](Widget &widget, auto, auto) {
 			if (storage->controller->contentMainAxis <= storage->controller->viewMainAxis)
 				widget.flags.visible = false;

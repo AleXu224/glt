@@ -5,39 +5,27 @@
 #include "align.hpp"
 #include "container.hpp"
 #include "fontIcon.hpp"
-#include "registerEvent.hpp"
 #include "row.hpp"
 #include "text.hpp"
 #include "window.hpp"
+#include "wrapper.hpp"
+
 
 using namespace squi;
 
 squi::DropdownButton::operator squi::Child() const {
-	Observable<ButtonState> stateEvent;
+	Observable<Color> colorEvent;
 
 	auto storage = std::make_shared<Storage>(items);
 
 	auto textWidget = Text{
 		.widget{
-			.onInit = [textUpdater = textUpdater, stateEvent, style = style](Widget &w) {
+			.onInit = [textUpdater = textUpdater, colorEvent](Widget &w) {
 				w.customState.add(textUpdater.observe([&w](const std::string &newText) {
 					w.as<Text::Impl>().setText(newText);
 				}));
 
-				w.customState.add(stateEvent.observe([style, &w](ButtonState state) {
-					auto color = [&state, &style]() {
-						switch (state) {
-							case ButtonState::resting:
-								return style.textColor;
-							case ButtonState::hovered:
-								return style.textColorHover;
-							case ButtonState::active:
-								return style.textColorActive;
-							case ButtonState::disabled:
-								return style.textColorDisabled;
-						}
-						std::unreachable();
-					}();
+				w.customState.add(colorEvent.observe([&w](Color color) {
 					w.as<Text::Impl>().setColor(color);
 				}));
 			},
@@ -47,21 +35,8 @@ squi::DropdownButton::operator squi::Child() const {
 
 	auto caret = FontIcon{
 		.textWidget{
-			.onInit = [stateEvent, style = style](Widget &w) {
-				w.customState.add(stateEvent.observe([style, &w](ButtonState state) {
-					auto color = [&state, &style]() {
-						switch (state) {
-							case ButtonState::resting:
-								return style.textColor;
-							case ButtonState::hovered:
-								return style.textColorHover;
-							case ButtonState::active:
-								return style.textColorActive;
-							case ButtonState::disabled:
-								return style.textColorDisabled;
-						}
-						std::unreachable();
-					}();
+			.onInit = [colorEvent](Widget &w) {
+				w.customState.add(colorEvent.observe([&w](Color color) {
 					w.as<Text::Impl>().setColor(color);
 				}));
 			},
@@ -98,16 +73,31 @@ squi::DropdownButton::operator squi::Child() const {
 			},
 		},
 	};
-	return RegisterEvent{
+	return Wrapper{
 		.onInit = [itemsUpdater = itemsUpdater, storage](Widget &w) {
 			observe(w, itemsUpdater, [storage](std::vector<ContextMenu::Item> newItems) {
 				storage->items = std::move(newItems);
 			});
 		},
-		.afterInit = [stateEvent](Widget &w) {
-			observe(w, Button::State::stateEvent.of(w), [stateEvent](ButtonState state) {
-				stateEvent.notify(state);
+		.afterInit = [colorEvent](Widget &w) {
+			observe(w, Button::State::stateEvent.of(w), [colorEvent, &w](ButtonState state) {
+				auto style = *Button::State::style.of(w);
+				switch (state) {
+					case ButtonState::resting:
+						colorEvent.notify(style.textColor);
+						break;
+					case ButtonState::hovered:
+						colorEvent.notify(style.textColorHover);
+						break;
+					case ButtonState::active:
+						colorEvent.notify(style.textColorActive);
+						break;
+					case ButtonState::disabled:
+						colorEvent.notify(style.textColorDisabled);
+						break;
+				}
 			});
+			colorEvent.notify(Button::State::style.of(w)->textColor);
 		},
 		.child = button,
 	};

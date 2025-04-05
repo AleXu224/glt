@@ -2,10 +2,11 @@
 #include "box.hpp"
 #include "column.hpp"
 #include "gestureDetector.hpp"
-#include "registerEvent.hpp"
 #include "stack.hpp"
 #include "text.hpp"
 #include "textInput.hpp"
+#include "wrapper.hpp"
+
 
 #include "GLFW/glfw3.h"
 
@@ -165,7 +166,7 @@ squi::TextBox::operator squi::Child() const {
 
 	Observable<std::string_view> onChangeObs{};
 
-	return RegisterEvent{
+	return Wrapper{
 		.afterInit = [storage](Widget &w) {
 			// For outside use
 			w.customState.add(storage);

@@ -3,14 +3,15 @@
 #include "align.hpp"
 #include "box.hpp"
 #include "gestureDetector.hpp"
-#include "registerEvent.hpp"
 #include "stack.hpp"
+#include "wrapper.hpp"
 #include <GLFW/glfw3.h>
+
 
 using namespace squi;
 
 squi::Modal::operator squi::Child() const {
-	return RegisterEvent{
+	return Wrapper{
 		.onInit = [closeEvent = closeEvent](Widget &w) {
 			observe(w, closeEvent, [&w]() {
 				w.deleteLater();

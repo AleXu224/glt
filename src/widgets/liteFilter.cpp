@@ -2,8 +2,9 @@
 
 #include "button.hpp"
 #include "observer.hpp"
-#include "registerEvent.hpp"
 #include "row.hpp"
+#include "wrapper.hpp"
+
 
 using namespace squi;
 
@@ -53,7 +54,7 @@ squi::LiteFilter::operator squi::Child() const {
 	auto storage = std::make_shared<Storage>(items);
 	Observable<bool> allSelectedEvent;
 
-	return RegisterEvent{
+	return Wrapper{
 		.afterInit = [allSelectedEvent](Widget &) {
 			allSelectedEvent.notify(true);
 		},
