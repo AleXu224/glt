@@ -25,7 +25,7 @@ void squi::Window::glfwError(int id, const char *description) {
 	std::print("GLFW Error {}: {}\n", id, description);
 }
 
-squi::Window::Window()
+squi::Window::Window(squi::WindowOptions options)
 	: Widget(
 		  Widget::Args{},
 		  Widget::FlagsArgs{
@@ -34,17 +34,23 @@ squi::Window::Window()
 			  .isInteractive = false,
 		  }
 	  ),
-	  engine() {
+	  engine(options) {
 	windowCount++;
 	auto &window = engine.instance.window.ptr;
 	state.root = this;
 	{
 		std::scoped_lock lock{Engine::Window::_windowMtx};
 		windowMap[window] = this;
-		glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int /*width*/, int /*height*/) {
+		glfwSetWindowMaximizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int maximized) {
+			std::scoped_lock wnd{windowMapMtx};
+			auto *window = windowMap[windowPtr];
+			if (window->maximizeCallback) window->maximizeCallback(static_cast<bool>(maximized));
+		});
+		glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int width, int height) {
 			std::scoped_lock wnd{windowMapMtx};
 			auto *window = windowMap[windowPtr];
 			std::scoped_lock swp{window->engine.swapChainMtx};
+			if (window->resizeCallback) window->resizeCallback(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 			window->engine.resized = true;
 			window->inputQueue.push(StateChange{});
 		});

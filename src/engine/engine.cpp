@@ -11,7 +11,7 @@
 
 #include "GLFW/glfw3.h"
 
-Engine::Runner::Runner() = default;
+Engine::Runner::Runner(WindowOptions options) : instance(options) {}
 
 Engine::Frame &Engine::Runner::getCurrentFrame() {
 	return instance.frames.at(frameNumber % FrameBuffer);

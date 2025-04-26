@@ -11,7 +11,7 @@ namespace Engine {
 
 		uint32_t frameNumber = 0;
 
-		Runner();
+		Runner(WindowOptions options = {});
 
 		Frame &getCurrentFrame();
 

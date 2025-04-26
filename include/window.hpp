@@ -15,6 +15,8 @@
 using namespace std::chrono_literals;
 
 namespace squi {
+	using WindowOptions = Engine::WindowOptions;
+
 	class Window : public Widget {
 	public:
 		Engine::Runner engine;
@@ -32,6 +34,8 @@ namespace squi {
 		bool drewLastFrame = false;
 		Observable<Child> addedChildren{};
 		Observable<Child> addedOverlays{};
+		std::function<void(bool)> maximizeCallback{};
+		std::function<void(uint32_t, uint32_t)> resizeCallback{};
 
 		std::unordered_map<Widget *, ChildRef> cleanupQueue{};
 
@@ -47,7 +51,7 @@ namespace squi {
 		Child content{};
 
 	public:
-		Window();
+		Window(WindowOptions options = {});
 		~Window() override;
 
 		static Window &of(Widget *w) {
@@ -91,5 +95,12 @@ namespace squi {
 		}
 
 		void queueCleanup(Widget *ptr, ChildRef w);
+
+		void setMaximizeCallback(std::function<void(bool)> callback) {
+			maximizeCallback = callback;
+		}
+		void setResizeCallback(std::function<void(uint32_t, uint32_t)> callback) {
+			resizeCallback = callback;
+		}
 	};
 }// namespace squi

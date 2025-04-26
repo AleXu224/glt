@@ -2,12 +2,18 @@
 
 #include "cstdint"
 #include "mutex"
-#include <string_view>
 
 
 struct GLFWwindow;
 
 namespace Engine {
+	struct WindowOptions {
+		std::string name = "Glt Window";
+		uint32_t width = 800;
+		uint32_t height = 600;
+		bool maximized = false;
+	};
+
 	struct Window {
 		static inline std::mutex _windowMtx{};
 
@@ -19,7 +25,7 @@ namespace Engine {
 		Window &operator=(const Window &) = default;
 		Window &operator=(Window &&) = delete;
 
-		Window(uint32_t width, uint32_t height, std::string_view title);
+		Window(WindowOptions options);
 
 		void destroy();
 

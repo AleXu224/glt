@@ -5,7 +5,7 @@
 
 using namespace Engine;
 
-Engine::Window::Window(uint32_t width, uint32_t height, std::string_view title)
+Engine::Window::Window(WindowOptions options)
 	: ptr() {
 	std::scoped_lock windowCreationLock{_windowMtx};
 	[[maybe_unused]] static bool glfwIniter = []() {
@@ -13,8 +13,9 @@ Engine::Window::Window(uint32_t width, uint32_t height, std::string_view title)
 		return true;
 	}();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_MAXIMIZED, options.maximized);
 	// glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-	ptr = glfwCreateWindow(width, height, std::string(title).c_str(), nullptr, nullptr);
+	ptr = glfwCreateWindow(options.width, options.height, options.name.c_str(), nullptr, nullptr);
 }
 
 void Engine::Window::destroy() {

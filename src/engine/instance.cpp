@@ -9,26 +9,27 @@
 
 using namespace Engine;
 
-Instance::Instance() : window(800, 600, "Vulkan window"),
-					   surface(createSurface()),
-					   swapChainExtent(createExtent()),
-					   swapChain(createSwapChain(false)),
-					   swapChainImageFormat(createSwapChainImageFormat()),
-					   swapChainImages(createSwapChainImages()),
-					   swapChainImageViews(createImageViews()),
-					   renderPass(createRenderPass()),
-					   swapChainFramebuffers(createFramebuffers()),
-					   frames{[&] {
-						   std::vector<Frame> ret{};
-						   ret.reserve(FrameBuffer);
-						   auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
-						   for (size_t i = 0; i < FrameBuffer; i++) {
-							   ret.emplace_back(i, Vulkan::device().resource, props.graphicsFamily.value());
-						   }
+Instance::Instance(WindowOptions options)
+	: window(options),
+	  surface(createSurface()),
+	  swapChainExtent(createExtent()),
+	  swapChain(createSwapChain(false)),
+	  swapChainImageFormat(createSwapChainImageFormat()),
+	  swapChainImages(createSwapChainImages()),
+	  swapChainImageViews(createImageViews()),
+	  renderPass(createRenderPass()),
+	  swapChainFramebuffers(createFramebuffers()),
+	  frames{[&] {
+		  std::vector<Frame> ret{};
+		  ret.reserve(FrameBuffer);
+		  auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
+		  for (size_t i = 0; i < FrameBuffer; i++) {
+			  ret.emplace_back(i, Vulkan::device().resource, props.graphicsFamily.value());
+		  }
 
-						   return ret;
-					   }()},
-					   currentFrame(frames.front()) {}
+		  return ret;
+	  }()},
+	  currentFrame(frames.front()) {}
 
 void Engine::Instance::recreateSwapChain() {
 	int width = 0;

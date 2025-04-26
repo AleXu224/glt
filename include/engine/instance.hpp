@@ -80,7 +80,7 @@ namespace Engine {
 			);
 		}
 
-		Instance();
+		Instance(WindowOptions windowOptions = {});
 
 		void recreateSwapChain();
 
