@@ -404,7 +404,7 @@ struct LayoutItem {
 									}();
 									const auto timeAlive = std::chrono::steady_clock::now() - storage->timeCreated;
 									if (timeAlive < std::chrono::milliseconds(200)) {
-										outputColor = outputColor.transistion(Color(0x17C55DAA), 1.f - (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(timeAlive).count()) / 200.f));
+										outputColor = outputColor.transition(Color(0x17C55DAA), 1.f - (static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(timeAlive).count()) / 200.f));
 									}
 									auto &box = dynamic_cast<Box::Impl &>(w);
 									box.setColor(outputColor);

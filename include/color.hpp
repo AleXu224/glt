@@ -23,7 +23,7 @@ namespace squi {
 
 		[[nodiscard]] operator glm::vec4() const;
 
-		[[nodiscard]] Color transistion(const Color &other, float t) const;
+		[[nodiscard]] Color transition(const Color &other, float t) const;
 
 		[[nodiscard]] Color mix(const Color &other) const;
 

@@ -75,7 +75,7 @@ Color::operator glm::vec4() const {
 }
 
 // TODO: Add support for transition curves
-Color Color::transistion(const Color &other, float t) const {
+Color Color::transition(const Color &other, float t) const {
 	glm::vec4 color1 = *this;
 	glm::vec4 color2 = other;
 
