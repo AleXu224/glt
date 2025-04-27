@@ -29,41 +29,11 @@ namespace squi {
 		Color textColorDisabled{1.f, 1.f, 1.f, 0.5f};
 		float textSize{14.0f};
 
-		static ButtonStyle Accent() {
-			return {};
-		}
+		static ButtonStyle Accent();
 
-		static ButtonStyle Standard() {
-			return ButtonStyle{
-				.color{0xFFFFFF0F},
-				.colorHover{0xFFFFFF15},
-				.colorActive{0xFFFFFF12},
-				.colorDisabled{0xFFFFFF12},
-				.borderColor{0xFFFFFF18},
-				.borderColorHover{0xFFFFFF18},
-				.borderColorActive{0xFFFFFF12},
-				.borderColorDisabled{0xFFFFFF12},
-				.borderPosition = Box::BorderPosition::outset,
-				.textColor{0xFFFFFFFF},
-				.textColorHover{0xFFFFFFFF},
-				.textColorActive{1.f, 1.f, 1.f, 0.78f},
-				.textColorDisabled{1.f, 1.f, 1.f, 0.36},
-			};
-		}
+		static ButtonStyle Standard();
 
-		static ButtonStyle Subtle() {
-			return ButtonStyle{
-				.color{0xFFFFFF00},
-				.colorHover{0xFFFFFF0F},
-				.colorActive{0xFFFFFF0B},
-				.colorDisabled{0xFFFFFF00},
-				.borderWidth = 0.0f,
-				.textColor{0xFFFFFFFF},
-				.textColorHover{0xFFFFFFFF},
-				.textColorActive{1.f, 1.f, 1.f, 0.78f},
-				.textColorDisabled{1.f, 1.f, 1.f, 0.36},
-			};
-		}
+		static ButtonStyle Subtle();
 
 		bool operator==(const ButtonStyle &other) const {
 			return color == other.color
@@ -105,7 +75,7 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		std::string_view text{"Button"};
-		ButtonStyle style{};
+		ButtonStyle style = ButtonStyle::Accent();
 		bool disabled = false;
 		std::function<void(GestureDetector::Event)> onClick{};
 		Child child{};

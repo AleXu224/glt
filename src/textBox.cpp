@@ -24,45 +24,46 @@ struct Body {
 	VoidObservable selectAll{};
 	std::function<void(std::string_view)> onChange{};
 	std::function<void(std::string_view)> onSubmit{};
+	TextBox::Style style;
 	std::string_view text;
 
 	operator squi::Child() const {
 		return Box{
 			.widget{
-				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
-					w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
+				.onInit = [stateUpdateObs = stateUpdateObs, style = style](Widget &w) {
+					w.customState.add(stateUpdateObs.observe([&w, style](BoxInputState state) {
 						auto &box = w.as<Box::Impl>();
 						switch (state) {
 							case squi::TextBox::InputState::resting: {
-								box.setColor(Theme::TextBox::rest);
+								box.setColor(style.rest);
 								return;
 							}
 							case squi::TextBox::InputState::hovered: {
-								box.setColor(Theme::TextBox::hover);
+								box.setColor(style.hover);
 								return;
 							}
 							case squi::TextBox::InputState::focused: {
-								box.setColor(Theme::TextBox::active);
+								box.setColor(style.active);
 								return;
 							}
 							case squi::TextBox::InputState::disabled: {
-								box.setColor(Theme::TextBox::disabled);
+								box.setColor(style.disabled);
 								return;
 							}
 						}
 					}));
 				},
 			},
-			.color{Theme::TextBox::rest},
-			.borderColor{Theme::TextBox::border},
+			.color{style.rest},
+			.borderColor{style.border},
 			.borderWidth{1.f},
 			.borderRadius{4.f},
 			.borderPosition = Box::BorderPosition::outset,
 			.child = TextInput{
 				.widget{
 					.padding = Padding{11.f, 0.f},
-					.onInit = [stateUpdateObs = stateUpdateObs, textUpdateObs = textUpdateObs, reqOnSubmitObs = requestOnSubmitCall, onSubmit = onSubmit](Widget &w) {
-						w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
+					.onInit = [style = style, stateUpdateObs = stateUpdateObs, textUpdateObs = textUpdateObs, reqOnSubmitObs = requestOnSubmitCall, onSubmit = onSubmit](Widget &w) {
+						w.customState.add(stateUpdateObs.observe([&w, style](BoxInputState state) {
 							auto &input = w.as<TextInput::Impl>();
 							switch (state) {
 								case squi::TextBox::InputState::focused: {
@@ -76,11 +77,11 @@ struct Body {
 							}
 							switch (state) {
 								case squi::TextBox::InputState::disabled: {
-									input.setColor(Theme::TextBox::textDisabled);
+									input.setColor(style.textDisabled);
 									break;
 								}
 								default: {
-									input.setColor(Theme::TextBox::text);
+									input.setColor(style.text);
 									break;
 								}
 							}
@@ -98,7 +99,7 @@ struct Body {
 				.fontSize = 14.0f,
 				.text = text,
 				.onTextChanged = onChange,
-				.color{Theme::TextBox::text},
+				.color{style.text},
 				.controller{
 					.selectAll = selectAll,
 				},
@@ -110,24 +111,25 @@ struct Body {
 struct Underline {
 	// Args
 	StObs stateUpdateObs{};
+	TextBox::Style style;
 
 	operator squi::Child() const {
 		return Box{
 			.widget{
-				.onInit = [stateUpdateObs = stateUpdateObs](Widget &w) {
+				.onInit = [stateUpdateObs = stateUpdateObs, style = style](Widget &w) {
 					w.flags.isInteractive = false;
-					w.customState.add(stateUpdateObs.observe([&w](BoxInputState state) {
+					w.customState.add(stateUpdateObs.observe([&w, style](BoxInputState state) {
 						auto &box = w.as<Box::Impl>();
 						switch (state) {
 							case squi::TextBox::InputState::resting:
 							case squi::TextBox::InputState::hovered:
 							case squi::TextBox::InputState::disabled: {
-								box.setBorderColor(Theme::TextBox::bottomBorder);
+								box.setBorderColor(style.bottomBorder);
 								box.setBorderWidth({0.f, 0.f, 1.f, 0.f});
 								return;
 							}
 							case squi::TextBox::InputState::focused: {
-								box.setBorderColor(Theme::TextBox::bottomBorderActive);
+								box.setBorderColor(style.bottomBorderActive);
 								box.setBorderWidth({0.f, 0.f, 2.f, 0.f});
 								return;
 							}
@@ -136,7 +138,7 @@ struct Underline {
 				},
 			},
 			.color{0.f, 0.f, 0.f, 0.f},
-			.borderColor{Theme::TextBox::bottomBorder},
+			.borderColor{style.bottomBorder},
 			.borderWidth{0.f, 0.f, 1.f, 0.f},
 			.borderRadius{4.f},
 		};
@@ -210,10 +212,12 @@ squi::TextBox::operator squi::Child() const {
 									if (onChange) onChange(str);
 								},
 								.onSubmit = controller.onSubmit,
+								.style = style,
 								.text = text,
 							},
 							Underline{
 								.stateUpdateObs = storage->stateObserver,
+								.style = style,
 							},
 						},
 					},

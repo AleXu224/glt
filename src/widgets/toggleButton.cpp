@@ -9,9 +9,11 @@ using namespace squi;
 squi::ToggleButton::operator squi::Child() const {
 	Observable<bool> stateEvent;
 
-	auto getStyle = [modifyStyle = modifyStyle](bool active) {
+	auto accentTheme = ButtonStyle::Accent();
+
+	auto getStyle = [modifyStyle = modifyStyle, accentTheme](bool active) {
 		auto style = [&]() {
-			if (active) return ButtonStyle::Accent();
+			if (active) return accentTheme;
 			else
 				return ButtonStyle::Standard();
 		}();

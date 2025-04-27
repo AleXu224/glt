@@ -5,7 +5,9 @@
 #include "memory"
 #include "observer.hpp"
 #include "text.hpp"
+#include "theme.hpp"
 #include "wrapper.hpp"
+
 
 using namespace squi;
 
@@ -119,4 +121,53 @@ Button::operator squi::Child() const {
 	Button::State::updateText.bind(ret, updateTextEvent);
 
 	return ret;
+}
+
+ButtonStyle squi::ButtonStyle::Accent() {
+	auto theme = ThemeManager::getTheme();
+
+	auto ret = ButtonStyle{
+		.color = theme.accent,
+	};
+
+	if (!theme.accent.isLight()) {
+		ret.textColor = Color{0xFFFFFFFF};
+		ret.textColorHover = Color{0xFFFFFFFF};
+		ret.textColorActive = Color{1.f, 1.f, 1.f, 0.78f};
+		ret.textColorDisabled = Color{1.f, 1.f, 1.f, 0.36};
+	}
+
+	return ret;
+}
+
+ButtonStyle squi::ButtonStyle::Standard() {
+	return ButtonStyle{
+		.color{0xFFFFFF0F},
+		.colorHover{0xFFFFFF15},
+		.colorActive{0xFFFFFF12},
+		.colorDisabled{0xFFFFFF12},
+		.borderColor{0xFFFFFF18},
+		.borderColorHover{0xFFFFFF18},
+		.borderColorActive{0xFFFFFF12},
+		.borderColorDisabled{0xFFFFFF12},
+		.borderPosition = Box::BorderPosition::outset,
+		.textColor{0xFFFFFFFF},
+		.textColorHover{0xFFFFFFFF},
+		.textColorActive{1.f, 1.f, 1.f, 0.78f},
+		.textColorDisabled{1.f, 1.f, 1.f, 0.36},
+	};
+}
+
+ButtonStyle squi::ButtonStyle::Subtle() {
+	return ButtonStyle{
+		.color{0xFFFFFF00},
+		.colorHover{0xFFFFFF0F},
+		.colorActive{0xFFFFFF0B},
+		.colorDisabled{0xFFFFFF00},
+		.borderWidth = 0.0f,
+		.textColor{0xFFFFFFFF},
+		.textColorHover{0xFFFFFFFF},
+		.textColorActive{1.f, 1.f, 1.f, 0.78f},
+		.textColorDisabled{1.f, 1.f, 1.f, 0.36},
+	};
 }

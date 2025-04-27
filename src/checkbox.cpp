@@ -6,6 +6,7 @@
 #include "margin.hpp"
 #include "row.hpp"
 #include "text.hpp"
+#include "theme.hpp"
 
 
 using namespace squi;
@@ -14,6 +15,8 @@ Checkbox::operator Child() const {
 	auto storage = std::make_shared<Storage>(value);
 
 	if (value.has_value()) storage->internalValue = value.value().get();
+
+	auto theme = ThemeManager::getTheme();
 
 	return GestureDetector{
 		.onClick = [storage, onChange = onChange](GestureDetector::Event /*event*/) {
@@ -37,11 +40,11 @@ Checkbox::operator Child() const {
 						.width = 20.f,
 						.height = 20.f,
 						.margin = Margin{0.f, 6.f},
-						.onUpdate = [storage](Widget &w) {
+						.onUpdate = [storage, theme](Widget &w) {
 							auto &box = dynamic_cast<Box::Impl &>(w);
 
-							box.setColor(storage->internalValue ? Color(0x60CDFFFF) : Color(0x0));
-							box.setBorderColor(storage->internalValue ? Color(0x60CDFFFF) : Color(1.f, 1.f, 1.f, 0.6f));
+							box.setColor(storage->internalValue ? Color(theme.accent) : Color(0x0));
+							box.setBorderColor(storage->internalValue ? Color(theme.accent) : Color(1.f, 1.f, 1.f, 0.6f));
 						},
 					},
 					.color = Color(0.f, 0.f, 0.f, 0.1f),

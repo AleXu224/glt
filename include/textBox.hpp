@@ -2,29 +2,28 @@
 
 #include "color.hpp"
 #include "observer.hpp"
+#include "theme.hpp"
 #include "widget.hpp"
 
 
 namespace squi {
-	namespace Theme {
-		struct TextBox {
-			static inline Color rest{0xFFFFFF0F};
-			static inline Color hover{0xFFFFFF15};
-			static inline Color active{0x1E1E1EB2};
-			static inline Color disabled{0xFFFFFF0B};
-
-			static inline Color border{0xFFFFFF14};
-			static inline Color borderActive{0xFFFFFF12};
-
-			static inline Color bottomBorder{0xFFFFFF8B};
-			static inline Color bottomBorderActive{0x60CDFFFF};
-
-			static inline Color text{0xFFFFFFFF};
-			static inline Color textDisabled{0xFFFFFF5D};
-			static inline Color textHint{0xFFFFFFC8};
-		};
-	}// namespace Theme
 	struct TextBox {
+		struct Style {
+			Color rest{0xFFFFFF0F};
+			Color hover{0xFFFFFF15};
+			Color active{0x1E1E1EB2};
+			Color disabled{0xFFFFFF0B};
+
+			Color border{0xFFFFFF14};
+			Color borderActive{0xFFFFFF12};
+
+			Color bottomBorder{0xFFFFFF8B};
+			Color bottomBorderActive{ThemeManager::getTheme().accent};
+
+			Color text{0xFFFFFFFF};
+			Color textDisabled{0xFFFFFF5D};
+			Color textHint{0xFFFFFFC8};
+		};
 		enum class InputState : uint8_t {
 			resting,
 			hovered,
@@ -49,6 +48,7 @@ namespace squi {
 		// Args
 		Widget::Args widget{};
 		bool disabled = false;
+		Style style{};
 		std::string_view text{};
 		Controller controller{};
 

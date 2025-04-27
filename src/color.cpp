@@ -1,6 +1,8 @@
 #include "color.hpp"
 #include "algorithm"
+#include "array"
 #include <glm/fwd.hpp>
+
 
 using namespace squi;
 
@@ -208,3 +210,23 @@ Color Color::white = Color::css(0xffffff);
 Color Color::whitesmoke = Color::css(0xf5f5f5);
 Color Color::yellow = Color::css(0xffff00);
 Color Color::yellowgreen = Color::css(0x9acd32);
+
+bool squi::Color::isLight() const {
+	std::array<uint8_t, 3> cols{r, g, b};
+	std::array<float, 3> colsAdjusted{};
+
+	for (size_t i = 0; i < 3; i++) {
+		float c = static_cast<float>(cols.at(i)) / 255.f;
+		if (c < 0.03928)
+			c = c / 12.92f;
+		else
+			c = std::pow(((c + 0.055f) / 1.055), 2.4);
+
+		colsAdjusted.at(i) = c;
+	}
+
+
+	float l = colsAdjusted.at(0) * 0.2126f + colsAdjusted.at(1) * 0.7152f + colsAdjusted.at(2) * 0.0722f;
+
+	return l > 0.179f;
+}

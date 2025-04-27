@@ -4,6 +4,7 @@
 #include "container.hpp"
 #include "row.hpp"
 #include "text.hpp"
+#include "theme.hpp"
 #include "wrapper.hpp"
 
 using namespace squi;
@@ -16,8 +17,8 @@ namespace {
 		Color background;
 		float knobWidth = 14.f;
 	};
-	const std::unordered_map<bool, std::unordered_map<ButtonState, ToggleSwitchTheme>> &toggleSwitchThemeData() {
-		static std::unordered_map<bool, std::unordered_map<ButtonState, ToggleSwitchTheme>> data{
+	std::unordered_map<bool, std::unordered_map<ButtonState, ToggleSwitchTheme>> toggleSwitchThemeData(Color accent) {
+		std::unordered_map<bool, std::unordered_map<ButtonState, ToggleSwitchTheme>> data{
 			{
 				false,
 				{
@@ -64,28 +65,28 @@ namespace {
 					{
 						ButtonState::resting,
 						ToggleSwitchTheme{
-							.borderColor = Color::css(96, 205, 255),
+							.borderColor = accent,
 							.knobColor = Color::black,
 							.knobBorderColor = Color::css(0xffffff, 0.08f),
-							.background = Color::css(96, 205, 255),
+							.background = accent,
 						},
 					},
 					{
 						ButtonState::hovered,
 						ToggleSwitchTheme{
-							.borderColor = Color::css(96, 205, 255, 0.9f),
+							.borderColor = accent * 0.9f,
 							.knobColor = Color::black,
 							.knobBorderColor = Color::black,
-							.background = Color::css(96, 205, 255, 0.9f),
+							.background = accent * 0.9f,
 						},
 					},
 					{
 						ButtonState::active,
 						ToggleSwitchTheme{
-							.borderColor = Color::css(96, 205, 255, 0.8f),
+							.borderColor = accent * 0.8f,
 							.knobColor = Color::black,
 							.knobBorderColor = Color::black,
-							.background = Color::css(96, 205, 255, 0.8f),
+							.background = accent * 0.8f,
 							.knobWidth = 17.f,
 						},
 					},
@@ -111,6 +112,8 @@ namespace {
 		VoidObservable switchEvent;
 
 		operator squi::Child() const {
+			auto themeData = toggleSwitchThemeData(ThemeManager::getTheme().accent);
+
 			return GestureDetector{
 				.onClick = [switchEvent = switchEvent](GestureDetector::Event) {
 					switchEvent.notify();
@@ -128,10 +131,10 @@ namespace {
 						.width = 40.f,
 						.height = 20.f,
 						.padding = 3.f,
-						.onInit = [stateEvent = stateEvent](Widget &w) {
-							observe(w, stateEvent, [&w](ToggleSwitch::ToggleSwitchState state) {
+						.onInit = [stateEvent = stateEvent, themeData](Widget &w) {
+							observe(w, stateEvent, [&w, themeData](ToggleSwitch::ToggleSwitchState state) {
 								auto &box = w.as<Box::Impl>();
-								auto &theme = toggleSwitchThemeData().at(state.active).at(state.state);
+								auto &theme = themeData.at(state.active).at(state.state);
 								box.setBorderColor(theme.borderColor);
 								box.setColor(theme.background);
 							});
@@ -157,11 +160,11 @@ namespace {
 								.widget{
 									.width = 14.f,
 									.height = 14.f,
-									.onInit = [stateEvent = stateEvent](Widget &w) {
-										observe(w, stateEvent, [&w](ToggleSwitch::ToggleSwitchState state) {
+									.onInit = [stateEvent = stateEvent, themeData](Widget &w) {
+										observe(w, stateEvent, [&w, themeData](ToggleSwitch::ToggleSwitchState state) {
 											auto &box = w.as<Box::Impl>();
 											[[maybe_unused]] auto col = Color::black;
-											auto &theme = toggleSwitchThemeData().at(state.active).at(state.state);
+											auto &theme = themeData.at(state.active).at(state.state);
 											box.setBorderColor(theme.knobBorderColor);
 											box.setColor(theme.knobColor);
 											w.state.width = theme.knobWidth;

@@ -31,6 +31,8 @@ namespace squi {
 
 		[[nodiscard]] Color operator*(const float &multiplier) const;
 
+		[[nodiscard]] bool isLight() const;
+
 		static Color transparent;
 		static Color black;
 

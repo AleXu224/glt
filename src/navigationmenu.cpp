@@ -9,8 +9,10 @@
 #include "scrollableFrame.hpp"
 #include "stack.hpp"
 #include "text.hpp"
+#include "theme.hpp"
 #include <functional>
 #include <memory>
+
 
 using namespace squi;
 
@@ -41,7 +43,7 @@ struct MenuItem {
 		});
 
 		const auto indicatorUpdate = [storage](Widget &widget) {
-			dynamic_cast<Box::Impl &>(widget).setColor(storage->isActive ? Color{0x60CDFFFF} : Color{0x00000000});
+			dynamic_cast<Box::Impl &>(widget).setColor(storage->isActive ? Color{ThemeManager::getTheme().accent} : Color{0x00000000});
 		};
 
 		return Button{
