@@ -10,7 +10,7 @@ namespace squi {
 	struct DropdownButton {
 		// Args
 		squi::Widget::Args widget{};
-		ButtonStyle style{};
+		ButtonStyle style = ButtonStyle::Accent();
 		std::string_view text{};
 		bool disabled = false;
 		std::vector<ContextMenu::Item> items{};

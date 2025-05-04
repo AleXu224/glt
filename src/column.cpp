@@ -17,7 +17,7 @@ vec2 Column::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink shoul
 	auto children = getChildren() | std::views::filter([](const Child &child) {
 						return *child->flags.visible;
 					});
-	const auto childCount = std::ranges::count_if(children, [](auto) {
+	const auto childCount = std::ranges::count_if(children, [](const auto &) {
 		return true;
 	});
 
