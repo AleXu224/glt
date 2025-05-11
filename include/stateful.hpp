@@ -19,7 +19,7 @@ namespace squi {
 		void reLayout(Widget *);
 	};// namespace StatefulHelpers
 
-	template<class T, StateImpact stateImpact>
+	template<class T, StateImpact stateImpact = StateImpact::NoImpact>
 	struct Stateful {
 		Stateful(const Stateful &) = default;
 		Stateful(Stateful &&) = default;
@@ -35,7 +35,7 @@ namespace squi {
 		template<class... Args>
 		Stateful(std::function<void(Widget &, const T &)> callback, Widget *parent, const Args &...args) : item(args...), parent(parent), callback(callback) {}
 
-		Stateful &operator=(const T&other) {
+		Stateful &operator=(const T &other) {
 			*this << other;
 			return *this;
 		}

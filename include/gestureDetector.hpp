@@ -34,6 +34,7 @@ namespace squi {
 			[[nodiscard]] std::optional<std::reference_wrapper<InputState>> getInputState() const;
 			[[nodiscard]] bool isKey(int key, int action, int mods = 0) const;
 			[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
+			[[nodiscard]] vec2 getCursorPos() const;
 
 			void setActive();
 			void setInactive();

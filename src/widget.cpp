@@ -52,7 +52,7 @@ Widget::Widget(const Args &args, const FlagsArgs &flags)
 	if (args.onLayout) m_funcs.onLayout.push_back(args.onLayout);
 	if (args.afterLayout) m_funcs.afterLayout.push_back(args.afterLayout);
 	if (args.onArrange) m_funcs.onArrange.push_back(args.onArrange);
-	if (args.afterArrange) m_funcs.onArrange.push_back(args.afterArrange);
+	if (args.afterArrange) m_funcs.afterArrange.push_back(args.afterArrange);
 	if (args.beforeDraw) m_funcs.beforeDraw.push_back(args.beforeDraw);
 	if (args.onDraw) m_funcs.onDraw.push_back(args.onDraw);
 	if (args.afterDraw) m_funcs.afterDraw.push_back(args.afterDraw);

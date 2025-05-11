@@ -71,7 +71,7 @@ void GestureDetector::Storage::update(State &state) {
 		}
 	}
 
-	if (state.active && onDrag)
+	if (state.focused && onDrag)
 		onDrag({*state.child.lock(), state});
 
 	if (state.active)
@@ -158,6 +158,13 @@ std::optional<std::reference_wrapper<InputState>> squi::GestureDetector::State::
 	auto widget = child.lock();
 	if (!widget) return {};
 	return Window::of(widget).inputState;
+}
+
+vec2 squi::GestureDetector::State::getCursorPos() const {
+	auto inputStateOpt = getInputState();
+	if (!inputStateOpt) return {};
+	auto &inputState = inputStateOpt->get();
+	return inputState.g_cursorPos;
 }
 
 bool squi::GestureDetector::canClick(Widget &widget) {
