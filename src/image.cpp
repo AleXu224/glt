@@ -92,6 +92,7 @@ vec2 squi::Image::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink 
 			}
 		}
 	}
+	std::unreachable();
 }
 
 void Image::Impl::postLayout(vec2 &size) {

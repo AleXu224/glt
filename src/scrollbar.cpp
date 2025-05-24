@@ -45,6 +45,7 @@ Scrollbar::operator Child() const {
 							case Scrollable::Direction::horizontal:
 								return widget.withDefaultHeight(16.f).withDefaultPadding(3.f);
 						}
+						std::unreachable();
 					}(),
 					.color{0},
 					.child{
@@ -60,6 +61,7 @@ Scrollbar::operator Child() const {
 										case Scrollable::Direction::horizontal:
 											return event.widget.state.parent->getContentRect().width() - event.widget.getSize().x;
 									}
+									std::unreachable();
 								}();
 								if (event.state.focused && *event.widget.flags.visible) {
 									switch (direction) {

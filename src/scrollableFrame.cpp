@@ -3,6 +3,7 @@
 #include "scrollable.hpp"
 #include "scrollbar.hpp"
 #include "stack.hpp"
+#include <utility>
 
 
 using namespace squi;
@@ -22,6 +23,7 @@ ScrollableFrame::operator squi::Child() const {
 						case Scrollable::Direction::horizontal:
 							return scrollableWidget.withDefaultWidth(Size::Shrink);
 					}
+					std::unreachable();
 				}(),
 				.alignment = alignment,
 				.direction = direction,

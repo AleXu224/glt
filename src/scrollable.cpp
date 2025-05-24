@@ -47,6 +47,7 @@ void Scrollable::Impl::onUpdate() {
 				if (inputState.isKeyDown(GLFW_KEY_LEFT_SHIFT)) return inputState.g_scrollDelta.y;
 				return inputState.g_scrollDelta.x;
 		}
+		std::unreachable();
 	}();
 	if (GestureDetector::canClick(*this) && delta != 0.f) {
 		scroll += delta * -40.f;
@@ -115,6 +116,7 @@ vec2 Scrollable::Impl::layoutChildren(vec2 maxSize, vec2 minSize, ShouldShrink s
 		case Direction::horizontal:
 			return {std::min(contentMainAxis, maxSize.x), maxCrossAxis};
 	}
+	std::unreachable();
 }
 
 void Scrollable::Impl::postLayout(vec2 & /*size*/) {
@@ -159,6 +161,7 @@ void Scrollable::Impl::arrangeChildren(vec2 &pos) {
 			case Direction::horizontal:
 				return getContentSize().y;
 		}
+		std::unreachable();
 	}();
 
 	for (auto &child: children) {

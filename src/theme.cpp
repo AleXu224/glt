@@ -3,11 +3,11 @@
 #ifdef _WIN32
 #include "guiddef.h"
 #include "winrt/windows.ui.viewmanagement.h"// IWYU pragma: keep
+using namespace winrt;
+using namespace Windows::UI::ViewManagement;
 #endif
 
 using namespace squi;
-using namespace winrt;
-using namespace Windows::UI::ViewManagement;
 
 std::optional<Color> squi::ThemeManager::getSystemAccentColor() {
 #ifndef _WIN32
