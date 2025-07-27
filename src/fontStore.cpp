@@ -348,3 +348,7 @@ std::shared_ptr<Engine::Texture> squi::FontStore::Font::getTexture() const {
 ImageProvider squi::FontStore::Font::getImageProvider() const {
 	return impl->atlas.getProvier();
 }
+
+void squi::FontStore::Font::writePendingTextures() {
+	impl->atlas.writePendingTextures();
+}

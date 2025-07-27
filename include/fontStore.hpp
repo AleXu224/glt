@@ -88,6 +88,7 @@ namespace squi {
 			[[nodiscard]] std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
 			[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
 			[[nodiscard]] ImageProvider getImageProvider() const;
+			void writePendingTextures();
 			static inline std::mutex fontMtx{};
 		};
 

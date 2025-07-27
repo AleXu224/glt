@@ -274,6 +274,32 @@ Engine::TextureWriter Engine::Texture::getWriter(Engine::TextureWriter::Args arg
 	);
 }
 
+Engine::TextureWriter::TextureWriter(TextureWriter &&other)
+	: memory(std::move(other.memory)),
+	  valid(std::move(other.valid)),
+	  width(std::move(other.width)),
+	  height(std::move(other.height)),
+	  image(std::move(other.image)),
+	  stagingBuffer(std::move(other.stagingBuffer)),
+	  stagingMemory(std::move(other.stagingMemory)),
+	  transitionFunc(std::move(other.transitionFunc)) {
+	other.valid = false;
+}
+
+Engine::TextureWriter &Engine::TextureWriter::operator=(TextureWriter &&other) {
+	this->memory = std::move(other.memory);
+	this->valid = std::move(other.valid);
+	this->width = std::move(other.width);
+	this->height = std::move(other.height);
+	this->image = std::move(other.image);
+	this->stagingBuffer = std::move(other.stagingBuffer);
+	this->stagingMemory = std::move(other.stagingMemory);
+	this->transitionFunc = std::move(other.transitionFunc);
+
+	other.valid = false;
+	return *this;
+}
+
 Engine::TextureWriter::TextureWriter(uint32_t width, uint32_t height, vk::raii::Image &image, std::function<void(vk::ImageLayout, vk::ImageLayout, vk::PipelineStageFlags, vk::PipelineStageFlags)> transitionFunc, Args args)
 	: width(width), height(height), image(&image), transitionFunc(transitionFunc) {
 	vk::ImageLayout srcLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

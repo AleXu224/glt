@@ -56,16 +56,17 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	// 	.mipLevel = 0,
 	// 	.arrayLayer = 0,
 	// });
-	auto writer = this->texture->getWriter({
-		.makeReadable = true,
-	});
+	if (!this->textureWriter) {
+		this->textureWriter = this->texture->getWriter({
+			.makeReadable = true,
+		});
+	}
+	auto *textureData = reinterpret_cast<unsigned char *>(this->textureWriter->memory);
 	for (int y = 0; y < height; y++) {
-		auto *textureData = reinterpret_cast<unsigned char *>(writer.memory);
 		auto yOffset = static_cast<ptrdiff_t>(y * AtlasSize + usedRow->yOffset * AtlasSize);
 		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
 		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
 	}
-	writer.write();
 
 	// Prepare return values
 	vec2 uvTopLeft{
@@ -94,6 +95,13 @@ ImageProvider squi::Atlas::getProvier() {
 			};
 		},
 	};
+}
+
+void squi::Atlas::writePendingTextures() {
+	if (this->textureWriter) {
+		this->textureWriter->write();
+		this->textureWriter.reset();
+	}
 }
 
 std::shared_ptr<Engine::Texture> squi::Atlas::getTexture() const {

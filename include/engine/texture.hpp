@@ -11,6 +11,11 @@ namespace Engine {
 		};
 		void *memory;
 
+		TextureWriter(const TextureWriter &) = delete;
+		TextureWriter &operator=(const TextureWriter &) = delete;
+		TextureWriter(TextureWriter &&);
+		TextureWriter &operator=(TextureWriter &&);
+		
 		TextureWriter(
 			uint32_t width,
 			uint32_t height,

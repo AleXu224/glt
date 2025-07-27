@@ -1,6 +1,7 @@
 #pragma once
 
 #include "image/provider.hpp"
+#include "texture.hpp"
 #include "vec2.hpp"
 
 #include "vector"
@@ -31,15 +32,18 @@ namespace squi {
 		std::string key;
 
 		std::shared_ptr<Engine::Texture> texture;
+		std::optional<Engine::TextureWriter> textureWriter = std::nullopt;
 
-		
-		public:
+
+	public:
 		Atlas(std::string_view key);
-		
+
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
 		add(const uint16_t &width, const uint16_t &height, unsigned char *data);
-		
+
 		[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
 		[[nodiscard]] ImageProvider getProvier();
+
+		void writePendingTextures();
 	};
 }// namespace squi

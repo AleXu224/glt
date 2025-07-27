@@ -215,6 +215,13 @@ squi::Window::Window(squi::WindowOptions options)
 					inputState.frameEnd();
 				}
 
+				for (const auto &font: FontStore::fonts()) {
+					auto fontPtr = font.second.lock();
+					if (!fontPtr) continue;
+
+					fontPtr->writePendingTextures();
+				}
+
 				if (needsRedraw || needsRelayout || needsReposition || forceRedraw) {
 					needsRedraw = false;
 					needsRelayout = false;
