@@ -2,12 +2,21 @@
 
 #include "child.hpp"
 #include "element.hpp"
+#include "key.hpp"
+#include "renderObject.hpp"
 #include "state.hpp"
 #include <functional>
+
 
 namespace squi::core {
 	struct StatelessWidget;
 	struct StatefulWidget;
+	struct RenderObjectWidget;
+
+	template<class T>
+	concept HasKey = requires(T a) {
+		requires std::is_base_of_v<Key, std::remove_cvref_t<decltype(a.key)>>;
+	};
 
 	template<class T>
 	concept StateLike = requires(T a) {
@@ -25,49 +34,69 @@ namespace squi::core {
 		{ a.build(std::declval<const Element &>()) } -> std::same_as<WidgetPtr>;
 	};
 
+	template<class T>
+	concept RenderObjectWidgetLike = requires(T a) {
+		{ a.createRenderObject() } -> std::same_as<std::shared_ptr<RenderObject>>;
+		{ a.updateRenderObject(std::declval<RenderObject *>()) } -> std::same_as<void>;
+	};
+
 	struct Widget {
 	private:
-		std::function<std::shared_ptr<Element>()> _createElement = nullptr;
-		std::function<std::shared_ptr<WidgetStateBase>()> _createState = nullptr;
-		std::function<WidgetPtr(const Element &)> _build = nullptr;
+		std::function<std::shared_ptr<Element>()> _createElementFunc = nullptr;
+		Key *_key = nullptr;
+		size_t _typeHash = 0;
 
 	public:
-		std::shared_ptr<Element> createElement() const {
-			assert(this->_createElement != nullptr);
-			return this->_createElement();
+		const Key &getKey() const {
+			if (_key == nullptr) {
+				return nullKey;
+			}
+			return *_key;
 		}
 
-		std::shared_ptr<WidgetStateBase> createState() const {
-			assert(this->_createState != nullptr);
-			return this->_createState();
+		size_t getTypeHash() const {
+			return this->_typeHash;
 		}
 
-		WidgetPtr build(const Element &element) const {
-			assert(this->_build != nullptr);
-			return this->_build(element);
+		std::shared_ptr<Element> _createElement() const {
+			assert(this->_createElementFunc != nullptr);
+			return this->_createElementFunc();
+		}
+
+		static bool canUpdate(const WidgetPtr &oldWidget, const WidgetPtr &newWidget) {
+			if (oldWidget && newWidget) {
+				return oldWidget->getTypeHash() == newWidget->getTypeHash() && oldWidget->getKey() == newWidget->getKey();
+			}
+			return false;
 		}
 
 		operator WidgetPtr(this auto &&self) {
 			using Self = std::remove_cvref_t<decltype(self)>;
 
+			self._typeHash = typeid(self).hash_code();
+
+
 			if constexpr (std::is_base_of_v<StatefulWidget, Self>) {
 				static_assert(StatefulWidgetLike<Self>, "StatefulWidget must be stateful");
 				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
+				if constexpr (HasKey<Self>) {
+					self._key = &widget->key;
+				}
 
-				widget->_createElement = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
+				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
 					return std::make_shared<StatefulElement>(ptr);
 				};
 
-				widget->_createState = []() -> std::shared_ptr<WidgetStateBase> {
+				widget->_createStateFunc = []() -> std::shared_ptr<WidgetStateBase> {
 					return std::make_shared<typename Self::State>();
 				};
 
-				widget->_build = [widget = std::weak_ptr<Self>(widget)](const Element &element) -> Child {
+				widget->_buildFunc = [widget = std::weak_ptr<Self>(widget)](const Element &element) -> WidgetPtr {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
-					return ptr->build(element);
+					return ptr->_build(element);
 				};
 
 				return widget;
@@ -75,10 +104,47 @@ namespace squi::core {
 				static_assert(StatelessWidgetLike<Self>, "StatelessWidget must be stateless");
 				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
 
-				widget->_createElement = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
+				if constexpr (HasKey<Self>) {
+					self._key = &widget->key;
+				}
+
+				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
 					return std::make_shared<StatelessElement>(ptr);
+				};
+
+				widget->_buildFunc = [widget = std::weak_ptr<Self>(widget)](const Element &element) -> WidgetPtr {
+					auto ptr = widget.lock();
+					assert(ptr != nullptr);
+					return ptr->build(element);
+				};
+
+				return widget;
+			} else if constexpr (std::is_base_of_v<RenderObjectWidget, Self>) {
+				static_assert(RenderObjectWidgetLike<Self>, "RenderObjectWidget must be render object widget");
+				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
+
+				if constexpr (HasKey<Self>) {
+					self._key = &widget->key;
+				}
+
+				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
+					auto ptr = widget.lock();
+					assert(ptr != nullptr);
+					return std::make_shared<RenderObjectElement>(ptr);
+				};
+
+				widget->_createRenderObjectFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<RenderObject> {
+					auto ptr = widget.lock();
+					assert(ptr != nullptr);
+					return ptr->createRenderObject();
+				};
+
+				widget->_updateRenderObjectFunc = [widget = std::weak_ptr<Self>(widget)](RenderObject *renderObject) -> void {
+					auto ptr = widget.lock();
+					assert(ptr != nullptr);
+					ptr->updateRenderObject(renderObject);
 				};
 
 				return widget;
@@ -88,20 +154,56 @@ namespace squi::core {
 		}
 	};
 
-	struct StatelessWidget : Widget {};
-	struct StatefulWidget : Widget {};
+	struct StatelessWidget : Widget {
+		std::function<WidgetPtr(const Element &)> _buildFunc = nullptr;
 
-	struct Stateful : StatefulWidget {
+		WidgetPtr _build(const Element &element) const {
+			assert(this->_buildFunc != nullptr);
+			return this->_buildFunc(element);
+		}
+	};
+
+	struct StatefulWidget : Widget {
+		std::function<std::shared_ptr<WidgetStateBase>()> _createStateFunc = nullptr;
+		std::function<WidgetPtr(const Element &)> _buildFunc = nullptr;
+
+		std::shared_ptr<WidgetStateBase> _createState() const {
+			assert(this->_createStateFunc != nullptr);
+			return this->_createStateFunc();
+		}
+
+		WidgetPtr _build(const Element &element) const {
+			assert(this->_buildFunc != nullptr);
+			return this->_buildFunc(element);
+		}
+	};
+
+	struct RenderObjectWidget : Widget {
+		std::function<std::shared_ptr<RenderObject>()> _createRenderObjectFunc = nullptr;
+		std::function<void(RenderObject *)> _updateRenderObjectFunc = nullptr;
+
+		std::shared_ptr<RenderObject> _createRenderObject() const {
+			assert(this->_createRenderObjectFunc != nullptr);
+			return this->_createRenderObjectFunc();
+		}
+
+		void _updateRenderObject(RenderObject *renderObject) const {
+			assert(this->_updateRenderObjectFunc != nullptr);
+			this->_updateRenderObjectFunc(renderObject);
+		}
+	};
+
+	struct StatefulTestWidget : StatefulWidget {
 		int b;
 
-		struct State : WidgetState<Stateful> {
+		struct State : WidgetState<StatefulTestWidget> {
 			Child build(const Element &element) override {
 				return {};
 			}
 		};
 	};
 
-	struct Stateless : StatelessWidget {
+	struct StatelessTestWidget : StatelessWidget {
 		int c;
 
 		Child build(const Element &element) const {
@@ -109,9 +211,22 @@ namespace squi::core {
 		}
 	};
 
+	struct RenderObjectTestWidget : RenderObjectWidget {
+		int d;
+
+		std::shared_ptr<RenderObject> createRenderObject() const {
+			return {};
+		}
+
+		void updateRenderObject(RenderObject *renderObject) const {
+			// Update render object properties here
+		}
+	};
+
 
 	void test() {
-		WidgetPtr a = Stateless{.c = 42};
-		WidgetPtr b = Stateful{.b = 24};
+		WidgetPtr a = StatelessTestWidget{.c = 42};
+		WidgetPtr b = StatefulTestWidget{.b = 24};
+		WidgetPtr c = RenderObjectTestWidget{.d = 12};
 	}
 }// namespace squi::core

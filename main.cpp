@@ -1,23 +1,10 @@
-#include "align.hpp"
-#include "window.hpp"
-
-#include "widgets/slider.hpp"
+#include "core/app.hpp"
 
 int main(int /*unused*/, char ** /*unused*/) {
-	using namespace squi;
+	using namespace squi::core;
 
-	squi::Window window{};
-	window.addChild(Align{
-		.child = Slider{
-			.minVal = 1.f,
-			.maxVal = 10.f,
-			.step = 1.f,
-			.valueChanged = [](float newVal) {
-				std::println("{}", newVal);
-			},
-		},
-	});
+	App app{};
+	app.run();
 
-	Window::run();
 	return 0;
 }

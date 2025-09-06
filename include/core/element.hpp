@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderObject.hpp"
 #include "state.hpp"
 #include <cassert>
 
@@ -24,10 +25,7 @@ namespace squi::core {
 
 		virtual void update(const WidgetPtr &newWidget) {
 			assert(this->mounted);
-			if (this->widget != newWidget) {
-				this->widget = newWidget;
-				this->dirty = true;
-			}
+			this->widget = newWidget;
 		}
 
 		virtual void rebuild() {
@@ -41,6 +39,14 @@ namespace squi::core {
 			this->parent = nullptr;
 			this->mounted = false;
 		}
+
+		void markNeedsRebuild() {
+			this->dirty = true;
+			// FIXME: add to a global dirty list for rebuild scheduling
+		}
+
+		ElementPtr updateChild(ElementPtr child, WidgetPtr newWidget);
+		void updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets);
 	};
 
 	struct ComponentElement : Element {
@@ -49,23 +55,46 @@ namespace squi::core {
 		ComponentElement(const WidgetPtr &widget) : Element(widget) {};
 
 		virtual void firstBuild();
+		virtual Child build() = 0;
 
-		void mount(Element *parent) override {
-			Element::mount(parent);
-			this->firstBuild();
-		}
+		void mount(Element *parent) override;
+		void rebuild() override;
+		void update(const WidgetPtr &newWidget) override;
+		void unmount() override;
 	};
 
 	struct StatelessElement : ComponentElement {
-		StatelessElement(const WidgetPtr &widget) : ComponentElement(widget) {};
+		StatelessElement(const StatelessWidgetPtr &widget);
 
-		void rebuild() override {
+		void update(const WidgetPtr &newWidget) override {
+			ComponentElement::update(newWidget);
 		}
+
+		Child build() override;
 	};
 
 	struct StatefulElement : ComponentElement {
 		std::shared_ptr<WidgetStateBase> state;
+		StatefulElement(const StatefulWidgetPtr &widget);
 
-		StatefulElement(const WidgetPtr &widget);
+		Child build() override;
+
+		void update(const WidgetPtr &newWidget) override;
+		void rebuild() override;
+		void unmount() override;
+	};
+
+	struct RenderObjectElement : Element {
+		std::shared_ptr<RenderObject> renderObject;
+
+		RenderObjectElement(const RenderObjectWidgetPtr &widget);
+
+		void mount(Element *parent) override;
+		void update(const WidgetPtr &newWidget) override;
+		void unmount() override;
+
+	private:
+		void attachRenderObject();
+		void detachRenderObject();
 	};
 }// namespace squi::core
