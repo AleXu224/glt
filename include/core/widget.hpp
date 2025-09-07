@@ -19,6 +19,12 @@ namespace squi::core {
 	};
 
 	template<class T>
+	concept HasElement = requires(T a) {
+		typename std::remove_cvref_t<T>::Element;
+		requires std::is_base_of_v<Element, typename std::remove_cvref_t<T>::Element>;
+	};
+
+	template<class T>
 	concept StateLike = requires(T a) {
 		{ a.build(std::declval<const Element &>()) } -> std::same_as<WidgetPtr>;
 	};
@@ -86,6 +92,9 @@ namespace squi::core {
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
+					if constexpr (HasElement<Self>) {
+						return std::make_shared<typename Self::Element>(ptr);
+					}
 					return std::make_shared<StatefulElement>(ptr);
 				};
 
@@ -111,6 +120,9 @@ namespace squi::core {
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
+					if constexpr (HasElement<Self>) {
+						return std::make_shared<typename Self::Element>(ptr);
+					}
 					return std::make_shared<StatelessElement>(ptr);
 				};
 
@@ -122,7 +134,7 @@ namespace squi::core {
 
 				return widget;
 			} else if constexpr (std::is_base_of_v<RenderObjectWidget, Self>) {
-				static_assert(RenderObjectWidgetLike<Self>, "RenderObjectWidget must be render object widget");
+				static_assert(RenderObjectWidgetLike<Self>, "RenderObjectWidget is missing required methods");
 				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
 
 				if constexpr (HasKey<Self>) {
@@ -132,6 +144,9 @@ namespace squi::core {
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
 					assert(ptr != nullptr);
+					if constexpr (HasElement<Self>) {
+						return std::make_shared<typename Self::Element>(ptr);
+					}
 					return std::make_shared<RenderObjectElement>(ptr);
 				};
 
@@ -184,7 +199,9 @@ namespace squi::core {
 
 		std::shared_ptr<RenderObject> _createRenderObject() const {
 			assert(this->_createRenderObjectFunc != nullptr);
-			return this->_createRenderObjectFunc();
+			auto ret = this->_createRenderObjectFunc();
+			assert(ret != nullptr);
+			return ret;
 		}
 
 		void _updateRenderObject(RenderObject *renderObject) const {
@@ -224,7 +241,7 @@ namespace squi::core {
 	};
 
 
-	void test() {
+	inline void _test() {
 		WidgetPtr a = StatelessTestWidget{.c = 42};
 		WidgetPtr b = StatefulTestWidget{.b = 24};
 		WidgetPtr c = RenderObjectTestWidget{.d = 12};

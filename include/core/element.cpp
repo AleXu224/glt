@@ -73,7 +73,7 @@ namespace squi::core {
 	StatelessElement::StatelessElement(const StatelessWidgetPtr &widget) : ComponentElement(widget) {};
 
 	Child StatelessElement::build() {
-		auto widget = std::dynamic_pointer_cast<StatelessWidget>(this->widget);
+		auto widget = std::static_pointer_cast<StatelessWidget>(this->widget);
 		assert(widget != nullptr);
 		return widget->_build(*this);
 	}
@@ -115,7 +115,7 @@ namespace squi::core {
 	void RenderObjectElement::mount(Element *parent) {
 		Element::mount(parent);
 
-		if (auto renderWidget = std::dynamic_pointer_cast<RenderObjectWidget>(widget)) {
+		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
 			renderObject = renderWidget->_createRenderObject();
 			attachRenderObject();
 		}
@@ -124,7 +124,7 @@ namespace squi::core {
 	void RenderObjectElement::update(const WidgetPtr &newWidget) {
 		Element::update(newWidget);
 
-		if (auto renderWidget = std::dynamic_pointer_cast<RenderObjectWidget>(newWidget)) {
+		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(newWidget)) {
 			renderWidget->_updateRenderObject(renderObject.get());
 		}
 	}
@@ -148,14 +148,16 @@ namespace squi::core {
 	}
 
 	void RenderObjectElement::attachRenderObject() {
-		// In a real implementation, this would attach to the render tree
 		auto ancestorElement = getAncestorRenderObjectElement(this);
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
-			ancestorElement->renderObject->appendChild(this->renderObject);
+			ancestorElement->renderObject->addChild(this->renderObject);
 		}
 	}
 
 	void RenderObjectElement::detachRenderObject() {
-		// In a real implementation, this would detach from the render tree
+		auto ancestorElement = getAncestorRenderObjectElement(this);
+		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
+			ancestorElement->renderObject->removeChild(this->renderObject);
+		}
 	}
 }// namespace squi::core

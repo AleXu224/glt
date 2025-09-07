@@ -25,7 +25,7 @@ namespace squi::core {
 		const T *widget = nullptr;
 
 		void setWidget(const std::shared_ptr<Widget> &newWidget) override {
-			this->widget = dynamic_cast<const T *>(newWidget.get());
+			this->widget = static_cast<const T *>(newWidget.get());
 			assert(this->widget != nullptr);
 		}
 	};
