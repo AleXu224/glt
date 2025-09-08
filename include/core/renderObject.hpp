@@ -1,7 +1,6 @@
 #pragma once
 
 #include "boxConstraints.hpp"
-#include "child.hpp"
 #include "memory"
 #include "vec2.hpp"
 #include "vector"
@@ -9,6 +8,8 @@
 
 
 namespace squi::core {
+	struct App;
+
 	enum class Size : uint8_t {
 		// Will expand to fill all the available space
 		Expand,
@@ -26,7 +27,7 @@ namespace squi::core {
 		Margin padding{};
 	};
 
-	struct RenderObject {
+	struct RenderObject : std::enable_shared_from_this<RenderObject> {
 		RenderObject *parent = nullptr;
 
 		vec2 size{};
@@ -46,6 +47,8 @@ namespace squi::core {
 			  padding(args.padding) {}
 		virtual ~RenderObject() = default;
 
+		App *getApp();
+
 		vec2 calculateSize(BoxConstraints constraints, bool final = false);
 		virtual vec2 calculateContentSize(BoxConstraints constraints, bool final);
 
@@ -63,6 +66,8 @@ namespace squi::core {
 		virtual void removeChild(std::shared_ptr<RenderObject> child) {
 			assert(false);// Can't remove children from this RenderObject
 		}
+
+		virtual void init() {}
 	};
 
 	struct SingleChildRenderObject : RenderObject {

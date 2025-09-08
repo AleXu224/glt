@@ -97,4 +97,18 @@ namespace squi::core {
 		void attachRenderObject();
 		void detachRenderObject();
 	};
+
+	struct SingleChildRenderObjectElement : RenderObjectElement {
+		ElementPtr child;
+
+		SingleChildRenderObjectElement(const RenderObjectWidgetPtr &widget) : RenderObjectElement(widget) {}
+
+		virtual void firstBuild();
+		virtual Child build() = 0;
+
+		void mount(Element *parent) override;
+		void rebuild() override;
+		void update(const WidgetPtr &newWidget) override;
+		void unmount() override;
+	};
 }// namespace squi::core

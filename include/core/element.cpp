@@ -160,4 +160,41 @@ namespace squi::core {
 			ancestorElement->renderObject->removeChild(this->renderObject);
 		}
 	}
+
+	// Single Child Render Object Element
+	void SingleChildRenderObjectElement::firstBuild() {
+		auto childWidget = build();
+		if (childWidget) {
+			this->child = childWidget->_createElement();
+			this->child->mount(this);
+		}
+	}
+
+	void SingleChildRenderObjectElement::mount(Element *parent) {
+		RenderObjectElement::mount(parent);
+
+		this->firstBuild();
+	}
+
+	void SingleChildRenderObjectElement::rebuild() {
+		assert(this->mounted);
+		auto newChildWidget = build();
+		if (newChildWidget) {
+			this->child->update(newChildWidget);
+		}
+		RenderObjectElement::rebuild();
+	}
+
+	void SingleChildRenderObjectElement::update(const WidgetPtr &newWidget) {
+		RenderObjectElement::update(newWidget);
+		rebuild();
+	}
+
+	void SingleChildRenderObjectElement::unmount() {
+		if (this->child) {
+			this->child->unmount();
+			this->child.reset();
+		}
+		RenderObjectElement::unmount();
+	}
 }// namespace squi::core

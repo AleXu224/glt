@@ -24,7 +24,7 @@ namespace squi::core {
 				}
 			}
 			// Add this widget if it's an InheritedWidget
-			if (auto inheritedWidget = std::dynamic_pointer_cast<InheritedWidget>(widget)) {
+			if (auto inheritedWidget = std::static_pointer_cast<InheritedWidget>(widget)) {
 				auto *rawPtr = inheritedWidget.get();
 				std::type_index typeIndex(typeid(*rawPtr));
 				dependencies[typeIndex] = inheritedWidget;
@@ -35,16 +35,16 @@ namespace squi::core {
 		std::shared_ptr<T> dependOnInheritedWidgetOfExactType() const {
 			auto it = dependencies.find(std::type_index(typeid(T)));
 			if (it != dependencies.end()) {
-				return std::dynamic_pointer_cast<T>(it->second);
+				return std::static_pointer_cast<T>(it->second);
 			}
 			return nullptr;
 		}
 
 		void update(const WidgetPtr &newWidget) override {
-			auto oldInheritedWidget = std::dynamic_pointer_cast<InheritedWidget>(widget);
+			auto oldInheritedWidget = std::static_pointer_cast<InheritedWidget>(widget);
 			ComponentElement::update(newWidget);
 
-			auto newInheritedWidget = std::dynamic_pointer_cast<InheritedWidget>(newWidget);
+			auto newInheritedWidget = std::static_pointer_cast<InheritedWidget>(newWidget);
 			if (newInheritedWidget) {
 				bool shouldNotify = !oldInheritedWidget || newInheritedWidget->updateShouldNotify(oldInheritedWidget.get());
 

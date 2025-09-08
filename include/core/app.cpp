@@ -195,7 +195,7 @@ namespace squi::core {
 	}
 
 	void RootWidget::Element::mount(squi::core::Element *parent) {
-		squi::core::Element::mount(parent);
+		squi::core::SingleChildRenderObjectElement::mount(parent);
 		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
 			renderObject = renderWidget->_createRenderObject();
 		}
@@ -203,6 +203,6 @@ namespace squi::core {
 
 	void RootWidget::Element::unmount() {
 		renderObject.reset();
-		squi::core::Element::unmount();
+		squi::core::SingleChildRenderObjectElement::unmount();
 	}
 }// namespace squi::core

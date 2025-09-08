@@ -1,15 +1,17 @@
 #pragma once
 
+#include "core/inputState.hpp"
 #include "engine/engine.hpp"
 #include "inputQueue.hpp"
-#include "inputState.hpp"
 #include "store/pipeline.hpp"
 #include "store/sampler.hpp"
 #include "widget.hpp"
 
 
 namespace squi::core {
+	struct App;
 	struct RootRenderObject : SingleChildRenderObject {
+		App *app = nullptr;
 	};
 
 	struct RootWidget : RenderObjectWidget {
@@ -24,8 +26,15 @@ namespace squi::core {
 			// Update render object properties here
 		}
 
-		struct Element : RenderObjectElement {
-			Element(const RenderObjectWidgetPtr &widget) : RenderObjectElement(widget) {}
+		struct Element : SingleChildRenderObjectElement {
+			Element(const RenderObjectWidgetPtr &widget) : SingleChildRenderObjectElement(widget) {}
+
+			Child build() override {
+				if (auto rootWidget = std::static_pointer_cast<RootWidget>(widget)) {
+					return rootWidget->child;
+				}
+				return nullptr;
+			}
 
 			void mount(::squi::core::Element *parent) override;
 			void unmount() override;
@@ -59,7 +68,11 @@ namespace squi::core {
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
 
-		std::shared_ptr<RootRenderObject> rootRenderObject = std::make_shared<RootRenderObject>();
+		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
+			auto ret = std::make_shared<RootRenderObject>();
+			ret->app = this;
+			return ret;
+		}();
 
 		ElementPtr rootElement = Child(RootWidget{.rootRenderObject = rootRenderObject, .child = child})->_createElement();
 

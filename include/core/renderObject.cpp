@@ -1,11 +1,22 @@
 #include "renderObject.hpp"
 
 #include "algorithm"
+#include "core/app.hpp"
 #include "utils.hpp"
 
 
 namespace squi::core {
 	// Render Object
+	App *RenderObject::getApp() {
+		auto obj = this;
+		while (obj->parent != nullptr && obj->parent != obj) {
+			obj = obj->parent;
+		}
+		auto root = dynamic_cast<RootRenderObject *>(obj);
+		assert(root != nullptr);
+		return root->app;
+	}
+
 	vec2 RenderObject::calculateSize(BoxConstraints extConstraints, bool final) {
 		const auto &intConstraints = sizeConstraints;
 
