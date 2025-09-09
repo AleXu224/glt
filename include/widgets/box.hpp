@@ -23,6 +23,17 @@ namespace squi {
 		bool shouldClipContent = true;
 		Child child;
 
+		struct Element : core::SingleChildRenderObjectElement {
+			Element(const RenderObjectWidgetPtr &widget) : SingleChildRenderObjectElement(widget) {}
+
+			Child build() override {
+				if (auto boxWidget = std::static_pointer_cast<Box>(widget)) {
+					return boxWidget->child;
+				}
+				return nullptr;
+			}
+		};
+
 		struct BoxRenderObject : core::SingleChildRenderObject {
 			std::unique_ptr<BoxData> data;
 

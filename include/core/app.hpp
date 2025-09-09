@@ -6,6 +6,7 @@
 #include "store/pipeline.hpp"
 #include "store/sampler.hpp"
 #include "widget.hpp"
+#include <unordered_set>
 
 
 namespace squi::core {
@@ -15,6 +16,7 @@ namespace squi::core {
 	};
 
 	struct RootWidget : RenderObjectWidget {
+		App *app = nullptr;
 		std::shared_ptr<RootRenderObject> rootRenderObject;
 		WidgetPtr child;
 
@@ -27,7 +29,11 @@ namespace squi::core {
 		}
 
 		struct Element : SingleChildRenderObjectElement {
-			Element(const RenderObjectWidgetPtr &widget) : SingleChildRenderObjectElement(widget) {}
+			App *app = nullptr;
+
+			Element(const std::shared_ptr<RootWidget> &widget) : SingleChildRenderObjectElement(widget) {
+				this->app = widget->app;
+			}
 
 			Child build() override {
 				if (auto rootWidget = std::static_pointer_cast<RootWidget>(widget)) {
@@ -68,13 +74,15 @@ namespace squi::core {
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
 
+		std::unordered_set<Element *> dirtyElements{};
+
 		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
 			auto ret = std::make_shared<RootRenderObject>();
 			ret->app = this;
 			return ret;
 		}();
 
-		ElementPtr rootElement = Child(RootWidget{.rootRenderObject = rootRenderObject, .child = child})->_createElement();
+		ElementPtr rootElement = Child(RootWidget{.app = this, .rootRenderObject = rootRenderObject, .child = child})->_createElement();
 
 		void run();
 	};

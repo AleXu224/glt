@@ -48,42 +48,18 @@ namespace squi {
 	void Box::updateRenderObject(RenderObject *renderObject) const {
 		if (auto boxRenderObject = dynamic_cast<BoxRenderObject *>(renderObject)) {
 			auto &quad = boxRenderObject->data->quad;
-			// .size{0, 0},
-			// 	.color = args.color,
-			// 	.borderRadiuses = args.borderRadius,
-			// 	.borderSizes = args.borderWidth,
-			// 	.borderColor = args.borderPosition == BorderPosition::inset ? args.borderColor.mix(args.color) : args.borderColor,
 			quad.color = this->color;
+			quad.borderColor = this->borderPosition == BorderPosition::inset ? this->borderColor.mix(this->color) : this->borderColor;
 
-			// auto &qRadius = data->quad.borderRadiuses;
-			// if (radius.topLeft == qRadius.topLeft
-			// 	&& radius.topRight == qRadius.topRight
-			// 	&& radius.bottomRight == qRadius.bottomRight
-			// 	&& radius.bottomLeft == qRadius.bottomLeft) return;
-			// qRadius.topLeft = radius.topLeft;
-			// qRadius.topRight = radius.topRight;
-			// qRadius.bottomRight = radius.bottomRight;
-			// qRadius.bottomLeft = radius.bottomLeft;
 			quad.borderRadiuses.topLeft = this->borderRadius.topLeft;
 			quad.borderRadiuses.topRight = this->borderRadius.topRight;
 			quad.borderRadiuses.bottomRight = this->borderRadius.bottomRight;
 			quad.borderRadiuses.bottomLeft = this->borderRadius.bottomLeft;
 
-			// auto &qWidth = data->quad.borderSizes;
-			// if (width.top == qWidth.top
-			// 	&& width.right == qWidth.right
-			// 	&& width.bottom == qWidth.bottom
-			// 	&& width.left == qWidth.left) return;
-			// qWidth.top = width.top;
-			// qWidth.right = width.right;
-			// qWidth.bottom = width.bottom;
-			// qWidth.left = width.left;
 			quad.borderSizes.top = this->borderWidth.top;
 			quad.borderSizes.right = this->borderWidth.right;
 			quad.borderSizes.bottom = this->borderWidth.bottom;
 			quad.borderSizes.left = this->borderWidth.left;
-
-			quad.borderColor = this->borderPosition == BorderPosition::inset ? this->borderColor.mix(this->color) : this->borderColor;
 		}
 	}
 }// namespace squi

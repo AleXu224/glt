@@ -110,6 +110,12 @@ namespace squi::core {
 					// }
 					// cleanupQueue.clear();
 
+					for (const auto &elem: dirtyElements) {
+						if (elem->mounted && elem->dirty)
+							elem->rebuild();
+					}
+					dirtyElements.clear();
+
 					if (needsRelayout) {
 						renderObject.calculateSize(
 							BoxConstraints{

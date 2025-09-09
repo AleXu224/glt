@@ -1,9 +1,23 @@
 #include "element.hpp"
 
+#include "core/app.hpp"
 #include "widget.hpp"
 
 namespace squi::core {
+
 	// Element
+	App *Element::getApp() {
+		assert(this->root != nullptr);
+		auto root = dynamic_cast<RootWidget *>(this->root);
+		assert(root);
+		return root->app;
+	}
+
+	void Element::markNeedsRebuild() {
+		this->dirty = true;
+		getApp()->dirtyElements.insert(this);
+	}
+
 	ElementPtr Element::updateChild(ElementPtr child, WidgetPtr newWidget) {
 		if (child->widget == newWidget) {
 			// No change

@@ -8,6 +8,7 @@ namespace squi::core {
 	struct Element : std::enable_shared_from_this<Element> {
 		WidgetPtr widget;
 		Element *parent = nullptr;
+		Element *root = nullptr;
 		bool dirty = true;
 		bool mounted = false;
 
@@ -20,6 +21,7 @@ namespace squi::core {
 		virtual void mount(Element *parent) {
 			this->dirty = true;
 			this->parent = parent;
+			this->root = parent ? parent->root : this;
 			this->mounted = true;
 		}
 
@@ -37,13 +39,13 @@ namespace squi::core {
 
 		virtual void unmount() {
 			this->parent = nullptr;
+			this->root = nullptr;
 			this->mounted = false;
 		}
 
-		void markNeedsRebuild() {
-			this->dirty = true;
-			// FIXME: add to a global dirty list for rebuild scheduling
-		}
+		App *getApp();
+
+		void markNeedsRebuild();
 
 		ElementPtr updateChild(ElementPtr child, WidgetPtr newWidget);
 		void updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets);
