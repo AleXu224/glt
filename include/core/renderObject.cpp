@@ -162,6 +162,12 @@ namespace squi::core {
 		}
 	}
 
+	void SingleChildRenderObject::drawContent() {
+		if (child) {
+			child->draw();
+		}
+	}
+
 	// Multi Child Render Object
 	vec2 MultiChildRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
 		vec2 contentSize{};
@@ -178,6 +184,12 @@ namespace squi::core {
 	void MultiChildRenderObject::positionContentAt(const vec2 &newPos) {
 		for (auto &child: children) {
 			child->positionAt(newPos);
+		}
+	}
+
+	void MultiChildRenderObject::drawContent() {
+		for (auto &child: children) {
+			child->draw();
 		}
 	}
 

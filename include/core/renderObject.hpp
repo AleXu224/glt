@@ -78,6 +78,8 @@ namespace squi::core {
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 		void positionContentAt(const vec2 &newPos) override;
 
+		void drawContent() override;
+
 		void addChild(std::shared_ptr<RenderObject> child) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
@@ -85,6 +87,7 @@ namespace squi::core {
 			assert(this->child == nullptr);// Can only have one child
 			this->child = child;
 			child->parent = this;
+			child->init();
 		}
 
 		void removeChild(std::shared_ptr<RenderObject> child) override {
@@ -102,12 +105,15 @@ namespace squi::core {
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 		void positionContentAt(const vec2 &newPos) override;
 
+		void drawContent() override;
+
 		void addChild(std::shared_ptr<RenderObject> child) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}
 			children.push_back(child);
 			child->parent = this;
+			child->init();
 		}
 
 		void removeChild(std::shared_ptr<RenderObject> child) override {
