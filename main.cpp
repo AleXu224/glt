@@ -16,7 +16,6 @@ struct ColorChanger : StatefulWidget {
 		Child build(const Element &element) override {
 			return GestureDetector{
 				.onClick = [this](auto) {
-					std::println("GestureDetector clicked!");
 					setState([this]() {
 						color = (color == Color::black) ? widget->color : Color::black;
 						expanded = !expanded;
@@ -35,17 +34,41 @@ struct ColorChanger : StatefulWidget {
 	};
 };
 
+struct Dragger : StatefulWidget {
+	// Args
+
+	struct State : WidgetState<Dragger> {
+		float width = 100.f;
+		float height = 100.f;
+
+		Child build(const Element &element) override {
+			return GestureDetector{
+				.onDrag = [this](GestureDetector::State state) {
+					auto delta = state.getDragDelta();
+					setState([&]() {
+						width += delta.x;
+						height += delta.y;
+					});
+				},
+				.child = Box{
+					.widget{
+						.width = width,
+						.height = height,
+					},
+					.child = ColorChanger{
+						.color = Color::silver,
+					},
+				},
+			};
+		}
+	};
+};
+
 struct Test : StatelessWidget {
 	// Args
 
 	Child build(const Element &) const {
-		return Box{
-			.widget{
-				.width = 100.f,
-				.height = 100.f,
-			},
-			.child = ColorChanger{},
-		};
+		return Dragger{};
 	}
 };
 

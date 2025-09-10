@@ -4,6 +4,31 @@
 #include <GLFW/glfw3.h>
 
 namespace squi {
+	const vec2 &GestureDetector::State::getScroll() const {
+		return scrollDelta;
+	}
+
+	vec2 GestureDetector::State::getDragDelta() const {
+		if (!inputState) return {};
+		if (!focused || inputState->g_cursorPos == dragStart) return vec2{0};
+		return inputState->mouseDelta;
+	}
+
+	vec2 GestureDetector::State::getDragOffset() const {
+		if (!inputState) return {};
+		if (!focused) return vec2{0};
+		return inputState->g_cursorPos - dragStart;
+	}
+
+	const vec2 &GestureDetector::State::getDragStartPos() const {
+		return dragStart;
+	}
+
+	vec2 squi::GestureDetector::State::getCursorPos() const {
+		if (!inputState) return {};
+		return inputState->g_cursorPos;
+	}
+
 	void GestureDetector::DetectorRenderObject::update() {
 		auto app = getApp();
 		assert(app);
@@ -60,6 +85,13 @@ namespace squi {
 			state.textInput.clear();
 
 		if (widget.onUpdate) widget.onUpdate(state);
+	}
+
+	void GestureDetector::DetectorRenderObject::init() {
+		auto *app = this->getApp();
+		if (!app) return;
+
+		state.inputState = &app->inputState;
 	}
 
 	bool GestureDetector::DetectorRenderObject::canClick() const {
