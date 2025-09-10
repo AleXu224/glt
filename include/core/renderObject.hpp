@@ -2,13 +2,17 @@
 
 #include "boxConstraints.hpp"
 #include "memory"
+#include "rect.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include <functional>
 #include <variant>
 
 
 namespace squi::core {
 	struct App;
+	struct RenderObjectWidget;
+	struct RenderObjectElement;
 
 	enum class Size : uint8_t {
 		// Will expand to fill all the available space
@@ -28,26 +32,22 @@ namespace squi::core {
 	};
 
 	struct RenderObject : std::enable_shared_from_this<RenderObject> {
+		RenderObjectElement *element = nullptr;
 		RenderObject *parent = nullptr;
 
 		vec2 size{};
 		vec2 pos{};
 
-		std::variant<float, Size> width;
-		std::variant<float, Size> height;
-		BoxConstraints sizeConstraints;
-		Margin margin;
-		Margin padding;
+		std::variant<float, Size> width = Size::Expand;
+		std::variant<float, Size> height = Size::Expand;
+		BoxConstraints sizeConstraints{};
+		Margin margin{};
+		Margin padding{};
 
-		RenderObject(const Args &args = Args{})
-			: width(args.width),
-			  height(args.height),
-			  sizeConstraints(args.sizeConstraints),
-			  margin(args.margin),
-			  padding(args.padding) {}
+		RenderObject() {}
 		virtual ~RenderObject() = default;
 
-		App *getApp();
+		App *getApp() const;
 
 		vec2 calculateSize(BoxConstraints constraints, bool final = false);
 		virtual vec2 calculateContentSize(BoxConstraints constraints, bool final);
@@ -59,6 +59,12 @@ namespace squi::core {
 		virtual void drawSelf() {}
 		virtual void drawContent() {}
 
+		[[nodiscard]] Rect getRect() const;
+		[[nodiscard]] Rect getContentRect() const;
+		[[nodiscard]] Rect getLayoutRect() const;
+
+		virtual void iterateChildren(const std::function<void(RenderObject *)> &callback) {}
+
 		virtual void addChild(std::shared_ptr<RenderObject> child) {
 			assert(false);// Can't add children to this RenderObject
 		}
@@ -67,18 +73,34 @@ namespace squi::core {
 			assert(false);// Can't remove children from this RenderObject
 		}
 
+		void initRenderObject();
+		void updateWidgetArgs(const Args &args);
 		virtual void init() {}
+
+		RenderObjectWidget *getWidget() const;
+
+		template<class T>
+		T *getWidgetAs() const {
+			return static_cast<T *>(this->getWidget());
+		}
 	};
 
 	struct SingleChildRenderObject : RenderObject {
 		std::shared_ptr<RenderObject> child;
 
-		SingleChildRenderObject(const Args &args = Args{}) : RenderObject(args) {}
+		SingleChildRenderObject() : RenderObject() {}
 
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 		void positionContentAt(const vec2 &newPos) override;
 
 		void drawContent() override;
+
+		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
+			if (child) {
+				callback(child.get());
+				child->iterateChildren(callback);
+			}
+		}
 
 		void addChild(std::shared_ptr<RenderObject> child) override {
 			if (child->parent) {
@@ -87,7 +109,7 @@ namespace squi::core {
 			assert(this->child == nullptr);// Can only have one child
 			this->child = child;
 			child->parent = this;
-			child->init();
+			child->initRenderObject();
 		}
 
 		void removeChild(std::shared_ptr<RenderObject> child) override {
@@ -100,12 +122,19 @@ namespace squi::core {
 	struct MultiChildRenderObject : RenderObject {
 		std::vector<std::shared_ptr<RenderObject>> children;
 
-		MultiChildRenderObject(const Args &args = Args{}) : RenderObject(args) {}
+		MultiChildRenderObject() : RenderObject() {}
 
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 		void positionContentAt(const vec2 &newPos) override;
 
 		void drawContent() override;
+
+		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
+			for (const auto &child: children) {
+				callback(child.get());
+				child->iterateChildren(callback);
+			}
+		}
 
 		void addChild(std::shared_ptr<RenderObject> child) override {
 			if (child->parent) {
@@ -113,7 +142,7 @@ namespace squi::core {
 			}
 			children.push_back(child);
 			child->parent = this;
-			child->init();
+			child->initRenderObject();
 		}
 
 		void removeChild(std::shared_ptr<RenderObject> child) override {

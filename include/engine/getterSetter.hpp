@@ -21,9 +21,13 @@ namespace Engine {
 			return std::get<0>(obj).get();
 		}
 
-        operator const type &() const {
-            return std::get<0>(obj).get();
-        }
+		auto &&operator*(this auto &self) {
+			return std::get<0>(self.obj).get();
+		}
+
+		operator const type &() const {
+			return std::get<0>(obj).get();
+		}
 
 		GetterSetter(const GetterSetter &) = delete;
 		GetterSetter(GetterSetter &) = delete;

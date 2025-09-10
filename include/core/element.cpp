@@ -8,7 +8,7 @@ namespace squi::core {
 	// Element
 	App *Element::getApp() {
 		assert(this->root != nullptr);
-		auto root = dynamic_cast<RootWidget *>(this->root);
+		auto root = dynamic_cast<RootWidget::Element *>(this->root);
 		assert(root);
 		return root->app;
 	}
@@ -19,11 +19,21 @@ namespace squi::core {
 	}
 
 	ElementPtr Element::updateChild(ElementPtr child, WidgetPtr newWidget) {
+		if (!child)
+			return nullptr;
 		if (child->widget == newWidget) {
 			// No change
 			return child;
 		}
-		if (child && newWidget && child->widget && Widget::canUpdate(child->widget, newWidget)) {
+
+		if (!newWidget) {
+			if (child) {
+				child->unmount();
+			}
+			return nullptr;
+		}
+
+		if (child && child->widget && Widget::canUpdate(child->widget, newWidget)) {
 			// Same widget type, update in place
 			child->update(newWidget);
 			return child;
@@ -64,9 +74,7 @@ namespace squi::core {
 	void ComponentElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		if (newChildWidget) {
-			this->child->update(newChildWidget);
-		}
+		updateChild(this->child, newChildWidget);
 		Element::rebuild();
 	}
 
@@ -131,6 +139,7 @@ namespace squi::core {
 
 		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
 			renderObject = renderWidget->_createRenderObject();
+			renderObject->element = this;
 			attachRenderObject();
 		}
 	}
@@ -139,6 +148,7 @@ namespace squi::core {
 		Element::update(newWidget);
 
 		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(newWidget)) {
+			renderObject->updateWidgetArgs(renderWidget->_getWidgetArgs());
 			renderWidget->_updateRenderObject(renderObject.get());
 		}
 	}
@@ -193,9 +203,7 @@ namespace squi::core {
 	void SingleChildRenderObjectElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		if (newChildWidget) {
-			this->child->update(newChildWidget);
-		}
+		updateChild(this->child, newChildWidget);
 		RenderObjectElement::rebuild();
 	}
 

@@ -7,12 +7,12 @@
 
 namespace squi::core {
 	// Render Object
-	App *RenderObject::getApp() {
+	App *RenderObject::getApp() const {
 		auto obj = this;
 		while (obj->parent != nullptr && obj->parent != obj) {
 			obj = obj->parent;
 		}
-		auto root = dynamic_cast<RootRenderObject *>(obj);
+		auto root = dynamic_cast<const RootRenderObject *>(obj);
 		assert(root != nullptr);
 		return root->app;
 	}
@@ -146,6 +146,63 @@ namespace squi::core {
 	void RenderObject::draw() {
 		drawSelf();
 		drawContent();
+	}
+
+	Rect RenderObject::getRect() const {
+		return Rect::fromPosSize(pos + margin.getPositionOffset(), size);
+	}
+
+	Rect RenderObject::getContentRect() const {
+		return Rect::fromPosSize(
+			pos + margin.getPositionOffset() + padding.getPositionOffset(),
+			size - padding.getSizeOffset()
+		);
+	}
+
+	Rect RenderObject::getLayoutRect() const {
+		return Rect::fromPosSize(
+			pos,
+			size + margin.getSizeOffset()
+		);
+	}
+
+	void RenderObject::initRenderObject() {
+		auto &widget = this->element->widget;
+		if (auto renderObjectWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
+			this->updateWidgetArgs(renderObjectWidget->_getWidgetArgs());
+		}
+
+		init();
+	}
+
+	void RenderObject::updateWidgetArgs(const Args &args) {
+		auto *app = this->getApp();
+
+		if (width != args.width) {
+			width = args.width;
+			app->needsRelayout = true;
+		}
+		if (height != args.height) {
+			height = args.height;
+			app->needsRelayout = true;
+		}
+		if (sizeConstraints != args.sizeConstraints) {
+			sizeConstraints = args.sizeConstraints;
+			app->needsRelayout = true;
+		}
+		if (margin != args.margin) {
+			margin = args.margin;
+			app->needsRelayout = true;
+		}
+		if (padding != args.padding) {
+			padding = args.padding;
+			app->needsRelayout = true;
+		}
+	}
+
+	RenderObjectWidget *RenderObject::getWidget() const {
+		if (!element || !element->widget) return nullptr;
+		return static_cast<RenderObjectWidget *>(element->widget.get());
 	}
 
 	// Single Child Render Object

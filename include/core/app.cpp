@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "fontStore.hpp"
+#include "widgets/gestureDetector.hpp"
 #include <GLFW/glfw3.h>
 
 
@@ -102,6 +103,12 @@ namespace squi::core {
 						vec2{static_cast<float>(width), static_cast<float>(height)}
 					);
 
+					renderObject.iterateChildren([](RenderObject *child) {
+						if (auto *element = dynamic_cast<GestureDetector::DetectorRenderObject *>(child)) {
+							element->update();
+						}
+					});
+
 					// for (const auto &[_, ptr]: cleanupQueue) {
 					// 	auto w = ptr.lock();
 					// 	if (w) {
@@ -110,11 +117,16 @@ namespace squi::core {
 					// }
 					// cleanupQueue.clear();
 
+					// if (!dirtyElements.empty()) {
+					// 	std::println("Has dirty elements");
+					// }
 					for (const auto &elem: dirtyElements) {
 						if (elem->mounted && elem->dirty)
 							elem->rebuild();
 					}
 					dirtyElements.clear();
+
+					// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
 
 					if (needsRelayout) {
 						renderObject.calculateSize(

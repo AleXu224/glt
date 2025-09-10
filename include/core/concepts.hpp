@@ -20,6 +20,16 @@ namespace squi::core {
 	};
 
 	template<class T>
+	concept HasWidgetArgs = requires(T a) {
+		{ a.widget } -> std::same_as<Args&>;
+	};
+
+	template<class T>
+	concept HasWidgetArgsGetter = requires(T a) {
+		{ a.getArgs() } -> std::same_as<Args>;
+	};
+
+	template<class T>
 	concept HasChild = requires(T a) {
 		{ a.child } -> std::same_as<Child>;
 	};

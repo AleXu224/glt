@@ -8,7 +8,7 @@
 #include "vector"
 
 
-namespace squi {
+namespace squi::core {
 	struct KeyState {
 		int action;
 		int mods;
@@ -23,6 +23,8 @@ namespace squi {
 		std::string g_textInput{};
 		vec2 g_scrollDelta{0};
 		std::vector<Rect> g_hitCheckRects{};
+		// The area that can be currently interacted with
+		// Take a scrollable for example: the content that is scrolled away is not interactable
 		std::vector<Rect> g_activeArea{};
 		vec2 g_dpi{96};
 		bool g_cursorInside{false};
@@ -42,4 +44,4 @@ namespace squi {
 		[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
 		[[nodiscard]] bool isKeyDown(int key) const;
 	};
-}// namespace squi
+}// namespace squi::core

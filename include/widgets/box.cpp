@@ -9,12 +9,12 @@
 
 
 namespace squi {
-	Box::BoxRenderObject::BoxRenderObject(Args args)
-		: core::SingleChildRenderObject(args),
-		  data(std::make_unique<BoxData>(Engine::Quad::Args{})) {}
+	Box::BoxRenderObject::BoxRenderObject() : data(std::make_unique<BoxData>(Engine::Quad::Args{})) {}
 
 	void Box::BoxRenderObject::init() {
 		auto app = this->getApp();
+
+		this->getWidgetAs<Box>()->updateRenderObject(this);
 
 		this->data->pipeline = app->pipelineStore.getPipeline(Store::PipelineProvider<BoxPipeline>{
 			.key = "squiBoxPipeline",
@@ -40,26 +40,47 @@ namespace squi {
 	}
 
 	std::shared_ptr<RenderObject> Box::createRenderObject() const {
-		auto ret = std::make_shared<BoxRenderObject>(widget);
-		this->updateRenderObject(ret.get());
-		return ret;
+		return std::make_shared<BoxRenderObject>();
 	}
 
 	void Box::updateRenderObject(RenderObject *renderObject) const {
 		if (auto boxRenderObject = dynamic_cast<BoxRenderObject *>(renderObject)) {
+			auto *app = renderObject->getApp();
+
 			auto &quad = boxRenderObject->data->quad;
-			quad.color = this->color;
-			quad.borderColor = this->borderPosition == BorderPosition::inset ? this->borderColor.mix(this->color) : this->borderColor;
+			if (*quad.color != this->color) {
+				quad.color = this->color;
+				app->needsRedraw = true;
+			}
+			auto newBorderColor = this->borderPosition == BorderPosition::inset ? this->borderColor.mix(this->color) : this->borderColor;
+			if (*quad.borderColor != newBorderColor) {
+				quad.borderColor = newBorderColor;
+				app->needsRedraw = true;
+			}
 
-			quad.borderRadiuses.topLeft = this->borderRadius.topLeft;
-			quad.borderRadiuses.topRight = this->borderRadius.topRight;
-			quad.borderRadiuses.bottomRight = this->borderRadius.bottomRight;
-			quad.borderRadiuses.bottomLeft = this->borderRadius.bottomLeft;
+			if (this->borderRadius.topLeft != quad.borderRadiuses.topLeft
+				|| this->borderRadius.topRight != quad.borderRadiuses.topRight
+				|| this->borderRadius.bottomRight != quad.borderRadiuses.bottomRight
+				|| this->borderRadius.bottomLeft != quad.borderRadiuses.bottomLeft) {
+				quad.borderRadiuses.topLeft = this->borderRadius.topLeft;
+				quad.borderRadiuses.topRight = this->borderRadius.topRight;
+				quad.borderRadiuses.bottomRight = this->borderRadius.bottomRight;
+				quad.borderRadiuses.bottomLeft = this->borderRadius.bottomLeft;
 
-			quad.borderSizes.top = this->borderWidth.top;
-			quad.borderSizes.right = this->borderWidth.right;
-			quad.borderSizes.bottom = this->borderWidth.bottom;
-			quad.borderSizes.left = this->borderWidth.left;
+				app->needsRedraw = true;
+			}
+
+			if (this->borderWidth.top != quad.borderSizes.top
+				|| this->borderWidth.right != quad.borderSizes.right
+				|| this->borderWidth.bottom != quad.borderSizes.bottom
+				|| this->borderWidth.left != quad.borderSizes.left) {
+				quad.borderSizes.top = this->borderWidth.top;
+				quad.borderSizes.right = this->borderWidth.right;
+				quad.borderSizes.bottom = this->borderWidth.bottom;
+				quad.borderSizes.left = this->borderWidth.left;
+
+				app->needsRedraw = true;
+			}
 		}
 	}
 }// namespace squi

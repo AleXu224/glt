@@ -14,6 +14,15 @@ namespace squi::core {
 		bool shrinkWidth = false;
 		bool shrinkHeight = false;
 
+		bool operator==(const BoxConstraints &other) const {
+			return minWidth == other.minWidth
+				&& maxWidth == other.maxWidth
+				&& minHeight == other.minHeight
+				&& maxHeight == other.maxHeight
+				&& shrinkWidth == other.shrinkWidth
+				&& shrinkHeight == other.shrinkHeight;
+		}
+
 		void extendToFitMarginPadding(const Margin &margin, const Margin &padding) {
 			auto marginSize = margin.getSizeOffset();
 			auto paddingSize = padding.getSizeOffset();

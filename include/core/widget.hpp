@@ -106,7 +106,25 @@ namespace squi::core {
 				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
 
 				if constexpr (HasKey<Self>) {
-					self._key = &widget->key;
+					widget->_key = &widget->key;
+				}
+
+				if constexpr (HasWidgetArgsGetter<Self>) {
+					widget->_getWidgetArgsFunc = [widget = std::weak_ptr<Self>(widget)]() -> Args {
+						auto ptr = widget.lock();
+						assert(ptr != nullptr);
+						return ptr->getArgs();
+					};
+				} else if constexpr (HasWidgetArgs<Self>) {
+					widget->_getWidgetArgsFunc = [widget = std::weak_ptr<Self>(widget)]() -> Args {
+						auto ptr = widget.lock();
+						assert(ptr != nullptr);
+						return ptr->widget;
+					};
+				} else {
+					widget->_getWidgetArgsFunc = []() -> Args {
+						return {};
+					};
 				}
 
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
@@ -164,6 +182,7 @@ namespace squi::core {
 	struct RenderObjectWidget : Widget {
 		std::function<std::shared_ptr<RenderObject>()> _createRenderObjectFunc = nullptr;
 		std::function<void(RenderObject *)> _updateRenderObjectFunc = nullptr;
+		std::function<Args()> _getWidgetArgsFunc = nullptr;
 
 		std::shared_ptr<RenderObject> _createRenderObject() const {
 			assert(this->_createRenderObjectFunc != nullptr);
@@ -175,6 +194,11 @@ namespace squi::core {
 		void _updateRenderObject(RenderObject *renderObject) const {
 			assert(this->_updateRenderObjectFunc != nullptr);
 			this->_updateRenderObjectFunc(renderObject);
+		}
+
+		Args _getWidgetArgs() const {
+			assert(this->_getWidgetArgsFunc != nullptr);
+			return this->_getWidgetArgsFunc();
 		}
 	};
 
@@ -206,8 +230,11 @@ namespace squi::core {
 		void updateRenderObject(RenderObject *renderObject) const {
 			// Update render object properties here
 		}
-	};
 
+		Args getArgs() const {
+			return {};
+		}
+	};
 
 	inline void _test() {
 		WidgetPtr a = StatelessTestWidget{.c = 42};

@@ -39,7 +39,7 @@ namespace squi {
 
 			bool shouldClipContent = true;
 
-			BoxRenderObject(Args args = Args{});
+			BoxRenderObject();
 
 			void init() override;
 			void drawSelf() override;
