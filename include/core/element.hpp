@@ -113,4 +113,18 @@ namespace squi::core {
 		void update(const WidgetPtr &newWidget) override;
 		void unmount() override;
 	};
+
+	struct MultiChildRenderObjectElement : RenderObjectElement {
+		std::vector<ElementPtr> children;
+
+		MultiChildRenderObjectElement(const RenderObjectWidgetPtr &widget) : RenderObjectElement(widget) {}
+
+		virtual void firstBuild();
+		virtual std::vector<Child> build() = 0;
+
+		void mount(Element *parent) override;
+		void rebuild() override;
+		void update(const WidgetPtr &newWidget) override;
+		void unmount() override;
+	};
 }// namespace squi::core

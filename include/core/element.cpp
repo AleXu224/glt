@@ -219,4 +219,6 @@ namespace squi::core {
 		}
 		RenderObjectElement::unmount();
 	}
+
+	// Multi Child Render Object Element
 }// namespace squi::core
