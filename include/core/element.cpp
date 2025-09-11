@@ -2,6 +2,7 @@
 
 #include "core/app.hpp"
 #include "widget.hpp"
+#include <map>
 
 namespace squi::core {
 
@@ -18,14 +19,7 @@ namespace squi::core {
 		getApp()->dirtyElements.insert(this);
 	}
 
-	ElementPtr Element::updateChild(ElementPtr child, WidgetPtr newWidget) {
-		if (!child)
-			return nullptr;
-		if (child->widget == newWidget) {
-			// No change
-			return child;
-		}
-
+	ElementPtr Element::updateChild(ElementPtr child, WidgetPtr newWidget, size_t index) {
 		if (!newWidget) {
 			if (child) {
 				child->unmount();
@@ -33,8 +27,15 @@ namespace squi::core {
 			return nullptr;
 		}
 
+		if (child && child->widget == newWidget) {
+			if (child->index != index) child->updateIndex(index);
+			// No change
+			return child;
+		}
+
 		if (child && child->widget && Widget::canUpdate(child->widget, newWidget)) {
 			// Same widget type, update in place
+			if (child->index != index) child->updateIndex(index);
 			child->update(newWidget);
 			return child;
 		} else {
@@ -42,18 +43,112 @@ namespace squi::core {
 			if (child) {
 				child->unmount();
 			}
-			if (newWidget) {
-				auto newChild = newWidget->_createElement();
-				newChild->mount(this);
-				return newChild;
-			} else {
-				return nullptr;
-			}
+			auto newChild = newWidget->_createElement();
+			newChild->mount(this, index);
+			return newChild;
 		}
 	}
 
+	void Element::updateIndex(size_t index) {
+		this->index = index;
+	}
+
+	// Implementation is straight up copied from Flutter
 	void Element::updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets) {
-		// FIXME: implement this
+		int64_t newChildrenTop = 0;
+		int64_t oldChildrenTop = 0;
+		int64_t newChildrenBottom = static_cast<int64_t>(newWidgets.size()) - 1;
+		int64_t oldChildrenBottom = static_cast<int64_t>(oldChildren.size()) - 1;
+
+		std::vector<ElementPtr> newChildren(newWidgets.size(), nullptr);
+
+		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
+			auto &oldChild = oldChildren.at(oldChildrenTop);
+			auto &newWidget = newWidgets.at(newChildrenTop);
+
+			if (!Widget::canUpdate(oldChild->widget, newWidget)) {
+				break;
+			}
+
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+
+			newChildren.at(newChildrenTop) = newChild;
+			newChildrenTop++;
+			oldChildrenTop++;
+		}
+
+		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
+			auto &oldChild = oldChildren.at(oldChildrenBottom);
+			auto &newWidget = newWidgets.at(newChildrenBottom);
+
+			if (!Widget::canUpdate(oldChild->widget, newWidget)) {
+				break;
+			}
+
+			oldChildrenBottom--;
+			newChildrenBottom--;
+		}
+
+		std::vector<ElementPtr> childrenToRemove{};
+
+		bool haveOldChildren = oldChildrenTop <= oldChildrenBottom;
+		std::map<size_t, ElementPtr> oldKeyedChildren{};
+		if (haveOldChildren) {
+			while (oldChildrenTop <= oldChildrenBottom) {
+				auto &oldChild = oldChildren.at(oldChildrenTop);
+				if (oldChild->widget->getKey() != nullptr) {
+					oldKeyedChildren[oldChild->widget->getKey().hash()] = oldChild;
+				} else {
+					childrenToRemove.push_back(oldChild);
+				}
+				oldChildrenTop++;
+			}
+		}
+
+		while (newChildrenTop <= newChildrenBottom) {
+			ElementPtr oldChild = nullptr;
+			auto &newWidget = newWidgets.at(newChildrenTop);
+			if (haveOldChildren) {
+				auto &key = newWidget->getKey();
+				if (key != nullptr && oldKeyedChildren.contains(key.hash())) {
+					oldChild = oldKeyedChildren[key.hash()];
+					if (Widget::canUpdate(oldChild->widget, newWidget)) {
+						oldKeyedChildren.erase(key.hash());
+					} else {
+						oldChild.reset();
+					}
+				}
+			}
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+			newChildren.at(newChildrenTop) = newChild;
+			newChildrenTop++;
+		}
+
+		newChildrenBottom = static_cast<int64_t>(newWidgets.size()) - 1;
+		oldChildrenBottom = static_cast<int64_t>(oldChildren.size()) - 1;
+
+		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
+			auto &oldChild = oldChildren.at(oldChildrenTop);
+			auto &newWidget = newWidgets.at(newChildrenTop);
+
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+
+			newChildren.at(newChildrenTop) = newChild;
+			newChildrenTop++;
+			oldChildrenTop++;
+		}
+
+		if (haveOldChildren && !oldKeyedChildren.empty()) {
+			for (const auto &[key, oldChild]: oldKeyedChildren) {
+				childrenToRemove.push_back(oldChild);
+			}
+		}
+
+		for (const auto &child: childrenToRemove) {
+			child->unmount();
+		}
+
+		oldChildren = std::move(newChildren);
 	}
 
 	// Component Element
@@ -61,12 +156,12 @@ namespace squi::core {
 		auto childWidget = build();
 		if (childWidget) {
 			this->child = childWidget->_createElement();
-			this->child->mount(this);
+			this->child->mount(this, this->index);
 		}
 	}
 
-	void ComponentElement::mount(Element *parent) {
-		Element::mount(parent);
+	void ComponentElement::mount(Element *parent, size_t index) {
+		Element::mount(parent, index);
 
 		this->firstBuild();
 	}
@@ -74,7 +169,7 @@ namespace squi::core {
 	void ComponentElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		updateChild(this->child, newChildWidget);
+		updateChild(this->child, newChildWidget, this->index);
 		Element::rebuild();
 	}
 
@@ -89,6 +184,11 @@ namespace squi::core {
 			this->child.reset();
 		}
 		Element::unmount();
+	}
+
+	void ComponentElement::updateIndex(size_t index) {
+		Element::updateIndex(index);
+		this->child->updateIndex(index);
 	}
 
 	// Stateless Element
@@ -134,8 +234,8 @@ namespace squi::core {
 	// Render Object Element
 	RenderObjectElement::RenderObjectElement(const RenderObjectWidgetPtr &widget) : Element(widget) {}
 
-	void RenderObjectElement::mount(Element *parent) {
-		Element::mount(parent);
+	void RenderObjectElement::mount(Element *parent, size_t index) {
+		Element::mount(parent, index);
 
 		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
 			renderObject = renderWidget->_createRenderObject();
@@ -159,6 +259,12 @@ namespace squi::core {
 		Element::unmount();
 	}
 
+	void RenderObjectElement::updateIndex(size_t index) {
+		Element::updateIndex(index);
+		this->detachRenderObject();
+		this->attachRenderObject();
+	}
+
 	RenderObjectElement *getAncestorRenderObjectElement(Element *element) {
 		Element *ancestor = element->parent;
 		while (ancestor) {
@@ -174,7 +280,7 @@ namespace squi::core {
 	void RenderObjectElement::attachRenderObject() {
 		auto ancestorElement = getAncestorRenderObjectElement(this);
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
-			ancestorElement->renderObject->addChild(this->renderObject);
+			ancestorElement->renderObject->addChild(this->renderObject, this->index);
 		}
 	}
 
@@ -190,12 +296,12 @@ namespace squi::core {
 		auto childWidget = build();
 		if (childWidget) {
 			this->child = childWidget->_createElement();
-			this->child->mount(this);
+			this->child->mount(this, 0);
 		}
 	}
 
-	void SingleChildRenderObjectElement::mount(Element *parent) {
-		RenderObjectElement::mount(parent);
+	void SingleChildRenderObjectElement::mount(Element *parent, size_t index) {
+		RenderObjectElement::mount(parent, index);
 
 		this->firstBuild();
 	}
@@ -203,7 +309,7 @@ namespace squi::core {
 	void SingleChildRenderObjectElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		updateChild(this->child, newChildWidget);
+		updateChild(this->child, newChildWidget, 0);
 		RenderObjectElement::rebuild();
 	}
 

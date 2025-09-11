@@ -21,11 +21,11 @@ namespace squi::core {
 		size_t _typeHash = 0;
 
 	public:
-		const Key &getKey() const {
-			if (_key == nullptr) {
-				return nullKey;
+		const KeyBase &getKey() const {
+			if (_key == nullptr || *_key == nullptr) {
+				return *nullKey;
 			}
-			return *_key;
+			return **_key;
 		}
 
 		size_t getTypeHash() const {
@@ -48,14 +48,12 @@ namespace squi::core {
 			using Self = std::remove_cvref_t<decltype(self)>;
 
 			self._typeHash = typeid(self).hash_code();
-
+			static_assert(HasKey<Self>, "Widget requires a key");
+			auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
+			widget->_key = &widget->key;
 
 			if constexpr (std::is_base_of_v<StatefulWidget, Self>) {
 				static_assert(StatefulWidgetLike<Self>, "StatefulWidget must be stateful");
-				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
-				if constexpr (HasKey<Self>) {
-					self._key = &widget->key;
-				}
 
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
@@ -79,11 +77,6 @@ namespace squi::core {
 				return widget;
 			} else if constexpr (std::is_base_of_v<StatelessWidget, Self>) {
 				static_assert(StatelessWidgetLike<Self>, "StatelessWidget must be stateless");
-				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
-
-				if constexpr (HasKey<Self>) {
-					self._key = &widget->key;
-				}
 
 				widget->_createElementFunc = [widget = std::weak_ptr<Self>(widget)]() -> std::shared_ptr<Element> {
 					auto ptr = widget.lock();
@@ -103,11 +96,6 @@ namespace squi::core {
 				return widget;
 			} else if constexpr (std::is_base_of_v<RenderObjectWidget, Self>) {
 				static_assert(RenderObjectWidgetLike<Self>, "RenderObjectWidget is missing required methods");
-				auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
-
-				if constexpr (HasKey<Self>) {
-					widget->_key = &widget->key;
-				}
 
 				if constexpr (HasWidgetArgsGetter<Self>) {
 					widget->_getWidgetArgsFunc = [widget = std::weak_ptr<Self>(widget)]() -> Args {
@@ -203,6 +191,7 @@ namespace squi::core {
 	};
 
 	struct StatefulTestWidget : StatefulWidget {
+		Key key;
 		int b;
 
 		struct State : WidgetState<StatefulTestWidget> {
@@ -213,6 +202,7 @@ namespace squi::core {
 	};
 
 	struct StatelessTestWidget : StatelessWidget {
+		Key key;
 		int c;
 
 		Child build(const Element &element) const {
@@ -221,6 +211,7 @@ namespace squi::core {
 	};
 
 	struct RenderObjectTestWidget : RenderObjectWidget {
+		Key key;
 		int d;
 
 		std::shared_ptr<RenderObject> createRenderObject() const {

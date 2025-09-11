@@ -6,6 +6,7 @@
 #include "vec2.hpp"
 #include "vector"
 #include <functional>
+#include <optional>
 #include <variant>
 
 
@@ -65,7 +66,7 @@ namespace squi::core {
 
 		virtual void iterateChildren(const std::function<void(RenderObject *)> &callback) {}
 
-		virtual void addChild(std::shared_ptr<RenderObject> child) {
+		virtual void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) {
 			assert(false);// Can't add children to this RenderObject
 		}
 
@@ -102,7 +103,7 @@ namespace squi::core {
 			}
 		}
 
-		void addChild(std::shared_ptr<RenderObject> child) override {
+		void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}
@@ -136,11 +137,15 @@ namespace squi::core {
 			}
 		}
 
-		void addChild(std::shared_ptr<RenderObject> child) override {
+		void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}
-			children.push_back(child);
+			if (index) {
+				children.insert(children.begin() + *index, child);
+			} else {
+				children.push_back(child);
+			}
 			child->parent = this;
 			child->initRenderObject();
 		}

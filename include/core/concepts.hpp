@@ -10,7 +10,7 @@
 namespace squi::core {
 	template<class T>
 	concept HasKey = requires(T a) {
-		requires std::is_base_of_v<Key, std::remove_cvref_t<decltype(a.key)>>;
+		requires std::is_same_v<Key, std::remove_cvref_t<decltype(a.key)>>;
 	};
 
 	template<class T>
@@ -21,7 +21,7 @@ namespace squi::core {
 
 	template<class T>
 	concept HasWidgetArgs = requires(T a) {
-		{ a.widget } -> std::same_as<Args&>;
+		{ a.widget } -> std::same_as<Args &>;
 	};
 
 	template<class T>

@@ -7,6 +7,7 @@ using namespace squi;
 
 struct ColorChanger : StatefulWidget {
 	// Args
+	Key key;
 	Color color = Color::royalblue;
 
 	struct State : WidgetState<ColorChanger> {
@@ -36,6 +37,7 @@ struct ColorChanger : StatefulWidget {
 
 struct Dragger : StatefulWidget {
 	// Args
+	Key key;
 
 	struct State : WidgetState<Dragger> {
 		float width = 100.f;
@@ -66,6 +68,7 @@ struct Dragger : StatefulWidget {
 
 struct Test : StatelessWidget {
 	// Args
+	Key key;
 
 	Child build(const Element &) const {
 		return Dragger{};

@@ -13,6 +13,7 @@ namespace squi {
 			inset,
 			outset,
 		};
+		Key key;
 		Args widget{};
 
 		Color color{0xFFFFFFFF};

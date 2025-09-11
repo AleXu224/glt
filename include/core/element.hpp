@@ -9,6 +9,7 @@ namespace squi::core {
 		WidgetPtr widget;
 		Element *parent = nullptr;
 		Element *root = nullptr;
+		size_t index = 0;
 		bool dirty = true;
 		bool mounted = false;
 
@@ -18,11 +19,12 @@ namespace squi::core {
 
 		virtual ~Element() = default;
 
-		virtual void mount(Element *parent) {
+		virtual void mount(Element *parent, size_t index) {
 			this->dirty = true;
 			this->parent = parent;
 			this->root = parent ? parent->root : this;
 			this->mounted = true;
+			this->index = index;
 		}
 
 		virtual void update(const WidgetPtr &newWidget) {
@@ -47,7 +49,8 @@ namespace squi::core {
 
 		void markNeedsRebuild();
 
-		ElementPtr updateChild(ElementPtr child, WidgetPtr newWidget);
+		ElementPtr updateChild(ElementPtr child, WidgetPtr newWidget, size_t index);
+		virtual void updateIndex(size_t index);
 		void updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets);
 	};
 
@@ -59,10 +62,12 @@ namespace squi::core {
 		virtual void firstBuild();
 		virtual Child build() = 0;
 
-		void mount(Element *parent) override;
+		void mount(Element *parent, size_t index) override;
 		void rebuild() override;
 		void update(const WidgetPtr &newWidget) override;
 		void unmount() override;
+
+		void updateIndex(size_t index) override;
 	};
 
 	struct StatelessElement : ComponentElement {
@@ -91,9 +96,11 @@ namespace squi::core {
 
 		RenderObjectElement(const RenderObjectWidgetPtr &widget);
 
-		void mount(Element *parent) override;
+		void mount(Element *parent, size_t index) override;
 		void update(const WidgetPtr &newWidget) override;
 		void unmount() override;
+
+		void updateIndex(size_t index) override;
 
 	private:
 		void attachRenderObject();
@@ -108,7 +115,7 @@ namespace squi::core {
 		virtual void firstBuild();
 		virtual Child build() = 0;
 
-		void mount(Element *parent) override;
+		void mount(Element *parent, size_t index) override;
 		void rebuild() override;
 		void update(const WidgetPtr &newWidget) override;
 		void unmount() override;
@@ -122,7 +129,7 @@ namespace squi::core {
 		virtual void firstBuild();
 		virtual std::vector<Child> build() = 0;
 
-		void mount(Element *parent) override;
+		void mount(Element *parent, size_t index) override;
 		void rebuild() override;
 		void update(const WidgetPtr &newWidget) override;
 		void unmount() override;

@@ -16,6 +16,7 @@ namespace squi::core {
 	};
 
 	struct RootWidget : RenderObjectWidget {
+		Key key;
 		App *app = nullptr;
 		std::shared_ptr<RootRenderObject> rootRenderObject;
 		WidgetPtr child;
@@ -42,7 +43,7 @@ namespace squi::core {
 				return nullptr;
 			}
 
-			void mount(::squi::core::Element *parent) override;
+			void mount(::squi::core::Element *parent, size_t index) override;
 			void unmount() override;
 		};
 	};

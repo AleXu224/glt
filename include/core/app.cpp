@@ -75,7 +75,7 @@ namespace squi::core {
 			});
 		}
 		std::thread([&]() {
-			rootElement->mount(nullptr);
+			rootElement->mount(nullptr, 0);
 			auto &renderObjectElem = dynamic_cast<RenderObjectElement &>(*rootElement);
 			auto &renderObject = *renderObjectElem.renderObject;
 			engine.run(
@@ -212,8 +212,8 @@ namespace squi::core {
 		}
 	}
 
-	void RootWidget::Element::mount(squi::core::Element *parent) {
-		squi::core::SingleChildRenderObjectElement::mount(parent);
+	void RootWidget::Element::mount(squi::core::Element *parent, size_t index) {
+		squi::core::SingleChildRenderObjectElement::mount(parent, index);
 	}
 
 	void RootWidget::Element::unmount() {

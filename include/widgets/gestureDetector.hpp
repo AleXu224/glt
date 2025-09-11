@@ -9,6 +9,7 @@ namespace squi {
 		struct State;
 
 		// Args
+		Key key;
 		std::function<void(const State &)> onEnter{};
 		std::function<void(const State &)> onLeave{};
 		std::function<void(const State &)> onFocus{};
