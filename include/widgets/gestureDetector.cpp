@@ -4,36 +4,54 @@
 #include <GLFW/glfw3.h>
 
 namespace squi {
-	const vec2 &GestureDetector::State::getScroll() const {
+
+	bool Gesture::State::isKey(int key, int action, int mods) const {
+		if (!inputState) return false;
+		if (!inputState->g_keys.contains(key)) return false;
+
+		const auto &keyInput = inputState->g_keys.at(key);
+		return (keyInput.action == action && keyInput.mods == mods);
+	}
+
+	bool Gesture::State::isKeyPressedOrRepeat(int key, int mods) const {
+		if (!inputState) return false;
+
+		if (!inputState->g_keys.contains(key)) return false;
+
+		const auto &keyInput = inputState->g_keys.at(key);
+		return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
+	}
+
+	const vec2 &Gesture::State::getScroll() const {
 		return scrollDelta;
 	}
 
-	vec2 GestureDetector::State::getDragDelta() const {
+	vec2 Gesture::State::getDragDelta() const {
 		if (!inputState) return {};
 		if (!focused || inputState->g_cursorPos == dragStart) return vec2{0};
 		return inputState->mouseDelta;
 	}
 
-	vec2 GestureDetector::State::getDragOffset() const {
+	vec2 Gesture::State::getDragOffset() const {
 		if (!inputState) return {};
 		if (!focused) return vec2{0};
 		return inputState->g_cursorPos - dragStart;
 	}
 
-	const vec2 &GestureDetector::State::getDragStartPos() const {
+	const vec2 &Gesture::State::getDragStartPos() const {
 		return dragStart;
 	}
 
-	vec2 squi::GestureDetector::State::getCursorPos() const {
+	vec2 squi::Gesture::State::getCursorPos() const {
 		if (!inputState) return {};
 		return inputState->g_cursorPos;
 	}
 
-	void GestureDetector::DetectorRenderObject::update() {
-		auto app = getApp();
+	void Gesture::DetectorRenderObject::update() {
+		auto *app = getApp();
 		assert(app);
 		auto &inputState = app->inputState;
-		auto &widget = static_cast<GestureDetector &>(*element->widget);
+		auto &widget = static_cast<Gesture &>(*element->widget);
 
 		if (canClick()) {
 			state.scrollDelta = inputState.g_scrollDelta;
@@ -87,15 +105,15 @@ namespace squi {
 		if (widget.onUpdate) widget.onUpdate(state);
 	}
 
-	void GestureDetector::DetectorRenderObject::init() {
+	void Gesture::DetectorRenderObject::init() {
 		auto *app = this->getApp();
 		if (!app) return;
 
 		state.inputState = &app->inputState;
 	}
 
-	bool GestureDetector::DetectorRenderObject::canClick() const {
-		auto app = getApp();
+	bool Gesture::DetectorRenderObject::canClick() const {
+		auto *app = getApp();
 		if (!app) return false;
 
 		auto &inputState = app->inputState;

@@ -5,7 +5,7 @@
 
 
 namespace squi {
-	struct GestureDetector : RenderObjectWidget {
+	struct Gesture : RenderObjectWidget {
 		struct State;
 
 		// Args
@@ -56,7 +56,7 @@ namespace squi {
 			using SingleChildRenderObjectElement::SingleChildRenderObjectElement;
 
 			Child build() override {
-				if (auto gestureDetectorWidget = std::static_pointer_cast<GestureDetector>(widget)) {
+				if (auto gestureDetectorWidget = std::static_pointer_cast<Gesture>(widget)) {
 					return gestureDetectorWidget->child;
 				}
 				return nullptr;
@@ -71,7 +71,7 @@ namespace squi {
 			bool canClick() const;
 		};
 
-		std::shared_ptr<RenderObject> createRenderObject() const {
+		static std::shared_ptr<RenderObject> createRenderObject() {
 			return std::make_shared<DetectorRenderObject>();
 		}
 
@@ -79,7 +79,7 @@ namespace squi {
 			// Update render object properties here
 		}
 
-		Args getArgs() const {
+		static Args getArgs() {
 			return {
 				.width = Size::Wrap,
 				.height = Size::Wrap

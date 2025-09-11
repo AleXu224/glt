@@ -45,7 +45,11 @@ namespace squi::core {
 		Margin margin{};
 		Margin padding{};
 
-		RenderObject() {}
+		RenderObject() = default;
+		RenderObject(const RenderObject &) = default;
+		RenderObject(RenderObject &&) = delete;
+		RenderObject &operator=(const RenderObject &) = default;
+		RenderObject &operator=(RenderObject &&) = delete;
 		virtual ~RenderObject() = default;
 
 		App *getApp() const;
@@ -142,7 +146,7 @@ namespace squi::core {
 				child->parent->removeChild(child);
 			}
 			if (index) {
-				children.insert(children.begin() + *index, child);
+				children.insert(children.begin() + static_cast<std::vector<std::shared_ptr<RenderObject>>::difference_type>(*index), child);
 			} else {
 				children.push_back(child);
 			}

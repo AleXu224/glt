@@ -7,6 +7,11 @@ namespace squi::core {
 	struct Element;
 
 	struct WidgetStateBase {
+		WidgetStateBase() = default;
+		WidgetStateBase(const WidgetStateBase &) = default;
+		WidgetStateBase(WidgetStateBase &&) = default;
+		WidgetStateBase &operator=(const WidgetStateBase &) = default;
+		WidgetStateBase &operator=(WidgetStateBase &&) = default;
 		Element *element = nullptr;
 
 		virtual ~WidgetStateBase() = default;

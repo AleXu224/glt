@@ -104,7 +104,7 @@ namespace squi::core {
 					);
 
 					renderObject.iterateChildren([](RenderObject *child) {
-						if (auto *element = dynamic_cast<GestureDetector::DetectorRenderObject *>(child)) {
+						if (auto *element = dynamic_cast<Gesture::DetectorRenderObject *>(child)) {
 							element->update();
 						}
 					});

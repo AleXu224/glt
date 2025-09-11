@@ -7,9 +7,9 @@
 namespace squi::core {
 
 	// Element
-	App *Element::getApp() {
+	App *Element::getApp() const {
 		assert(this->root != nullptr);
-		auto root = dynamic_cast<RootWidget::Element *>(this->root);
+		auto *root = dynamic_cast<RootWidget::Element *>(this->root);
 		assert(root);
 		return root->app;
 	}
@@ -19,7 +19,7 @@ namespace squi::core {
 		getApp()->dirtyElements.insert(this);
 	}
 
-	ElementPtr Element::updateChild(ElementPtr child, WidgetPtr newWidget, size_t index) {
+	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index) {
 		if (!newWidget) {
 			if (child) {
 				child->unmount();
@@ -38,15 +38,14 @@ namespace squi::core {
 			if (child->index != index) child->updateIndex(index);
 			child->update(newWidget);
 			return child;
-		} else {
-			// Different widget type or null, replace
-			if (child) {
-				child->unmount();
-			}
-			auto newChild = newWidget->_createElement();
-			newChild->mount(this, index);
-			return newChild;
 		}
+		// Different widget type or null, replace
+		if (child) {
+			child->unmount();
+		}
+		auto newChild = newWidget->_createElement();
+		newChild->mount(this, index);
+		return newChild;
 	}
 
 	void Element::updateIndex(size_t index) {
@@ -64,7 +63,7 @@ namespace squi::core {
 
 		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
 			auto &oldChild = oldChildren.at(oldChildrenTop);
-			auto &newWidget = newWidgets.at(newChildrenTop);
+			const auto &newWidget = newWidgets.at(newChildrenTop);
 
 			if (!Widget::canUpdate(oldChild->widget, newWidget)) {
 				break;
@@ -79,7 +78,7 @@ namespace squi::core {
 
 		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
 			auto &oldChild = oldChildren.at(oldChildrenBottom);
-			auto &newWidget = newWidgets.at(newChildrenBottom);
+			const auto &newWidget = newWidgets.at(newChildrenBottom);
 
 			if (!Widget::canUpdate(oldChild->widget, newWidget)) {
 				break;
@@ -107,9 +106,9 @@ namespace squi::core {
 
 		while (newChildrenTop <= newChildrenBottom) {
 			ElementPtr oldChild = nullptr;
-			auto &newWidget = newWidgets.at(newChildrenTop);
+			const auto &newWidget = newWidgets.at(newChildrenTop);
 			if (haveOldChildren) {
-				auto &key = newWidget->getKey();
+				const auto &key = newWidget->getKey();
 				if (key != nullptr && oldKeyedChildren.contains(key.hash())) {
 					oldChild = oldKeyedChildren[key.hash()];
 					if (Widget::canUpdate(oldChild->widget, newWidget)) {
@@ -129,7 +128,7 @@ namespace squi::core {
 
 		while ((oldChildrenTop <= oldChildrenBottom) && (newChildrenTop <= newChildrenBottom)) {
 			auto &oldChild = oldChildren.at(oldChildrenTop);
-			auto &newWidget = newWidgets.at(newChildrenTop);
+			const auto &newWidget = newWidgets.at(newChildrenTop);
 
 			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
 
@@ -215,8 +214,8 @@ namespace squi::core {
 	}
 
 	void StatefulElement::update(const WidgetPtr &newWidget) {
-		ComponentElement::update(newWidget);
 		this->state->setWidget(newWidget);
+		ComponentElement::update(newWidget);
 	}
 
 	void StatefulElement::rebuild() {
@@ -265,10 +264,10 @@ namespace squi::core {
 		this->attachRenderObject();
 	}
 
-	RenderObjectElement *getAncestorRenderObjectElement(Element *element) {
+	RenderObjectElement *RenderObjectElement::getAncestorRenderObjectElement(Element *element) {
 		Element *ancestor = element->parent;
 		while (ancestor) {
-			if (auto roe = dynamic_cast<RenderObjectElement *>(ancestor)) {
+			if (auto *roe = dynamic_cast<RenderObjectElement *>(ancestor)) {
 				return roe;
 			}
 			if (ancestor->parent == ancestor) break;// Prevent potential infinite loop
@@ -278,14 +277,16 @@ namespace squi::core {
 	}
 
 	void RenderObjectElement::attachRenderObject() {
-		auto ancestorElement = getAncestorRenderObjectElement(this);
+		auto *ancestorElement = getAncestorRenderObjectElement(this);
+		this->getApp()->needsRelayout = true;
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
 			ancestorElement->renderObject->addChild(this->renderObject, this->index);
 		}
 	}
 
 	void RenderObjectElement::detachRenderObject() {
-		auto ancestorElement = getAncestorRenderObjectElement(this);
+		auto *ancestorElement = getAncestorRenderObjectElement(this);
+		this->getApp()->needsRelayout = true;
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
 			ancestorElement->renderObject->removeChild(this->renderObject);
 		}
@@ -327,4 +328,53 @@ namespace squi::core {
 	}
 
 	// Multi Child Render Object Element
+	void MultiChildRenderObjectElement::firstBuild() {
+		auto childWidgets = buildAndPrune();
+		for (size_t i = 0; i < childWidgets.size(); i++) {
+			auto &childWidget = childWidgets.at(i);
+			if (!childWidget) continue;
+			auto element = childWidget->_createElement();
+			this->children.push_back(element);
+			element->mount(this, i);
+		}
+	}
+
+	std::vector<Child> MultiChildRenderObjectElement::buildAndPrune() {
+		auto childWidgets = build();
+		childWidgets.erase(
+			std::remove_if(childWidgets.begin(), childWidgets.end(), [](const Child &child) {
+				return child == nullptr;
+			}),
+			childWidgets.end()
+		);
+		return childWidgets;
+	}
+
+	void MultiChildRenderObjectElement::mount(Element *parent, size_t index) {
+		RenderObjectElement::mount(parent, index);
+
+		this->firstBuild();
+	}
+
+	void MultiChildRenderObjectElement::rebuild() {
+		assert(this->mounted);
+		auto newChildWidgets = buildAndPrune();
+		updateChildren(this->children, newChildWidgets);
+		RenderObjectElement::rebuild();
+	}
+
+	void MultiChildRenderObjectElement::update(const WidgetPtr &newWidget) {
+		RenderObjectElement::update(newWidget);
+		rebuild();
+	}
+
+	void MultiChildRenderObjectElement::unmount() {
+		for (auto &child: this->children) {
+			if (child) {
+				child->unmount();
+			}
+		}
+		this->children.clear();
+		RenderObjectElement::unmount();
+	}
 }// namespace squi::core

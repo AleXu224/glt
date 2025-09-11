@@ -195,7 +195,7 @@ namespace squi::core {
 		int b;
 
 		struct State : WidgetState<StatefulTestWidget> {
-			Child build(const Element &element) override {
+			Child build(const Element &) override {
 				return {};
 			}
 		};
@@ -205,7 +205,7 @@ namespace squi::core {
 		Key key;
 		int c;
 
-		Child build(const Element &element) const {
+		static Child build(const Element &) {
 			return {};
 		}
 	};
@@ -214,7 +214,7 @@ namespace squi::core {
 		Key key;
 		int d;
 
-		std::shared_ptr<RenderObject> createRenderObject() const {
+		static std::shared_ptr<RenderObject> createRenderObject() {
 			return {};
 		}
 
@@ -222,7 +222,7 @@ namespace squi::core {
 			// Update render object properties here
 		}
 
-		Args getArgs() const {
+		static Args getArgs() {
 			return {};
 		}
 	};

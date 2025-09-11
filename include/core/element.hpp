@@ -13,6 +13,11 @@ namespace squi::core {
 		bool dirty = true;
 		bool mounted = false;
 
+		Element(const Element &) = delete;
+		Element(Element &&) = delete;
+		Element &operator=(const Element &) = delete;
+		Element &operator=(Element &&) = delete;
+
 		Element(const WidgetPtr &widget) : widget(widget) {
 			assert(widget != nullptr);
 		};
@@ -45,11 +50,11 @@ namespace squi::core {
 			this->mounted = false;
 		}
 
-		App *getApp();
+		App *getApp() const;
 
 		void markNeedsRebuild();
 
-		ElementPtr updateChild(ElementPtr child, WidgetPtr newWidget, size_t index);
+		ElementPtr updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index);
 		virtual void updateIndex(size_t index);
 		void updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets);
 	};
@@ -105,6 +110,7 @@ namespace squi::core {
 	private:
 		void attachRenderObject();
 		void detachRenderObject();
+		static RenderObjectElement *getAncestorRenderObjectElement(Element *element);
 	};
 
 	struct SingleChildRenderObjectElement : RenderObjectElement {
@@ -128,6 +134,7 @@ namespace squi::core {
 
 		virtual void firstBuild();
 		virtual std::vector<Child> build() = 0;
+		std::vector<Child> buildAndPrune();
 
 		void mount(Element *parent, size_t index) override;
 		void rebuild() override;
