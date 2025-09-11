@@ -6,17 +6,22 @@
 namespace squi::core {
 	struct KeyBase {
 	public:
+		KeyBase() = default;
+		KeyBase(const KeyBase &) = default;
+		KeyBase(KeyBase &&) = delete;
+		KeyBase &operator=(const KeyBase &) = default;
+		KeyBase &operator=(KeyBase &&) = delete;
 		virtual ~KeyBase() = default;
 		// Compare with nullptr
 		virtual bool operator==(std::nullptr_t) const {
 			return false;
 		}
 		virtual bool operator==(const KeyBase &other) const = 0;
-		virtual std::size_t hash() const = 0;
-		virtual std::string toString() const = 0;
+		[[nodiscard]] virtual std::size_t hash() const = 0;
+		[[nodiscard]] virtual std::string toString() const = 0;
 
-		operator std::shared_ptr<KeyBase>(this auto &&self) {
-			return std::shared_ptr<KeyBase>(std::forward<decltype(self)>(self));
+		operator std::shared_ptr<const KeyBase>(this auto &&self) {
+			return std::make_shared<const std::remove_cvref_t<decltype(self)>>(std::forward<decltype(self)>(self));
 		}
 	};
 
@@ -48,7 +53,7 @@ namespace squi::core {
 		ValueKey(const std::string &value) : value(value) {}
 
 		bool operator==(const KeyBase &other) const override {
-			if (auto *otherValueKey = dynamic_cast<const ValueKey *>(&other)) {
+			if (const auto *otherValueKey = dynamic_cast<const ValueKey *>(&other)) {
 				return value == otherValueKey->value;
 			}
 			return false;
@@ -73,7 +78,7 @@ namespace squi::core {
 		ObjectKey(const void *object) : object(object) {}
 
 		bool operator==(const KeyBase &other) const override {
-			if (auto *otherObjectKey = dynamic_cast<const ObjectKey *>(&other)) {
+			if (const auto *otherObjectKey = dynamic_cast<const ObjectKey *>(&other)) {
 				return object == otherObjectKey->object;
 			}
 			return false;

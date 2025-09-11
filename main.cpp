@@ -63,18 +63,22 @@ struct Test : StatefulWidget {
 					.child = Stack{
 						.children{
 							ColorChanger{
+								.key = ValueKey("red"),
 								.color = Color::red,
 								.size = 150.f,
 							},
+							swapped//
+								? Child(ColorChanger{
+									  .key = ValueKey("orangeRed"),
+									  .color = Color::orangered,
+									  .size = 100.f,
+								  })
+								: nullptr,
 							ColorChanger{
-								.color = Color::orangered,
-								.size = 100.f,
+								.key = ValueKey("orange"),
+								.color = Color::orange,
+								.size = 50.f,
 							},
-							swapped ? Child(ColorChanger{
-										  .color = Color::orange,
-										  .size = 50.f,
-									  })
-									: nullptr,
 						},
 					},
 				},
