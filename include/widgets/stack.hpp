@@ -17,8 +17,14 @@ namespace squi {
 			}
 		};
 
+		struct StackRenderObject : MultiChildRenderObject {
+			StackRenderObject() : MultiChildRenderObject() {}
+
+			void iterateChildren(const std::function<void(RenderObject *)> &callback) override;
+		};
+
 		static std::shared_ptr<RenderObject> createRenderObject() {
-			return std::make_shared<MultiChildRenderObject>();
+			return std::make_shared<StackRenderObject>();
 		}
 
 		void updateRenderObject(RenderObject *renderObject) const {

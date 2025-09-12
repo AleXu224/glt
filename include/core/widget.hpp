@@ -21,23 +21,23 @@ namespace squi::core {
 		size_t _typeHash = 0;
 
 	public:
-		const KeyBase &getKey() const {
+		[[nodiscard]] const KeyBase &getKey() const {
 			if (_key == nullptr || *_key == nullptr) {
 				return *nullKey;
 			}
 			return **_key;
 		}
 
-		size_t getTypeHash() const {
+		[[nodiscard]] size_t getTypeHash() const {
 			return this->_typeHash;
 		}
 
-		std::shared_ptr<Element> _createElement() const {
+		[[nodiscard]] std::shared_ptr<Element> _createElement() const {
 			assert(this->_createElementFunc != nullptr);
 			return this->_createElementFunc();
 		}
 
-		static bool canUpdate(const WidgetPtr &oldWidget, const WidgetPtr &newWidget) {
+		[[nodiscard]] static bool canUpdate(const WidgetPtr &oldWidget, const WidgetPtr &newWidget) {
 			if (oldWidget && newWidget) {
 				return oldWidget->getTypeHash() == newWidget->getTypeHash() && oldWidget->getKey() == newWidget->getKey();
 			}
@@ -146,7 +146,7 @@ namespace squi::core {
 	struct StatelessWidget : Widget {
 		std::function<WidgetPtr(const Element &)> _buildFunc = nullptr;
 
-		WidgetPtr _build(const Element &element) const {
+		[[nodiscard]] WidgetPtr _build(const Element &element) const {
 			assert(this->_buildFunc != nullptr);
 			return this->_buildFunc(element);
 		}
@@ -156,12 +156,12 @@ namespace squi::core {
 		std::function<std::shared_ptr<WidgetStateBase>()> _createStateFunc = nullptr;
 		std::function<WidgetPtr(const Element &)> _buildFunc = nullptr;
 
-		std::shared_ptr<WidgetStateBase> _createState() const {
+		[[nodiscard]] std::shared_ptr<WidgetStateBase> _createState() const {
 			assert(this->_createStateFunc != nullptr);
 			return this->_createStateFunc();
 		}
 
-		WidgetPtr _build(const Element &element) const {
+		[[nodiscard]] WidgetPtr _build(const Element &element) const {
 			assert(this->_buildFunc != nullptr);
 			return this->_buildFunc(element);
 		}
@@ -172,7 +172,7 @@ namespace squi::core {
 		std::function<void(RenderObject *)> _updateRenderObjectFunc = nullptr;
 		std::function<Args()> _getWidgetArgsFunc = nullptr;
 
-		std::shared_ptr<RenderObject> _createRenderObject() const {
+		[[nodiscard]] std::shared_ptr<RenderObject> _createRenderObject() const {
 			assert(this->_createRenderObjectFunc != nullptr);
 			auto ret = this->_createRenderObjectFunc();
 			assert(ret != nullptr);
@@ -184,7 +184,7 @@ namespace squi::core {
 			this->_updateRenderObjectFunc(renderObject);
 		}
 
-		Args _getWidgetArgs() const {
+		[[nodiscard]] Args _getWidgetArgs() const {
 			assert(this->_getWidgetArgsFunc != nullptr);
 			return this->_getWidgetArgsFunc();
 		}
