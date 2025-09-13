@@ -1,8 +1,8 @@
 #include "core/app.hpp"
 
 #include "widgets/box.hpp"
+#include "widgets/flex.hpp"
 #include "widgets/gestureDetector.hpp"
-#include "widgets/stack.hpp"
 #include <GLFW/glfw3.h>
 
 using namespace squi::core;
@@ -31,9 +31,8 @@ struct ColorChanger : StatefulWidget {
 				},
 				.child = Box{
 					.widget{
-						.width = widget->size,
+						.width = Size::Expand,
 						.height = widget->size,
-						.margin = Margin{10.f},
 					},
 					.color = color,
 				},
@@ -48,41 +47,31 @@ struct Test : StatefulWidget {
 
 	struct State : WidgetState<Test> {
 		bool swapped = false;
+		float spacing = 5.f;
 
 		Child build(const Element &) override {
 			return Gesture{
 				.onUpdate = [this](const Gesture::State &state) {
+					if (state.getScroll().y != 0.0f) {
+						setState([&]() {
+							spacing += state.getScroll().y;
+						});
+					}
 					if (state.isKeyPressedOrRepeat(GLFW_KEY_SPACE)) {
 						setState([this]() {
 							swapped = !swapped;
 						});
 					}
 				},
-				.child = Box{
-					.widget{
-						.width = 300.f,
-						.height = 300.f,
-					},
-					.child = Stack{
-						.children{
-							ColorChanger{
-								.key = ValueKey("red"),
-								.color = Color::red,
-								.size = 150.f,
-							},
-							swapped//
-								? Child(ColorChanger{
-									  .key = ValueKey("orangeRed"),
-									  .color = Color::orangered,
-									  .size = 100.f,
-								  })
-								: nullptr,
-							ColorChanger{
-								.key = ValueKey("orange"),
-								.color = Color::orange,
-								.size = 50.f,
-							},
-						},
+				.child = Flex{
+					.direction = swapped ? Axis::Vertical : Axis::Horizontal,
+					.crossAxisAlignment = Flex::Alignment::start,
+					.spacing = spacing,
+					.children{
+						Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::lime},
+						ColorChanger{},
+						Box{.widget{.width = 50.f, .height = Size::Expand}, .color = Color::lime},
+						Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::lime},
 					},
 				},
 			};

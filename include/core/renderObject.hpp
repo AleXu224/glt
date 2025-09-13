@@ -1,6 +1,8 @@
 #pragma once
 
+#include "axis.hpp"
 #include "boxConstraints.hpp"
+#include "child.hpp"
 #include "core/alignment.hpp"
 #include "memory"
 #include "rect.hpp"
@@ -23,6 +25,12 @@ namespace squi::core {
 		Shrink,
 		// Will will let the children expand, taking up the minimum size to contain the children afterwards
 		Wrap,
+	};
+
+	enum class Sizing : uint8_t {
+		Fixed,
+		Expand,
+		Shrink,
 	};
 
 	struct Args {
@@ -71,13 +79,32 @@ namespace squi::core {
 		[[nodiscard]] Rect getContentRect() const;
 		[[nodiscard]] Rect getLayoutRect() const;
 
+		[[nodiscard]] Sizing getSizing(Axis axis) const {
+			const auto &dim = (axis == Axis::Horizontal) ? width : height;
+			if (std::holds_alternative<float>(dim)) {
+				return Sizing::Fixed;
+			}
+			switch (std::get<Size>(dim)) {
+				case Size::Expand:
+					return Sizing::Expand;
+				case Size::Shrink:
+					return Sizing::Shrink;
+				case Size::Wrap:
+					return getContentSizing(axis);
+			}
+		}
+
+		[[nodiscard]] virtual Sizing getContentSizing(Axis /*axis*/) const {
+			return Sizing::Fixed;
+		}
+
 		virtual void iterateChildren(const std::function<void(RenderObject *)> &callback) {}
 
-		virtual void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) {
+		virtual void addChild(const RenderObjectPtr & /*child*/, std::optional<size_t> /*index*/ = std::nullopt) {
 			assert(false);// Can't add children to this RenderObject
 		}
 
-		virtual void removeChild(std::shared_ptr<RenderObject> child) {
+		virtual void removeChild(const RenderObjectPtr & /*child*/) {
 			assert(false);// Can't remove children from this RenderObject
 		}
 
@@ -103,6 +130,13 @@ namespace squi::core {
 
 		void drawContent() override;
 
+		Sizing getContentSizing(Axis axis) const override {
+			if (child) {
+				return child->getSizing(axis);
+			}
+			return Sizing::Fixed;
+		}
+
 		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
 			if (child) {
 				callback(child.get());
@@ -110,7 +144,7 @@ namespace squi::core {
 			}
 		}
 
-		void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) override {
+		void addChild(const RenderObjectPtr &child, std::optional<size_t> /*index*/ = std::nullopt) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}
@@ -120,7 +154,7 @@ namespace squi::core {
 			child->initRenderObject();
 		}
 
-		void removeChild(std::shared_ptr<RenderObject> child) override {
+		void removeChild(const RenderObjectPtr &child) override {
 			assert(this->child == child);
 			this->child = nullptr;
 			child->parent = nullptr;
@@ -137,6 +171,20 @@ namespace squi::core {
 
 		void drawContent() override;
 
+		Sizing getContentSizing(Axis axis) const override {
+			auto ret = Sizing::Fixed;
+			for (const auto &child: children) {
+				auto childSizing = child->getSizing(axis);
+				if (childSizing == Sizing::Expand) {
+					return Sizing::Expand;
+				}
+				if (childSizing == Sizing::Shrink) {
+					ret = Sizing::Shrink;
+				}
+			}
+			return ret;
+		}
+
 		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
 			for (const auto &child: children) {
 				callback(child.get());
@@ -144,7 +192,7 @@ namespace squi::core {
 			}
 		}
 
-		void addChild(std::shared_ptr<RenderObject> child, std::optional<size_t> index = std::nullopt) override {
+		void addChild(const RenderObjectPtr &child, std::optional<size_t> index = std::nullopt) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}
@@ -157,7 +205,7 @@ namespace squi::core {
 			child->initRenderObject();
 		}
 
-		void removeChild(std::shared_ptr<RenderObject> child) override {
+		void removeChild(const RenderObjectPtr &child) override {
 			auto it = std::find(children.begin(), children.end(), child);
 			if (it != children.end()) {
 				children.erase(it);

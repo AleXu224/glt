@@ -1,5 +1,6 @@
 #pragma once
 
+#include "axis.hpp"           // IWYU pragma: export
 #include "child.hpp"          // IWYU pragma: export
 #include "element.hpp"        // IWYU pragma: export
 #include "inheritedWidget.hpp"// IWYU pragma: export

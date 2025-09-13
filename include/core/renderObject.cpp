@@ -206,7 +206,7 @@ namespace squi::core {
 
 	RenderObjectWidget *RenderObject::getWidget() const {
 		if (!element || !element->widget) return nullptr;
-		return static_cast<RenderObjectWidget *>(element->widget.get());
+		return std::static_pointer_cast<RenderObjectWidget>(element->widget).get();
 	}
 
 	// Single Child Render Object

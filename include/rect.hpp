@@ -31,11 +31,12 @@ namespace squi {
 			return {left, top};
 		}
 
-		void offset(vec2 offset) {
+		Rect &offset(vec2 offset) {
 			left += offset.x;
 			right += offset.x;
 			top += offset.y;
 			bottom += offset.y;
+			return *this;
 		}
 
 		[[nodiscard]] bool contains(const vec2 &position) const {

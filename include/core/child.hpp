@@ -8,6 +8,7 @@ namespace squi::core {
 	struct StatelessWidget;
 	struct StatefulWidget;
 	struct RenderObjectWidget;
+	struct RenderObject;
 	struct Element;
 
 	using Child = std::shared_ptr<Widget>;
@@ -16,6 +17,7 @@ namespace squi::core {
 	using StatelessWidgetPtr = std::shared_ptr<StatelessWidget>;
 	using StatefulWidgetPtr = std::shared_ptr<StatefulWidget>;
 	using RenderObjectWidgetPtr = std::shared_ptr<RenderObjectWidget>;
+	using RenderObjectPtr = std::shared_ptr<RenderObject>;
 	using Context = std::shared_ptr<Element>;
 	using ElementPtr = std::shared_ptr<Element>;
 }// namespace squi::core

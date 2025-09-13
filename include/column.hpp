@@ -6,7 +6,7 @@
 namespace squi {
 	struct Column {
 		// Helpers
-		enum class Alignment {
+		enum class Alignment : uint8_t {
 			left,
 			center,
 			right,

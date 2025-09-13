@@ -75,5 +75,9 @@ namespace squi::core {
 			newConstraints.shrinkHeight = shrinkHeight;
 			return newConstraints;
 		}
+
+		[[nodiscard]] BoxConstraints copy() const {
+			return *this;
+		}
 	};
 }// namespace squi::core
