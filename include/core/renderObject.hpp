@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boxConstraints.hpp"
+#include "core/alignment.hpp"
 #include "memory"
 #include "rect.hpp"
 #include "vec2.hpp"
@@ -25,11 +26,12 @@ namespace squi::core {
 	};
 
 	struct Args {
-		std::variant<float, Size> width = Size::Expand;
-		std::variant<float, Size> height = Size::Expand;
-		BoxConstraints sizeConstraints{};
-		Margin margin{};
-		Margin padding{};
+		std::optional<std::variant<float, Size>> width = std::nullopt;
+		std::optional<std::variant<float, Size>> height = std::nullopt;
+		std::optional<Alignment> alignment = std::nullopt;
+		std::optional<BoxConstraints> sizeConstraints = std::nullopt;
+		std::optional<Margin> margin = std::nullopt;
+		std::optional<Margin> padding = std::nullopt;
 	};
 
 	struct RenderObject : std::enable_shared_from_this<RenderObject> {
@@ -41,6 +43,7 @@ namespace squi::core {
 
 		std::variant<float, Size> width = Size::Expand;
 		std::variant<float, Size> height = Size::Expand;
+		Alignment alignment = Alignment::TopLeft;
 		BoxConstraints sizeConstraints{};
 		Margin margin{};
 		Margin padding{};
@@ -57,8 +60,8 @@ namespace squi::core {
 		vec2 calculateSize(BoxConstraints constraints, bool final = false);
 		virtual vec2 calculateContentSize(BoxConstraints constraints, bool final);
 
-		void positionAt(const vec2 &newPos);
-		virtual void positionContentAt(const vec2 &newPos) {}
+		void positionAt(const Rect &newBounds);
+		virtual void positionContentAt(const Rect &newBounds) {}
 
 		void draw();
 		virtual void drawSelf() {}
@@ -96,7 +99,7 @@ namespace squi::core {
 		SingleChildRenderObject() : RenderObject() {}
 
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
-		void positionContentAt(const vec2 &newPos) override;
+		void positionContentAt(const Rect &newBounds) override;
 
 		void drawContent() override;
 
@@ -130,7 +133,7 @@ namespace squi::core {
 		MultiChildRenderObject() : RenderObject() {}
 
 		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
-		void positionContentAt(const vec2 &newPos) override;
+		void positionContentAt(const Rect &newBounds) override;
 
 		void drawContent() override;
 

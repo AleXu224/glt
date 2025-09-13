@@ -144,7 +144,12 @@ namespace squi::core {
 					}
 
 					if (needsRelayout || needsReposition) {
-						renderObject.positionAt({0.0f, 0.0f});
+						renderObject.positionAt(
+							Rect::fromPosSize(
+								vec2{0.0f, 0.0f},
+								vec2{static_cast<float>(width), static_cast<float>(height)}
+							)
+						);
 					}
 
 					inputState.g_activeArea.pop_back();

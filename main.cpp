@@ -20,6 +20,9 @@ struct ColorChanger : StatefulWidget {
 
 		Child build(const Element &) override {
 			return Gesture{
+				.widget{
+					.alignment = Alignment::Center,
+				},
 				.onClick = [this](const auto &) {
 					setState([this]() {
 						color = (color == Color::black) ? widget->color : Color::black;

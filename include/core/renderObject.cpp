@@ -8,11 +8,11 @@
 namespace squi::core {
 	// Render Object
 	App *RenderObject::getApp() const {
-		auto obj = this;
+		const auto *obj = this;
 		while (obj->parent != nullptr && obj->parent != obj) {
 			obj = obj->parent;
 		}
-		auto root = dynamic_cast<const RootRenderObject *>(obj);
+		const auto *root = dynamic_cast<const RootRenderObject *>(obj);
 		assert(root != nullptr);
 		return root->app;
 	}
@@ -134,13 +134,13 @@ namespace squi::core {
 		return size + marginOffset;
 	}
 
-	vec2 RenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
+	vec2 RenderObject::calculateContentSize(BoxConstraints, bool) {
 		return {};
 	}
 
-	void RenderObject::positionAt(const vec2 &newPos) {
-		pos = newPos + margin.getPositionOffset();
-		positionContentAt(pos + padding.getPositionOffset());
+	void RenderObject::positionAt(const Rect &newBounds) {
+		pos = newBounds.posFromAlignment(alignment, getLayoutRect()) + margin.getPositionOffset();
+		positionContentAt(getContentRect());
 	}
 
 	void RenderObject::draw() {
@@ -178,24 +178,28 @@ namespace squi::core {
 	void RenderObject::updateWidgetArgs(const Args &args) {
 		auto *app = this->getApp();
 
-		if (width != args.width) {
-			width = args.width;
+		if (width != args.width.value_or(Size::Expand)) {
+			width = args.width.value_or(Size::Expand);
 			app->needsRelayout = true;
 		}
-		if (height != args.height) {
-			height = args.height;
+		if (height != args.height.value_or(Size::Expand)) {
+			height = args.height.value_or(Size::Expand);
 			app->needsRelayout = true;
 		}
-		if (sizeConstraints != args.sizeConstraints) {
-			sizeConstraints = args.sizeConstraints;
+		if (alignment != args.alignment.value_or(Alignment::TopLeft)) {
+			alignment = args.alignment.value_or(Alignment::TopLeft);
+			app->needsReposition = true;
+		}
+		if (sizeConstraints != args.sizeConstraints.value_or({})) {
+			sizeConstraints = args.sizeConstraints.value_or({});
 			app->needsRelayout = true;
 		}
-		if (margin != args.margin) {
-			margin = args.margin;
+		if (margin != args.margin.value_or({})) {
+			margin = args.margin.value_or({});
 			app->needsRelayout = true;
 		}
-		if (padding != args.padding) {
-			padding = args.padding;
+		if (padding != args.padding.value_or({})) {
+			padding = args.padding.value_or({});
 			app->needsRelayout = true;
 		}
 	}
@@ -213,9 +217,9 @@ namespace squi::core {
 		return {};
 	}
 
-	void SingleChildRenderObject::positionContentAt(const vec2 &newPos) {
+	void SingleChildRenderObject::positionContentAt(const Rect &newBounds) {
 		if (child) {
-			child->positionAt(newPos);
+			child->positionAt(newBounds);
 		}
 	}
 
@@ -238,9 +242,9 @@ namespace squi::core {
 		return contentSize;
 	}
 
-	void MultiChildRenderObject::positionContentAt(const vec2 &newPos) {
+	void MultiChildRenderObject::positionContentAt(const Rect &newBounds) {
 		for (auto &child: children) {
-			child->positionAt(newPos);
+			child->positionAt(newBounds);
 		}
 	}
 

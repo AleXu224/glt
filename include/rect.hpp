@@ -1,6 +1,9 @@
 #pragma once
 
+#include "core/alignment.hpp"
+#include "margin.hpp"
 #include "vec2.hpp"
+
 
 namespace squi {
 	struct Rect {
@@ -41,6 +44,23 @@ namespace squi {
 
 		[[nodiscard]] bool intersects(const Rect &other) const {
 			return left <= other.right && right >= other.left && top <= other.bottom && bottom >= other.top;
+		}
+
+		[[nodiscard]] Rect inset(Margin margin) const {
+			Rect r = *this;
+			r.left += margin.left;
+			r.top += margin.top;
+			r.right -= margin.right;
+			r.bottom -= margin.bottom;
+			return r;
+		}
+
+		[[nodiscard]] vec2 posFromAlignment(const core::Alignment &alignment, const Rect &rect) const {
+			vec2 alignedPos = alignment.toVec2();
+			alignedPos.x *= (width() - rect.width());
+			alignedPos.y *= (height() - rect.height());
+			alignedPos += getTopLeft();
+			return alignedPos;
 		}
 
 		Rect &inset(const float &distance) {

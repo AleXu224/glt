@@ -10,6 +10,7 @@ namespace squi {
 
 		// Args
 		Key key;
+		Args widget;
 		std::function<void(const State &)> onEnter{};
 		std::function<void(const State &)> onLeave{};
 		std::function<void(const State &)> onFocus{};
@@ -79,11 +80,11 @@ namespace squi {
 			// Update render object properties here
 		}
 
-		static Args getArgs() {
-			return {
-				.width = Size::Wrap,
-				.height = Size::Wrap
-			};
+		[[nodiscard]] Args getArgs() const {
+			auto ret = widget;
+			ret.width = ret.width.value_or(Size::Wrap);
+			ret.height = ret.height.value_or(Size::Wrap);
+			return ret;
 		}
 	};
 
