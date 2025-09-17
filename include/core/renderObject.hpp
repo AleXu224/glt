@@ -67,6 +67,7 @@ namespace squi::core {
 
 		vec2 calculateSize(BoxConstraints constraints, bool final = false);
 		virtual vec2 calculateContentSize(BoxConstraints constraints, bool final);
+		virtual void afterSizeCalculated() {}
 
 		void positionAt(const Rect &newBounds);
 		virtual void positionContentAt(const Rect &newBounds) {}

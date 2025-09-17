@@ -129,6 +129,7 @@ namespace squi::core {
 
 		if (final) {
 			// Can do stuff here that should only be done once the size is final
+			afterSizeCalculated();
 		}
 
 		return size + marginOffset;

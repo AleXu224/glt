@@ -3,6 +3,7 @@
 #include "widgets/box.hpp"
 #include "widgets/flex.hpp"
 #include "widgets/gestureDetector.hpp"
+#include "widgets/text.hpp"
 #include <GLFW/glfw3.h>
 
 using namespace squi::core;
@@ -46,33 +47,39 @@ struct Test : StatefulWidget {
 	Key key;
 
 	struct State : WidgetState<Test> {
-		bool swapped = false;
-		float spacing = 5.f;
+		std::string text = "Hello, World!";
+		float fontSize = 30.f;
+		Color color = Color::white;
 
 		Child build(const Element &) override {
 			return Gesture{
+				.onClick = [&](const Gesture::State &) {
+					// Update the color to a random one
+					setState([this]() {
+						color = Color::css(rand() % 255, rand() % 255, rand() % 255);
+					});
+				},
 				.onUpdate = [this](const Gesture::State &state) {
-					if (state.getScroll().y != 0.0f) {
-						setState([&]() {
-							spacing += state.getScroll().y;
+					if (state.getScroll().y != 0) {
+						setState([this, &state]() {
+							fontSize = std::clamp(fontSize + state.getScroll().y, 5.f, 100.f);
 						});
 					}
-					if (state.isKeyPressedOrRepeat(GLFW_KEY_SPACE)) {
+					if (!state.textInput.empty()) {
+						setState([this, &state]() {
+							text += state.textInput;
+						});
+					}
+					if (state.isKeyPressedOrRepeat(GLFW_KEY_BACKSPACE) && !text.empty()) {
 						setState([this]() {
-							swapped = !swapped;
+							text.pop_back();
 						});
 					}
 				},
-				.child = Flex{
-					.direction = swapped ? Axis::Vertical : Axis::Horizontal,
-					.crossAxisAlignment = Flex::Alignment::start,
-					.spacing = spacing,
-					.children{
-						Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::lime},
-						ColorChanger{},
-						Box{.widget{.width = 50.f, .height = Size::Expand}, .color = Color::lime},
-						Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::lime},
-					},
+				.child = Text{
+					.text = text,
+					.fontSize = fontSize,
+					.color = color,
 				},
 			};
 		}

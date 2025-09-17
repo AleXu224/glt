@@ -12,7 +12,7 @@ namespace squi {
 	Box::BoxRenderObject::BoxRenderObject() : data(std::make_unique<BoxData>(Engine::Quad::Args{})) {}
 
 	void Box::BoxRenderObject::init() {
-		auto app = this->getApp();
+		auto *app = this->getApp();
 
 		this->getWidgetAs<Box>()->updateRenderObject(this);
 
