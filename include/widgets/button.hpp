@@ -132,18 +132,18 @@ namespace squi {
 						isHovered = false;
 						updateStatus();
 					},
+					.onFocus = [this](const Gesture::State &) {
+						isActive = true;
+						updateStatus();
+					},
+					.onFocusLoss = [this](const Gesture::State &) {
+						isActive = false;
+						updateStatus();
+					},
 					.onClick = [this](const Gesture::State &) {
 						if (widget->onClick) {
 							widget->onClick();
 						}
-					},
-					.onPress = [this](const Gesture::State &) {
-						isActive = true;
-						updateStatus();
-					},
-					.onRelease = [this](const Gesture::State &) {
-						isActive = false;
-						updateStatus();
 					},
 					.child = Box{
 						.widget = getArgs(),
