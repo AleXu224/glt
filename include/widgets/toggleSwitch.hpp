@@ -1,7 +1,7 @@
 #pragma once
 
-#include "button.hpp"
-#include "widget.hpp"
+#include "../button.hpp"
+#include "../widget.hpp"
 
 namespace squi {
 	struct ToggleSwitch {

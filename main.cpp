@@ -1,5 +1,6 @@
 #include "core/app.hpp"
 
+#include "include/widgets/button.hpp"
 #include "widgets/box.hpp"
 #include "widgets/flex.hpp"
 #include "widgets/gestureDetector.hpp"
@@ -47,39 +48,32 @@ struct Test : StatefulWidget {
 	Key key;
 
 	struct State : WidgetState<Test> {
-		std::string text = "Hello, World!";
-		float fontSize = 30.f;
-		Color color = Color::white;
+		bool toggle = false;
+		Button::Status status = Button::Status::resting;
 
 		Child build(const Element &) override {
-			return Gesture{
-				.onClick = [&](const Gesture::State &) {
-					// Update the color to a random one
-					setState([this]() {
-						color = Color::css(rand() % 255, rand() % 255, rand() % 255);
+			return Button{
+				.widget{
+					.margin = 16.f,
+				},
+				.theme = toggle ? Button::Theme::Accent() : Button::Theme::Standard(),
+				.onStatusChange = [this](Button::Status status) {
+					setState([this, status]() {
+						this->status = status;
 					});
 				},
-				.onUpdate = [this](const Gesture::State &state) {
-					if (state.getScroll().y != 0) {
-						setState([this, &state]() {
-							fontSize = std::clamp(fontSize + state.getScroll().y, 5.f, 100.f);
-						});
-					}
-					if (!state.textInput.empty()) {
-						setState([this, &state]() {
-							text += state.textInput;
-						});
-					}
-					if (state.isKeyPressedOrRepeat(GLFW_KEY_BACKSPACE) && !text.empty()) {
-						setState([this]() {
-							text.pop_back();
-						});
-					}
+				.onClick = [this]() {
+					setState([this]() {
+						toggle = !toggle;
+					});
 				},
-				.child = Text{
-					.text = text,
-					.fontSize = fontSize,
-					.color = color,
+				.content = Box{
+					.widget{
+						.width = 16.f,
+						.height = 16.f,
+						.alignment = Alignment::Center,
+					},
+					.color = Button::Theme::Standard().fromStatus(status).textColor,
 				},
 			};
 		}

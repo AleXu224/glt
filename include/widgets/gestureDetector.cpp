@@ -113,13 +113,15 @@ namespace squi {
 	}
 
 	bool Gesture::DetectorRenderObject::canClick() const {
+		if (!child) return false;
+
 		auto *app = getApp();
 		if (!app) return false;
 
 		auto &inputState = app->inputState;
 
 		bool cursorInsideAnotherWidget = false;
-		const bool cursorInsideWidget = getRect().contains(inputState.g_cursorPos);
+		const bool cursorInsideWidget = child->getRect().contains(inputState.g_cursorPos);
 		const bool cursorInsideActiveArea = inputState.g_activeArea.back().contains(inputState.g_cursorPos);
 		if (cursorInsideWidget && cursorInsideActiveArea) {
 			for (auto &widgetRect: inputState.g_hitCheckRects) {

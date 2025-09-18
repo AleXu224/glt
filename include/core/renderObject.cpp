@@ -150,19 +150,19 @@ namespace squi::core {
 	}
 
 	Rect RenderObject::getRect() const {
-		return Rect::fromPosSize(pos + margin.getPositionOffset(), size);
+		return Rect::fromPosSize(pos, size);
 	}
 
 	Rect RenderObject::getContentRect() const {
 		return Rect::fromPosSize(
-			pos + margin.getPositionOffset() + padding.getPositionOffset(),
+			pos + padding.getPositionOffset(),
 			size - padding.getSizeOffset()
 		);
 	}
 
 	Rect RenderObject::getLayoutRect() const {
 		return Rect::fromPosSize(
-			pos,
+			pos - margin.getPositionOffset(),
 			size + margin.getSizeOffset()
 		);
 	}

@@ -13,6 +13,7 @@ namespace squi {
 		float bottom;
 
 		Rect(vec2 topLeft, vec2 bottomRight);
+		Rect(vec2 size) : left(0.f), top(0.f), right(size.x), bottom(size.y) {}
 		[[nodiscard]] static Rect fromPosSize(vec2 position, vec2 size) {
 			return {position, position + size};
 		}

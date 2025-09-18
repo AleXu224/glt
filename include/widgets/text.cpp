@@ -65,7 +65,7 @@ namespace squi {
 	}
 
 	void Text::TextRenderObject::positionContentAt(const Rect &newBounds) {
-		const auto topLeft = newBounds.getTopLeft();
+		const auto topLeft = newBounds.posFromAlignment(alignment, textSize);
 		if (topLeft != lastPos) {
 			const vec2 roundedPos = topLeft.rounded();
 			for (auto &quadVec: data->quads) {

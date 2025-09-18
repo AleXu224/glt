@@ -1,8 +1,9 @@
 #pragma once
 
-#include "button.hpp"
+#include "../button.hpp"
+#include "../widget.hpp"
 #include "stateInfo.hpp"
-#include "widget.hpp"
+
 
 
 namespace squi {
