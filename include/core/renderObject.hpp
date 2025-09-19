@@ -148,6 +148,7 @@ namespace squi::core {
 		}
 
 		void addChild(const RenderObjectPtr &child, std::optional<size_t> /*index*/ = std::nullopt) override {
+			if (!child) return;
 			if (child->parent) {
 				child->parent->removeChild(child);
 			}

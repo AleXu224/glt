@@ -122,10 +122,9 @@ namespace squi {
 				case Axis::Vertical: {
 					auto offset = (crossAxisWidth - child->getLayoutRect().width()) * crossAxisOffsetFactor;
 					child->positionAt(
-						child->getLayoutRect().offset(
-							childPos
-								.withYOffset(-std::round(scroll - cursor))
-								.withXOffset(offset)
+						Rect::fromPosSize(
+							childPos.withYOffset(-std::round(scroll - cursor)).withXOffset(offset),
+							child->getLayoutRect().size()
 						)
 					);
 					cursor += child->getLayoutRect().height() + spacing;
@@ -134,10 +133,9 @@ namespace squi {
 				case Axis::Horizontal: {
 					auto offset = (crossAxisWidth - child->getLayoutRect().height()) * crossAxisOffsetFactor;
 					child->positionAt(
-						child->getLayoutRect().offset(
-							childPos
-								.withXOffset(-std::round(scroll - cursor))
-								.withYOffset(offset)
+						Rect::fromPosSize(
+							childPos.withXOffset(-std::round(scroll - cursor)).withYOffset(offset),
+							child->getLayoutRect().size()
 						)
 					);
 					cursor += child->getLayoutRect().width() + spacing;
@@ -148,5 +146,15 @@ namespace squi {
 	}
 
 	void Scrollable::ScrollableRenderObject::drawContent() {
+		auto *app = this->getApp();
+		auto &instance = app->engine.instance;
+		instance.pushScissor(getRect());
+		for (auto &child: children) {
+			if (!child) continue;
+
+
+			child->draw();
+		}
+		instance.popScissor();
 	}
 }// namespace squi

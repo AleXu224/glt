@@ -126,6 +126,14 @@ namespace squi::core {
 					}
 					dirtyElements.clear();
 
+					// if (needsRelayout) {
+					// 	std::println("Relayout needed");
+					// } else if (needsReposition) {
+					// 	std::println("Reposition needed");
+					// } else if (needsRedraw) {
+					// 	std::println("Redraw needed");
+					// }
+
 					// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
 
 					if (needsRelayout) {

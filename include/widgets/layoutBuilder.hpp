@@ -5,6 +5,7 @@
 namespace squi {
 	struct LayoutBuilder : RenderObjectWidget {
 		Key key;
+		Args widget;
 		std::function<Child(BoxConstraints)> builder;
 
 		struct Element : SingleChildRenderObjectElement {
@@ -21,10 +22,10 @@ namespace squi {
 
 		struct LayoutBuilderRenderObject : SingleChildRenderObject {
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override {
-				if (child && final) {
+				if (final) {
 					dynamic_cast<Element &>(*element).parentConstraints = constraints;
 					element->rebuild();
-					SingleChildRenderObject::calculateContentSize(constraints, final);
+					return SingleChildRenderObject::calculateContentSize(constraints, final);
 				}
 				return {};
 			}
@@ -38,11 +39,11 @@ namespace squi {
 			// Update render object properties here
 		}
 
-		static Args getArgs() {
-			return {
-				.width = 0.f,
-				.height = 0.f,
-			};
+		Args getArgs() const {
+			auto ret = widget;
+			ret.width = ret.width.value_or(Size::Wrap);
+			ret.height = ret.height.value_or(Size::Wrap);
+			return ret;
 		}
 	};
 }// namespace squi

@@ -168,7 +168,7 @@ namespace squi::core {
 	void ComponentElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		updateChild(this->child, newChildWidget, this->index);
+		this->child = updateChild(this->child, newChildWidget, this->index);
 		Element::rebuild();
 	}
 
@@ -310,7 +310,7 @@ namespace squi::core {
 	void SingleChildRenderObjectElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		updateChild(this->child, newChildWidget, 0);
+		this->child = updateChild(this->child, newChildWidget, 0);
 		RenderObjectElement::rebuild();
 	}
 
