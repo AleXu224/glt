@@ -1,17 +1,10 @@
 #pragma once
 
 #include "core/core.hpp"
-#include "observer.hpp"
+#include "misc/scrollViewData.hpp"
 
 namespace squi {
 	struct Scrollable : RenderObjectWidget {
-		struct Controller {
-			float viewMainAxis{0.0f};
-			float contentMainAxis{0.0f};
-			float scroll{0.0f};
-			Observable<float> onScrollChange{};
-		};
-
 		enum class Alignment : uint8_t {
 			begin,
 			center,
@@ -23,11 +16,8 @@ namespace squi {
 		Alignment alignment = Alignment::begin;
 		Axis direction = Axis::Vertical;
 		float spacing = 0.0f;
-		/**
-         * @brief onScroll(float scroll, float contentHeight, float viewHeight)
-         */
-		std::function<void(float, float, float)> onScroll{};
-		std::shared_ptr<Controller> controller{std::make_shared<Controller>()};
+		float scroll = 0.0f;
+		std::shared_ptr<ScrollViewData> controller{std::make_shared<ScrollViewData>()};
 		Children children{};
 
 		struct Element : MultiChildRenderObjectElement {
@@ -47,10 +37,16 @@ namespace squi {
 			float spacing = 0;
 			Alignment alignment = Alignment::begin;
 			Axis direction = Axis::Vertical;
-			std::shared_ptr<Controller> controller;
-			std::function<void(float, float, float)> onScroll{};
+			std::shared_ptr<ScrollViewData> controller;
 
 			void init() override;
+
+			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
+			void afterSizeCalculated() override;
+
+			void positionContentAt(const Rect &newBounds) override;
+
+			void drawContent() override;
 		};
 
 		static std::shared_ptr<RenderObject> createRenderObject() {

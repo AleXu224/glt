@@ -33,9 +33,11 @@ namespace squi::core {
 		Shrink,
 	};
 
+	using SizeVariant = std::variant<float, Size>;
+
 	struct Args {
-		std::optional<std::variant<float, Size>> width = std::nullopt;
-		std::optional<std::variant<float, Size>> height = std::nullopt;
+		std::optional<SizeVariant> width = std::nullopt;
+		std::optional<SizeVariant> height = std::nullopt;
 		std::optional<Alignment> alignment = std::nullopt;
 		std::optional<BoxConstraints> sizeConstraints = std::nullopt;
 		std::optional<Margin> margin = std::nullopt;

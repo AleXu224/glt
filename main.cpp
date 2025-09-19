@@ -1,6 +1,7 @@
 #include "core/app.hpp"
 
 #include "include/widgets/button.hpp"
+#include "include/widgets/scrollview.hpp"
 #include "widgets/box.hpp"
 #include "widgets/flex.hpp"
 #include "widgets/gestureDetector.hpp"
@@ -52,28 +53,20 @@ struct Test : StatefulWidget {
 		Button::Status status = Button::Status::resting;
 
 		Child build(const Element &) override {
-			return Button{
-				.widget{
-					.margin = 16.f,
-				},
-				.theme = toggle ? Button::Theme::Accent() : Button::Theme::Standard(),
-				.onStatusChange = [this](Button::Status status) {
-					setState([this, status]() {
-						this->status = status;
-					});
-				},
-				.onClick = [this]() {
-					setState([this]() {
-						toggle = !toggle;
-					});
-				},
-				.content = Box{
-					.widget{
-						.width = 16.f,
-						.height = 16.f,
-						.alignment = Alignment::Center,
-					},
-					.color = Button::Theme::Standard().fromStatus(status).textColor,
+			return ScrollView{
+				.children{
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					Box{.widget{.width = 50.f, .height = 50.f}},
+					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
 				},
 			};
 		}
