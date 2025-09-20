@@ -7,10 +7,12 @@
 #include "GLFW/glfw3.h"
 #include <GLFW/glfw3native.h>
 
+#include <utility>
+
 using namespace Engine;
 
 Instance::Instance(WindowOptions options)
-	: window(options),
+	: window(std::move(options)),
 	  surface(createSurface()),
 	  swapChainExtent(createExtent()),
 	  swapChain(createSwapChain(false)),

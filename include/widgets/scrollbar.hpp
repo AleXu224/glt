@@ -15,7 +15,11 @@ namespace squi {
 
 		struct State : WidgetState<Scrollbar> {
 			float dragStartScroll = 0.f;
-			
+			bool hovered = false;
+			bool focused = false;
+
+			[[nodiscard]] Padding getPadding() const;
+
 			Child build(const Element &) override;
 		};
 	};

@@ -7,11 +7,12 @@
 #include "vulkan.hpp"
 #include "vulkanIncludes.hpp"
 #include <print>
+#include <utility>
 #include <vector>
 
 #include "GLFW/glfw3.h"
 
-Engine::Runner::Runner(WindowOptions options) : instance(options) {}
+Engine::Runner::Runner(WindowOptions options) : instance(std::move(options)) {}
 
 Engine::Frame &Engine::Runner::getCurrentFrame() {
 	return instance.frames.at(frameNumber % FrameBuffer);
