@@ -5,6 +5,7 @@
 #include "widgets/scrollable.hpp"
 #include "widgets/scrollbar.hpp"
 #include "widgets/stack.hpp"
+#include <GLFW/glfw3.h>
 
 
 namespace squi {
@@ -40,6 +41,10 @@ namespace squi {
 							auto mainAxisScroll = widget->direction == Axis::Horizontal ? scroll.x : scroll.y;
 							if (mainAxisScroll != 0.f) {
 								scrollUpdater.notify(this->scroll - mainAxisScroll * 40.f);
+							}
+							// Allow scrolling horizontally when shift is held down
+							if (state.inputState->isKeyDown(GLFW_KEY_LEFT_SHIFT) && widget->direction == Axis::Horizontal && scroll.y != 0.f) {
+								scrollUpdater.notify(this->scroll - scroll.y * 40.f);
 							}
 						}
 					},

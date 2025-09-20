@@ -1,5 +1,6 @@
 #include "widgets/scrollbar.hpp"
 
+#include "animatedBox.hpp"
 #include "layoutBuilder.hpp"
 #include "widgets/box.hpp"
 #include "widgets/gestureDetector.hpp"
@@ -40,7 +41,7 @@ namespace squi {
 							hovered = false;
 						});
 					},
-					.child = Box{
+					.child = AnimatedBox{
 						.widget{
 							.width = widget->direction == Axis::Horizontal ? SizeVariant(Size::Expand) : SizeVariant(12.f),
 							.height = widget->direction == Axis::Vertical ? SizeVariant(Size::Expand) : SizeVariant(12.f),
