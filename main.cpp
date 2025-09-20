@@ -1,6 +1,7 @@
 #include "core/animated.hpp"
 #include "core/app.hpp"
 
+#include "include/widgets/animatedBox.hpp"
 #include "include/widgets/button.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "widgets/box.hpp"
@@ -18,22 +19,9 @@ struct ColorChanger : StatefulWidget {
 	float size = 50.f;
 
 	struct State : WidgetState<ColorChanger> {
-		Animated<Color> color{
-			.from = Color::royalblue,
-			.duration = 500ms,
-			.curve = Curve::easeOutCubic,
-		};
-		Animated<float> width{
-			.from = 50.f,
-			.duration = 500ms,
-			.curve = Curve::easeOutCubic,
-		};
+		Color color = Color::royalblue;
+		float width = 50.f;
 		bool expanded = false;
-
-		void initState() override {
-			color.mount(this);
-			width.mount(this);
-		}
 
 		Child build(const Element &) override {
 			return Gesture{
@@ -44,11 +32,12 @@ struct ColorChanger : StatefulWidget {
 						width = expanded ? 100.f : 50.f;
 					});
 				},
-				.child = Box{
+				.child = AnimatedBox{
 					.widget{
 						.width = width,
 						.height = widget->size,
 					},
+					.duration = 500ms,
 					.color = color,
 				},
 			};

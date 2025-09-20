@@ -17,6 +17,7 @@ namespace squi::core {
 		virtual ~WidgetStateBase() = default;
 
 		virtual void initState() {}
+		virtual void widgetUpdated() {}
 		virtual void dispose() {}
 
 		virtual Child build(const Element &element) = 0;

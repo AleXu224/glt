@@ -1,5 +1,7 @@
 #pragma once
 
+#include "borderRadius.hpp"
+#include "borderWidth.hpp"
 #include "color.hpp"
 #include "core/animationController.hpp"
 #include "core/app.hpp"
@@ -16,7 +18,7 @@ namespace squi::core {
 		T to = from;
 		std::chrono::milliseconds duration = 100ms;
 		std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-		std::function<float(float)> curve = Curve::easeInOutCubic;
+		std::function<float(float)> curve = Curve::easeOutCubic;
 
 		struct Controller : AnimationController {
 			using AnimationController::AnimationController;
@@ -111,8 +113,80 @@ namespace squi::core {
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
 		return from.transition(to, t);
+	}
 
-		controller->endTime = startTime + duration;
-		controller->run();
+	template<>
+	inline BorderWidth Animated<BorderWidth>::getValue() const {
+		if (!isMounted()) return from;
+		auto now = controller->app->frameStartTime;
+		if (now - startTime >= duration) return to;
+		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
+		t = curve(t);
+		return BorderWidth{
+			from.top + ((to.top - from.top) * t),
+			from.right + ((to.right - from.right) * t),
+			from.bottom + ((to.bottom - from.bottom) * t),
+			from.left + ((to.left - from.left) * t),
+		};
+	}
+
+	template<>
+	inline BorderRadius Animated<BorderRadius>::getValue() const {
+		if (!isMounted()) return from;
+		auto now = controller->app->frameStartTime;
+		if (now - startTime >= duration) return to;
+		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
+		t = curve(t);
+		return BorderRadius{
+			from.topLeft + ((to.topLeft - from.topLeft) * t),
+			from.topRight + ((to.topRight - from.topRight) * t),
+			from.bottomRight + ((to.bottomRight - from.bottomRight) * t),
+			from.bottomLeft + ((to.bottomLeft - from.bottomLeft) * t),
+		};
+	}
+
+	template<>
+	inline Alignment Animated<Alignment>::getValue() const {
+		if (!isMounted()) return from;
+		auto now = controller->app->frameStartTime;
+		if (now - startTime >= duration) return to;
+		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
+		t = curve(t);
+		return Alignment{
+			from.horizontal + ((to.horizontal - from.horizontal) * t),
+			from.vertical + ((to.vertical - from.vertical) * t),
+		};
+	}
+
+	template<>
+	inline Margin Animated<Margin>::getValue() const {
+		if (!isMounted()) return from;
+		auto now = controller->app->frameStartTime;
+		if (now - startTime >= duration) return to;
+		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
+		t = curve(t);
+		return Margin{
+			from.top + ((to.top - from.top) * t),
+			from.right + ((to.right - from.right) * t),
+			from.bottom + ((to.bottom - from.bottom) * t),
+			from.left + ((to.left - from.left) * t),
+		};
+	}
+
+	template<>
+	inline BoxConstraints Animated<BoxConstraints>::getValue() const {
+		if (!isMounted()) return from;
+		auto now = controller->app->frameStartTime;
+		if (now - startTime >= duration) return to;
+		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
+		t = curve(t);
+		return BoxConstraints{
+			.minWidth = from.minWidth + ((to.minWidth - from.minWidth) * t),
+			.maxWidth = from.maxWidth + ((to.maxWidth - from.maxWidth) * t),
+			.minHeight = from.minHeight + ((to.minHeight - from.minHeight) * t),
+			.maxHeight = from.maxHeight + ((to.maxHeight - from.maxHeight) * t),
+			.shrinkWidth = to.shrinkWidth,
+			.shrinkHeight = to.shrinkHeight,
+		};
 	}
 }// namespace squi::core

@@ -210,6 +210,7 @@ namespace squi::core {
 	void StatefulElement::update(const WidgetPtr &newWidget) {
 		this->state->setWidget(newWidget);
 		ComponentElement::update(newWidget);
+		this->state->widgetUpdated();
 	}
 
 	void StatefulElement::firstBuild() {
