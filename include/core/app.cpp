@@ -81,7 +81,7 @@ namespace squi::core {
 			engine.run(
 				[&]() -> bool {
 					static thread_local bool firstRun = true;
-					if (!firstRun && inputQueue.waitForInput())
+					if (!runningAnimations.empty() || (!firstRun && inputQueue.waitForInput()))
 						inputState.parseInput(inputQueue.pop());
 
 					inputState.frameBegin();
@@ -91,6 +91,10 @@ namespace squi::core {
 						needsRelayout = true;
 					}
 					drewLastFrame = false;
+
+					auto newFrameStartTime = std::chrono::steady_clock::now();
+					deltaTime = newFrameStartTime - frameStartTime;
+					frameStartTime = newFrameStartTime;
 
 					const auto &width = engine.instance.swapChainExtent.width;
 					const auto &height = engine.instance.swapChainExtent.height;
@@ -102,6 +106,17 @@ namespace squi::core {
 						vec2{0.0f, 0.0f},
 						vec2{static_cast<float>(width), static_cast<float>(height)}
 					);
+
+					// Update animations
+					for (auto it = runningAnimations.begin(); it != runningAnimations.end();) {
+						auto *anim = *it;
+						if (anim->isCompleted()) {
+							it = runningAnimations.erase(it);
+						} else {
+							anim->markElementDirty();
+							++it;
+						}
+					}
 
 					renderObject.iterateChildren([](RenderObject *child) {
 						if (auto *element = dynamic_cast<Gesture::DetectorRenderObject *>(child)) {

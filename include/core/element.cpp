@@ -200,13 +200,7 @@ namespace squi::core {
 	}
 
 	// Stateful Element
-	StatefulElement::StatefulElement(const StatefulWidgetPtr &widget) : ComponentElement(widget) {
-		this->state = widget->_createState();
-
-		this->state->element = this;
-		this->state->setWidget(widget);
-		this->state->initState();
-	}
+	StatefulElement::StatefulElement(const StatefulWidgetPtr &widget) : ComponentElement(widget) {}
 
 	Child StatefulElement::build() {
 		assert(state != nullptr);
@@ -216,6 +210,15 @@ namespace squi::core {
 	void StatefulElement::update(const WidgetPtr &newWidget) {
 		this->state->setWidget(newWidget);
 		ComponentElement::update(newWidget);
+	}
+
+	void StatefulElement::firstBuild() {
+		this->state = std::static_pointer_cast<StatefulWidget>(widget)->_createState();
+
+		this->state->element = this;
+		this->state->setWidget(widget);
+		this->state->initState();
+		ComponentElement::firstBuild();
 	}
 
 	void StatefulElement::rebuild() {

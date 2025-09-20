@@ -1,3 +1,4 @@
+#include "core/animated.hpp"
 #include "core/app.hpp"
 
 #include "include/widgets/button.hpp"
@@ -14,27 +15,38 @@ using namespace squi;
 struct ColorChanger : StatefulWidget {
 	// Args
 	Key key;
-	Color color = Color::royalblue;
 	float size = 50.f;
 
 	struct State : WidgetState<ColorChanger> {
-		Color color = Color::black;
+		Animated<Color> color{
+			.from = Color::royalblue,
+			.duration = 500ms,
+			.curve = Curve::easeOutCubic,
+		};
+		Animated<float> width{
+			.from = 50.f,
+			.duration = 500ms,
+			.curve = Curve::easeOutCubic,
+		};
 		bool expanded = false;
+
+		void initState() override {
+			color.mount(this);
+			width.mount(this);
+		}
 
 		Child build(const Element &) override {
 			return Gesture{
-				.widget{
-					.alignment = Alignment::Center,
-				},
 				.onClick = [this](const auto &) {
 					setState([this]() {
-						color = (color == Color::black) ? widget->color : Color::black;
 						expanded = !expanded;
+						color = expanded ? Color::black : Color::royalblue;
+						width = expanded ? 100.f : 50.f;
 					});
 				},
 				.child = Box{
 					.widget{
-						.width = Size::Expand,
+						.width = width,
 						.height = widget->size,
 					},
 					.color = color,
@@ -54,19 +66,23 @@ struct Test : StatefulWidget {
 
 		Child build(const Element &) override {
 			return ScrollView{
+				.direction = Axis::Horizontal,
+				.spacing = 2.f,
 				.children{
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
-					Box{.widget{.width = 50.f, .height = 50.f}},
-					Box{.widget{.width = 50.f, .height = 50.f}, .color = Color::red},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
+					ColorChanger{},
 				},
 			};
 		}

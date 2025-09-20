@@ -92,6 +92,7 @@ namespace squi::core {
 		Child build() override;
 
 		void update(const WidgetPtr &newWidget) override;
+		void firstBuild() override;
 		void rebuild() override;
 		void unmount() override;
 	};

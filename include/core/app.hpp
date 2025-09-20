@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/animationController.hpp"
 #include "core/inputState.hpp"
 #include "engine/engine.hpp"
 #include "inputQueue.hpp"
@@ -70,12 +71,16 @@ namespace squi::core {
 		std::function<void(bool)> maximizeCallback{};
 		std::function<void(uint32_t, uint32_t)> resizeCallback{};
 
+		std::chrono::steady_clock::time_point frameStartTime = std::chrono::steady_clock::now();
+		std::chrono::duration<float> deltaTime = 0ms;
+
 		static inline std::mutex windowMapMtx{};
 		static inline std::mutex pollMtx{};
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
 
 		std::unordered_set<Element *> dirtyElements{};
+		std::unordered_set<AnimationController *> runningAnimations{};
 
 		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
 			auto ret = std::make_shared<RootRenderObject>();
