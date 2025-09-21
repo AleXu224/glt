@@ -176,7 +176,10 @@ namespace squi::core {
 					// if (!dirtyElements.empty()) {
 					// 	std::println("Has dirty elements");
 					// }
-					for (const auto &elem: dirtyElements) {
+					while (!dirtyElements.empty()) {
+						auto it = dirtyElements.begin();
+						auto *elem = *it;
+						dirtyElements.erase(it);
 						if (elem->mounted && elem->dirty)
 							elem->rebuild();
 					}

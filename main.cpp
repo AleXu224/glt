@@ -94,6 +94,10 @@ struct Test : StatefulWidget {
 int main(int /*unused*/, char ** /*unused*/) {
 
 	App app{
+		.windowOptions{
+			.width = 1280,
+			.height = 720,
+		},
 		.child = Test{},
 	};
 	app.run();

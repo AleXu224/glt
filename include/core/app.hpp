@@ -50,10 +50,11 @@ namespace squi::core {
 	};
 
 	struct App {
+		Engine::WindowOptions windowOptions{
+			.name = "Squi App",
+		};
 		Engine::Runner engine{
-			Engine::WindowOptions{
-				.name = "Squi App",
-			},
+			windowOptions
 		};
 
 		Child child;
