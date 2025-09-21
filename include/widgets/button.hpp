@@ -1,11 +1,11 @@
 #pragma once
 
+#include "animatedText.hpp"
 #include "color.hpp"
 #include "core/core.hpp"
 #include "utils.hpp"
-#include "widgets/box.hpp"
+#include "widgets/animatedBox.hpp"
 #include "widgets/gestureDetector.hpp"
-#include "widgets/text.hpp"
 
 
 namespace squi {
@@ -90,7 +90,7 @@ namespace squi {
 				return std::visit(
 					utils::overloaded{
 						[&](const std::string &text) -> Child {
-							return Text{
+							return AnimatedText{
 								.widget{
 									.alignment = Alignment::Center,
 								},
@@ -120,6 +120,10 @@ namespace squi {
 				return args;
 			}
 
+			void widgetUpdated() override {
+				updateStatus();
+			}
+
 			Child build(const Element &) override {
 				auto style = widget->theme.fromStatus(status);
 
@@ -145,7 +149,7 @@ namespace squi {
 							widget->onClick();
 						}
 					},
-					.child = Box{
+					.child = AnimatedBox{
 						.widget = getArgs(),
 						.color = style.backgroundColor,
 						.borderColor = style.borderColor,

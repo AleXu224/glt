@@ -56,7 +56,7 @@ namespace squi {
 				std::tie(data->quads, textSize.x, textSize.y) = font->generateQuads(
 					text,
 					fontSize,
-					pos.rounded(),
+					lastPos.rounded(),
 					color,
 					lineWrap ? std::optional<float>(size.x) : std::nullopt
 				);

@@ -58,6 +58,19 @@ struct Test : StatefulWidget {
 				.direction = Axis::Horizontal,
 				.spacing = 2.f,
 				.children{
+					Button{
+						.onClick = [this]() {
+							setState([this]() {
+								toggle = !toggle;
+							});
+						},
+						.content = "Toggle",
+					},
+					Button{
+						.theme = Button::Theme::Accent(),
+						.disabled = toggle,
+						.content = "Button",
+					},
 					ColorChanger{},
 					ColorChanger{},
 					ColorChanger{},
