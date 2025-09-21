@@ -2,6 +2,11 @@
 #include "fontStore.hpp"
 #include "widgets/gestureDetector.hpp"
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+
+#ifdef _WIN32
+#include "dwmapi.h"
+#endif
 
 
 namespace squi::core {
@@ -74,6 +79,42 @@ namespace squi::core {
 				});
 			});
 		}
+
+#ifdef _WIN32
+		bool supportsNewMica = false;
+		const auto *const system = L"kernel32.dll";
+		DWORD dummy = 0;
+		const auto cbInfo = ::GetFileVersionInfoSizeExW(FILE_VER_GET_NEUTRAL, system, &dummy);
+		std::vector<char> buffer(cbInfo);
+		::GetFileVersionInfoExW(FILE_VER_GET_NEUTRAL, system, dummy, buffer.size(), buffer.data());
+		void *p = nullptr;
+		UINT size = 0;
+		::VerQueryValueW(buffer.data(), L"\\", &p, &size);
+		assert(size >= sizeof(VS_FIXEDFILEINFO));
+		assert(p != nullptr);
+		const auto *pFixed = static_cast<const VS_FIXEDFILEINFO *>(p);
+
+		bool isWin11 = false;
+		if (HIWORD(pFixed->dwFileVersionMS) == 10 && HIWORD(pFixed->dwFileVersionLS) >= 22000) {
+			isWin11 = true;
+			if (HIWORD(pFixed->dwFileVersionLS) >= 22523) supportsNewMica = true;
+		}
+
+		HWND hwnd = glfwGetWin32Window(window);
+		// Renderer::getInstance().initialize(hwnd, 800, 600);
+
+		int darkMode = 1;
+		int mica = 2;
+		int micaOld = 1;
+		if (isWin11) {
+			DwmSetWindowAttribute(hwnd, 20, &darkMode, sizeof(darkMode));
+			if (supportsNewMica)
+				DwmSetWindowAttribute(hwnd, 38, &mica, sizeof(mica));
+			else
+				DwmSetWindowAttribute(hwnd, 1029, &micaOld, sizeof(micaOld));
+		}
+#endif
+
 		std::thread([&]() {
 			rootElement->mount(nullptr, 0);
 			auto &renderObjectElem = dynamic_cast<RenderObjectElement &>(*rootElement);
