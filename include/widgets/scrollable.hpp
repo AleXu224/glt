@@ -2,40 +2,38 @@
 
 #include "core/core.hpp"
 #include "misc/scrollViewData.hpp"
+#include "widgets/flex.hpp"
 
 namespace squi {
 	struct Scrollable : RenderObjectWidget {
-		enum class Alignment : uint8_t {
-			begin,
-			center,
-			end
-		};
-
 		Key key;
 		Args widget;
-		Alignment alignment = Alignment::begin;
+		Flex::Alignment alignment = Flex::Alignment::start;
 		Axis direction = Axis::Vertical;
 		float spacing = 0.0f;
 		float scroll = 0.0f;
 		std::shared_ptr<ScrollViewData> controller{std::make_shared<ScrollViewData>()};
 		Children children{};
 
-		struct Element : MultiChildRenderObjectElement {
-			using MultiChildRenderObjectElement::MultiChildRenderObjectElement;
+		struct Element : SingleChildRenderObjectElement {
+			using SingleChildRenderObjectElement::SingleChildRenderObjectElement;
 
-			std::vector<Child> build() override {
+			Child build() override {
 				if (auto scrollableWidget = std::static_pointer_cast<Scrollable>(widget)) {
-					return scrollableWidget->children;
+					return Flex{
+						.direction = scrollableWidget->direction,
+						.crossAxisAlignment = scrollableWidget->alignment,
+						.spacing = scrollableWidget->spacing,
+						.children = std::move(scrollableWidget->children),
+					};
 				}
 				return {};
 			};
 		};
 
-		struct ScrollableRenderObject : MultiChildRenderObject {
+		struct ScrollableRenderObject : SingleChildRenderObject {
 			float scroll = 0;
 			float contentMainAxis = 0.f;
-			float spacing = 0;
-			Alignment alignment = Alignment::begin;
 			Axis direction = Axis::Vertical;
 			std::shared_ptr<ScrollViewData> controller;
 
@@ -54,9 +52,5 @@ namespace squi {
 		}
 
 		void updateRenderObject(RenderObject *renderObject) const;
-
-		static Args getArgs() {
-			return {};
-		}
 	};
 }// namespace squi

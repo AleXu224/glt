@@ -24,8 +24,8 @@ namespace squi {
 		std::vector<RenderObjectPtr> expandedChildren{};
 
 		if (!ignoreCrossAxisSize && crossAxisShrink) {
-			const auto size = _calculateContentSize(constraints, final, true).x;
-			crossAxisMaxSize = std::clamp(size, crossAxisMinSize, crossAxisMaxSize);
+			const auto size = _calculateContentSize(constraints, false, true);
+			crossAxisMaxSize = std::clamp(direction == Axis::Horizontal ? size.y : size.x, crossAxisMinSize, crossAxisMaxSize);
 			crossAxisShrink = false;
 		}
 

@@ -12,7 +12,7 @@ namespace squi {
 		Key key;
 		Args widget{};
 
-		std::string_view text;
+		std::string text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
 		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;

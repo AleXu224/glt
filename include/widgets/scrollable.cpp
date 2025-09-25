@@ -6,11 +6,6 @@ namespace squi {
 		if (auto *scrollableRenderObject = dynamic_cast<ScrollableRenderObject *>(renderObject)) {
 			auto *app = renderObject->getApp();
 
-			if (spacing != scrollableRenderObject->spacing) {
-				scrollableRenderObject->spacing = spacing;
-				app->needsReposition = true;
-			}
-
 			if (scroll != scrollableRenderObject->scroll) {
 				scrollableRenderObject->scroll = scroll;
 				app->needsReposition = true;
@@ -47,9 +42,7 @@ namespace squi {
 				break;
 		}
 
-		for (auto &child: children) {
-			if (!child) continue;
-
+		if (child) {
 			const auto size = child->calculateSize(childConstraints, final);
 			switch (direction) {
 				case Axis::Vertical:
@@ -62,15 +55,14 @@ namespace squi {
 					break;
 			}
 		}
-		float totalSpacing = spacing * (static_cast<float>(children.size()) - 1.f);
-		totalSpacing = std::max(totalSpacing, 0.f);
-		contentMainAxis = totalMainAxis + totalSpacing;
+
+		contentMainAxis = totalMainAxis;
 
 		switch (direction) {
 			case Axis::Vertical:
-				return {maxCrossAxis, contentMainAxis};
+				return {maxCrossAxis, totalMainAxis};
 			case Axis::Horizontal:
-				return {contentMainAxis, maxCrossAxis};
+				return {totalMainAxis, maxCrossAxis};
 		}
 		std::unreachable();
 	}
@@ -93,68 +85,36 @@ namespace squi {
 
 	void Scrollable::ScrollableRenderObject::positionContentAt(const Rect &newBounds) {
 		const auto childPos = newBounds.posFromAlignment(::squi::Alignment::TopLeft, size);
-		float cursor = 0.f;
-		const auto crossAxisWidth = [&]() {
-			switch (direction) {
-				case Axis::Vertical:
-					return getContentRect().width();
-				case Axis::Horizontal:
-					return getContentRect().height();
-			}
-			std::unreachable();
-		}();
 
-		const auto crossAxisOffsetFactor = [&]() {
-			switch (alignment) {
-				case Alignment::begin:
-					return 0.f;
-				case Alignment::center:
-					return 0.5f;
-				case Alignment::end:
-					return 1.f;
+		if (!child) return;
+		switch (direction) {
+			case Axis::Vertical: {
+				child->positionAt(
+					Rect::fromPosSize(
+						childPos.withYOffset(-std::round(scroll)),
+						child->getLayoutRect().size()
+					)
+				);
+				break;
 			}
-			std::unreachable();
-		}();
-
-		for (auto &child: children) {
-			if (!child) continue;
-			switch (direction) {
-				case Axis::Vertical: {
-					auto offset = (crossAxisWidth - child->getLayoutRect().width()) * crossAxisOffsetFactor;
-					child->positionAt(
-						Rect::fromPosSize(
-							childPos.withYOffset(-std::round(scroll - cursor)).withXOffset(offset),
-							child->getLayoutRect().size()
-						)
-					);
-					cursor += child->getLayoutRect().height() + spacing;
-					break;
-				}
-				case Axis::Horizontal: {
-					auto offset = (crossAxisWidth - child->getLayoutRect().height()) * crossAxisOffsetFactor;
-					child->positionAt(
-						Rect::fromPosSize(
-							childPos.withXOffset(-std::round(scroll - cursor)).withYOffset(offset),
-							child->getLayoutRect().size()
-						)
-					);
-					cursor += child->getLayoutRect().width() + spacing;
-					break;
-				}
+			case Axis::Horizontal: {
+				child->positionAt(
+					Rect::fromPosSize(
+						childPos.withXOffset(-std::round(scroll)),
+						child->getLayoutRect().size()
+					)
+				);
+				break;
 			}
 		}
 	}
 
 	void Scrollable::ScrollableRenderObject::drawContent() {
+		if (!child) return;
 		auto *app = this->getApp();
 		auto &instance = app->engine.instance;
 		instance.pushScissor(getRect());
-		for (auto &child: children) {
-			if (!child) continue;
-
-
-			child->draw();
-		}
+		child->draw();
 		instance.popScissor();
 	}
 }// namespace squi

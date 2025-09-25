@@ -12,7 +12,7 @@ namespace squi {
 		std::chrono::milliseconds duration = 200ms;
 		std::function<float(float)> curve = core::Curve::easeOutCubic;
 
-		std::string_view text;
+		std::string text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
 		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
