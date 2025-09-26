@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(VCPKG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 26)
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)

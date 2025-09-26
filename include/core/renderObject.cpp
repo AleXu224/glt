@@ -141,7 +141,25 @@ namespace squi::core {
 
 	void RenderObject::positionAt(const Rect &newBounds) {
 		pos = newBounds.posFromAlignment(alignment, getLayoutRect()) + margin.getPositionOffset();
-		positionContentAt(getContentRect());
+
+		auto wrapWidth = (std::holds_alternative<Size>(width) && std::get<Size>(width) == Size::Wrap);
+		auto wrapHeight = (std::holds_alternative<Size>(height) && std::get<Size>(height) == Size::Wrap);
+
+		auto contentBounds = getContentRect();
+		auto offset = padding.getPositionOffset() + margin.getPositionOffset();
+
+		// If the widget is wrapping then allow the content to be positioned relative to the parent bounds
+		if (wrapWidth) {
+			contentBounds.left = newBounds.left + offset.x;
+			contentBounds.right = newBounds.right - offset.x;
+		}
+
+		if (wrapHeight) {
+			contentBounds.top = newBounds.top + offset.y;
+			contentBounds.bottom = newBounds.bottom - offset.y;
+		}
+
+		positionContentAt(contentBounds);
 	}
 
 	void RenderObject::draw() {

@@ -20,8 +20,8 @@ namespace squi {
 		return {
 			.resting{.backgroundColor = 0xFFFFFF0F, .borderColor = 0xFFFFFF18, .textColor = Color::white},
 			.hovered{.backgroundColor = 0xFFFFFF15, .borderColor = 0xFFFFFF18, .textColor = Color::white},
-			.active{.backgroundColor = 0xFFFFFF12, .borderColor = 0xFFFFFF12, .textColor = Color::white * 0.78f},
-			.disabled{.backgroundColor = 0xFFFFFF12, .borderColor = 0xFFFFFF12, .textColor = Color::white * 0.36f},
+			.active{.backgroundColor = Color::white * 0.0326f, .borderColor = 0xFFFFFF12, .textColor = Color::white * 0.78f},
+			.disabled{.backgroundColor = Color::white * 0.0419f, .borderColor = 0xFFFFFF12, .textColor = Color::white * 0.36f},
 		};
 	}
 

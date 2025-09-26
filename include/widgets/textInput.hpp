@@ -22,6 +22,7 @@ namespace squi {
 
 		struct State : WidgetState<TextInput> {
 			std::shared_ptr<Controller> controller;
+			float scroll = 0.f;
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 
@@ -63,6 +64,7 @@ namespace squi {
 			void handlePaste(const Gesture::State &state);
 
 			[[nodiscard]] Child getSelectionBox(uint32_t widthToStart) const;
+			[[nodiscard]] Child getCursorBox(uint32_t widthToCursor) const;
 
 			Child build(const Element &) override;
 		};

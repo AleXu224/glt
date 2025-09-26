@@ -1,5 +1,6 @@
 #include "widgets/textInput.hpp"
 
+#include "offset.hpp"
 #include "theme.hpp"
 #include "widgets/box.hpp"
 #include "widgets/scrollable.hpp"
@@ -272,19 +273,38 @@ namespace squi {
 			);
 		}
 		auto theme = ThemeManager::getTheme();
-		return Box{
-			.widget{
-				.width = Size::Wrap,
-				.height = Size::Wrap,
-				.margin = Margin{}.withLeft(static_cast<float>(widthToStart)),
+		return Offset{
+			.calculateContentBounds = [widthToStart](const Rect &bounds, const SingleChildRenderObject &) -> Rect {
+				auto ret = bounds;
+				ret.offset({static_cast<float>(widthToStart), 0.f});
+				return ret;
 			},
-			.color = theme.accent,
-			.child = Text{
-				.text = controller->text.substr(
-					selectionMin,
-					selectionMax - selectionMin
-				),
-				.color = theme.accent.isLight() ? Color::black : Color::white,
+			.child = Box{
+				.widget{
+					.width = Size::Wrap,
+					.height = Size::Wrap,
+				},
+				.color = theme.accent,
+				.child = Text{
+					.text = controller->text.substr(selectionMin, selectionMax - selectionMin),
+					.color = theme.accent.isLight() ? Color::black : Color::white,
+				},
+			},
+		};
+	}
+
+	[[nodiscard]] Child TextInput::State::getCursorBox(uint32_t widthToCursor) const {
+		if (!widget->active) return nullptr;
+		return Offset{
+			.calculateContentBounds = [widthToCursor](const Rect &bounds, const SingleChildRenderObject &) -> Rect {
+				auto ret = bounds;
+				ret.offset({static_cast<float>(widthToCursor), 0.f});
+				return ret;
+			},
+			.child = Box{
+				.widget{
+					.width = 1.f,
+				},
 			},
 		};
 	}
@@ -295,10 +315,20 @@ namespace squi {
 			14.f
 		);
 
+		// auto [textSize, _] = font->getTextSizeSafe(
+		// 	controller->text,
+		// 	14.f
+		// );
+
+		auto args = widget->widget;
+		args.height = args.height.value_or(Size::Shrink);
+
 		return Gesture{
 			.onUpdate = [this](const Gesture::State &state) {
 				if (!widget->active)
 					return;
+
+				auto lastCursor = controller->cursor;
 
 				// Make sure the cursors are not out of bounds
 				clampCursors();
@@ -319,12 +349,14 @@ namespace squi {
 				handleCopy(state);
 				handleCut(state);
 				handlePaste(state);
+
+				if (lastCursor != controller->cursor)
+					this->element->markNeedsReposition();
 			},
 			.child = Scrollable{
-				.widget{
-					.height = Size::Shrink,
-				},
+				.widget = args,
 				.direction = Axis::Horizontal,
+				.scroll = scroll,
 				.children{Stack{
 					.widget{
 						.width = Size::Wrap,
@@ -335,12 +367,7 @@ namespace squi {
 							.text = controller->text,
 						},
 						getSelectionBox(widthToCursor),
-						Box{
-							.widget{
-								.width = 1.f,
-								.margin = Margin{}.withLeft(static_cast<float>(widthToCursor)),
-							},
-						},
+						getCursorBox(widthToCursor),
 					},
 				}},
 			},
