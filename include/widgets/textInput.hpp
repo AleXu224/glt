@@ -3,6 +3,7 @@
 #include "core/core.hpp"
 #include "fontStore.hpp"
 #include "widgets/gestureDetector.hpp"
+#include "widgets/misc/scrollViewData.hpp"
 #include <GLFW/glfw3.h>
 
 
@@ -18,10 +19,14 @@ namespace squi {
 		Key key;
 		Args widget;
 		std::shared_ptr<Controller> controller;
+		std::function<void(const std::string &)> onTextChanged;
 		bool active = false;
 
 		struct State : WidgetState<TextInput> {
+			Controller cachedController{};
 			std::shared_ptr<Controller> controller;
+			ScrollViewData cachedScrollData{};
+			std::shared_ptr<ScrollViewData> scrollController = std::make_shared<ScrollViewData>();
 			float scroll = 0.f;
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
@@ -30,12 +35,15 @@ namespace squi {
 				controller = std::make_shared<Controller>();
 				if (!controller) {
 					controller = std::make_shared<Controller>();
+					cachedController = *controller;
 				}
 			}
 
 			void widgetUpdated() override {
-				if (widget->controller)
+				if (widget->controller) {
 					controller = widget->controller;
+					cachedController = *controller;
+				}
 			}
 
 			void clampCursors();

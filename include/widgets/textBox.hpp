@@ -1,8 +1,9 @@
 #pragma once
 
 #include "core/core.hpp"
-#include "widgets/box.hpp"
+#include "theme.hpp"
 #include "widgets/button.hpp"
+#include "widgets/column.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/textInput.hpp"
 
@@ -12,11 +13,14 @@ namespace squi {
 		// Args
 		Key key;
 		bool disabled = false;
+		std::shared_ptr<TextInput::Controller> controller = std::make_shared<TextInput::Controller>();
+		std::function<std::optional<std::string>(const std::string &)> validator;
 
 		struct State : WidgetState<TextBox> {
 			Button::Status status = Button::Status::resting;
 			bool active = false;
 			bool hovered = false;
+			std::string errorMessage;
 
 			void updateStatus() {
 				Button::Status newStatus = Button::Status::resting;
@@ -35,10 +39,15 @@ namespace squi {
 				}
 			}
 
+			void widgetUpdated() override {
+				updateStatus();
+			}
+
 			Child build(const Element &) override {
 				static auto theme = []() {
 					auto ret = Button::Theme::Standard();
 					ret.active.textColor = Color::white;
+					ret.active.backgroundColor = Color::css(30, 30, 30, 0.7f);
 					return ret;
 				}();
 
@@ -61,30 +70,71 @@ namespace squi {
 						active = false;
 						updateStatus();
 					},
-					.child = Box{
+					.child = Column{
 						.widget{
-							.width = Size::Shrink,
-							.height = 32.f,
-							.padding = Padding{}.withHorizontal(12.f),
+							.width = Size::Wrap,
+							.height = Size::Wrap,
 						},
-						.color = style.backgroundColor,
-						.borderColor = style.borderColor,
-						.borderWidth = style.borderWidth,
-						.borderRadius = 4.f,
-						.borderPosition = style.borderPosition,
-						.child = Stack{
-							.children{
-								TextInput{
-									.widget{
-										.alignment = Alignment::CenterLeft,
-										.sizeConstraints = BoxConstraints{
-											.minWidth = 100.f,
-											.maxWidth = 200.f,
+						.spacing = 4.f,
+						.children{
+							AnimatedBox{
+								.widget{
+									.width = Size::Shrink,
+									.height = 32.f,
+								},
+								.color = style.backgroundColor,
+								.borderColor = style.borderColor,
+								.borderWidth = style.borderWidth,
+								.borderRadius = style.borderRadius,
+								.borderPosition = style.borderPosition,
+								.child = Stack{
+									.children{
+										AnimatedBox{
+											.color = Color::transparent,
+											.borderColor = [&]() {
+												if (!errorMessage.empty()) return Color(0xFF99A4FF);
+
+												switch (status) {
+													case Button::Status::disabled:
+														return Color::transparent;
+													case Button::Status::active:
+														return ThemeManager::getTheme().accent;
+													default:
+														return Color::white * 0.54f;
+												}
+											}(),
+											.borderWidth = BorderWidth{}.withBottom((status == Button::Status::active ? 2.f : 1.f)),
+											.borderRadius = style.borderRadius,
+										},
+										TextInput{
+											.widget{
+												.alignment = Alignment::CenterLeft,
+												.sizeConstraints = BoxConstraints{
+													.minWidth = 100.f,
+													.maxWidth = 200.f,
+												},
+												.margin = Margin{}.withHorizontal(12.f),
+											},
+											.controller = widget->controller,
+											.onTextChanged = [this](const std::string &text) {
+												if (widget->validator) {
+													auto err = widget->validator(text);
+													setState([&]() {
+														errorMessage = err.value_or("");
+													});
+												}
+											},
+											.active = status == Button::Status::active,
 										},
 									},
-									.active = status == Button::Status::active,
 								},
 							},
+							errorMessage.empty()//
+								? Child{}
+								: Text{
+									  .text = errorMessage,
+									  .color = 0xFF99A4FF,
+								  },
 						},
 					},
 				};

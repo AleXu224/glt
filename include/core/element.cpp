@@ -31,6 +31,10 @@ namespace squi::core {
 		getApp()->needsRedraw = true;
 	}
 
+	void Element::addPostLayoutTask(const std::function<void()> &task) const {
+		getApp()->postLayoutTasks.emplace_back(task);
+	}
+
 	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index) {
 		if (!newWidget) {
 			if (child) {

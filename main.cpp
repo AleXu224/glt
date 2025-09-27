@@ -1,7 +1,9 @@
 #include "core/app.hpp"
 
+#include "include/widgets/column.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
+
 
 #include <GLFW/glfw3.h>
 
@@ -45,8 +47,44 @@ struct Test : StatefulWidget {
 	Key key;
 
 	struct State : WidgetState<Test> {
+		std::shared_ptr<TextInput::Controller> controller = std::make_shared<TextInput::Controller>();
+		bool disabled = false;
+
 		Child build(const Element &) override {
-			return TextBox{};
+			return Column{
+				.children{
+					TextBox{
+						.disabled = disabled,
+						.controller = controller,
+						.validator = [](const std::string &text) -> std::optional<std::string> {
+							std::println("Validating: {}", text);
+							if (text.contains("error")) {
+								return "Error: Text contains the word 'error'";
+							}
+							return {};
+						},
+					},
+					Button{
+						.onClick = [this]() {
+							setState([&]() {
+								// remove the last character if it exists
+								if (!controller->text.empty()) {
+									controller->text.pop_back();
+								}
+							});
+						},
+						.content = "Test",
+					},
+					Button{
+						.onClick = [this]() {
+							setState([&]() {
+								disabled = !disabled;
+							});
+						},
+						.content = "Toggle Disabled",
+					},
+				},
+			};
 		}
 	};
 };

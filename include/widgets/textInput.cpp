@@ -7,6 +7,8 @@
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
 
+#include <algorithm>
+
 namespace squi {
 	void TextInput::State::clampCursors() {
 		auto newCursor = std::clamp(controller->cursor, static_cast<int64_t>(0), static_cast<int64_t>(controller->text.size()));
@@ -39,9 +41,11 @@ namespace squi {
 	}
 
 	void TextInput::State::setText(const std::string &text) {
+		if (text == controller->text) return;
 		setState([this, &text]() {
 			controller->text = text;
 		});
+		if (widget->onTextChanged) widget->onTextChanged(controller->text);
 	}
 
 	void TextInput::State::clearSelection() {
@@ -61,8 +65,8 @@ namespace squi {
 	void TextInput::State::handleTextInput(const Gesture::State &state) {
 		if (!state.inputState->g_textInput.empty()) {
 			clearSelection();
+			setText(std::format("{}{}{}", controller->text.substr(0, controller->cursor), state.inputState->g_textInput, controller->text.substr(controller->cursor)));
 			setState([this, &state]() {
-				controller->text = std::format("{}{}{}", controller->text.substr(0, controller->cursor), state.inputState->g_textInput, controller->text.substr(controller->cursor));
 				controller->cursor += static_cast<int64_t>(state.inputState->g_textInput.size());
 			});
 		}
@@ -320,8 +324,22 @@ namespace squi {
 		// 	14.f
 		// );
 
+		this->element->addPostLayoutTask([this]() {
+			if (this->cachedScrollData != *this->scrollController) {
+				this->cachedScrollData = *this->scrollController;
+				this->element->markNeedsRebuild();
+			}
+		});
+
 		auto args = widget->widget;
 		args.height = args.height.value_or(Size::Shrink);
+		args.padding = args.padding.value_or(Padding{}.withRight(1.f));
+
+		auto minScroll = std::max(static_cast<float>(widthToCursor) - cachedScrollData.viewMainAxis, 0.f);
+		auto maxScroll = std::min(static_cast<float>(widthToCursor), std::max(cachedScrollData.contentMainAxis - cachedScrollData.viewMainAxis, 0.f));
+		// Min scroll can be bigger than max scroll for a single build
+		minScroll = std::min(minScroll, maxScroll);
+		scroll = std::clamp(scroll, minScroll, maxScroll);
 
 		return Gesture{
 			.onUpdate = [this](const Gesture::State &state) {
@@ -357,6 +375,7 @@ namespace squi {
 				.widget = args,
 				.direction = Axis::Horizontal,
 				.scroll = scroll,
+				.controller = scrollController,
 				.children{Stack{
 					.widget{
 						.width = Size::Wrap,

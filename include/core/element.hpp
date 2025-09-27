@@ -58,6 +58,8 @@ namespace squi::core {
 		void markNeedsReposition() const;
 		void markNeedsRedraw() const;
 
+		void addPostLayoutTask(const std::function<void()> &task) const;
+
 		ElementPtr updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index);
 		virtual void updateIndex(size_t index);
 		void updateChildren(std::vector<ElementPtr> &oldChildren, const std::vector<WidgetPtr> &newWidgets);

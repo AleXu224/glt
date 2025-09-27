@@ -176,38 +176,44 @@ namespace squi::core {
 					// if (!dirtyElements.empty()) {
 					// 	std::println("Has dirty elements");
 					// }
-					while (!dirtyElements.empty()) {
-						auto it = dirtyElements.begin();
-						auto *elem = *it;
-						dirtyElements.erase(it);
-						if (elem->mounted && elem->dirty)
-							elem->rebuild();
-					}
-					dirtyElements.clear();
+					while (!dirtyElements.empty() || needsRelayout) {
+						while (!dirtyElements.empty()) {
+							auto it = dirtyElements.begin();
+							auto *elem = *it;
+							dirtyElements.erase(it);
+							if (elem->mounted && elem->dirty)
+								elem->rebuild();
+						}
+						dirtyElements.clear();
 
-					// if (needsRelayout) {
-					// 	std::println("Relayout needed");
-					// } else if (needsReposition) {
-					// 	std::println("Reposition needed");
-					// } else if (needsRedraw) {
-					// 	std::println("Redraw needed");
-					// }
+						if (needsRelayout || needsReposition) needsRedraw = true;
+						if (needsRelayout) needsReposition = true;
 
-					// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
-
-					if (needsRelayout) {
-						renderObject.calculateSize(
-							BoxConstraints{
-								.maxWidth = static_cast<float>(width),
-								.maxHeight = static_cast<float>(height),
-							},
-							true
-						);
-						// std::println("Relayout counter:");
-						// for (const auto &[key, value]: relayoutCounter) {
-						// 	std::println("{} - {} layouts", key, value);
+						// if (needsRelayout) {
+						// 	std::println("Relayout needed");
+						// } else if (needsReposition) {
+						// 	std::println("Reposition needed");
+						// } else if (needsRedraw) {
+						// 	std::println("Redraw needed");
 						// }
-						// relayoutCounter.clear();
+
+						// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
+
+						if (needsRelayout) {
+							renderObject.calculateSize(
+								BoxConstraints{
+									.maxWidth = static_cast<float>(width),
+									.maxHeight = static_cast<float>(height),
+								},
+								true
+							);
+						}
+						needsRelayout = false;
+
+						for (const auto &task: postLayoutTasks) {
+							task();
+						}
+						postLayoutTasks.clear();
 					}
 
 					if (needsRelayout || needsReposition) {

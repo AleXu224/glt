@@ -252,6 +252,25 @@ namespace squi::core {
 	vec2 MultiChildRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
 		vec2 contentSize{};
 
+		if (constraints.shrinkWidth || constraints.shrinkHeight) {
+			vec2 childrenMaxSize{};
+			for (auto &child: children) {
+				if (!child) continue;
+
+				const auto size = child->calculateSize(constraints, final);
+				childrenMaxSize.x = std::max(size.x, childrenMaxSize.x);
+				childrenMaxSize.y = std::max(size.y, childrenMaxSize.y);
+			}
+
+			if (constraints.shrinkWidth)
+				constraints.maxWidth = std::clamp(childrenMaxSize.x, constraints.minWidth, constraints.maxWidth);
+			if (constraints.shrinkHeight)
+				constraints.maxHeight = std::clamp(childrenMaxSize.y, constraints.minHeight, constraints.maxHeight);
+
+			constraints.shrinkWidth = false;
+			constraints.shrinkHeight = false;
+		}
+
 		for (auto &child: children) {
 			const auto size = child->calculateSize(constraints, final);
 			contentSize.x = std::max(size.x, contentSize.x);
