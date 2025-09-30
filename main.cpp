@@ -3,6 +3,7 @@
 #include "include/widgets/column.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
+#include "widgets/toggleButton.hpp"
 
 
 #include <GLFW/glfw3.h>
@@ -50,6 +51,8 @@ struct Test : StatefulWidget {
 		TextInput::Controller controller{"Hello"};
 		bool disabled = false;
 
+		bool toggled = false;
+
 		Child build(const Element &) override {
 			return Column{
 				.children{
@@ -82,6 +85,15 @@ struct Test : StatefulWidget {
 							});
 						},
 						.content = "Toggle Disabled",
+					},
+					ToggleButton{
+						.active = toggled,
+						.onToggle = [this](bool active) {
+							setState([&]() {
+								toggled = active;
+							});
+						},
+						.content = "Toggle",
 					},
 				},
 			};
