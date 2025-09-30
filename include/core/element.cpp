@@ -5,13 +5,20 @@
 #include <map>
 
 namespace squi::core {
-
 	// Element
 	App *Element::getApp() const {
 		assert(this->root != nullptr);
 		auto *root = dynamic_cast<RootWidget::Element *>(this->root);
 		assert(root);
 		return root->app;
+	}
+
+	void Element::rebuild() {
+		assert(this->mounted);
+		if (this->dirty) {
+			this->dirty = false;
+			getApp()->dirtyElements.erase(this);
+		}
 	}
 
 	void Element::markNeedsRebuild() {
@@ -35,7 +42,7 @@ namespace squi::core {
 		getApp()->postLayoutTasks.emplace_back(task);
 	}
 
-	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index) {
+	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index, size_t depth) {
 		if (!newWidget) {
 			if (child) {
 				child->unmount();
@@ -60,7 +67,7 @@ namespace squi::core {
 			child->unmount();
 		}
 		auto newChild = newWidget->_createElement();
-		newChild->mount(this, index);
+		newChild->mount(this, index, depth);
 		return newChild;
 	}
 
@@ -85,7 +92,7 @@ namespace squi::core {
 				break;
 			}
 
-			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop, this->depth + 1);
 
 			newChildren.at(newChildrenTop) = newChild;
 			newChildrenTop++;
@@ -134,7 +141,7 @@ namespace squi::core {
 					}
 				}
 			}
-			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop, this->depth + 1);
 			newChildren.at(newChildrenTop) = newChild;
 			newChildrenTop++;
 		}
@@ -146,7 +153,7 @@ namespace squi::core {
 			auto &oldChild = oldChildren.at(oldChildrenTop);
 			const auto &newWidget = newWidgets.at(newChildrenTop);
 
-			auto newChild = updateChild(oldChild, newWidget, newChildrenTop);
+			auto newChild = updateChild(oldChild, newWidget, newChildrenTop, this->depth + 1);
 
 			newChildren.at(newChildrenTop) = newChild;
 			newChildrenTop++;
@@ -171,12 +178,12 @@ namespace squi::core {
 		auto childWidget = build();
 		if (childWidget) {
 			this->child = childWidget->_createElement();
-			this->child->mount(this, this->index);
+			this->child->mount(this, this->index, this->depth + 1);
 		}
 	}
 
-	void ComponentElement::mount(Element *parent, size_t index) {
-		Element::mount(parent, index);
+	void ComponentElement::mount(Element *parent, size_t index, size_t depth) {
+		Element::mount(parent, index, depth);
 
 		this->firstBuild();
 	}
@@ -184,12 +191,13 @@ namespace squi::core {
 	void ComponentElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		this->child = updateChild(this->child, newChildWidget, this->index);
+		this->child = updateChild(this->child, newChildWidget, this->index, this->depth + 1);
 		Element::rebuild();
 	}
 
 	void ComponentElement::update(const WidgetPtr &newWidget) {
 		Element::update(newWidget);
+		beforeRebuild();
 		rebuild();
 	}
 
@@ -226,7 +234,6 @@ namespace squi::core {
 	void StatefulElement::update(const WidgetPtr &newWidget) {
 		this->state->setWidget(newWidget);
 		ComponentElement::update(newWidget);
-		this->state->widgetUpdated();
 	}
 
 	void StatefulElement::firstBuild() {
@@ -236,6 +243,10 @@ namespace squi::core {
 		this->state->setWidget(widget);
 		this->state->initState();
 		ComponentElement::firstBuild();
+	}
+
+	void StatefulElement::beforeRebuild() {
+		this->state->widgetUpdated();
 	}
 
 	void StatefulElement::rebuild() {
@@ -253,8 +264,8 @@ namespace squi::core {
 	// Render Object Element
 	RenderObjectElement::RenderObjectElement(const RenderObjectWidgetPtr &widget) : Element(widget) {}
 
-	void RenderObjectElement::mount(Element *parent, size_t index) {
-		Element::mount(parent, index);
+	void RenderObjectElement::mount(Element *parent, size_t index, size_t depth) {
+		Element::mount(parent, index, depth);
 
 		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(widget)) {
 			renderObject = renderWidget->_createRenderObject();
@@ -317,12 +328,12 @@ namespace squi::core {
 		auto childWidget = build();
 		if (childWidget) {
 			this->child = childWidget->_createElement();
-			this->child->mount(this, 0);
+			this->child->mount(this, 0, this->depth + 1);
 		}
 	}
 
-	void SingleChildRenderObjectElement::mount(Element *parent, size_t index) {
-		RenderObjectElement::mount(parent, index);
+	void SingleChildRenderObjectElement::mount(Element *parent, size_t index, size_t depth) {
+		RenderObjectElement::mount(parent, index, depth);
 
 		this->firstBuild();
 	}
@@ -330,7 +341,7 @@ namespace squi::core {
 	void SingleChildRenderObjectElement::rebuild() {
 		assert(this->mounted);
 		auto newChildWidget = build();
-		this->child = updateChild(this->child, newChildWidget, 0);
+		this->child = updateChild(this->child, newChildWidget, 0, this->depth + 1);
 		RenderObjectElement::rebuild();
 	}
 
@@ -355,7 +366,7 @@ namespace squi::core {
 			if (!childWidget) continue;
 			auto element = childWidget->_createElement();
 			this->children.push_back(element);
-			element->mount(this, i);
+			element->mount(this, i, this->depth + 1);
 		}
 	}
 
@@ -370,8 +381,8 @@ namespace squi::core {
 		return childWidgets;
 	}
 
-	void MultiChildRenderObjectElement::mount(Element *parent, size_t index) {
-		RenderObjectElement::mount(parent, index);
+	void MultiChildRenderObjectElement::mount(Element *parent, size_t index, size_t depth) {
+		RenderObjectElement::mount(parent, index, depth);
 
 		this->firstBuild();
 	}

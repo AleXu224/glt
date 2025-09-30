@@ -11,97 +11,97 @@
 
 namespace squi {
 	void TextInput::State::clampCursors() {
-		auto newCursor = std::clamp(controller->cursor, static_cast<int64_t>(0), static_cast<int64_t>(controller->text.size()));
-		if (newCursor != controller->cursor) {
+		auto newCursor = std::clamp(cursor, static_cast<int64_t>(0), static_cast<int64_t>(text.size()));
+		if (newCursor != cursor) {
 			setState([this, newCursor]() {
-				controller->cursor = newCursor;
+				cursor = newCursor;
 			});
 		}
-		if (controller->selectionStart.has_value()) {
-			std::optional<int64_t> newSelectionStart = std::clamp(controller->selectionStart.value_or(0), static_cast<int64_t>(0), static_cast<int64_t>(controller->text.size()));
-			if (controller->cursor == controller->selectionStart.value())
+		if (selectionStart.has_value()) {
+			std::optional<int64_t> newSelectionStart = std::clamp(selectionStart.value_or(0), static_cast<int64_t>(0), static_cast<int64_t>(text.size()));
+			if (cursor == selectionStart.value())
 				newSelectionStart = std::nullopt;
 
-			if (newSelectionStart != controller->selectionStart) {
+			if (newSelectionStart != selectionStart) {
 				setState([this, newSelectionStart]() {
-					controller->selectionStart = newSelectionStart;
+					selectionStart = newSelectionStart;
 				});
 			}
 		}
 	}
 
 	int64_t TextInput::State::getSelectionMin() const {
-		if (!controller->selectionStart.has_value()) return controller->cursor;
-		return std::min(controller->selectionStart.value(), controller->cursor);
+		if (!selectionStart.has_value()) return cursor;
+		return std::min(selectionStart.value(), cursor);
 	}
 
 	int64_t TextInput::State::getSelectionMax() const {
-		if (!controller->selectionStart.has_value()) return controller->cursor;
-		return std::max(controller->selectionStart.value(), controller->cursor);
+		if (!selectionStart.has_value()) return cursor;
+		return std::max(selectionStart.value(), cursor);
 	}
 
-	void TextInput::State::setText(const std::string &text) {
-		if (text == controller->text) return;
-		setState([this, &text]() {
-			controller->text = text;
+	void TextInput::State::setText(const std::string &newText) {
+		if (text == newText) return;
+		setState([this, &newText]() {
+			text = newText;
 		});
-		if (widget->onTextChanged) widget->onTextChanged(controller->text);
+		if (widget->onTextChanged) widget->onTextChanged(text);
 	}
 
 	void TextInput::State::clearSelection() {
 		clampCursors();
-		if (!controller->selectionStart.has_value()) return;
+		if (!selectionStart.has_value()) return;
 		const auto min = getSelectionMin();
 		const auto max = getSelectionMax();
 
-		std::string newText = std::format("{}{}", std::string(controller->text.substr(0, min)), std::string(controller->text.substr(max)));
+		std::string newText = std::format("{}{}", std::string(text.substr(0, min)), std::string(text.substr(max)));
 		setText(newText);
 		setState([&]() {
-			controller->cursor = min;
-			controller->selectionStart = std::nullopt;
+			cursor = min;
+			selectionStart = std::nullopt;
 		});
 	}
 
 	void TextInput::State::handleTextInput(const Gesture::State &state) {
 		if (!state.inputState->g_textInput.empty()) {
 			clearSelection();
-			setText(std::format("{}{}{}", controller->text.substr(0, controller->cursor), state.inputState->g_textInput, controller->text.substr(controller->cursor)));
+			setText(std::format("{}{}{}", text.substr(0, cursor), state.inputState->g_textInput, text.substr(cursor)));
 			setState([this, &state]() {
-				controller->cursor += static_cast<int64_t>(state.inputState->g_textInput.size());
+				cursor += static_cast<int64_t>(state.inputState->g_textInput.size());
 			});
 		}
 	}
 
 	uint64_t TextInput::State::getPrevWordStart() const {
-		auto pos = controller->text.find_last_of(' ', controller->cursor - 1);
+		auto pos = text.find_last_of(' ', cursor - 1);
 		if (pos == std::string::npos) pos = 0;
 		return pos;
 	}
 
 	uint64_t TextInput::State::getNextWordStart() const {
-		auto pos = controller->text.find_first_of(' ', controller->cursor + 1);
-		if (pos == std::string::npos) pos = controller->text.size();
+		auto pos = text.find_first_of(' ', cursor + 1);
+		if (pos == std::string::npos) pos = text.size();
 		return pos;
 	}
 
 	void TextInput::State::handleBackspace(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_BACKSPACE)) {
-			if (controller->selectionStart.has_value()) {
+			if (selectionStart.has_value()) {
 				clearSelection();
 				return;
 			}
 			const auto &keyState = key.value();
-			if (keyState.mods & GLFW_MOD_CONTROL && controller->cursor > 0) {
+			if (keyState.mods & GLFW_MOD_CONTROL && cursor > 0) {
 				auto pos = getPrevWordStart();
 
-				setText(std::format("{}{}", controller->text.substr(0, pos), controller->text.substr(controller->cursor)));
+				setText(std::format("{}{}", text.substr(0, pos), text.substr(cursor)));
 				setState([&]() {
-					controller->cursor = static_cast<int64_t>(pos);
+					cursor = static_cast<int64_t>(pos);
 				});
-			} else if (controller->cursor > 0) {
-				setText(std::format("{}{}", controller->text.substr(0, controller->cursor - 1), controller->text.substr(controller->cursor)));
+			} else if (cursor > 0) {
+				setText(std::format("{}{}", text.substr(0, cursor - 1), text.substr(cursor)));
 				setState([&]() {
-					--controller->cursor;
+					--cursor;
 				});
 			}
 		}
@@ -109,16 +109,16 @@ namespace squi {
 
 	void TextInput::State::handleDelete(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_DELETE)) {
-			if (controller->selectionStart.has_value()) {
+			if (selectionStart.has_value()) {
 				clearSelection();
 			} else {
 				const auto &keyState = key.value();
-				if (keyState.mods & GLFW_MOD_CONTROL && controller->cursor < static_cast<int64_t>(controller->text.size())) {
+				if (keyState.mods & GLFW_MOD_CONTROL && cursor < static_cast<int64_t>(text.size())) {
 					auto pos = getNextWordStart();
 
-					setText(std::format("{}{}", controller->text.substr(0, controller->cursor), controller->text.substr(pos)));
-				} else if (controller->cursor < static_cast<int64_t>(controller->text.size())) {
-					setText(std::format("{}{}", controller->text.substr(0, controller->cursor), controller->text.substr(controller->cursor + 1)));
+					setText(std::format("{}{}", text.substr(0, cursor), text.substr(pos)));
+				} else if (cursor < static_cast<int64_t>(text.size())) {
+					setText(std::format("{}{}", text.substr(0, cursor), text.substr(cursor + 1)));
 				}
 			}
 		}
@@ -127,29 +127,29 @@ namespace squi {
 	void TextInput::State::handleLeftArrow(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_LEFT)) {
 			bool removedSelection = false;
-			if (key->mods & GLFW_MOD_SHIFT && controller->cursor > 0) {
-				if (!controller->selectionStart.has_value()) setState([&]() {
-					controller->selectionStart = controller->cursor;
+			if (key->mods & GLFW_MOD_SHIFT && cursor > 0) {
+				if (!selectionStart.has_value()) setState([&]() {
+					selectionStart = cursor;
 				});
-			} else if (!(key->mods & GLFW_MOD_SHIFT) && controller->selectionStart.has_value()) {
+			} else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value()) {
 				clampCursors();
 				setState([&]() {
-					controller->cursor = getSelectionMin();
-					controller->selectionStart = std::nullopt;
+					cursor = getSelectionMin();
+					selectionStart = std::nullopt;
 				});
 				removedSelection = true;
 			}
 
-			if (controller->cursor > 0 && !removedSelection) {
+			if (cursor > 0 && !removedSelection) {
 				if (key->mods & GLFW_MOD_CONTROL) {
 					auto pos = getPrevWordStart();
 
 					setState([&]() {
-						controller->cursor = static_cast<int64_t>(pos);
+						cursor = static_cast<int64_t>(pos);
 					});
 				} else {
 					setState([&]() {
-						--controller->cursor;
+						--cursor;
 					});
 				}
 			}
@@ -159,29 +159,29 @@ namespace squi {
 	void TextInput::State::handleRightArrow(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_RIGHT)) {
 			bool removedSelection = false;
-			if (key->mods & GLFW_MOD_SHIFT && controller->cursor < static_cast<int64_t>(controller->text.size())) {
-				if (!controller->selectionStart.has_value()) setState([&]() {
-					controller->selectionStart = controller->cursor;
+			if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(text.size())) {
+				if (!selectionStart.has_value()) setState([&]() {
+					selectionStart = cursor;
 				});
-			} else if (!(key->mods & GLFW_MOD_SHIFT) && controller->selectionStart.has_value()) {
+			} else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value()) {
 				clampCursors();
 				setState([&]() {
-					controller->cursor = getSelectionMax();
-					controller->selectionStart = std::nullopt;
+					cursor = getSelectionMax();
+					selectionStart = std::nullopt;
 				});
 				removedSelection = true;
 			}
 
-			if (controller->cursor < static_cast<int64_t>(controller->text.size()) && !removedSelection) {
+			if (cursor < static_cast<int64_t>(text.size()) && !removedSelection) {
 				if (key->mods & GLFW_MOD_CONTROL) {
 					auto pos = getNextWordStart();
 
 					setState([&]() {
-						controller->cursor = static_cast<int64_t>(pos);
+						cursor = static_cast<int64_t>(pos);
 					});
 				} else {
 					setState([&]() {
-						++controller->cursor;
+						++cursor;
 					});
 				}
 			}
@@ -190,63 +190,63 @@ namespace squi {
 
 	void TextInput::State::handleHome(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_HOME)) {
-			if (key->mods & GLFW_MOD_SHIFT && controller->cursor > 0 && !controller->selectionStart.has_value())
+			if (key->mods & GLFW_MOD_SHIFT && cursor > 0 && !selectionStart.has_value())
 				setState([&]() {
-					controller->selectionStart = controller->cursor;
+					selectionStart = cursor;
 				});
-			else if (!(key->mods & GLFW_MOD_SHIFT) && controller->selectionStart.has_value())
+			else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
 				setState([&]() {
-					controller->selectionStart = std::nullopt;
+					selectionStart = std::nullopt;
 				});
 
 			setState([&]() {
-				controller->cursor = std::min<int64_t>(controller->cursor, 0);
+				cursor = std::min<int64_t>(cursor, 0);
 			});
 		}
 	}
 
 	void TextInput::State::handleEnd(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_END)) {
-			if (key->mods & GLFW_MOD_SHIFT && controller->cursor < static_cast<int64_t>(controller->text.size()) && !controller->selectionStart.has_value())
+			if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(text.size()) && !selectionStart.has_value())
 				setState([&]() {
-					controller->selectionStart = controller->cursor;
+					selectionStart = cursor;
 				});
-			else if (!(key->mods & GLFW_MOD_SHIFT) && controller->selectionStart.has_value())
+			else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
 				setState([&]() {
-					controller->selectionStart = std::nullopt;
+					selectionStart = std::nullopt;
 				});
 
 			setState([&]() {
-				controller->cursor = std::max(controller->cursor, static_cast<int64_t>(controller->text.size()));
+				cursor = std::max(cursor, static_cast<int64_t>(text.size()));
 			});
 		}
 	}
 
-	void TextInput::State::handleEscape(const Gesture::State &state) const {
+	void TextInput::State::handleEscape(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_ESCAPE)) {
-			controller->selectionStart = std::nullopt;
+			selectionStart = std::nullopt;
 		}
 	}
 
 	void TextInput::State::handleSelectAll(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_A); key && key->mods & GLFW_MOD_CONTROL) {
 			setState([&]() {
-				controller->selectionStart = 0;
-				controller->cursor = static_cast<int64_t>(controller->text.size());
+				selectionStart = 0;
+				cursor = static_cast<int64_t>(text.size());
 			});
 		}
 	}
 
 	void TextInput::State::handleCopy(const Gesture::State &state) const {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_C); key && key->mods & GLFW_MOD_CONTROL && controller->selectionStart.has_value()) {
-			auto textToCopy = controller->text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_C); key && key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
+			auto textToCopy = text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 		}
 	}
 
 	void TextInput::State::handleCut(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_X); key && key->mods & GLFW_MOD_CONTROL && controller->selectionStart.has_value()) {
-			auto textToCopy = controller->text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_X); key && key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
+			auto textToCopy = text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 			clearSelection();
 		}
@@ -258,21 +258,21 @@ namespace squi {
 			if (!clipboardText) return;
 			clearSelection();
 			const auto clipboardString = std::string_view(clipboardText);
-			const auto &textValue = controller->text;
-			setText(std::format("{}{}{}", textValue.substr(0, controller->cursor), clipboardString, textValue.substr(controller->cursor)));
+			const auto &textValue = text;
+			setText(std::format("{}{}{}", textValue.substr(0, cursor), clipboardString, textValue.substr(cursor)));
 			setState([&]() {
-				controller->cursor += static_cast<int64_t>(clipboardString.size());
+				cursor += static_cast<int64_t>(clipboardString.size());
 			});
 		}
 	}
 
 	Child TextInput::State::getSelectionBox(uint32_t widthToStart) const {
-		if (!controller->selectionStart.has_value()) return nullptr;
+		if (!selectionStart.has_value()) return nullptr;
 		auto selectionMin = getSelectionMin();
 		auto selectionMax = getSelectionMax();
-		if (selectionMin != controller->cursor) {
+		if (selectionMin != cursor) {
 			std::tie(widthToStart, std::ignore) = font->getTextSizeSafe(
-				controller->text.substr(0, selectionMin),
+				text.substr(0, selectionMin),
 				14.f
 			);
 		}
@@ -290,7 +290,7 @@ namespace squi {
 				},
 				.color = theme.accent,
 				.child = Text{
-					.text = controller->text.substr(selectionMin, selectionMax - selectionMin),
+					.text = text.substr(selectionMin, selectionMax - selectionMin),
 					.color = theme.accent.isLight() ? Color::black : Color::white,
 				},
 			},
@@ -315,14 +315,9 @@ namespace squi {
 
 	Child TextInput::State::build(const Element &) {
 		auto [widthToCursor, _] = font->getTextSizeSafe(
-			controller->text.substr(0, controller->cursor),
+			text.substr(0, cursor),
 			14.f
 		);
-
-		// auto [textSize, _] = font->getTextSizeSafe(
-		// 	controller->text,
-		// 	14.f
-		// );
 
 		this->element->addPostLayoutTask([this]() {
 			if (this->cachedScrollData != *this->scrollController) {
@@ -346,7 +341,7 @@ namespace squi {
 				if (!widget->active)
 					return;
 
-				auto lastCursor = controller->cursor;
+				auto lastCursor = cursor;
 
 				// Make sure the cursors are not out of bounds
 				clampCursors();
@@ -368,7 +363,7 @@ namespace squi {
 				handleCut(state);
 				handlePaste(state);
 
-				if (lastCursor != controller->cursor)
+				if (lastCursor != cursor)
 					this->element->markNeedsReposition();
 			},
 			.child = Scrollable{
@@ -383,7 +378,7 @@ namespace squi {
 					},
 					.children{
 						Text{
-							.text = controller->text,
+							.text = text,
 						},
 						getSelectionBox(widthToCursor),
 						getCursorBox(widthToCursor),

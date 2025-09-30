@@ -7,6 +7,7 @@
 #include "store/pipeline.hpp"
 #include "store/sampler.hpp"
 #include "widget.hpp"
+#include <set>
 #include <unordered_set>
 
 
@@ -33,9 +34,7 @@ namespace squi::core {
 		struct Element : SingleChildRenderObjectElement {
 			App *app = nullptr;
 
-			Element(const std::shared_ptr<RootWidget> &widget) : SingleChildRenderObjectElement(widget) {
-				this->app = widget->app;
-			}
+			Element(const std::shared_ptr<RootWidget> &widget) : SingleChildRenderObjectElement(widget), app(widget->app) {}
 
 			Child build() override {
 				if (auto rootWidget = std::static_pointer_cast<RootWidget>(widget)) {
@@ -44,7 +43,7 @@ namespace squi::core {
 				return nullptr;
 			}
 
-			void mount(::squi::core::Element *parent, size_t index) override;
+			void mount(::squi::core::Element *parent, size_t index, size_t depth) override;
 			void unmount() override;
 		};
 	};
@@ -80,7 +79,10 @@ namespace squi::core {
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
 
-		std::unordered_set<Element *> dirtyElements{};
+		static constexpr auto elemComp = [](Element *e1, Element *e2) {
+			return e1->depth < e2->depth;
+		};
+		std::set<Element *, decltype(elemComp)> dirtyElements{elemComp};
 		std::unordered_set<AnimationController *> runningAnimations{};
 		std::vector<std::function<void()>> postLayoutTasks{};
 

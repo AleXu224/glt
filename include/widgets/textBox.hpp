@@ -13,7 +13,7 @@ namespace squi {
 		// Args
 		Key key;
 		bool disabled = false;
-		std::shared_ptr<TextInput::Controller> controller = std::make_shared<TextInput::Controller>();
+		TextInput::Controller controller{};
 		std::function<std::optional<std::string>(const std::string &)> validator;
 
 		struct State : WidgetState<TextBox> {
@@ -53,31 +53,31 @@ namespace squi {
 
 				auto style = theme.fromStatus(status);
 
-				return Gesture{
-					.onEnter = [this](const Gesture::State &) {
-						hovered = true;
-						updateStatus();
+				return Column{
+					.widget{
+						.width = Size::Wrap,
+						.height = Size::Wrap,
 					},
-					.onLeave = [this](const Gesture::State &) {
-						hovered = false;
-						updateStatus();
-					},
-					.onActive = [this](const Gesture::State &) {
-						active = true;
-						updateStatus();
-					},
-					.onInactive = [this](const Gesture::State &) {
-						active = false;
-						updateStatus();
-					},
-					.child = Column{
-						.widget{
-							.width = Size::Wrap,
-							.height = Size::Wrap,
-						},
-						.spacing = 4.f,
-						.children{
-							AnimatedBox{
+					.spacing = 4.f,
+					.children{
+						Gesture{
+							.onEnter = [this](const Gesture::State &) {
+								hovered = true;
+								updateStatus();
+							},
+							.onLeave = [this](const Gesture::State &) {
+								hovered = false;
+								updateStatus();
+							},
+							.onActive = [this](const Gesture::State &) {
+								active = true;
+								updateStatus();
+							},
+							.onInactive = [this](const Gesture::State &) {
+								active = false;
+								updateStatus();
+							},
+							.child = AnimatedBox{
 								.widget{
 									.width = Size::Shrink,
 									.height = 32.f,
@@ -129,13 +129,13 @@ namespace squi {
 									},
 								},
 							},
-							errorMessage.empty()//
-								? Child{}
-								: Text{
-									  .text = errorMessage,
-									  .color = 0xFF99A4FF,
-								  },
 						},
+						errorMessage.empty()//
+							? Child{}
+							: Text{
+								  .text = errorMessage,
+								  .color = 0xFF99A4FF,
+							  },
 					},
 				};
 			}

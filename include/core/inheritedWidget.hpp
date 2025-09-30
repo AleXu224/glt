@@ -15,8 +15,8 @@ namespace squi::core {
 
 		InheritedElement(const WidgetPtr &widget) : ComponentElement(widget) {}
 
-		void mount(Element *parent, size_t index) override {
-			ComponentElement::mount(parent, index);
+		void mount(Element *parent, size_t index, size_t depth) override {
+			ComponentElement::mount(parent, index, depth);
 			// Inherit dependencies from parent
 			if (parent) {
 				if (auto *inheritedParent = dynamic_cast<InheritedElement *>(parent)) {

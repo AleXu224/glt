@@ -2,6 +2,7 @@
 
 #include "core/core.hpp"
 #include "fontStore.hpp"
+#include "observer.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/misc/scrollViewData.hpp"
 #include <GLFW/glfw3.h>
@@ -10,41 +11,69 @@
 namespace squi {
 	struct TextInput : StatefulWidget {
 		struct Controller {
-			std::string text;
-			int64_t cursor = 0;
-			std::optional<int64_t> selectionStart;
+		private:
+			struct ControlBlock {
+				Observable<const std::string &> textObservable{};
+				std::optional<std::string> initialText{};
+				std::string *textPtr = nullptr;
+			};
+			std::shared_ptr<ControlBlock> controlBlock = std::make_shared<ControlBlock>();
+
+			void mount(std::string &text) {
+				controlBlock->textPtr = &text;
+			}
+
+		public:
+			Controller() = default;
+			Controller(const std::string &initial) {
+				controlBlock->initialText = initial;
+			}
+
+			[[nodiscard]] Observer<const std::string &> getTextObserver(const std::function<void(const std::string &)> &callback) const {
+				return controlBlock->textObservable.observe(callback);
+			}
+
+			void setText(const std::string &text) const {
+				controlBlock->textObservable.notify(text);
+			}
+
+			[[nodiscard]] const std::string &getText() const {
+				assert(controlBlock->textPtr);
+				return *controlBlock->textPtr;
+			}
+
+			friend TextInput;
 		};
 
 		// Args
 		Key key;
 		Args widget;
-		std::shared_ptr<Controller> controller;
+		Controller controller{};
 		std::function<void(const std::string &)> onTextChanged;
 		bool active = false;
 
 		struct State : WidgetState<TextInput> {
-			Controller cachedController{};
-			std::shared_ptr<Controller> controller;
 			ScrollViewData cachedScrollData{};
 			std::shared_ptr<ScrollViewData> scrollController = std::make_shared<ScrollViewData>();
+			Controller controller{};
+			Observer<const std::string &> textObserver{};
+			std::string text;
+			int64_t cursor = 0;
+			std::optional<int64_t> selectionStart;
 			float scroll = 0.f;
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 
 			void initState() override {
-				controller = std::make_shared<Controller>();
-				if (!controller) {
-					controller = std::make_shared<Controller>();
-					cachedController = *controller;
-				}
+				controller = widget->controller;
+				controller.mount(text);
+				text = controller.controlBlock->initialText.value_or("");
+				textObserver = controller.getTextObserver([this](const std::string &newText) {
+					setText(newText);
+				});
 			}
 
-			void widgetUpdated() override {
-				if (widget->controller) {
-					controller = widget->controller;
-					cachedController = *controller;
-				}
-			}
+			void widgetUpdated() override {}
 
 			void clampCursors();
 
@@ -65,7 +94,7 @@ namespace squi {
 			void handleRightArrow(const Gesture::State &state);
 			void handleHome(const Gesture::State &state);
 			void handleEnd(const Gesture::State &state);
-			void handleEscape(const Gesture::State &state) const;
+			void handleEscape(const Gesture::State &state);
 			void handleSelectAll(const Gesture::State &state);
 			void handleCopy(const Gesture::State &state) const;
 			void handleCut(const Gesture::State &state);

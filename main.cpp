@@ -47,7 +47,7 @@ struct Test : StatefulWidget {
 	Key key;
 
 	struct State : WidgetState<Test> {
-		std::shared_ptr<TextInput::Controller> controller = std::make_shared<TextInput::Controller>();
+		TextInput::Controller controller{"Hello"};
 		bool disabled = false;
 
 		Child build(const Element &) override {
@@ -68,8 +68,8 @@ struct Test : StatefulWidget {
 						.onClick = [this]() {
 							setState([&]() {
 								// remove the last character if it exists
-								if (!controller->text.empty()) {
-									controller->text.pop_back();
+								if (!controller.getText().empty()) {
+									controller.setText(controller.getText().substr(0, controller.getText().size() - 1));
 								}
 							});
 						},
