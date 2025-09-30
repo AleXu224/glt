@@ -1,8 +1,10 @@
 #include "app.hpp"
 #include "fontStore.hpp"
 #include "widgets/gestureDetector.hpp"
+#include "widgets/layoutInspector.hpp"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+
 
 #ifdef _WIN32
 #include "dwmapi.h"
@@ -288,6 +290,15 @@ namespace squi::core {
 				std::println("Found non expired font, {} uses", font.use_count());
 			}
 		}
+	}
+
+	Child RootWidget::Element::build() {
+		if (auto rootWidget = std::static_pointer_cast<RootWidget>(widget)) {
+			return LayoutInspector{
+				.child = rootWidget->child,
+			};
+		}
+		return nullptr;
 	}
 
 	void RootWidget::Element::mount(squi::core::Element *parent, size_t index, size_t depth) {

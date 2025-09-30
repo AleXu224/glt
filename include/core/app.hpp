@@ -36,12 +36,7 @@ namespace squi::core {
 
 			Element(const std::shared_ptr<RootWidget> &widget) : SingleChildRenderObjectElement(widget), app(widget->app) {}
 
-			Child build() override {
-				if (auto rootWidget = std::static_pointer_cast<RootWidget>(widget)) {
-					return rootWidget->child;
-				}
-				return nullptr;
-			}
+			Child build() override;
 
 			void mount(::squi::core::Element *parent, size_t index, size_t depth) override;
 			void unmount() override;

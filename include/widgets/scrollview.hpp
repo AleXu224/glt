@@ -12,6 +12,8 @@ namespace squi {
 	struct ScrollView : StatefulWidget {
 		// Args
 		Key key;
+		Args widget;
+		Args scrollWidget;
 		Flex::Alignment alignment = Flex::Alignment::start;
 		Axis direction = Axis::Vertical;
 		float spacing = 0.f;
@@ -49,8 +51,10 @@ namespace squi {
 						}
 					},
 					.child = Stack{
+						.widget = widget->widget,
 						.children{
 							Scrollable{
+								.widget = widget->scrollWidget,
 								.alignment = widget->alignment,
 								.direction = widget->direction,
 								.spacing = widget->spacing,
