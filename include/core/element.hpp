@@ -25,6 +25,11 @@ namespace squi::core {
 
 		virtual ~Element() = default;
 
+		template<class T>
+		T *getWidgetAs() const {
+			return static_cast<T *>(widget.get());
+		}
+
 		virtual void mount(Element *parent, size_t index, size_t depth) {
 			this->dirty = true;
 			this->parent = parent;

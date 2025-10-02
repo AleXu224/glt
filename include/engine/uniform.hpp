@@ -15,6 +15,7 @@
 
 namespace Engine {
 	struct Ubo {
+		glm::mat4 model = glm::mat4(1.f);
 		glm::mat4 view;
 	};
 

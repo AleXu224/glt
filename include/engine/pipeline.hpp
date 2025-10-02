@@ -31,7 +31,9 @@ namespace Engine {
 		vk::raii::Pipeline pipeline = nullptr;
 		Shader fragmentShader;
 		Shader vertexShader;
-		Uniform<Ubo> basicUniform;
+		glm::mat4 viewMatrix{1.f};
+		// Have a pool of basic uniforms so that we can have multiple transforms
+		std::vector<std::shared_ptr<Uniform<Ubo>>> basicUniforms;
 		std::tuple<Uniform<Uniforms>...> uniforms;
 
 		squi::VoidObserver frameBeginListener;
@@ -71,7 +73,7 @@ namespace Engine {
 		Pipeline(const Args &args)
 			: fragmentShader(Vulkan::device().resource, args.fragmentShader),
 			  vertexShader(Vulkan::device().resource, args.vertexShader),
-			  basicUniform({.instance = args.instance}),
+			  basicUniforms(),
 			  uniforms([&]() -> std::tuple<Uniform<Uniforms>...> {
 				  return [&]<size_t... I>(const std::index_sequence<I...> &) {
 					  return std::tuple<Uniform<Uniforms>...>{
@@ -83,12 +85,16 @@ namespace Engine {
 				  float width = instance.swapChainExtent.width;
 				  float height = instance.swapChainExtent.height;
 
-				  basicUniform.getData().view = glm::mat4{
+				  viewMatrix = glm::mat4{
 					  1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
 					  0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
 					  -1.0f, -1.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 0.0f, 1.0f
 				  };
+
+				  auto &data = basicUniforms.front()->getData();
+				  data.view = viewMatrix;
+				  data.model = glm::mat4(1.f);
 			  })),
 			  frameEndListener(args.instance.frameEndEvent.observe([this] {
 				  lastVertexBufferIndex = 0;
@@ -100,19 +106,25 @@ namespace Engine {
 				  indexArrIndex = 0;
 
 				  binds = 0;
+
+				  basicUniforms.resize(1);
+				  transformIndex = 0;
 			  })),
 			  vertexBufferSize(args.vertexBufferSize),
 			  indexBufferSize(args.IndexBufferSize),
 			  instance(args.instance) {
 			float width = instance.swapChainExtent.width;
 			float height = instance.swapChainExtent.height;
-
-			basicUniform.getData().view = glm::mat4{
+			viewMatrix = glm::mat4{
 				1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
 				-1.0f, -1.0f, 1.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 1.0f
 			};
+
+			pushBasicUniforms(instance.getTransform());
+			transformIndex = instance.getTransformIndex();
+
 			vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
 				.size = sizeof(Vertex) * args.vertexBufferSize,
 				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
@@ -236,14 +248,14 @@ namespace Engine {
 				if constexpr (hasTexture) {
 					return std::apply(
 						[&](auto &&...U) {
-							return std::array{*basicUniform.descriptorSetLayout, *samplerUniformLayout, (*U.descriptorSetLayout)...};
+							return std::array{*basicUniforms.back()->descriptorSetLayout, *samplerUniformLayout, (*U.descriptorSetLayout)...};
 						},
 						uniforms
 					);
 				} else {
 					return std::apply(
 						[&](auto &&...U) {
-							return std::array{*basicUniform.descriptorSetLayout, (*U.descriptorSetLayout)...};
+							return std::array{*basicUniforms.back()->descriptorSetLayout, (*U.descriptorSetLayout)...};
 						},
 						uniforms
 					);
@@ -281,25 +293,50 @@ namespace Engine {
 			pipeline = Vulkan::device().resource.createGraphicsPipeline(nullptr, pipelineInfo);
 		}
 
+		void pushBasicUniforms(const glm::mat4 &modelMatrix) {
+			auto &val = basicUniforms.emplace_back(std::make_shared<Uniform<Ubo>>(Uniform<Ubo>::Args{
+				.instance = instance,
+			}));
+
+			auto &data = val->getData();
+			data.view = viewMatrix;
+			data.model = modelMatrix;
+
+			instance.currentFrame.get().resourceLock.emplace_back(val);
+		}
+
 		std::function<void()> currentPipelineFlush = [&] {
 			this->flush(true);
 		};
 
 		uint32_t binds = 0;
+		uint32_t transformIndex = 0;
 
 		void bind() {
-			if (instance.currentPipeline == this) return;
+			auto isPipelineBound = instance.currentPipeline == this;
+			auto isTransformBound = instance.getTransformIndex() == transformIndex;
+			if (isPipelineBound && isTransformBound) return;
 			if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
 
 			auto &cmd = instance.currentFrame.get().commandBuffer;
-			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-			cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
-			cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
+			if (!isPipelineBound) {
+				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+				cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
+				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
+			}
 
-			auto descriptors = std::apply([&](auto &&...U) {
-				return std::array<vk::DescriptorSet, sizeof...(Uniforms) + 1>{basicUniform.getDescriptorSet(), (U.getDescriptorSet())...};
-			},
-										  uniforms);
+			if (!isTransformBound) {
+				pushBasicUniforms(instance.getTransform());
+				transformIndex = instance.getTransformIndex();
+			}
+
+			// In either case we'll need to bind the descriptors so no need to check
+			auto descriptors = std::apply(
+				[&](auto &&...U) {
+					return std::array<vk::DescriptorSet, sizeof...(Uniforms) + 1>{basicUniforms.back()->getDescriptorSet(), (U.getDescriptorSet())...};
+				},
+				uniforms
+			);
 
 			cmd.bindDescriptorSets(
 				vk::PipelineBindPoint::eGraphics,
@@ -321,15 +358,23 @@ namespace Engine {
 
 		void bindWithSampler(const SamplerUniform &sampler) {
 			auto &cmd = instance.currentFrame.get().commandBuffer;
-			if (instance.currentPipeline != this || lastBoundSampler != &sampler) {
+			if (instance.currentPipeline != this || lastBoundSampler != &sampler || instance.getTransformIndex() != transformIndex) {
 				if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
 				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
 				cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
 				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
-				auto descriptors = std::apply([&](auto &&...U) {
-					return std::array<vk::DescriptorSet, sizeof...(Uniforms) + 2>{basicUniform.getDescriptorSet(), sampler.getDescriptorSet(), (U.getDescriptorSet())...};
-				},
-											  uniforms);
+
+				if (instance.getTransformIndex() != transformIndex) {
+					pushBasicUniforms(instance.getTransform());
+					transformIndex = instance.getTransformIndex();
+				}
+
+				auto descriptors = std::apply(
+					[&](auto &&...U) {
+						return std::array<vk::DescriptorSet, sizeof...(Uniforms) + 2>{basicUniforms.back()->getDescriptorSet(), sampler.getDescriptorSet(), (U.getDescriptorSet())...};
+					},
+					uniforms
+				);
 
 				cmd.bindDescriptorSets(
 					vk::PipelineBindPoint::eGraphics,
@@ -349,14 +394,14 @@ namespace Engine {
 			instance.currentPipelineFlush = &currentPipelineFlush;
 		}
 
-		[[nodiscard]] std::tuple<uint64_t, uint64_t> availableSpace() {
+		[[nodiscard]] std::tuple<uint64_t, uint64_t> availableSpace() const {
 			return {
 				static_cast<uint64_t>(vertexBufferSize) - static_cast<uint64_t>(vertexBufferIndex),
 				static_cast<uint64_t>(indexBufferSize) - static_cast<uint64_t>(indexBufferIndex),
 			};
 		}
 
-		[[nodiscard]] std::pair<size_t, size_t> getIndexes() {
+		[[nodiscard]] std::pair<size_t, size_t> getIndexes() const {
 			return {vertexBufferIndex % vertexBufferSize, indexBufferIndex % indexBufferSize};
 		}
 

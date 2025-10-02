@@ -80,6 +80,28 @@ namespace Engine {
 			);
 		}
 
+		static inline uint32_t transformIndex = 0;
+		std::vector<std::pair<uint32_t, glm::mat4>> transformStack{};
+		void pushTransform(glm::mat4 matrix) {
+			if (currentPipelineFlush) (*currentPipelineFlush)();
+			if (!transformStack.empty()) {
+				matrix = transformStack.back().second * matrix;
+			}
+			transformStack.push_back({++transformIndex, matrix});
+		}
+		void popTransform() {
+			if (currentPipelineFlush) (*currentPipelineFlush)();
+			transformStack.pop_back();
+		}
+		uint32_t getTransformIndex() const {
+			if (transformStack.empty()) return 0;
+			return transformStack.back().first;
+		}
+		glm::mat4 getTransform() const {
+			if (transformStack.empty()) return glm::mat4(1.f);
+			return transformStack.back().second;
+		}
+
 		Instance(WindowOptions windowOptions = {});
 
 		void recreateSwapChain();

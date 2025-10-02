@@ -46,7 +46,7 @@ namespace squi {
 			void drawSelf() override;
 		};
 
-		std::shared_ptr<RenderObject> createRenderObject() const;
+		static std::shared_ptr<RenderObject> createRenderObject();
 
 		void updateRenderObject(RenderObject *renderObject) const;
 	};

@@ -14,7 +14,22 @@ namespace squi {
 		Key key;
 		Element *element;
 
-		struct State : WidgetState<LayoutInspectorItem> {
+
+		struct State final : WidgetState<LayoutInspectorItem> {
+			[[nodiscard]] std::string getElementName() const {
+				std::string ret = typeid(*widget->element).name();
+				if (const auto found = ret.find("struct"); found != std::string::npos) {
+					ret.erase(found, 6);
+				}
+				if (const auto found = ret.find("squi::"); found != std::string::npos) {
+					ret.erase(found, 6);
+				}
+				if (const auto found = ret.find("core::"); found != std::string::npos) {
+					ret.erase(found, 6);
+				}
+				return ret;
+			}
+
 			Child build(const Element &) override {
 				return Box{
 					.widget{
@@ -23,7 +38,7 @@ namespace squi {
 					.color = Color::white * 0.1f,
 					.borderRadius = 4.f,
 					.child = Text{
-						.text = "Layout Inspector Item",
+						.text = getElementName(),
 					},
 				};
 			}

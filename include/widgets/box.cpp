@@ -39,7 +39,7 @@ namespace squi {
 		data->pipeline->addData(data->quad.getData(index.first, index.second));
 	}
 
-	std::shared_ptr<RenderObject> Box::createRenderObject() const {
+	std::shared_ptr<RenderObject> Box::createRenderObject() {
 		return std::make_shared<BoxRenderObject>();
 	}
 
@@ -48,12 +48,12 @@ namespace squi {
 			auto *app = renderObject->getApp();
 
 			auto &quad = boxRenderObject->data->quad;
-			if (*quad.color != this->color) {
+			if (*quad.color != static_cast<glm::vec4>(this->color)) {
 				quad.color = this->color;
 				app->needsRedraw = true;
 			}
 			auto newBorderColor = this->borderPosition == BorderPosition::inset ? this->borderColor.mix(this->color) : this->borderColor;
-			if (*quad.borderColor != newBorderColor) {
+			if (*quad.borderColor != static_cast<glm::vec4>(newBorderColor)) {
 				quad.borderColor = newBorderColor;
 				app->needsRedraw = true;
 			}

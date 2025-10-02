@@ -37,8 +37,8 @@ void main() {
 	// Border size order: top, right, bottom, left
 	vec2 borderSize = vec2(fragUv.x < 0.5 ? fragBorderSizes.w : fragBorderSizes.y, fragUv.y < 0.5 ? fragBorderSizes.x : fragBorderSizes.z);
 	// Border radius order: topleft, topright, bottomright, bottomleft
-	float borderRadius = fragUv.x < 0.5 ? fragUv.y < 0.5 ? fragBorderRadiuses.x : fragBorderRadiuses.w : fragUv.y < 0.5 ? fragBorderRadiuses.y
-																														: fragBorderRadiuses.z;
+	float borderRadius = fragUv.x < 0.5 ? (fragUv.y < 0.5 ? fragBorderRadiuses.x : fragBorderRadiuses.w) : (fragUv.y < 0.5 ? fragBorderRadiuses.y
+																														: fragBorderRadiuses.z);
 
 	vec2 coords = (fragUv * fragSize);
 	vec2 halfSize = fragSize / 2.f;

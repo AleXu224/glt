@@ -3,7 +3,9 @@
 #include "include/widgets/column.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
+#include "widgets/fontIcon.hpp"
 #include "widgets/toggleButton.hpp"
+#include "widgets/transform.hpp"
 
 
 #include <GLFW/glfw3.h>
@@ -86,14 +88,28 @@ struct Test : StatefulWidget {
 						},
 						.content = "Toggle Disabled",
 					},
-					ToggleButton{
-						.active = toggled,
-						.onToggle = [this](bool active) {
-							setState([&]() {
-								toggled = active;
-							});
+					Transform{
+						.scale = toggled ? 2.f : 1.f,
+						.rotate = toggled ? 45.f : 0.f,
+						.child = ToggleButton{
+							.active = toggled,
+							.onToggle = [this](bool active) {
+								setState([&]() {
+									toggled = active;
+								});
+							},
+							.content = "Toggle",
 						},
-						.content = "Toggle",
+					},
+					Box{
+						.widget{
+							.width = Size::Wrap,
+							.height = Size::Wrap,
+						},
+						.color = Color::red,
+						.child = FontIcon{
+							.icon = 0xe5d2,
+						},
 					},
 				},
 			};

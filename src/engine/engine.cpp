@@ -110,7 +110,6 @@ void Engine::Runner::draw() {
 
 	drawFunc();
 
-
 	if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
 	instance.currentPipeline = nullptr;
 	instance.currentPipelineFlush = nullptr;
