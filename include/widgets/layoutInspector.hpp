@@ -52,7 +52,7 @@ namespace squi {
 		Child child;
 
 		struct State : WidgetState<LayoutInspector> {
-			bool visible = true;
+			bool visible = false;
 
 			Child build(const Element &) override {
 				return Gesture{

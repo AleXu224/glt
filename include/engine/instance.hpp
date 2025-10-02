@@ -35,35 +35,50 @@ namespace Engine {
 		squi::VoidObservable frameEndEvent{};
 		squi::VoidObservable frameBeginEvent{};
 
-		std::vector<squi::Rect> scissorStack{};
+		struct ScissorEntry {
+			// A scissor entry that assumes there are no transforms, should be used for bounds checking
+			squi::Rect logical;
+			// This represents the actual scissor that is being used to render
+			squi::Rect physical;
+		};
+
+		std::vector<ScissorEntry> scissorStack{};
 		void pushScissor(const squi::Rect &rect) {
 			if (currentPipelineFlush) (*currentPipelineFlush)();
+			auto transformedRect = rect.transformed(getTransform());
 			if (!scissorStack.empty()) {
-				scissorStack.push_back(rect.overlap(scissorStack.back()));
+				scissorStack.push_back(ScissorEntry{
+					.logical = rect.overlap(scissorStack.back().logical),
+					.physical = transformedRect.overlap(scissorStack.back().physical),
+				});
 			} else {
-				scissorStack.push_back(rect);
+				scissorStack.push_back(ScissorEntry{
+					.logical = rect,
+					.physical = transformedRect,
+				});
 			}
-			const auto &r = scissorStack.back();
+			const auto &r = scissorStack.back().physical;
 			auto sz = r.size().rounded();
 			auto pos = r.getTopLeft();
 			currentFrame.get().commandBuffer.setScissor(
-				0, vk::Rect2D{
-					   .offset{
-						   .x = static_cast<int32_t>(pos.x),
-						   .y = static_cast<int32_t>(pos.y),
-					   },
-					   .extent{
-						   .width = static_cast<uint32_t>(std::max(sz.x, 0.f)),
-						   .height = static_cast<uint32_t>(std::max(sz.y, 0.f)),
-					   },
-				   }
+				0,
+				vk::Rect2D{
+					.offset{
+						.x = static_cast<int32_t>(pos.x),
+						.y = static_cast<int32_t>(pos.y),
+					},
+					.extent{
+						.width = static_cast<uint32_t>(std::max(sz.x, 0.f)),
+						.height = static_cast<uint32_t>(std::max(sz.y, 0.f)),
+					},
+				}
 			);
 		}
 		void popScissor() {
 			if (currentPipelineFlush) (*currentPipelineFlush)();
 			scissorStack.pop_back();
 			if (scissorStack.empty()) return;
-			auto rect = scissorStack.back();
+			auto rect = scissorStack.back().physical;
 			auto sz = rect.size().rounded();
 			auto pos = rect.getTopLeft().rounded();
 			currentFrame.get().commandBuffer.setScissor(

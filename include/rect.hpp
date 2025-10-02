@@ -80,5 +80,7 @@ namespace squi {
 			return *this;
 		}
 		[[nodiscard]] Rect overlap(const Rect &other) const;
+
+		Rect transformed(const glm::mat4 &m) const;
 	};
 }// namespace squi

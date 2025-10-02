@@ -85,7 +85,7 @@ namespace squi {
 		auto *app = this->getApp();
 
 		data->pipeline->bindWithSampler(*data->sampler);
-		const auto clipRect = app->engine.instance.scissorStack.back();
+		const auto clipRect = app->engine.instance.scissorStack.back().logical;
 		const auto minOffsetX = clipRect.left - pos.x;
 		// const auto minOffsetY = clipRect.top - pos.y;
 		const auto maxOffsetX = clipRect.right - pos.x;

@@ -8,7 +8,6 @@
 namespace squi {
 	struct FontIcon : public StatelessWidget {
 		Key key;
-		Args widget;
 		float size = 16.f;
 		float fontSize = 24.f;
 		decltype(Text::font) font = FontStore::defaultIcons;

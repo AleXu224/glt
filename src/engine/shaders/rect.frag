@@ -47,12 +47,12 @@ void main() {
 
 	// These would only be needed in a 3d context.
 	// In 2d the result will always be 1
-	// vec2 grad_dist = vec2(dFdx(dist), dFdy(dist));
-	float afwidth = 0.5f /* * length(grad_dist) */;
+	vec2 grad_dist = vec2(dFdx(dist), dFdy(dist));
+	float afwidth = 0.5f * length(grad_dist);
 	float bdCov = smoothstep(afwidth, -afwidth, dist);
 
-	// vec2 grad_dist2 = vec2(dFdx(dist2), dFdy(dist2));
-	float afwidth2 = 0.5f /* * length(grad_dist2) */;
+	vec2 grad_dist2 = vec2(dFdx(dist2), dFdy(dist2));
+	float afwidth2 = 0.5f * length(grad_dist2);
 	float bgCov = smoothstep(afwidth2, -afwidth2, dist2);
 
 	// Paint border
