@@ -51,70 +51,75 @@ struct Test : StatefulWidget {
 
 	struct State : WidgetState<Test> {
 		TextInput::Controller controller{"Hello"};
+		Animated<float> rotation{0.f};
+		Animated<float> scale{1.f};
 		bool disabled = false;
 
 		bool toggled = false;
 
+		void initState() override {
+			rotation.mount(this);
+			scale.mount(this);
+		}
+
 		Child build(const Element &) override {
 			return Column{
 				.children{
-					Transform{
-						.origin{0.f, 0.f},
-						.scale = 6.f,
-						.child = TextBox{
-							.disabled = disabled,
-							.controller = controller,
-							.validator = [](const std::string &text) -> std::optional<std::string> {
-								std::println("Validating: {}", text);
-								if (text.contains("error")) {
-									return "Error: Text contains the word 'error'";
-								}
-								return {};
-							},
+					TextBox{
+						.disabled = disabled,
+						.controller = controller,
+						.validator = [](const std::string &text) -> std::optional<std::string> {
+							std::println("Validating: {}", text);
+							if (text.contains("error")) {
+								return "Error: Text contains the word 'error'";
+							}
+							return {};
 						},
 					},
-					// Button{
-					// 	.onClick = [this]() {
-					// 		setState([&]() {
-					// 			// remove the last character if it exists
-					// 			if (!controller.getText().empty()) {
-					// 				controller.setText(controller.getText().substr(0, controller.getText().size() - 1));
-					// 			}
-					// 		});
-					// 	},
-					// 	.content = "Test",
-					// },
-					// Button{
-					// 	.onClick = [this]() {
-					// 		setState([&]() {
-					// 			disabled = !disabled;
-					// 		});
-					// 	},
-					// 	.content = "Toggle Disabled",
-					// },
-					// Transform{
-					// 	.scale = toggled ? 2.f : 1.f,
-					// 	.rotate = toggled ? 45.f : 0.f,
-					// 	.child = ToggleButton{
-					// 		.active = toggled,
-					// 		.onToggle = [this](bool active) {
-					// 			setState([&]() {
-					// 				toggled = active;
-					// 			});
-					// 		},
-					// 		.content = "Toggle",
-					// 	},
-					// },
-					// Box{
-					// 	.widget{
-					// 		.width = Size::Wrap,
-					// 		.height = Size::Wrap,
-					// 	},
-					// 	.color = Color::red,
-					// 	.child = FontIcon{
-					// 		.icon = 0xe5d2,
-					// 	},
-					// },
+					Button{
+						.onClick = [this]() {
+							setState([&]() {
+								// remove the last character if it exists
+								if (!controller.getText().empty()) {
+									controller.setText(controller.getText().substr(0, controller.getText().size() - 1));
+								}
+							});
+						},
+						.content = "Test",
+					},
+					Button{
+						.onClick = [this]() {
+							setState([&]() {
+								disabled = !disabled;
+							});
+						},
+						.content = "Toggle Disabled",
+					},
+					Transform{
+						.scale = vec2{scale},
+						.rotate = rotation,
+						.child = ToggleButton{
+							.active = toggled,
+							.onToggle = [this](bool active) {
+								setState([&]() {
+									toggled = active;
+									rotation = toggled ? 45.f : 0.f;
+									scale = toggled ? 2.f : 1.f;
+								});
+							},
+							.content = "Toggle",
+						},
+					},
+					Box{
+						.widget{
+							.width = Size::Wrap,
+							.height = Size::Wrap,
+						},
+						.color = Color::red,
+						.child = FontIcon{
+							.icon = 0xe5d2,
+						},
+					},
 				},
 			};
 		}

@@ -17,7 +17,7 @@ namespace squi {
 
 		struct State final : WidgetState<LayoutInspectorItem> {
 			[[nodiscard]] std::string getElementName() const {
-				std::string ret = typeid(*widget->element).name();
+				std::string ret = typeid(*widget->element->widget).name();
 				if (const auto found = ret.find("struct"); found != std::string::npos) {
 					ret.erase(found, 6);
 				}
