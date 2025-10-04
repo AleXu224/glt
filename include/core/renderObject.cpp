@@ -209,8 +209,8 @@ namespace squi::core {
 			alignment = args.alignment.value_or(Alignment::TopLeft);
 			app->needsReposition = true;
 		}
-		if (sizeConstraints != args.sizeConstraints.value_or({})) {
-			sizeConstraints = args.sizeConstraints.value_or({});
+		if (sizeConstraints != args.sizeConstraints.value_or(BoxConstraints{})) {
+			sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{});
 			app->needsRelayout = true;
 		}
 		if (margin != args.margin.value_or({})) {
