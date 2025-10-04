@@ -7,13 +7,13 @@
 
 namespace squi {
 	void TextBox::State::updateStatus() {
-		Button::Status newStatus = Button::Status::resting;
+		Button::ButtonStatus newStatus = Button::ButtonStatus::resting;
 		if (widget->disabled) {
-			newStatus = Button::Status::disabled;
+			newStatus = Button::ButtonStatus::disabled;
 		} else if (active) {
-			newStatus = Button::Status::active;
+			newStatus = Button::ButtonStatus::active;
 		} else if (hovered) {
-			newStatus = Button::Status::hovered;
+			newStatus = Button::ButtonStatus::hovered;
 		}
 
 		if (newStatus != status) {
@@ -75,15 +75,15 @@ namespace squi {
 										if (!errorMessage.empty()) return Color(0xFF99A4FF);
 
 										switch (status) {
-											case Button::Status::disabled:
+											case Button::ButtonStatus::disabled:
 												return Color::transparent;
-											case Button::Status::active:
+											case Button::ButtonStatus::active:
 												return ThemeManager::getTheme().accent;
 											default:
 												return Color::white * 0.54f;
 										}
 									}(),
-									.borderWidth = BorderWidth{}.withBottom((status == Button::Status::active ? 2.f : 1.f)),
+									.borderWidth = BorderWidth{}.withBottom((status == Button::ButtonStatus::active ? 2.f : 1.f)),
 									.borderRadius = style.borderRadius,
 								},
 								TextInput{
@@ -104,7 +104,7 @@ namespace squi {
 											});
 										}
 									},
-									.active = status == Button::Status::active,
+									.active = status == Button::ButtonStatus::active,
 								},
 							},
 						},
