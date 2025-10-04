@@ -14,7 +14,7 @@ namespace squi {
 		std::function<std::optional<std::string>(const std::string &)> validator;
 
 		struct State : WidgetState<TextBox> {
-			Button::Status status = Button::Status::resting;
+			Button::ButtonStatus status = Button::ButtonStatus::resting;
 			bool active = false;
 			bool hovered = false;
 			std::string errorMessage;
