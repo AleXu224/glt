@@ -213,12 +213,12 @@ namespace squi::core {
 			sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{});
 			app->needsRelayout = true;
 		}
-		if (margin != args.margin.value_or({})) {
-			margin = args.margin.value_or({});
+		if (margin != args.margin.value_or(Margin{})) {
+			margin = args.margin.value_or(Margin{});
 			app->needsRelayout = true;
 		}
-		if (padding != args.padding.value_or({})) {
-			padding = args.padding.value_or({});
+		if (padding != args.padding.value_or(Padding{})) {
+			padding = args.padding.value_or(Padding{});
 			app->needsRelayout = true;
 		}
 	}

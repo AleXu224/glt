@@ -58,10 +58,10 @@ namespace squi {
 
 				assignAndMount(width, widget->widget.width);
 				assignAndMount(height, widget->widget.height);
-				assignAndMount(alignment, widget->widget.alignment.value_or({}));
+				assignAndMount(alignment, widget->widget.alignment.value_or(Alignment{}));
 				assignAndMount(sizeConstraints, widget->widget.sizeConstraints.value_or(BoxConstraints{}));
-				assignAndMount(margin, widget->widget.margin.value_or({}));
-				assignAndMount(padding, widget->widget.padding.value_or({}));
+				assignAndMount(margin, widget->widget.margin.value_or(Margin{}));
+				assignAndMount(padding, widget->widget.padding.value_or(Padding{}));
 			}
 
 			void updateOptionalAnimated(auto &&animated, const auto &value) {
