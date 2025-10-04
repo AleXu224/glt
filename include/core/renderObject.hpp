@@ -143,7 +143,6 @@ namespace squi::core {
 		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
 			if (child) {
 				callback(child.get());
-				child->iterateChildren(callback);
 			}
 		}
 

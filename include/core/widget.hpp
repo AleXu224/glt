@@ -19,6 +19,7 @@ namespace squi::core {
 		std::function<std::shared_ptr<Element>()> _createElementFunc = nullptr;
 		Key *_key = nullptr;
 		size_t _typeHash = 0;
+		std::string_view _name;
 
 	public:
 		[[nodiscard]] const KeyBase &getKey() const {
@@ -30,6 +31,10 @@ namespace squi::core {
 
 		[[nodiscard]] size_t getTypeHash() const {
 			return this->_typeHash;
+		}
+
+		[[nodiscard]] std::string_view getName() const {
+			return this->_name;
 		}
 
 		[[nodiscard]] std::shared_ptr<Element> _createElement() const {
@@ -51,6 +56,8 @@ namespace squi::core {
 			static_assert(HasKey<Self>, "Widget requires a key");
 			auto widget = std::make_shared<Self>(std::forward<decltype(self)>(self));
 			widget->_key = &widget->key;
+
+			widget->_name = typeid(self).name();
 
 			if constexpr (std::is_base_of_v<StatefulWidget, Self>) {
 				static_assert(StatefulWidgetLike<Self>, "StatefulWidget must be stateful");

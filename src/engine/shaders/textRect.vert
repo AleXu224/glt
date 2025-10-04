@@ -1,9 +1,11 @@
 #version 450
-layout(binding = 0) uniform Ubo {
+layout(push_constant) uniform PushConstants {
     mat4 model;
+} pushConstants;
+
+layout(binding = 0) uniform Ubo {
 	mat4 view;
-}
-ubo;
+} ubo;
 
 layout(location = 0) in vec4 inColor;
 layout(location = 1) in vec2 inSize;
@@ -17,7 +19,7 @@ layout(location = 1) out vec2 fragUv;
 
 void main() {
 	vec2 pos = inPos + inUv * inSize + inOffset;
-	gl_Position = ubo.view * ubo.model * vec4(pos, 1.0, 1.0);
+	gl_Position = ubo.view * pushConstants.model * vec4(pos, 1.0, 1.0);
 	fragColor = inColor;
 	fragUv = inTextUv;
 }

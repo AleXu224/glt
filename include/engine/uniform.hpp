@@ -14,8 +14,11 @@
 
 
 namespace Engine {
-	struct Ubo {
+	struct PushConstant {
 		glm::mat4 model = glm::mat4(1.f);
+	};
+	
+	struct Ubo {
 		glm::mat4 view;
 	};
 

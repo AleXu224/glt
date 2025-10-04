@@ -7,7 +7,7 @@
 #include "store/pipeline.hpp"
 #include "store/sampler.hpp"
 #include "widget.hpp"
-#include <set>
+#include <map>
 #include <unordered_set>
 
 
@@ -77,7 +77,7 @@ namespace squi::core {
 		static constexpr auto elemComp = [](Element *e1, Element *e2) {
 			return e1->depth < e2->depth;
 		};
-		std::set<Element *, decltype(elemComp)> dirtyElements{elemComp};
+		std::map<Element *, std::weak_ptr<Element>, decltype(elemComp)> dirtyElements{elemComp};
 		std::unordered_set<AnimationController *> runningAnimations{};
 		std::vector<std::function<void()>> postLayoutTasks{};
 

@@ -23,7 +23,7 @@ namespace squi::core {
 
 	void Element::markNeedsRebuild() {
 		this->dirty = true;
-		getApp()->dirtyElements.insert(this);
+		getApp()->dirtyElements.insert_or_assign(this, weak_from_this());
 	}
 
 	void Element::markNeedsRelayout() const {

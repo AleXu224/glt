@@ -1,23 +1,34 @@
 #pragma once
 
+#include "button.hpp"
+#include "column.hpp"
 #include "core/core.hpp"
+#include "fontIcon.hpp"
+#include "transform.hpp"
 #include "widgets/box.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/row.hpp"
 #include "widgets/scrollview.hpp"
 #include "widgets/text.hpp"
+#include "wrapper.hpp"
 #include <GLFW/glfw3.h>
 
 namespace squi {
 	struct LayoutInspectorItem : StatefulWidget {
 		// Args
 		Key key;
-		Element *element;
-
+		std::weak_ptr<RenderObject> renderObjectPtr;
 
 		struct State final : WidgetState<LayoutInspectorItem> {
-			[[nodiscard]] std::string getElementName() const {
-				std::string ret = typeid(*widget->element->widget).name();
+			bool open = false;
+			Animated<float> iconRotate{0.f};
+
+			void initState() override {
+				iconRotate.mount(this);
+			}
+
+			[[nodiscard]] static std::string getElementName(const RenderObjectPtr &renderObject) {
+				std::string ret{renderObject->element->widget->getName()};
 				if (const auto found = ret.find("struct"); found != std::string::npos) {
 					ret.erase(found, 6);
 				}
@@ -31,14 +42,60 @@ namespace squi {
 			}
 
 			Child build(const Element &) override {
-				return Box{
-					.widget{
-						.padding = 8.f,
-					},
-					.color = Color::white * 0.1f,
-					.borderRadius = 4.f,
-					.child = Text{
-						.text = getElementName(),
+				auto renderObject = widget->renderObjectPtr.lock();
+				if (!renderObject) return nullptr;
+
+				return Column{
+					.children{
+						Button{
+							.widget{
+								.width = Size::Expand,
+							},
+							.theme = Button::Theme::Subtle(),
+							.onClick = [this]() {
+								setState([&]() {
+									open = !open;
+									iconRotate = open ? 90.f : 0.f;
+								});
+							},
+							.content = Row{
+								.widget{
+									.height = Size::Shrink,
+									.alignment = Alignment::CenterLeft,
+								},
+								.children{
+									Transform{
+										.rotate = iconRotate,
+										.child = FontIcon{
+											.icon = 0xe5cc,
+										},
+									},
+									Text{
+										.text = getElementName(renderObject),
+									},
+								},
+							},
+						},
+						Column{
+							.widget{
+								.padding = Padding{}.withLeft(8.f),
+							},
+							.children = [&]() -> Children {
+								Children ret;
+
+								if (!open) return ret;
+
+								renderObject->iterateChildren([&](RenderObject *childRenderObject) {
+									ret.emplace_back(
+										LayoutInspectorItem{
+											.renderObjectPtr = childRenderObject->weak_from_this(),
+										}
+									);
+								});
+
+								return ret;
+							}(),
+						},
 					},
 				};
 			}
@@ -52,6 +109,7 @@ namespace squi {
 		Child child;
 
 		struct State : WidgetState<LayoutInspector> {
+			std::weak_ptr<RenderObject> contentRenderObject;
 			bool visible = false;
 
 			Child build(const Element &) override {
@@ -66,7 +124,14 @@ namespace squi {
 					.child = Row{
 						.widget{},
 						.children{
-							widget->child,
+							Wrapper{
+								.afterLayout = [this](RenderObject &renderObject) {
+									if (visible && contentRenderObject.lock() != renderObject.shared_from_this()) setState([&]() {
+										contentRenderObject = renderObject.weak_from_this();
+									});
+								},
+								.child = widget->child,
+							},
 							visible//
 								? Box{
 									  .widget{
@@ -77,7 +142,9 @@ namespace squi {
 										  .scrollWidget{
 											  .padding = 4.f,
 										  },
-										  .children{LayoutInspectorItem{.element = this->element}},
+										  .children{
+											  LayoutInspectorItem{.renderObjectPtr = this->contentRenderObject},
+										  },
 									  },
 								  }
 								: Child(nullptr),

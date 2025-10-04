@@ -108,11 +108,11 @@ namespace Engine {
 			if (currentPipelineFlush) (*currentPipelineFlush)();
 			transformStack.pop_back();
 		}
-		uint32_t getTransformIndex() const {
+		[[nodiscard]] uint32_t getTransformIndex() const {
 			if (transformStack.empty()) return 0;
 			return transformStack.back().first;
 		}
-		glm::mat4 getTransform() const {
+		[[nodiscard]] glm::mat4 getTransform() const {
 			if (transformStack.empty()) return glm::mat4(1.f);
 			return transformStack.back().second;
 		}

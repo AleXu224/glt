@@ -161,11 +161,16 @@ namespace squi::core {
 						}
 					}
 
-					renderObject.iterateChildren([](RenderObject *child) {
+					std::function<void(RenderObject *)> lbd;
+
+					lbd = [&lbd](RenderObject *child) {
 						if (auto *element = dynamic_cast<Gesture::DetectorRenderObject *>(child)) {
 							element->update();
 						}
-					});
+						child->iterateChildren(lbd);
+					};
+
+					renderObject.iterateChildren(lbd);
 
 					// for (const auto &[_, ptr]: cleanupQueue) {
 					// 	auto w = ptr.lock();
@@ -181,7 +186,11 @@ namespace squi::core {
 					while (!dirtyElements.empty() || needsRelayout) {
 						while (!dirtyElements.empty()) {
 							auto it = dirtyElements.begin();
-							auto *elem = *it;
+							auto elem = it->second.lock();
+							if (!elem) {
+								dirtyElements.erase(it);
+								continue;
+							}
 							dirtyElements.erase(it);
 							if (elem->mounted && elem->dirty)
 								elem->rebuild();
