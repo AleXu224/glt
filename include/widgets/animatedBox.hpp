@@ -61,7 +61,7 @@ namespace squi {
 				assignAndMount(width, widget->widget.width);
 				assignAndMount(height, widget->widget.height);
 				assignAndMount(alignment, widget->widget.alignment.value_or({}));
-				assignAndMount(sizeConstraints, widget->widget.sizeConstraints.value_or({}));
+				assignAndMount(sizeConstraints, widget->widget.sizeConstraints.value_or(BoxConstraints{}));
 				assignAndMount(margin, widget->widget.margin.value_or({}));
 				assignAndMount(padding, widget->widget.padding.value_or({}));
 
