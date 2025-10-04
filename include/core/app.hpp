@@ -13,9 +13,7 @@
 
 namespace squi::core {
 	struct App;
-	struct RootRenderObject : SingleChildRenderObject {
-		App *app = nullptr;
-	};
+	struct RootRenderObject : SingleChildRenderObject {};
 
 	struct RootWidget : RenderObjectWidget {
 		Key key;
@@ -76,7 +74,7 @@ namespace squi::core {
 
 		struct ElementComparator {
 			static bool operator()(const Element *a, const Element *b) {
-				return a->depth < b->depth;
+				return a->id < b->id;
 			}
 		};
 		std::map<Element *, std::weak_ptr<Element>, ElementComparator> dirtyElements{};
@@ -85,6 +83,7 @@ namespace squi::core {
 
 		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
 			auto ret = std::make_shared<RootRenderObject>();
+			ret->root = ret.get();
 			ret->app = this;
 			return ret;
 		}();

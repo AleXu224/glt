@@ -30,13 +30,13 @@ namespace squi::core {
 		static const Alignment BottomRight;
 	};
 
-	constexpr Alignment Alignment::TopLeft = {0.f, 0.f};
-	constexpr Alignment Alignment::TopCenter = {0.5f, 0.0f};
-	constexpr Alignment Alignment::TopRight = {1.0f, 0.0f};
-	constexpr Alignment Alignment::CenterLeft = {0.0f, 0.5f};
-	constexpr Alignment Alignment::Center = {0.5f, 0.5f};
-	constexpr Alignment Alignment::CenterRight = {1.0f, 0.5f};
-	constexpr Alignment Alignment::BottomLeft = {0.0f, 1.0f};
-	constexpr Alignment Alignment::BottomCenter = {0.5f, 1.0f};
-	constexpr Alignment Alignment::BottomRight = {1.0f, 1.0f};
+	constexpr inline Alignment Alignment::TopLeft = {0.f, 0.f};
+	constexpr inline Alignment Alignment::TopCenter = {0.5f, 0.0f};
+	constexpr inline Alignment Alignment::TopRight = {1.0f, 0.0f};
+	constexpr inline Alignment Alignment::CenterLeft = {0.0f, 0.5f};
+	constexpr inline Alignment Alignment::Center = {0.5f, 0.5f};
+	constexpr inline Alignment Alignment::CenterRight = {1.0f, 0.5f};
+	constexpr inline Alignment Alignment::BottomLeft = {0.0f, 1.0f};
+	constexpr inline Alignment Alignment::BottomCenter = {0.5f, 1.0f};
+	constexpr inline Alignment Alignment::BottomRight = {1.0f, 1.0f};
 }// namespace squi::core

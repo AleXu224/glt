@@ -23,9 +23,6 @@ namespace squi {
 	Child Scrollbar::State::build(const Element &) {
 		// Wrap the whole thing in a layout builder so that we can get the sizing of the scrollable
 		return LayoutBuilder{
-			.widget{
-				.alignment = Alignment::BottomRight,
-			},
 			.builder = [this](BoxConstraints) -> Child {
 				if (widget->controller->contentMainAxis <= widget->controller->viewMainAxis)
 					return nullptr;
@@ -45,6 +42,7 @@ namespace squi {
 						.widget{
 							.width = widget->direction == Axis::Horizontal ? SizeVariant(Size::Expand) : SizeVariant(12.f),
 							.height = widget->direction == Axis::Vertical ? SizeVariant(Size::Expand) : SizeVariant(12.f),
+							.alignment = Alignment::BottomRight,
 							.padding = getPadding(),
 						},
 						.color = hovered || focused ? 0xFFFFFF0F : Color::transparent,
@@ -78,9 +76,6 @@ namespace squi {
 								}
 
 								return Gesture{
-									.widget{
-										.alignment = alignment,
-									},
 									.onFocus = [this](const Gesture::State &) {
 										dragStartScroll = widget->scroll;
 										setState([this]() {
@@ -101,6 +96,7 @@ namespace squi {
 									},
 									.child = Box{
 										.widget{
+											.alignment = alignment,
 											.sizeConstraints = sizeConstraints,
 										},
 										.color = 0xFFFFFF8B,

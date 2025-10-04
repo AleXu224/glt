@@ -10,6 +10,8 @@ namespace squi::core {
 		Element *parent = nullptr;
 		Element *root = nullptr;
 		size_t depth = 0;
+		static inline uint64_t nextId = 1;
+		const uint64_t id = nextId++;
 		size_t index = 0;
 		bool dirty = true;
 		bool mounted = false;

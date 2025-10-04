@@ -93,7 +93,7 @@ namespace squi::core {
 
 			from = getValue();
 			to = newTo;
-			startTime = std::chrono::steady_clock::now();
+			startTime = controller->app->frameStartTime;
 
 			controller->endTime = startTime + duration;
 			controller->run();

@@ -67,7 +67,7 @@ namespace squi {
 		struct DetectorRenderObject : SingleChildRenderObject {
 			State state{};
 
-			void update();
+			void update() override;
 			void init() override;
 			bool canClick() const;
 		};

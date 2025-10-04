@@ -8,13 +8,8 @@
 namespace squi::core {
 	// Render Object
 	App *RenderObject::getApp() const {
-		const auto *obj = this;
-		while (obj->parent != nullptr && obj->parent != obj) {
-			obj = obj->parent;
-		}
-		const auto *root = dynamic_cast<const RootRenderObject *>(obj);
-		assert(root != nullptr);
-		return root->app;
+		assert(app != nullptr);
+		return app;
 	}
 
 	vec2 RenderObject::calculateSize(BoxConstraints extConstraints, bool final) {

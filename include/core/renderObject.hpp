@@ -10,6 +10,7 @@
 #include "vector"
 #include <functional>
 #include <optional>
+#include <span>
 #include <utility>
 #include <variant>
 
@@ -48,6 +49,8 @@ namespace squi::core {
 	struct RenderObject : std::enable_shared_from_this<RenderObject> {
 		RenderObjectElement *element = nullptr;
 		RenderObject *parent = nullptr;
+		RenderObject *root = nullptr;
+		App *app = nullptr;
 
 		vec2 size{};
 		vec2 pos{};
@@ -79,6 +82,8 @@ namespace squi::core {
 		virtual void drawSelf() {}
 		virtual void drawContent() {}
 
+		virtual void update() {}
+
 		[[nodiscard]] Rect getRect() const;
 		[[nodiscard]] Rect getContentRect() const;
 		[[nodiscard]] Rect getLayoutRect() const;
@@ -104,6 +109,10 @@ namespace squi::core {
 		}
 
 		virtual void iterateChildren(const std::function<void(RenderObject *)> &callback) {}
+
+		virtual std::span<const RenderObjectPtr> getChildren() const {
+			return {};
+		}
 
 		virtual void addChild(const RenderObjectPtr & /*child*/, std::optional<size_t> /*index*/ = std::nullopt) {
 			assert(false);// Can't add children to this RenderObject
@@ -148,6 +157,11 @@ namespace squi::core {
 			}
 		}
 
+		std::span<const RenderObjectPtr> getChildren() const override {
+			if (!child) return {};
+			return std::span<const RenderObjectPtr>{&child, 1};
+		}
+
 		void addChild(const RenderObjectPtr &child, std::optional<size_t> /*index*/ = std::nullopt) override {
 			if (!child) return;
 			if (child->parent) {
@@ -156,6 +170,8 @@ namespace squi::core {
 			assert(this->child == nullptr);// Can only have one child
 			this->child = child;
 			child->parent = this;
+			child->root = this->root;
+			child->app = this->app;
 			child->initRenderObject();
 		}
 
@@ -197,6 +213,10 @@ namespace squi::core {
 			}
 		}
 
+		std::span<const RenderObjectPtr> getChildren() const override {
+			return children;
+		}
+
 		void addChild(const RenderObjectPtr &child, std::optional<size_t> index = std::nullopt) override {
 			if (child->parent) {
 				child->parent->removeChild(child);
@@ -207,6 +227,8 @@ namespace squi::core {
 				children.push_back(child);
 			}
 			child->parent = this;
+			child->root = this->root;
+			child->app = this->app;
 			child->initRenderObject();
 		}
 

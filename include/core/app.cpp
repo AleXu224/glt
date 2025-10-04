@@ -1,6 +1,5 @@
 #include "app.hpp"
 #include "fontStore.hpp"
-#include "widgets/gestureDetector.hpp"
 #include "widgets/layoutInspector.hpp"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -161,28 +160,17 @@ namespace squi::core {
 						}
 					}
 
-					std::function<void(RenderObject *)> lbd;
-
-					lbd = [&lbd](RenderObject *child) {
-						if (auto *element = dynamic_cast<Gesture::DetectorRenderObject *>(child)) {
-							element->update();
+					struct Updater {
+						static void update(RenderObject *child) {
+							child->update();
+							for (const auto &child: child->getChildren()) {
+								update(child.get());
+							}
 						}
-						child->iterateChildren(lbd);
 					};
 
-					renderObject.iterateChildren(lbd);
+					Updater::update(&renderObject);
 
-					// for (const auto &[_, ptr]: cleanupQueue) {
-					// 	auto w = ptr.lock();
-					// 	if (w) {
-					// 		w->pruneChildren();
-					// 	}
-					// }
-					// cleanupQueue.clear();
-
-					// if (!dirtyElements.empty()) {
-					// 	std::println("Has dirty elements");
-					// }
 					while (!dirtyElements.empty() || needsRelayout) {
 						while (!dirtyElements.empty()) {
 							auto it = dirtyElements.begin();

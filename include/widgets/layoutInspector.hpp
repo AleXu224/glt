@@ -21,10 +21,12 @@ namespace squi {
 
 		struct State final : WidgetState<LayoutInspectorItem> {
 			bool open = false;
-			Animated<float> iconRotate{0.f};
+			Animated<float> iconRotate{.from = 0.f};
+			Animated<float> iconOffset{.from = 0.f};
 
 			void initState() override {
 				iconRotate.mount(this);
+				iconOffset.mount(this);
 			}
 
 			[[nodiscard]] static std::string getElementName(const RenderObjectPtr &renderObject) {
@@ -56,6 +58,7 @@ namespace squi {
 								setState([&]() {
 									open = !open;
 									iconRotate = open ? 90.f : 0.f;
+									iconOffset = open ? .5f : 0.f;
 								});
 							},
 							.content = Row{
@@ -65,6 +68,7 @@ namespace squi {
 								},
 								.children{
 									Transform{
+										.translate{-iconOffset, iconOffset},
 										.rotate = iconRotate,
 										.child = FontIcon{
 											.icon = 0xe5cc,
