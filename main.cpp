@@ -132,7 +132,7 @@ struct Test2 : StatefulWidget {
 
 	struct State : WidgetState<Test2> {
 		bool toggle = false;
-		Button::Status status = Button::Status::resting;
+		Button::ButtonStatus status = Button::ButtonStatus::resting;
 
 		Child build(const Element &) override {
 			return ScrollView{

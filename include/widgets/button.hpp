@@ -10,7 +10,7 @@
 
 namespace squi {
 	struct Button : StatefulWidget {
-		enum class Status : uint8_t {
+		enum class ButtonStatus : uint8_t {
 			resting,
 			hovered,
 			active,
@@ -37,15 +37,15 @@ namespace squi {
 			static Theme Standard();
 			static Theme Subtle();
 
-			auto &&fromStatus(this auto &&self, Status status) {
+			auto &&fromStatus(this auto &&self, ButtonStatus status) {
 				switch (status) {
-					case Status::resting:
+					case ButtonStatus::resting:
 						return self.resting;
-					case Status::hovered:
+					case ButtonStatus::hovered:
 						return self.hovered;
-					case Status::active:
+					case ButtonStatus::active:
 						return self.active;
-					case Status::disabled:
+					case ButtonStatus::disabled:
 						return self.disabled;
 				}
 				throw std::runtime_error("Invalid button status");
@@ -57,23 +57,23 @@ namespace squi {
 		Args widget{};
 		Theme theme = Theme::Standard();
 		bool disabled;
-		std::function<void(Status)> onStatusChange{};
+		std::function<void(ButtonStatus)> onStatusChange{};
 		std::function<void()> onClick{};
 		std::variant<std::string, Child> content = "Button";
 
 		struct State : WidgetState<Button> {
-			Status status = Status::resting;
+			ButtonStatus status = ButtonStatus::resting;
 			bool isHovered = false;
 			bool isActive = false;
 
 			void updateStatus() {
-				Status newStatus = Status::resting;
+				ButtonStatus newStatus = ButtonStatus::resting;
 				if (widget->disabled) {
-					newStatus = Status::disabled;
+					newStatus = ButtonStatus::disabled;
 				} else if (isActive) {
-					newStatus = Status::active;
+					newStatus = ButtonStatus::active;
 				} else if (isHovered) {
-					newStatus = Status::hovered;
+					newStatus = ButtonStatus::hovered;
 				}
 
 				if (newStatus != status) {
