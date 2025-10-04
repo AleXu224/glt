@@ -74,10 +74,12 @@ namespace squi::core {
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
 
-		static constexpr auto elemComp = [](Element *e1, Element *e2) {
-			return e1->depth < e2->depth;
+		struct ElementComparator {
+			static bool operator()(const Element *a, const Element *b) {
+				return a->depth < b->depth;
+			}
 		};
-		std::map<Element *, std::weak_ptr<Element>, decltype(elemComp)> dirtyElements{elemComp};
+		std::map<Element *, std::weak_ptr<Element>, ElementComparator> dirtyElements{};
 		std::unordered_set<AnimationController *> runningAnimations{};
 		std::vector<std::function<void()>> postLayoutTasks{};
 
