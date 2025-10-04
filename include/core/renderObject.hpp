@@ -95,6 +95,7 @@ namespace squi::core {
 				case Size::Wrap:
 					return getContentSizing(axis);
 			}
+			std::unreachable();
 		}
 
 		[[nodiscard]] virtual Sizing getContentSizing(Axis /*axis*/) const {
