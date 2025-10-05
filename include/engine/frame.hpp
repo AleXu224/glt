@@ -2,7 +2,6 @@
 
 #include "any"
 #include "vulkanIncludes.hpp"
-#include <print>
 #include <vulkan/vulkan_raii.hpp>
 
 namespace Engine {

@@ -15,7 +15,7 @@
 Engine::Runner::Runner(WindowOptions options) : instance(std::move(options)) {}
 
 Engine::Frame &Engine::Runner::getCurrentFrame() {
-	return instance.frames.at(frameNumber % FrameBuffer);
+	return instance.frames.at(frameNumber % instance.frames.size());
 }
 
 void Engine::Runner::recreateSwapChain() {

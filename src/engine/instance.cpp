@@ -23,9 +23,9 @@ Instance::Instance(WindowOptions options)
 	  swapChainFramebuffers(createFramebuffers()),
 	  frames{[&] {
 		  std::vector<Frame> ret{};
-		  ret.reserve(FrameBuffer);
+		  ret.reserve(swapChainImages.size());
 		  auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
-		  for (size_t i = 0; i < FrameBuffer; i++) {
+		  for (size_t i = 0; i < swapChainImages.size(); i++) {
 			  ret.emplace_back(i, Vulkan::device().resource, props.graphicsFamily.value());
 		  }
 

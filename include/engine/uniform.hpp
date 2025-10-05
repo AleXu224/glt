@@ -3,12 +3,8 @@
 #include "buffer.hpp"
 #include "frame.hpp"
 #include "instance.hpp"
-#include "utils.hpp"
 #include "vulkanIncludes.hpp"
-#include <array>
-#include <cstring>
 #include <functional>
-#include <print>
 #include <ranges>
 #include <vulkan/vulkan_enums.hpp>
 
@@ -17,7 +13,7 @@ namespace Engine {
 	struct PushConstant {
 		glm::mat4 model = glm::mat4(1.f);
 	};
-	
+
 	struct Ubo {
 		glm::mat4 view;
 	};
@@ -33,27 +29,31 @@ namespace Engine {
 			Instance &instance;
 		};
 
+		Instance &instance;
+
 		vk::raii::DescriptorSetLayout descriptorSetLayout;
 
-		std::array<Buffer, FrameBuffer> buffers;
+		std::vector<Buffer> buffers;
 
 		vk::raii::DescriptorPool descriptorPool;
 		std::vector<vk::raii::DescriptorSet> descriptorSets;
 
-		Instance &instance;
-
 		Uniform(const Args &args)
-			: descriptorSetLayout(createSetLayout()),
-			  buffers(generateArray<Buffer, FrameBuffer>([&](auto) {
-				  return Buffer{Buffer::Args{
-					  .size = sizeof(T),
-					  .usage = vk::BufferUsageFlagBits::eUniformBuffer,
-				  }};
-			  })),
+			: instance(args.instance),
+			  descriptorSetLayout(createSetLayout()),
+			  buffers([&]() {
+				  std::vector<Buffer> ret;
+				  for (auto _: std::views::iota(0ull, instance.frames.size())) {
+					  ret.emplace_back(Buffer::Args{
+						  .size = sizeof(T),
+						  .usage = vk::BufferUsageFlagBits::eUniformBuffer,
+					  });
+				  }
+				  return ret;
+			  }()),
 			  descriptorPool(createDescriptorPool()),
-			  descriptorSets(createDescriptorSets()),
-			  instance(args.instance) {
-			for (auto i: std::views::iota(0ull, FrameBuffer)) {
+			  descriptorSets(createDescriptorSets()) {
+			for (auto i: std::views::iota(0ull, instance.frames.size())) {
 				auto &buffer = buffers.at(i).buffer;
 
 				vk::DescriptorBufferInfo bufferInfo{
@@ -120,15 +120,15 @@ namespace Engine {
 			};
 		}
 
-		static vk::raii::DescriptorPool createDescriptorPool() {
+		vk::raii::DescriptorPool createDescriptorPool() {
 			vk::DescriptorPoolSize size{
 				.type = vk::DescriptorType::eUniformBuffer,
-				.descriptorCount = FrameBuffer,
+				.descriptorCount = instance.frames.size(),
 			};
 
 			vk::DescriptorPoolCreateInfo createInfo{
 				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-				.maxSets = FrameBuffer,
+				.maxSets = instance.frames.size(),
 				.poolSizeCount = 1,
 				.pPoolSizes = &size,
 			};
@@ -137,13 +137,11 @@ namespace Engine {
 		}
 
 		std::vector<vk::raii::DescriptorSet> createDescriptorSets() {
-			auto setLayouts = generateArray<vk::DescriptorSetLayout, FrameBuffer>([&](size_t /*i*/) -> vk::DescriptorSetLayout {
-				return *descriptorSetLayout;
-			});
+			std::vector<vk::DescriptorSetLayout> setLayouts(instance.frames.size(), *descriptorSetLayout);
 
 			vk::DescriptorSetAllocateInfo allocInfo{
 				.descriptorPool = *descriptorPool,
-				.descriptorSetCount = FrameBuffer,
+				.descriptorSetCount = static_cast<uint32_t>(instance.frames.size()),
 				.pSetLayouts = setLayouts.data(),
 			};
 

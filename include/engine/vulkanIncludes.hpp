@@ -9,7 +9,3 @@
 #include <vulkan/vulkan_enums.hpp>  // IWYU pragma: export
 #include <vulkan/vulkan_raii.hpp>   // IWYU pragma: export
 #include <vulkan/vulkan_structs.hpp>// IWYU pragma: export
-
-
-
-static constexpr uint32_t FrameBuffer = 2;
