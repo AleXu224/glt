@@ -4,13 +4,38 @@
 #include "borderWidth.hpp"
 #include "color.hpp"
 #include "core/animationController.hpp"
-#include "core/app.hpp"
 #include "core/core.hpp"
 #include "core/curve.hpp"
 #include <chrono>
 
 namespace squi::core {
 	using namespace std::chrono_literals;
+
+	struct AnimatedController : AnimationController {
+		using AnimationController::AnimationController;
+
+		AnimatedController(const AnimatedController &) = delete;
+		AnimatedController(AnimatedController &&) noexcept = delete;
+		AnimatedController &operator=(const AnimatedController &) = delete;
+		AnimatedController &operator=(AnimatedController &&) noexcept = delete;
+
+		ElementPtr element = nullptr;
+		App *app = nullptr;
+
+		[[nodiscard]] bool isCompleted() const override;
+
+		void markElementDirty() override {
+			if (element) {
+				element->markNeedsRebuild();
+			}
+		}
+
+		void run();
+
+		[[nodiscard]] std::chrono::steady_clock::time_point getFrameStartTime() const;
+
+		~AnimatedController() override;
+	};
 
 	template<class T>
 	struct Animated {
@@ -20,43 +45,7 @@ namespace squi::core {
 		std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
 		std::function<float(float)> curve = Curve::easeOutCubic;
 
-		struct Controller : AnimationController {
-			using AnimationController::AnimationController;
-
-			Controller(const Controller &) = delete;
-			Controller(Controller &&) noexcept = delete;
-			Controller &operator=(const Controller &) = delete;
-			Controller &operator=(Controller &&) noexcept = delete;
-
-			ElementPtr element = nullptr;
-			App *app = nullptr;
-
-			[[nodiscard]] bool isCompleted() const override {
-				if (!app) return false;
-				return app->frameStartTime >= endTime;
-			}
-
-			void markElementDirty() override {
-				if (element) {
-					element->markNeedsRebuild();
-				}
-			}
-
-			void run() {
-				if (!app) return;
-				app->runningAnimations.insert(this);
-				markElementDirty();
-			}
-
-
-			~Controller() override {
-				if (app) {
-					app->runningAnimations.erase(this);
-				}
-			}
-		};
-
-		std::shared_ptr<Controller> controller = std::make_shared<Controller>();
+		std::shared_ptr<AnimatedController> controller = std::make_shared<AnimatedController>();
 
 		void mount(WidgetStateBase *state) {
 			this->controller->element = state->element->shared_from_this();
@@ -69,14 +58,14 @@ namespace squi::core {
 
 		[[nodiscard]] bool isCompleted() const {
 			if (!isMounted()) return false;
-			return controller->app->frameStartTime - startTime >= duration;
+			return controller->getFrameStartTime() - startTime >= duration;
 		}
 
 		[[nodiscard]] T getValue() const {
 			static_assert(std::is_arithmetic_v<T>, "Animation only supports arithmetic types");
 			assert(isMounted());
 			if (!isMounted()) return from;
-			auto now = controller->app->frameStartTime;
+			auto now = controller->getFrameStartTime();
 			if (now - startTime >= duration) return to;
 			auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 			t = curve(t);
@@ -93,7 +82,7 @@ namespace squi::core {
 
 			from = getValue();
 			to = newTo;
-			startTime = controller->app->frameStartTime;
+			startTime = controller->getFrameStartTime();
 
 			controller->endTime = startTime + duration;
 			controller->run();
@@ -108,7 +97,7 @@ namespace squi::core {
 	template<>
 	inline Color Animated<Color>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
@@ -118,7 +107,7 @@ namespace squi::core {
 	template<>
 	inline BorderWidth Animated<BorderWidth>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
@@ -133,7 +122,7 @@ namespace squi::core {
 	template<>
 	inline BorderRadius Animated<BorderRadius>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
@@ -148,7 +137,7 @@ namespace squi::core {
 	template<>
 	inline Alignment Animated<Alignment>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
@@ -161,7 +150,7 @@ namespace squi::core {
 	template<>
 	inline Margin Animated<Margin>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);
@@ -176,7 +165,7 @@ namespace squi::core {
 	template<>
 	inline BoxConstraints Animated<BoxConstraints>::getValue() const {
 		if (!isMounted()) return from;
-		auto now = controller->app->frameStartTime;
+		auto now = controller->getFrameStartTime();
 		if (now - startTime >= duration) return to;
 		auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
 		t = curve(t);

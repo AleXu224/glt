@@ -5,7 +5,6 @@
 #include "observer.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/misc/scrollViewData.hpp"
-#include <GLFW/glfw3.h>
 
 
 namespace squi {

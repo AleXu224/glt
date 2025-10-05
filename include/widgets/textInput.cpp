@@ -7,6 +7,7 @@
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
 
+#include <GLFW/glfw3.h>
 #include <algorithm>
 
 namespace squi {

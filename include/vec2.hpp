@@ -1,9 +1,10 @@
 #pragma once
 #include "cmath"
+#include "glm/glm.hpp"// IWYU pragma: keep
+#include "iostream"
 #include <limits>
 #include <print>
-#include "iostream"
-#include "glm/glm.hpp"
+
 
 namespace squi {
 	struct vec2 {
@@ -23,66 +24,66 @@ namespace squi {
 		}
 
 		[[nodiscard]] float length() const noexcept {
-			return std::sqrtf(x * x + y * y);
+			return std::sqrtf((x * x) + (y * y));
 		}
 
-		[[nodiscard]] inline vec2 operator+(const vec2 &other) const {
+		[[nodiscard]] constexpr vec2 operator+(const vec2 &other) const {
 			return {x + other.x, y + other.y};
 		}
-		[[nodiscard]] inline vec2 operator-(const vec2 &other) const {
+		[[nodiscard]] constexpr vec2 operator-(const vec2 &other) const {
 			return {x - other.x, y - other.y};
 		}
-		[[nodiscard]] inline vec2 operator*(const vec2 &other) const {
+		[[nodiscard]] constexpr vec2 operator*(const vec2 &other) const {
 			return {x * other.x, y * other.y};
 		}
-		[[nodiscard]] inline vec2 operator/(const vec2 &other) const {
+		[[nodiscard]] constexpr vec2 operator/(const vec2 &other) const {
 			return {x / other.x, y / other.y};
 		}
 
-		[[nodiscard]] inline vec2 operator-() const {
+		[[nodiscard]] constexpr vec2 operator-() const {
 			return {-x, -y};
 		}
 
-		inline void operator+=(const vec2 &other) {
+		constexpr void operator+=(const vec2 &other) {
 			x += other.x;
 			y += other.y;
 		}
-		inline void operator-=(const vec2 &other) {
+		constexpr void operator-=(const vec2 &other) {
 			x -= other.x;
 			y -= other.y;
 		}
-		inline void operator*=(const vec2 &other) {
+		constexpr void operator*=(const vec2 &other) {
 			x *= other.x;
 			y *= other.y;
 		}
-		inline void operator/=(const vec2 &other) {
+		constexpr void operator/=(const vec2 &other) {
 			x /= other.x;
 			y /= other.y;
 		}
 
-		inline bool operator==(const vec2 &other) const {
+		constexpr bool operator==(const vec2 &other) const {
 			return x == other.x && y == other.y;
 		}
 
-		[[nodiscard]] inline vec2 withX(const float &newX) const {
+		[[nodiscard]] constexpr vec2 withX(const float &newX) const {
 			return {newX, y};
 		}
-		[[nodiscard]] inline vec2 withY(const float &newY) const {
+		[[nodiscard]] constexpr vec2 withY(const float &newY) const {
 			return {x, newY};
 		}
 
-		[[nodiscard]] inline vec2 withXOffset(const float &offset) const {
+		[[nodiscard]] constexpr vec2 withXOffset(const float &offset) const {
 			return {x + offset, y};
 		}
-		[[nodiscard]] inline vec2 withYOffset(const float &offset) const {
+		[[nodiscard]] constexpr vec2 withYOffset(const float &offset) const {
 			return {x, y + offset};
 		}
 
-		[[nodiscard]] inline vec2 rounded() const {
+		[[nodiscard]] constexpr vec2 rounded() const {
 			return {std::roundf(x), std::roundf(y)};
 		}
 
-		[[nodiscard]] inline operator glm::vec2() const {
+		[[nodiscard]] constexpr operator glm::vec2() const {
 			return {x, y};
 		}
 
