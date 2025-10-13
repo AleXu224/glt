@@ -33,40 +33,80 @@ namespace squi::core {
 		return mouseDelta;
 	}
 
-	std::optional<KeyState> InputState::getKey(int key) const {
+	std::optional<KeyState> InputState::getKey(GestureKey key) const {
 		if (!g_keys.contains(key)) return std::nullopt;
 
 		return g_keys.at(key);
 	}
 
-	std::optional<KeyState> InputState::getKeyPressedOrRepeat(int key) const {
+	std::optional<KeyState> InputState::getKeyPressedOrRepeat(GestureKey key) const {
 		if (!g_keys.contains(key)) return std::nullopt;
 
 		const auto &keyInput = g_keys.at(key);
-		if (keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) return keyInput;
+		if (keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat) return keyInput;
 
 		return std::nullopt;
 	}
 
-	bool InputState::isKey(int key, int action, int mods) const {
-		if (!g_keys.contains(key)) return false;
+	bool InputState::isKey(std::variant<GestureKey, GestureMouseKey> key, GestureAction action, GestureMod mods) const {
+		if (!std::visit(
+				utils::overloaded{
+					[&](const GestureKey &key) {
+						return g_keys.contains(key);
+					},
+					[&](const GestureMouseKey &key) {
+						return g_mouseKeys.contains(key);
+					},
+				},
+				key
+			)) return false;
 
-		const auto &keyInput = g_keys.at(key);
-		return (keyInput.action == action && keyInput.mods == mods);
+		const auto &keyInput = std::visit(
+			utils::overloaded{
+				[&](const GestureKey &key) {
+					return g_keys.at(key);
+				},
+				[&](const GestureMouseKey &key) {
+					return g_mouseKeys.at(key);
+				},
+			},
+			key
+		);
+		return (keyInput.action == action && keyInput.mods == static_cast<int>(mods));
 	}
 
-	bool InputState::isKeyPressedOrRepeat(int key, int mods) const {
-		if (!g_keys.contains(key)) return false;
+	bool InputState::isKeyPressedOrRepeat(std::variant<GestureKey, GestureMouseKey> key, GestureMod mods) const {
+		if (!std::visit(
+				utils::overloaded{
+					[&](const GestureKey &key) {
+						return g_keys.contains(key);
+					},
+					[&](const GestureMouseKey &key) {
+						return g_mouseKeys.contains(key);
+					},
+				},
+				key
+			)) return false;
 
-		const auto &keyInput = g_keys.at(key);
-		return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
+		const auto &keyInput = std::visit(
+			utils::overloaded{
+				[&](const GestureKey &key) {
+					return g_keys.at(key);
+				},
+				[&](const GestureMouseKey &key) {
+					return g_mouseKeys.at(key);
+				},
+			},
+			key
+		);
+		return ((keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat) && keyInput.mods == static_cast<int>(mods));
 	}
 
-	bool InputState::isKeyDown(int key) const {
+	bool InputState::isKeyDown(GestureKey key) const {
 		if (!g_keys_persistent.contains(key)) return false;
 
 		const auto &keyInput = g_keys_persistent.at(key);
-		return keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT;
+		return keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat;
 	}
 
 	void InputState::parseInput(const std::optional<InputTypes> &input) {
@@ -85,15 +125,15 @@ namespace squi::core {
 				},
 				[&](const KeyInput &input) {
 					if (!g_keys.contains(input.key))
-						g_keys.insert({input.key, {.action = input.action, .mods = input.mods}});
+						g_keys.insert({input.key, {.action = input.action, .mods = static_cast<int>(input.mods)}});
 					else
-						g_keys.at(input.key) = {.action = input.action, .mods = input.mods};
+						g_keys.at(input.key) = {.action = input.action, .mods = static_cast<int>(input.mods)};
 				},
 				[&](const MouseInput &input) {
-					if (!g_keys.contains(input.button))
-						g_keys.insert({input.button, {.action = input.action, .mods = input.mods}});
+					if (!g_mouseKeys.contains(input.button))
+						g_mouseKeys.insert({input.button, {.action = input.action, .mods = static_cast<int>(input.mods)}});
 					else
-						g_keys.at(input.button) = {.action = input.action, .mods = input.mods};
+						g_mouseKeys.at(input.button) = {.action = input.action, .mods = static_cast<int>(input.mods)};
 				},
 				[&](const CursorEntered &input) {
 					g_cursorInside = input.entered;

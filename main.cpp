@@ -8,8 +8,6 @@
 #include "widgets/transform.hpp"
 
 
-#include <GLFW/glfw3.h>
-
 using namespace squi::core;
 using namespace squi;
 

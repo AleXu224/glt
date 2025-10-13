@@ -86,13 +86,13 @@ namespace squi {
 	}
 
 	void TextInput::State::handleBackspace(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_BACKSPACE)) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::backspace)) {
 			if (selectionStart.has_value()) {
 				clearSelection();
 				return;
 			}
 			const auto &keyState = key.value();
-			if (keyState.mods & GLFW_MOD_CONTROL && cursor > 0) {
+			if (keyState.mods & static_cast<int>(GestureMod::control) && cursor > 0) {
 				auto pos = getPrevWordStart();
 
 				setText(std::format("{}{}", text.substr(0, pos), text.substr(cursor)));
@@ -109,12 +109,12 @@ namespace squi {
 	}
 
 	void TextInput::State::handleDelete(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_DELETE)) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::del)) {
 			if (selectionStart.has_value()) {
 				clearSelection();
 			} else {
 				const auto &keyState = key.value();
-				if (keyState.mods & GLFW_MOD_CONTROL && cursor < static_cast<int64_t>(text.size())) {
+				if (keyState.mods & static_cast<int>(GestureMod::control) && cursor < static_cast<int64_t>(text.size())) {
 					auto pos = getNextWordStart();
 
 					setText(std::format("{}{}", text.substr(0, cursor), text.substr(pos)));
@@ -126,13 +126,13 @@ namespace squi {
 	}
 
 	void TextInput::State::handleLeftArrow(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_LEFT)) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::left)) {
 			bool removedSelection = false;
-			if (key->mods & GLFW_MOD_SHIFT && cursor > 0) {
+			if (key->mods & static_cast<int>(GestureMod::shift) && cursor > 0) {
 				if (!selectionStart.has_value()) setState([&]() {
 					selectionStart = cursor;
 				});
-			} else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value()) {
+			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value()) {
 				clampCursors();
 				setState([&]() {
 					cursor = getSelectionMin();
@@ -142,7 +142,7 @@ namespace squi {
 			}
 
 			if (cursor > 0 && !removedSelection) {
-				if (key->mods & GLFW_MOD_CONTROL) {
+				if (key->mods & static_cast<int>(GestureMod::control)) {
 					auto pos = getPrevWordStart();
 
 					setState([&]() {
@@ -158,13 +158,13 @@ namespace squi {
 	}
 
 	void TextInput::State::handleRightArrow(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_RIGHT)) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::right)) {
 			bool removedSelection = false;
-			if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(text.size())) {
+			if (key->mods & static_cast<int>(GestureMod::shift) && cursor < static_cast<int64_t>(text.size())) {
 				if (!selectionStart.has_value()) setState([&]() {
 					selectionStart = cursor;
 				});
-			} else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value()) {
+			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value()) {
 				clampCursors();
 				setState([&]() {
 					cursor = getSelectionMax();
@@ -174,7 +174,7 @@ namespace squi {
 			}
 
 			if (cursor < static_cast<int64_t>(text.size()) && !removedSelection) {
-				if (key->mods & GLFW_MOD_CONTROL) {
+				if (key->mods & static_cast<int>(GestureMod::control)) {
 					auto pos = getNextWordStart();
 
 					setState([&]() {
@@ -190,12 +190,12 @@ namespace squi {
 	}
 
 	void TextInput::State::handleHome(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_HOME)) {
-			if (key->mods & GLFW_MOD_SHIFT && cursor > 0 && !selectionStart.has_value())
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::home)) {
+			if (key->mods & static_cast<int>(GestureMod::shift) && cursor > 0 && !selectionStart.has_value())
 				setState([&]() {
 					selectionStart = cursor;
 				});
-			else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
+			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value())
 				setState([&]() {
 					selectionStart = std::nullopt;
 				});
@@ -207,12 +207,12 @@ namespace squi {
 	}
 
 	void TextInput::State::handleEnd(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_END)) {
-			if (key->mods & GLFW_MOD_SHIFT && cursor < static_cast<int64_t>(text.size()) && !selectionStart.has_value())
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::end)) {
+			if (key->mods & static_cast<int>(GestureMod::shift) && cursor < static_cast<int64_t>(text.size()) && !selectionStart.has_value())
 				setState([&]() {
 					selectionStart = cursor;
 				});
-			else if (!(key->mods & GLFW_MOD_SHIFT) && selectionStart.has_value())
+			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value())
 				setState([&]() {
 					selectionStart = std::nullopt;
 				});
@@ -224,13 +224,13 @@ namespace squi {
 	}
 
 	void TextInput::State::handleEscape(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_ESCAPE)) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::escape)) {
 			selectionStart = std::nullopt;
 		}
 	}
 
 	void TextInput::State::handleSelectAll(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_A); key && key->mods & GLFW_MOD_CONTROL) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::a); key && key->mods & static_cast<int>(GestureMod::control)) {
 			setState([&]() {
 				selectionStart = 0;
 				cursor = static_cast<int64_t>(text.size());
@@ -239,14 +239,14 @@ namespace squi {
 	}
 
 	void TextInput::State::handleCopy(const Gesture::State &state) const {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_C); key && key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::c); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart.has_value()) {
 			auto textToCopy = text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 		}
 	}
 
 	void TextInput::State::handleCut(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_X); key && key->mods & GLFW_MOD_CONTROL && selectionStart.has_value()) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::x); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart.has_value()) {
 			auto textToCopy = text.substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 			clearSelection();
@@ -254,7 +254,7 @@ namespace squi {
 	}
 
 	void TextInput::State::handlePaste(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GLFW_KEY_V); key && key->mods & GLFW_MOD_CONTROL) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::v); key && key->mods & static_cast<int>(GestureMod::control)) {
 			const auto *const clipboardText = glfwGetClipboardString(nullptr);
 			if (!clipboardText) return;
 			clearSelection();

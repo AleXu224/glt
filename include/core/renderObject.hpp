@@ -132,6 +132,11 @@ namespace squi::core {
 		T *getWidgetAs() const {
 			return static_cast<T *>(this->getWidget());
 		}
+
+		template<class T>
+		T *as() {
+			return dynamic_cast<T *>(this);
+		}
 	};
 
 	struct SingleChildRenderObject : RenderObject {

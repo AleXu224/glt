@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mutex"
+#include "widgets/misc/gestureEnums.hpp"
 #include <future>
 #include <queue>
 #include <variant>
@@ -21,14 +22,14 @@ namespace squi {
 	};
 
 	struct KeyInput {
-		int key;
-		int action;
+		GestureKey key;
+		GestureAction action;
 		int mods;
 	};
 
 	struct MouseInput {
-		int button;
-		int action;
+		GestureMouseKey button;
+		GestureAction action;
 		int mods;
 	};
 

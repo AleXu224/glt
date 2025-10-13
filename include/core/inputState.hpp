@@ -6,11 +6,12 @@
 #include "unordered_map"
 #include "vec2.hpp"
 #include "vector"
+#include "widgets/misc/gestureEnums.hpp"
 
 
 namespace squi::core {
 	struct KeyState {
-		int action;
+		GestureAction action;
 		int mods;
 	};
 
@@ -18,8 +19,10 @@ namespace squi::core {
 		vec2 lastCursorPos{};
 		vec2 mouseDelta{};
 		vec2 g_cursorPos{0};
-		std::unordered_map<int, KeyState> g_keys{};
-		std::unordered_map<int, KeyState> g_keys_persistent{};
+		std::unordered_map<GestureKey, KeyState> g_keys{};
+		std::unordered_map<GestureMouseKey, KeyState> g_mouseKeys{};
+		std::unordered_map<GestureKey, KeyState> g_keys_persistent{};
+		std::unordered_map<GestureMouseKey, KeyState> g_mouseKeys_persistent{};
 		std::string g_textInput{};
 		vec2 g_scrollDelta{0};
 		std::vector<Rect> g_hitCheckRects{};
@@ -38,10 +41,10 @@ namespace squi::core {
 		// Get how much the cursor has moved since the last frame
 		[[nodiscard]] vec2 getMouseDelta() const;
 
-		[[nodiscard]] std::optional<KeyState> getKey(int key) const;
-		[[nodiscard]] std::optional<KeyState> getKeyPressedOrRepeat(int key) const;
-		[[nodiscard]] bool isKey(int key, int action, int mods = 0) const;
-		[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
-		[[nodiscard]] bool isKeyDown(int key) const;
+		[[nodiscard]] std::optional<KeyState> getKey(GestureKey key) const;
+		[[nodiscard]] std::optional<KeyState> getKeyPressedOrRepeat(GestureKey key) const;
+		[[nodiscard]] bool isKey(std::variant<GestureKey, GestureMouseKey> key, GestureAction action, GestureMod mods = GestureMod::none) const;
+		[[nodiscard]] bool isKeyPressedOrRepeat(std::variant<GestureKey, GestureMouseKey> key, GestureMod mods = GestureMod::none) const;
+		[[nodiscard]] bool isKeyDown(GestureKey key) const;
 	};
 }// namespace squi::core

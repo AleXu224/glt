@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "fontStore.hpp"
 #include "widgets/layoutInspector.hpp"
+
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
@@ -57,8 +58,8 @@ namespace squi::core {
 				//		Screen::getCurrentScreen()->animationRunning();
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(KeyInput{
-					.key = key,
-					.action = action,
+					.key = static_cast<GestureKey>(key),
+					.action = static_cast<GestureAction>(action),
 					.mods = mods,
 				});
 			});
@@ -67,8 +68,8 @@ namespace squi::core {
 				//		Screen::getCurrentScreen()->animationRunning();
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(MouseInput{
-					.button = button,
-					.action = action,
+					.button = static_cast<GestureMouseKey>(button),
+					.action = static_cast<GestureAction>(action),
 					.mods = mods,
 				});
 			});
@@ -227,7 +228,7 @@ namespace squi::core {
 					inputState.g_activeArea.pop_back();
 					if (!inputState.g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
 
-					bool forceRedraw = inputState.isKeyPressedOrRepeat(GLFW_KEY_F9);
+					bool forceRedraw = inputState.isKeyPressedOrRepeat(GestureKey::f9);
 
 					{
 						std::scoped_lock lock{Engine::Window::_windowMtx};

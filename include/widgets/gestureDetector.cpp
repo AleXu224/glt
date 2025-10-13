@@ -1,25 +1,68 @@
 #include "widgets/gestureDetector.hpp"
 
 #include "core/app.hpp"
+#include "utils.hpp"
 #include <GLFW/glfw3.h>
+
 
 namespace squi {
 
-	bool Gesture::State::isKey(int key, int action, int mods) const {
+	bool Gesture::State::isKey(std::variant<GestureKey, GestureMouseKey> key, GestureAction action, GestureMod mods) const {
 		if (!inputState) return false;
-		if (!inputState->g_keys.contains(key)) return false;
+		bool found = std::visit(
+			utils::overloaded{
+				[&](const GestureKey &key) {
+					return inputState->g_keys.contains(key);
+				},
+				[&](const GestureMouseKey &key) {
+					return inputState->g_mouseKeys.contains(key);
+				},
+			},
+			key
+		);
+		if (!found) return false;
 
-		const auto &keyInput = inputState->g_keys.at(key);
-		return (keyInput.action == action && keyInput.mods == mods);
+		const auto &keyInput = std::visit(
+			utils::overloaded{
+				[&](const GestureKey &key) {
+					return inputState->g_keys.at(key);
+				},
+				[&](const GestureMouseKey &key) {
+					return inputState->g_mouseKeys.at(key);
+				},
+			},
+			key
+		);
+		return (keyInput.action == action && keyInput.mods == static_cast<int>(mods));
 	}
 
-	bool Gesture::State::isKeyPressedOrRepeat(int key, int mods) const {
+	bool Gesture::State::isKeyPressedOrRepeat(std::variant<GestureKey, GestureMouseKey> key, GestureMod mods) const {
 		if (!inputState) return false;
 
-		if (!inputState->g_keys.contains(key)) return false;
+		if (!std::visit(
+				utils::overloaded{
+					[&](const GestureKey &key) {
+						return inputState->g_keys.contains(key);
+					},
+					[&](const GestureMouseKey &key) {
+						return inputState->g_mouseKeys.contains(key);
+					},
+				},
+				key
+			)) return false;
 
-		const auto &keyInput = inputState->g_keys.at(key);
-		return ((keyInput.action == GLFW_PRESS || keyInput.action == GLFW_REPEAT) && keyInput.mods == mods);
+		const auto &keyInput = std::visit(
+			utils::overloaded{
+				[&](const GestureKey &key) {
+					return inputState->g_keys.at(key);
+				},
+				[&](const GestureMouseKey &key) {
+					return inputState->g_mouseKeys.at(key);
+				},
+			},
+			key
+		);
+		return ((keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat) && keyInput.mods == static_cast<int>(mods));
 	}
 
 	const vec2 &Gesture::State::getScroll() const {
@@ -59,7 +102,7 @@ namespace squi {
 			if (!state.hovered && widget.onEnter) widget.onEnter(state);
 			state.hovered = true;
 
-			if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focusedOutside) {
+			if (inputState.isKey(GestureMouseKey::left, GestureAction::press) && !state.focusedOutside) {
 				if (!state.focused) {
 					state.dragStart = inputState.g_cursorPos;
 					if (widget.onPress) widget.onPress(state);
@@ -68,7 +111,7 @@ namespace squi {
 				state.focused = true;
 				if (!state.active && widget.onActive) widget.onActive(state);
 				state.active = true;
-			} else if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
+			} else if (inputState.isKey(GestureMouseKey::left, GestureAction::release)) {
 				if (state.focused && !state.focusedOutside) {
 					if (widget.onClick) widget.onClick(state);
 					if (widget.onRelease) widget.onRelease(state);
@@ -83,11 +126,11 @@ namespace squi {
 			if (state.hovered && widget.onLeave) widget.onLeave(state);
 			state.hovered = false;
 
-			if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS) && !state.focused) {
+			if (inputState.isKey(GestureMouseKey::left, GestureAction::press) && !state.focused) {
 				state.focusedOutside = true;
 				if (state.active && widget.onInactive) widget.onInactive(state);
 				state.active = false;
-			} else if (inputState.isKey(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE)) {
+			} else if (inputState.isKey(GestureMouseKey::left, GestureAction::release)) {
 				if (state.focused && widget.onFocusLoss) widget.onFocusLoss(state);
 				state.focused = false;
 				state.focusedOutside = false;

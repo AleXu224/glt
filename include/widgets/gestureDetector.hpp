@@ -2,9 +2,10 @@
 
 #include "core/core.hpp"
 #include "core/inputState.hpp"
-
+#include "misc/gestureEnums.hpp"
 
 namespace squi {
+
 	struct Gesture : RenderObjectWidget {
 		struct State;
 
@@ -48,8 +49,8 @@ namespace squi {
 			[[nodiscard]] vec2 getDragOffset() const;
 			// Get the location of where the drag began
 			[[nodiscard]] const vec2 &getDragStartPos() const;
-			[[nodiscard]] bool isKey(int key, int action, int mods = 0) const;
-			[[nodiscard]] bool isKeyPressedOrRepeat(int key, int mods = 0) const;
+			[[nodiscard]] bool isKey(std::variant<GestureKey, GestureMouseKey> key, GestureAction action, GestureMod mods = GestureMod::none) const;
+			[[nodiscard]] bool isKeyPressedOrRepeat(std::variant<GestureKey, GestureMouseKey> key, GestureMod mods = GestureMod::none) const;
 			[[nodiscard]] vec2 getCursorPos() const;
 		};
 

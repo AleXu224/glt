@@ -81,6 +81,8 @@ namespace squi {
 		}
 		[[nodiscard]] Rect overlap(const Rect &other) const;
 
-		Rect transformed(const glm::mat4 &m) const;
+		[[nodiscard]] Rect transformed(const glm::mat4 &m) const;
+
+		bool operator==(const Rect &other) const = default;
 	};
 }// namespace squi
