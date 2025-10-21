@@ -15,6 +15,7 @@ namespace squi::core {
 		size_t index = 0;
 		bool dirty = true;
 		bool mounted = false;
+		bool shouldDispose = false;
 
 		Element(const Element &) = delete;
 		Element(Element &&) = delete;
@@ -61,6 +62,13 @@ namespace squi::core {
 		void markNeedsRelayout() const;
 		void markNeedsReposition() const;
 		void markNeedsRedraw() const;
+
+		void dispose() {
+			this->shouldDispose = true;
+			if (parent) {
+				parent->markNeedsRebuild();
+			}
+		}
 
 		void addPostLayoutTask(const std::function<void()> &task) const;
 
