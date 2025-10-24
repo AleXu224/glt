@@ -2,6 +2,7 @@
 #include "compiledShaders/inspectorQuadfrag.hpp"
 #include "compiledShaders/inspectorQuadvert.hpp"
 #include "inspectorQuad.hpp"
+#include "navigator.hpp"
 #include "pipeline.hpp"
 #include "widgets/button.hpp"
 #include "widgets/column.hpp"
@@ -215,7 +216,9 @@ namespace squi {
 										contentRenderObject = renderObject.weak_from_this();
 									});
 								},
-								.child = widget->child,
+								.child = Navigator{
+									.child = widget->child,
+								},
 							},
 							LayoutInspectorOverlay{
 								.value = [&]() -> std::optional<LayoutInspectorOverlay::Value> {

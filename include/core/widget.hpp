@@ -197,46 +197,46 @@ namespace squi::core {
 		}
 	};
 
-	struct StatefulTestWidget : StatefulWidget {
-		Key key;
-		int b;
+	// struct StatefulTestWidget : StatefulWidget {
+	// 	Key key;
+	// 	int b;
 
-		struct State : WidgetState<StatefulTestWidget> {
-			Child build(const Element &) override {
-				return {};
-			}
-		};
-	};
+	// 	struct State : WidgetState<StatefulTestWidget> {
+	// 		Child build(const Element &) override {
+	// 			return {};
+	// 		}
+	// 	};
+	// };
 
-	struct StatelessTestWidget : StatelessWidget {
-		Key key;
-		int c;
+	// struct StatelessTestWidget : StatelessWidget {
+	// 	Key key;
+	// 	int c;
 
-		static Child build(const Element &) {
-			return {};
-		}
-	};
+	// 	static Child build(const Element &) {
+	// 		return {};
+	// 	}
+	// };
 
-	struct RenderObjectTestWidget : RenderObjectWidget {
-		Key key;
-		int d;
+	// struct RenderObjectTestWidget : RenderObjectWidget {
+	// 	Key key;
+	// 	int d;
 
-		static std::shared_ptr<RenderObject> createRenderObject() {
-			return {};
-		}
+	// 	static std::shared_ptr<RenderObject> createRenderObject() {
+	// 		return {};
+	// 	}
 
-		void updateRenderObject(RenderObject *renderObject) const {
-			// Update render object properties here
-		}
+	// 	void updateRenderObject(RenderObject *renderObject) const {
+	// 		// Update render object properties here
+	// 	}
 
-		static Args getArgs() {
-			return {};
-		}
-	};
+	// 	static Args getArgs() {
+	// 		return {};
+	// 	}
+	// };
 
-	inline void _test() {
-		WidgetPtr a = StatelessTestWidget{.c = 42};
-		WidgetPtr b = StatefulTestWidget{.b = 24};
-		WidgetPtr c = RenderObjectTestWidget{.d = 12};
-	}
+	// inline void _test() {
+	// 	WidgetPtr a = StatelessTestWidget{.c = 42};
+	// 	WidgetPtr b = StatefulTestWidget{.b = 24};
+	// 	WidgetPtr c = RenderObjectTestWidget{.d = 12};
+	// }
 }// namespace squi::core
