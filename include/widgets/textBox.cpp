@@ -1,6 +1,7 @@
 #include "widgets/textBox.hpp"
 
 #include "theme.hpp"
+#include "widgets/animatedBox.hpp"
 #include "widgets/column.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"

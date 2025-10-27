@@ -1,12 +1,8 @@
 #pragma once
 
-#include "animatedText.hpp"
 #include "color.hpp"
 #include "core/core.hpp"
-#include "utils.hpp"
-#include "widgets/animatedBox.hpp"
-#include "widgets/gestureDetector.hpp"
-
+#include "widgets/box.hpp"
 
 namespace squi {
 	struct Button : StatefulWidget {
@@ -66,100 +62,17 @@ namespace squi {
 			bool isHovered = false;
 			bool isActive = false;
 
-			void updateStatus() {
-				ButtonStatus newStatus = ButtonStatus::resting;
-				if (widget->disabled) {
-					newStatus = ButtonStatus::disabled;
-				} else if (isActive) {
-					newStatus = ButtonStatus::active;
-				} else if (isHovered) {
-					newStatus = ButtonStatus::hovered;
-				}
+			void updateStatus();
 
-				if (newStatus != status) {
-					setState([&]() {
-						status = newStatus;
-					});
-					if (widget->onStatusChange) {
-						widget->onStatusChange(newStatus);
-					}
-				}
-			}
+			[[nodiscard]] Child getContent(const Style &style) const;
 
-			[[nodiscard]] Child getContent(const Style &style) const {
-				return std::visit(
-					utils::overloaded{
-						[&](const std::string &text) -> Child {
-							return AnimatedText{
-								.widget{
-									.alignment = Alignment::Center,
-								},
-								.text = text,
-								.fontSize = style.textSize,
-								.color = style.textColor,
-							};
-						},
-						[](const Child &child) -> Child {
-							return child;
-						}
-					},
-					widget->content
-				);
-			}
-
-			[[nodiscard]] Args getArgs() const {
-				// Make the button shrink to the contents by default
-				auto args = widget->widget;
-				args.width = args.width.value_or(Size::Shrink);
-				args.height = args.height.value_or(Size::Shrink);
-				args.padding = args.padding.value_or(Padding{12.f, 6.f});
-				args.sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{
-					.minWidth = 32.f,
-					.minHeight = 32.f,
-				});
-				return args;
-			}
+			[[nodiscard]] Args getArgs() const;
 
 			void widgetUpdated() override {
 				updateStatus();
 			}
 
-			Child build(const Element &) override {
-				auto style = widget->theme.fromStatus(status);
-
-				return Gesture{
-					.onEnter = [this](const Gesture::State &) {
-						isHovered = true;
-						updateStatus();
-					},
-					.onLeave = [this](const Gesture::State &) {
-						isHovered = false;
-						updateStatus();
-					},
-					.onFocus = [this](const Gesture::State &) {
-						isActive = true;
-						updateStatus();
-					},
-					.onFocusLoss = [this](const Gesture::State &) {
-						isActive = false;
-						updateStatus();
-					},
-					.onClick = [this](const Gesture::State &) {
-						if (widget->onClick) {
-							widget->onClick();
-						}
-					},
-					.child = AnimatedBox{
-						.widget = getArgs(),
-						.color = style.backgroundColor,
-						.borderColor = style.borderColor,
-						.borderWidth = style.borderWidth,
-						.borderRadius = style.borderRadius,
-						.borderPosition = style.borderPosition,
-						.child = getContent(style),
-					},
-				};
-			}
+			Child build(const Element &) override;
 		};
 	};
 }// namespace squi

@@ -3,6 +3,7 @@
 #include "include/widgets/column.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
+#include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"

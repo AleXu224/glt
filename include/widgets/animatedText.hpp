@@ -50,4 +50,6 @@ namespace squi {
 			Child build(const Element &) override;
 		};
 	};
+
+	extern template Widget::operator Child(AnimatedText &&);
 }// namespace squi
