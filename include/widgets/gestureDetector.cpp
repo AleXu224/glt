@@ -91,6 +91,7 @@ namespace squi {
 	}
 
 	void Gesture::DetectorRenderObject::update() {
+		SingleChildRenderObject::update();
 		auto *app = getApp();
 		assert(app);
 		auto &inputState = app->inputState;

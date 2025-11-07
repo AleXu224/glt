@@ -14,6 +14,9 @@
 #include "widgets/transform.hpp"
 #include "widgets/wrapper.hpp"
 
+#include "utils.hpp"
+
+#include "core/app.hpp"
 
 namespace squi {
 	//
@@ -57,6 +60,7 @@ namespace squi {
 								iconRotate = open ? 90.f : 0.f;
 								iconOffset = open ? .5f : 0.f;
 							});
+							if (widget->onSelectRenderObject) widget->onSelectRenderObject(this->widget->renderObjectPtr);
 						},
 						.content = Row{
 							.widget{
@@ -106,6 +110,7 @@ namespace squi {
 								LayoutInspectorItem{
 									.renderObjectPtr = child->weak_from_this(),
 									.onHoverRenderObject = widget->onHoverRenderObject,
+									.onSelectRenderObject = widget->onSelectRenderObject,
 								}
 							);
 						}
@@ -134,6 +139,10 @@ namespace squi {
 
 			std::optional<Value> value;
 			std::shared_ptr<InspectorPipeline> pipeline;
+
+			Rect getHitcheckRect() const override {
+				return Rect::fromPosSize({}, {});
+			}
 
 			void init() override {
 				auto *app = getApp();
@@ -182,6 +191,86 @@ namespace squi {
 		}
 	};
 
+	struct LayoutInspectorDetails : StatelessWidget {
+		// Args
+		Key key;
+		std::weak_ptr<RenderObject> selectedRenderObject;
+
+		[[nodiscard]] Child build(const Element &) const {
+			auto renderObject = selectedRenderObject.lock();
+			if (!renderObject) return {};
+
+			return Box{
+				.widget{
+					.height = Size::Shrink,
+					.padding = 16.f,
+				},
+				.color = Color::black * 0.1f,
+				.borderColor = Color::black * 0.8f,
+				.borderWidth = BorderWidth::Top(1.f),
+				.child = Column{
+					.children{
+						Text{.text = "Specs:", .fontSize = 20.f},
+						Text{
+							.text = std::format(
+								"Width: {}",
+								std::visit(
+									utils::overloaded{
+										[](float size) -> std::string {
+											return std::format("{}px", size);
+										},
+										[](Size size) -> std::string {
+											switch (size) {
+												case Size::Expand:
+													return "Expand";
+												case Size::Shrink:
+													return "Shrink";
+												case Size::Wrap:
+													return "Wrap";
+											}
+											std::unreachable();
+										},
+									},
+									renderObject->width
+								)
+							),
+						},
+						Text{
+							.text = std::format(
+								"Height: {}",
+								std::visit(
+									utils::overloaded{
+										[](float size) -> std::string {
+											return std::format("{}px", size);
+										},
+										[](Size size) -> std::string {
+											switch (size) {
+												case Size::Expand:
+													return "Expand";
+												case Size::Shrink:
+													return "Shrink";
+												case Size::Wrap:
+													return "Wrap";
+											}
+											std::unreachable();
+										},
+									},
+									renderObject->height
+								)
+							),
+						},
+						Text{.text = std::format("Margin: t:{}, r:{}, b:{}, l:{}", renderObject->margin.top, renderObject->margin.right, renderObject->margin.bottom, renderObject->margin.left)},
+						Text{.text = std::format("Padding: t:{}, r:{}, b:{}, l:{}", renderObject->padding.top, renderObject->padding.right, renderObject->padding.bottom, renderObject->padding.left)},
+						Text{.widget{.margin = Margin{}.withTop(8.f)}, .text = "Sizing:", .fontSize = 20.f},
+						Text{
+							.text = std::format("Size: {}x{}", renderObject->size.x, renderObject->size.y),
+						},
+					},
+				},
+			};
+		}
+	};
+
 	void LayoutInspector::State::initState() {
 		onHoverRenderObject = [this](const std::pair<bool, std::weak_ptr<RenderObject>> &hover) {
 			if (hover.second.lock() != hoveredRenderObject.lock()) {
@@ -193,6 +282,11 @@ namespace squi {
 					hoveredRenderObject.reset();
 				});
 			}
+		};
+		onSelectRenderObject = [this](const std::weak_ptr<RenderObject> &renderObject) {
+			setState([&]() {
+				selectedRenderObject = renderObject;
+			});
 		};
 	}
 
@@ -239,14 +333,22 @@ namespace squi {
 								  .width = 400.f,
 							  },
 							  .color = Color::white * 0.1f,
-							  .child = ScrollView{
-								  .scrollWidget{
-									  .padding = 4.f,
-								  },
+							  .child = Column{
 								  .children{
-									  LayoutInspectorItem{
-										  .renderObjectPtr = this->contentRenderObject,
-										  .onHoverRenderObject = this->onHoverRenderObject,
+									  ScrollView{
+										  .scrollWidget{
+											  .padding = 4.f,
+										  },
+										  .children{
+											  LayoutInspectorItem{
+												  .renderObjectPtr = this->contentRenderObject,
+												  .onHoverRenderObject = this->onHoverRenderObject,
+												  .onSelectRenderObject = this->onSelectRenderObject,
+											  },
+										  },
+									  },
+									  LayoutInspectorDetails{
+										  .selectedRenderObject = this->selectedRenderObject,
 									  },
 								  },
 							  },

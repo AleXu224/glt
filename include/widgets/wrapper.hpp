@@ -14,10 +14,19 @@ namespace squi {
 		std::function<void(RenderObject &)> beforeDraw;
 		std::function<void(RenderObject &)> afterDraw;
 
+		std::function<void()> onUnmount;
+
 		Child child;
 
 		struct Element : SingleChildRenderObjectElement {
 			using SingleChildRenderObjectElement::SingleChildRenderObjectElement;
+
+			void unmount() override {
+				if (auto *wrapper = getWidgetAs<Wrapper>()) {
+					if (wrapper->onUnmount) wrapper->onUnmount();
+				}
+				SingleChildRenderObjectElement::unmount();
+			}
 
 			Child build() override {
 				if (auto offsetWidget = std::static_pointer_cast<Wrapper>(widget)) {

@@ -161,16 +161,7 @@ namespace squi::core {
 						}
 					}
 
-					struct Updater {
-						static void update(RenderObject *child) {
-							child->update();
-							for (const auto &child: child->getChildren()) {
-								update(child.get());
-							}
-						}
-					};
-
-					Updater::update(&renderObject);
+					renderObject.update();
 
 					while (!dirtyElements.empty() || needsRelayout) {
 						while (!dirtyElements.empty()) {
@@ -214,15 +205,22 @@ namespace squi::core {
 							task();
 						}
 						postLayoutTasks.clear();
-					}
 
-					if (needsRelayout || needsReposition) {
-						renderObject.positionAt(
-							Rect::fromPosSize(
-								vec2{0.0f, 0.0f},
-								vec2{static_cast<float>(width), static_cast<float>(height)}
-							)
-						);
+						if (needsReposition) {
+							renderObject.positionAt(
+								Rect::fromPosSize(
+									vec2{0.0f, 0.0f},
+									vec2{static_cast<float>(width), static_cast<float>(height)}
+								)
+							);
+						}
+
+						for (const auto &task: postRepositionTasks) {
+							task();
+						}
+						postRepositionTasks.clear();
+
+						needsReposition = false;
 					}
 
 					inputState.g_activeArea.pop_back();

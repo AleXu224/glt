@@ -68,7 +68,15 @@ namespace squi::core {
 		extConstraints.minWidth = std::clamp(intConstraints.minWidth, extConstraints.minWidth, extConstraints.maxWidth);
 		extConstraints.minHeight = std::clamp(intConstraints.minHeight, extConstraints.minHeight, extConstraints.maxHeight);
 
-		const auto contentSize = calculateContentSize(extConstraints.withoutPadding(padding), final);
+		auto contentConstraints = extConstraints.withoutPadding(padding);
+		if (std::holds_alternative<float>(width) || std::get<Size>(width) != Size::Wrap) {
+			contentConstraints.minWidth = 0.f;
+		}
+		if (std::holds_alternative<float>(height) || std::get<Size>(height) != Size::Wrap) {
+			contentConstraints.minHeight = 0.f;
+		}
+
+		const auto contentSize = calculateContentSize(contentConstraints, final);
 		extConstraints.minWidth = std::clamp(contentSize.x + paddingOffset.x, extConstraints.minWidth, extConstraints.maxWidth);
 		extConstraints.minHeight = std::clamp(contentSize.y + paddingOffset.y, extConstraints.minHeight, extConstraints.maxHeight);
 
@@ -178,6 +186,10 @@ namespace squi::core {
 			pos - margin.getPositionOffset(),
 			size + margin.getSizeOffset()
 		);
+	}
+
+	Rect RenderObject::getHitcheckRect() const {
+		return getRect();
 	}
 
 	void RenderObject::initRenderObject() {

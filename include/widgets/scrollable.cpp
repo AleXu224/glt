@@ -24,6 +24,17 @@ namespace squi {
 		this->getWidgetAs<Scrollable>()->updateRenderObject(this);
 	}
 
+	void Scrollable::ScrollableRenderObject::update() {
+		auto *app = getApp();
+		if (app) {
+			app->inputState.g_activeArea.emplace_back(getRect());
+		}
+		SingleChildRenderObject::update();
+		if (app) {
+			app->inputState.g_activeArea.pop_back();
+		}
+	}
+
 	vec2 Scrollable::ScrollableRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
 		auto childConstraints = constraints;
 		float totalMainAxis = 0.f;

@@ -39,6 +39,8 @@ namespace squi {
 
 			void init() override;
 
+			void update() override;
+
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 			void afterSizeCalculated() override;
 

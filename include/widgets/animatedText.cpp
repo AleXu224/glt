@@ -3,8 +3,6 @@
 #include "widgets/text.hpp"
 
 namespace squi {
-	// template Widget::operator Child(AnimatedText &&);
-
 	void AnimatedText::State::assignAndMount(auto &&animated, const auto &value) {
 		animated.from = value;
 		animated.to = value;

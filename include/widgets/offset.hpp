@@ -25,6 +25,7 @@ namespace squi {
 				if (widget->calculateContentBounds) {
 					auto contentBounds = widget->calculateContentBounds(newBounds, *this);
 					SingleChildRenderObject::positionContentAt(contentBounds);
+					pos = contentBounds.getTopLeft();
 				} else {
 					SingleChildRenderObject::positionContentAt(newBounds);
 				}

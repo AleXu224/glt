@@ -42,6 +42,10 @@ namespace squi::core {
 		getApp()->postLayoutTasks.emplace_back(task);
 	}
 
+	void Element::addPostRepositionTask(const std::function<void()> &task) const {
+		getApp()->postRepositionTasks.emplace_back(task);
+	}
+
 	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index, size_t depth) {
 		if (!newWidget || (child && child->shouldDispose)) {
 			if (child) {

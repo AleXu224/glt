@@ -9,6 +9,7 @@ namespace squi {
 		Key key;
 		std::weak_ptr<RenderObject> renderObjectPtr;
 		std::function<void(const std::pair<bool, std::weak_ptr<RenderObject>> &)> onHoverRenderObject;
+		std::function<void(const std::weak_ptr<RenderObject> &)> onSelectRenderObject;
 
 		struct State final : WidgetState<LayoutInspectorItem> {
 			bool open = false;
@@ -35,7 +36,9 @@ namespace squi {
 			std::weak_ptr<RenderObject> contentRenderObject;
 			bool visible = false;
 			std::weak_ptr<RenderObject> hoveredRenderObject;
+			std::weak_ptr<RenderObject> selectedRenderObject;
 			std::function<void(const std::pair<bool, std::weak_ptr<RenderObject>> &)> onHoverRenderObject;
+			std::function<void(const std::weak_ptr<RenderObject> &)> onSelectRenderObject;
 
 			void initState() override;
 

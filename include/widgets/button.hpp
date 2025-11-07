@@ -21,6 +21,7 @@ namespace squi {
 			BorderWidth borderWidth{1.0f};
 			Color textColor{0x000000FF};
 			float textSize{14.0f};
+			Alignment alignment = Alignment::Center;
 		};
 
 		struct Theme {

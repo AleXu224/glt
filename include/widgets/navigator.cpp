@@ -63,6 +63,15 @@ namespace squi {
 		});
 	}
 
+	void Navigator::Context::popOverlay() const {
+		auto nav = navigator.lock();
+		if (!nav) return;
+		if (nav->pages.empty()) return;
+		nav->setState([&]() {
+			nav->pages.back().overlays.pop_back();
+		});
+	}
+
 	void Navigator::Context::popPage() const {
 		auto nav = navigator.lock();
 		if (!nav) return;

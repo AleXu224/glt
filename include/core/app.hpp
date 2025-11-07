@@ -80,6 +80,7 @@ namespace squi::core {
 		std::map<Element *, std::weak_ptr<Element>, ElementComparator> dirtyElements{};
 		std::unordered_set<AnimationController *> runningAnimations{};
 		std::vector<std::function<void()>> postLayoutTasks{};
+		std::vector<std::function<void()>> postRepositionTasks{};
 
 		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
 			auto ret = std::make_shared<RootRenderObject>();

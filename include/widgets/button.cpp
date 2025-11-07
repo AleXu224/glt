@@ -63,7 +63,7 @@ namespace squi {
 				[&](const std::string &text) -> Child {
 					return AnimatedText{
 						.widget{
-							.alignment = Alignment::Center,
+							.alignment = style.alignment,
 						},
 						.text = text,
 						.fontSize = style.textSize,

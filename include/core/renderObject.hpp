@@ -8,7 +8,6 @@
 #include "rect.hpp"
 #include "vec2.hpp"
 #include "vector"
-#include <functional>
 #include <optional>
 #include <span>
 #include <utility>
@@ -87,6 +86,8 @@ namespace squi::core {
 		[[nodiscard]] Rect getRect() const;
 		[[nodiscard]] Rect getContentRect() const;
 		[[nodiscard]] Rect getLayoutRect() const;
+	
+		[[nodiscard]] virtual Rect getHitcheckRect() const;
 
 		[[nodiscard]] Sizing getSizing(Axis axis) const {
 			const auto &dim = (axis == Axis::Horizontal) ? width : height;
@@ -107,8 +108,6 @@ namespace squi::core {
 		[[nodiscard]] virtual Sizing getContentSizing(Axis /*axis*/) const {
 			return Sizing::Fixed;
 		}
-
-		virtual void iterateChildren(const std::function<void(RenderObject *)> &callback) {}
 
 		virtual std::span<const RenderObjectPtr> getChildren() const {
 			return {};
@@ -149,17 +148,17 @@ namespace squi::core {
 
 		void drawContent() override;
 
+		void update() override {
+			if (child) {
+				child->update();
+			}
+		}
+
 		Sizing getContentSizing(Axis axis) const override {
 			if (child) {
 				return child->getSizing(axis);
 			}
 			return Sizing::Fixed;
-		}
-
-		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
-			if (child) {
-				callback(child.get());
-			}
 		}
 
 		std::span<const RenderObjectPtr> getChildren() const override {
@@ -197,6 +196,12 @@ namespace squi::core {
 
 		void drawContent() override;
 
+		void update() override {
+			for (const auto &child: children) {
+				child->update();
+			}
+		}
+
 		Sizing getContentSizing(Axis axis) const override {
 			auto ret = Sizing::Fixed;
 			for (const auto &child: children) {
@@ -209,13 +214,6 @@ namespace squi::core {
 				}
 			}
 			return ret;
-		}
-
-		void iterateChildren(const std::function<void(RenderObject *)> &callback) override {
-			for (const auto &child: children) {
-				callback(child.get());
-				child->iterateChildren(callback);
-			}
 		}
 
 		std::span<const RenderObjectPtr> getChildren() const override {

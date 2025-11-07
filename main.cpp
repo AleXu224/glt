@@ -1,6 +1,7 @@
 #include "core/app.hpp"
 
 #include "include/widgets/column.hpp"
+#include "include/widgets/dropdownButton.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
 #include "widgets/animatedBox.hpp"
@@ -117,6 +118,24 @@ struct Test : StatefulWidget {
 						.color = Color::red,
 						.child = FontIcon{
 							.icon = 0xe5d2,
+						},
+					},
+					DropdownButton{
+						.items{
+							ContextMenu::Button{
+								.text = "some button",
+							},
+							ContextMenu::Button{
+								.text = "some other button",
+							},
+							ContextMenu::Toggle{
+								.text = "some toggle button",
+								.value = true,
+							},
+							ContextMenu::Toggle{
+								.text = "some other toggle button",
+								.value = false,
+							},
 						},
 					},
 				},

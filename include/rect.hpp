@@ -32,6 +32,18 @@ namespace squi {
 			return {left, top};
 		}
 
+		[[nodiscard]] vec2 getBottomRight() const {
+			return {right, bottom};
+		}
+
+		[[nodiscard]] vec2 getBottomLeft() const {
+			return {left, bottom};
+		}
+
+		[[nodiscard]] vec2 getTopRight() const {
+			return {right, top};
+		}
+
 		Rect &offset(vec2 offset) {
 			left += offset.x;
 			right += offset.x;
