@@ -20,8 +20,9 @@ namespace squi {
 		Key key;
 		std::string label;
 		std::function<void()> onClick;
+		std::function<void()> onClose;
 
-		[[nodiscard]] Child build(const Element &) const {
+		[[nodiscard]] Child build(const Element &element) const {
 			auto buttonTheme = Button::Theme::Subtle();
 			buttonTheme.resting.alignment = Alignment::CenterLeft;
 			buttonTheme.hovered.alignment = Alignment::CenterLeft;
@@ -36,7 +37,11 @@ namespace squi {
 					.padding = Padding{4.f, 2.f},
 				},
 				.theme = buttonTheme,
-				.onClick = onClick,
+				.onClick = [this, &element]() mutable {
+					if (this->onClick) this->onClick();
+					if (this->onClose) this->onClose();
+					Navigator::of(element).popOverlay();
+				},
 				.content = label,
 			};
 		}
@@ -48,11 +53,12 @@ namespace squi {
 		std::string label;
 		std::function<void(bool)> onClick;
 		bool currentValue;
+		std::function<void()> onClose;
 
 		struct State : WidgetState<ContextMenuToggle> {
 			Button::ButtonStatus status = Button::ButtonStatus::resting;
 
-			Child build(const Element &) override {
+			Child build(const Element &element) override {
 				auto buttonTheme = Button::Theme::Subtle();
 				buttonTheme.resting.alignment = Alignment::CenterLeft;
 				buttonTheme.hovered.alignment = Alignment::CenterLeft;
@@ -76,15 +82,25 @@ namespace squi {
 					},
 					.onClick = [&]() {
 						if (widget->onClick) widget->onClick(!widget->currentValue);
+						if (widget->onClose) widget->onClose();
+						Navigator::of(element).popOverlay();
 					},
 					.content = Row{
 						.crossAxisAlignment = Flex::Alignment::center,
 						.spacing = 4.f,
 						.children{
-							FontIcon{
-								.color = style.textColor,
-								.icon = 0xe5ca,
-							},
+							widget->currentValue//
+								? Child(FontIcon{
+									  .color = style.textColor,
+									  .icon = 0xe5ca,
+								  })
+								: Child(Box{
+									  .widget{
+										  .width = style.textSize,
+										  .height = style.textSize,
+									  },
+									  .color = Color::transparent,
+								  }),
 							AnimatedText{
 								.text = widget->label,
 								.fontSize = style.textSize,
@@ -102,6 +118,7 @@ namespace squi {
 			.children{
 				Gesture{
 					.onClick = [&](const Gesture::State &) {
+						if (onClose) onClose();
 						Navigator::of(element).popOverlay();
 					},
 					.child = Box{
@@ -133,6 +150,7 @@ namespace squi {
 												ret.emplace_back(ContextMenuButton{
 													.label = button.text,
 													.onClick = button.callback,
+													.onClose = this->onClose,
 												});
 											},
 											[&](const ContextMenu::Toggle &button) {
@@ -140,9 +158,19 @@ namespace squi {
 													.label = button.text,
 													.onClick = button.callback,
 													.currentValue = button.value,
+													.onClose = this->onClose,
 												});
 											},
-											[&](const ContextMenu::Divider &button) {},
+											[&](const ContextMenu::Divider &) {
+												ret.emplace_back(Box{
+													.widget{
+														.width = Size::Expand,
+														.height = 1.f,
+														.margin = Margin{1.f}.withBottom(2.f),
+													},
+													.color = Color::white * 0.0837f,
+												});
+											},
 										},
 										item
 									);

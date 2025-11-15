@@ -51,8 +51,8 @@ struct Test : StatefulWidget {
 
 	struct State : WidgetState<Test> {
 		TextInput::Controller controller{"Hello"};
-		Animated<float> rotation{0.f};
-		Animated<float> scale{1.f};
+		Animated<float> rotation{.from = 0.f};
+		Animated<float> scale{.from = 1.f};
 		bool disabled = false;
 
 		bool toggled = false;
@@ -128,13 +128,20 @@ struct Test : StatefulWidget {
 							ContextMenu::Button{
 								.text = "some other button",
 							},
+							ContextMenu::Divider{},
 							ContextMenu::Toggle{
 								.text = "some toggle button",
 								.value = true,
+								.callback = [](bool val) {
+									std::println("Toggle is now: {}", val);
+								},
 							},
 							ContextMenu::Toggle{
 								.text = "some other toggle button",
 								.value = false,
+								.callback = [](bool val) {
+									std::println("Other toggle is now: {}", val);
+								},
 							},
 						},
 					},
