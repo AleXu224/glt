@@ -130,9 +130,16 @@ namespace Engine {
 		}
 
 	private:
+		struct SwapChainSupportDetails {
+			vk::SurfaceCapabilitiesKHR capabilities;
+			std::vector<vk::SurfaceFormatKHR> formats;
+			std::vector<vk::PresentModeKHR> presentModes;
+		};
+
 		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
 
 		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating);
+		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating, const SwapChainSupportDetails& swapChainSupport);
 		[[nodiscard]] std::vector<vk::Image> createSwapChainImages() const;
 		[[nodiscard]] vk::Format createSwapChainImageFormat();
 		[[nodiscard]] vk::Extent2D createExtent();
@@ -142,13 +149,6 @@ namespace Engine {
 		[[nodiscard]] std::vector<vk::raii::Framebuffer> createFramebuffers();
 
 		[[nodiscard]] bool checkValidationLayers() const;
-
-
-		struct SwapChainSupportDetails {
-			vk::SurfaceCapabilitiesKHR capabilities;
-			std::vector<vk::SurfaceFormatKHR> formats;
-			std::vector<vk::PresentModeKHR> presentModes;
-		};
 
 		[[nodiscard]] Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
 		[[nodiscard]] static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);

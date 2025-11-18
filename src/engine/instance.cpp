@@ -40,8 +40,9 @@ void Engine::Instance::recreateSwapChain() {
 	if (width == 0 || height == 0) return;
 	Vulkan::device().resource.waitIdle();
 
-	swapChainExtent = createExtent();
-	swapChain = createSwapChain(true);
+	auto swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
+	swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities);
+	swapChain = createSwapChain(true, swapChainSupport);
 	swapChainImageFormat = createSwapChainImageFormat();
 	swapChainImages = createSwapChainImages();
 	swapChainImageViews = createImageViews();
@@ -75,8 +76,10 @@ vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
 }
 
 vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
-	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
+	return createSwapChain(recreating, querySwapChainSupport(Vulkan::physicalDevice()));
+}
 
+vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating, const SwapChainSupportDetails& swapChainSupport) {
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	vk::PresentModeKHR presentMode = chooseSwapPresentMode();
 
