@@ -36,6 +36,9 @@ namespace squi {
 					});
 				},
 				.content = Row{
+					.widget{
+						.alignment = Alignment::CenterLeft,
+					},
 					.crossAxisAlignment = Flex::Alignment::center,
 					.children{
 						AnimatedText{
