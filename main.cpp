@@ -4,6 +4,7 @@
 #include "include/widgets/dropdownButton.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
+#include "include/widgets/topNav.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/toggleButton.hpp"
@@ -204,7 +205,22 @@ int main(int /*unused*/, char ** /*unused*/) {
 			.width = 1280,
 			.height = 720,
 		},
-		.child = Test{},
+		.child = TopNav{
+			.pages{
+				TopNav::Page{
+					.name = "Test 1",
+					.content = Test{},
+				},
+				TopNav::Page{
+					.name = "Test 2",
+					.content = Test2{},
+				},
+				TopNav::Page{
+					.name = "Test 3",
+					.content = Test{},
+				},
+			},
+		},
 	};
 	app.run();
 

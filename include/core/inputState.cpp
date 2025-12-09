@@ -72,7 +72,7 @@ namespace squi::core {
 			},
 			key
 		);
-		return (keyInput.action == action && keyInput.mods == static_cast<int>(mods));
+		return (keyInput.action == action && keyInput.mods == mods.value);
 	}
 
 	bool InputState::isKeyPressedOrRepeat(std::variant<GestureKey, GestureMouseKey> key, GestureMod mods) const {
@@ -99,7 +99,7 @@ namespace squi::core {
 			},
 			key
 		);
-		return ((keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat) && keyInput.mods == static_cast<int>(mods));
+		return ((keyInput.action == GestureAction::press || keyInput.action == GestureAction::repeat) && keyInput.mods == mods.value);
 	}
 
 	bool InputState::isKeyDown(GestureKey key) const {
