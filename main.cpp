@@ -2,6 +2,8 @@
 
 #include "include/widgets/column.hpp"
 #include "include/widgets/dropdownButton.hpp"
+#include "include/widgets/expander.hpp"
+#include "include/widgets/iconButton.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
 #include "include/widgets/topNav.hpp"
@@ -207,6 +209,30 @@ int main(int /*unused*/, char ** /*unused*/) {
 		},
 		.child = TopNav{
 			.pages{
+				TopNav::Page{
+					.name = "Test expander",
+					.content = Expander{
+						.icon = FontIcon{
+							.icon = 0xe5d2,
+						},
+						.title = "Expander Title",
+						.subtitle = "This is a subtitle",
+						.action = Button{
+							.theme = Button::Theme::Accent(),
+							.content = "Action",
+						},
+						.content = Column{
+							.children{
+								Text{.text = "This is the content of the expander."},
+								Text{.text = "It can be anything you want."},
+								Button{
+									.content = "A button inside the expander",
+								},
+								IconButton{},
+							},
+						},
+					},
+				},
 				TopNav::Page{
 					.name = "Test 1",
 					.content = Test{},
