@@ -16,7 +16,7 @@ namespace squi::core {
 	struct RootRenderObject : SingleChildRenderObject {};
 
 	struct RootWidget : RenderObjectWidget {
-		Key key;
+		Key key{};
 		App *app = nullptr;
 		std::shared_ptr<RootRenderObject> rootRenderObject;
 		WidgetPtr child;
