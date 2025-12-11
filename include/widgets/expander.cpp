@@ -6,8 +6,9 @@
 #include "widgets/text.hpp"
 
 namespace squi {
-	core::Child Expander::State::build(const Element &element) {
+	core::Child Expander::State::build(const Element &) {
 		return Column{
+			.widget = widget->widget,
 			.children{
 				Box{
 					.widget{

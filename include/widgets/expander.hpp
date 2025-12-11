@@ -6,6 +6,7 @@ namespace squi {
 	struct Expander : StatefulWidget {
 		// Args
 		Key key;
+		Args widget;
 		Child icon;
 		std::string title;
 		std::string subtitle;
