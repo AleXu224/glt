@@ -3,6 +3,7 @@
 #include "include/widgets/column.hpp"
 #include "include/widgets/dropdownButton.hpp"
 #include "include/widgets/expander.hpp"
+#include "include/widgets/grid.hpp"
 #include "include/widgets/iconButton.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
@@ -210,6 +211,43 @@ int main(int /*unused*/, char ** /*unused*/) {
 		},
 		.child = TopNav{
 			.pages{
+				TopNav::Page{
+					.name = "Test grid",
+					.content = Grid{
+						.columnCount = Grid::MinSize{110.f},
+						.spacing = 10.f,
+						.children{
+							Box{
+								.widget{
+									.width = 100.f,
+									.height = 100.f,
+								},
+								.color = Color::red,
+							},
+							Box{
+								.widget{
+									.width = 100.f,
+									.height = 100.f,
+								},
+								.color = Color::teal,
+							},
+							Box{
+								.widget{
+									.width = 100.f,
+									.height = 100.f,
+								},
+								.color = Color::turquoise,
+							},
+							Box{
+								.widget{
+									.width = 100.f,
+									.height = 100.f,
+								},
+								.color = Color::yellow,
+							},
+						},
+					},
+				},
 				TopNav::Page{
 					.name = "Test lite filter",
 					.content = LiteFilter{

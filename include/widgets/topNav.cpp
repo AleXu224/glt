@@ -2,7 +2,7 @@
 #include "widgets/box.hpp"
 #include "widgets/column.hpp"
 #include "widgets/gestureDetector.hpp"
-#include "widgets/row.hpp"
+#include "widgets/scrollview.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
 
@@ -16,9 +16,9 @@ namespace squi {
 		bool isSelected{false};
 		std::function<void()> onClick;
 
-		Child build(const Element &) const {
+		[[nodiscard]] Child build(const Element &) const {
 			return Gesture{
-				.onClick = [this](auto) {
+				.onClick = [this](auto &&) {
 					if (this->onClick) this->onClick();
 				},
 				.child = Stack{
@@ -69,21 +69,21 @@ namespace squi {
 		return ret;
 	}
 
-	squi::core::Child squi::TopNav::State::build(const Element &element) {
+	squi::core::Child squi::TopNav::State::build(const Element &) {
 		return Gesture{
 			.onUpdate = [&](const Gesture::State &state) {
 				if (state.isKeyPressedOrRepeat(GestureKey::tab, GestureMod::control)) {
 					setState([&]() {
-						currentPageIndex = (currentPageIndex + 1) % widget->pages.size();
+						currentPageIndex = (currentPageIndex + 1) % static_cast<int64_t>(widget->pages.size());
 					});
 				} else if (state.isKeyPressedOrRepeat(GestureKey::tab, GestureMod::control | GestureMod::shift)) {
 					setState([&]() {
-						currentPageIndex = (currentPageIndex - 1 + widget->pages.size()) % widget->pages.size();
+						currentPageIndex = (currentPageIndex - 1 + static_cast<int64_t>(widget->pages.size())) % static_cast<int64_t>(widget->pages.size());
 					});
 				}
 
 				for (const auto &[index, page]: widget->pages | std::views::enumerate | std::views::take(9)) {
-					if (state.isKeyPressedOrRepeat(GestureKey::n0 + index + 1, GestureMod::control)) {
+					if (state.isKeyPressedOrRepeat(GestureKey::n0 + static_cast<int16_t>(index) + 1, GestureMod::control)) {
 						setState([&]() {
 							currentPageIndex = index;
 						});
@@ -93,11 +93,14 @@ namespace squi {
 			.child = Column{
 				.widget = widget->widget,
 				.children{
-					Row{
+					ScrollView{
 						.widget{
 							.height = 40.f,
-							.margin = 4.f,
 						},
+						.scrollWidget{
+							.padding = 4.f,
+						},
+						.direction = Axis::Horizontal,
 						.children = getButtons(),
 					},
 					Box{
