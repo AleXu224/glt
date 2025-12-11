@@ -9,6 +9,7 @@
 #include "include/widgets/topNav.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
+#include "widgets/liteFilter.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"
 
@@ -209,6 +210,31 @@ int main(int /*unused*/, char ** /*unused*/) {
 		},
 		.child = TopNav{
 			.pages{
+				TopNav::Page{
+					.name = "Test lite filter",
+					.content = LiteFilter{
+						.items{
+							LiteFilter::Item{
+								.name = "Item 1",
+								.onUpdate = [](bool selected) {
+									std::println("Item 1 selected: {}", selected);
+								},
+							},
+							LiteFilter::Item{
+								.name = "Item 2",
+								.onUpdate = [](bool selected) {
+									std::println("Item 2 selected: {}", selected);
+								},
+							},
+							LiteFilter::Item{
+								.name = "Item 3",
+								.onUpdate = [](bool selected) {
+									std::println("Item 3 selected: {}", selected);
+								},
+							},
+						},
+					},
+				},
 				TopNav::Page{
 					.name = "Test expander",
 					.content = Expander{
