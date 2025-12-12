@@ -256,16 +256,10 @@ Engine::LockedResource<vk::raii::Device &> Engine::Vulkan::device() {
 		vk::DeviceCreateInfo createInfo{
 			.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
 			.pQueueCreateInfos = queueCreateInfos.data(),
-			.enabledLayerCount = 0,
 			.enabledExtensionCount = static_cast<uint32_t>(deviceExt.size()),
 			.ppEnabledExtensionNames = deviceExt.data(),
 			.pEnabledFeatures = &deviceFeatures,
 		};
-
-		if (debugBuild && validationLayersAvailable) {
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-		}
 
 		return vk::raii::Device{physicalDevice(), createInfo};
 	}();
