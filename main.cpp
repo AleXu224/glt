@@ -5,6 +5,7 @@
 #include "include/widgets/expander.hpp"
 #include "include/widgets/grid.hpp"
 #include "include/widgets/iconButton.hpp"
+#include "include/widgets/paginator.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
 #include "include/widgets/topNav.hpp"
@@ -211,6 +212,26 @@ int main(int /*unused*/, char ** /*unused*/) {
 		},
 		.child = TopNav{
 			.pages{
+				TopNav::Page{
+					.name = "Test Paginator",
+					.content = Paginator{
+						.itemsPerPage = 10,
+						.getItemCount = []() {
+							return 95;
+						},
+						.builder = [](uint32_t offset, uint32_t count) {
+							Children ret;
+							for (uint32_t i = 0; i < count; i++) {
+								ret.push_back(
+									Text{.text = "Item " + std::to_string(offset + i + 1)});
+							}
+							return Column{
+								.spacing = 5.f,
+								.children = ret,
+							};
+						},
+					},
+				},
 				TopNav::Page{
 					.name = "Test grid",
 					.content = Grid{
