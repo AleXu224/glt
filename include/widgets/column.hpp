@@ -7,7 +7,7 @@ namespace squi {
 	struct Column : StatelessWidget {
 		using Alignment = Flex::Alignment;
 		// Args
-		Key key;
+		Key key{};
 		Args widget{};
 		Alignment crossAxisAlignment = Alignment::start;
 		float spacing = 0.f;
