@@ -153,10 +153,10 @@ namespace squi::core {
 					// Update animations
 					for (auto it = runningAnimations.begin(); it != runningAnimations.end();) {
 						auto *anim = *it;
+						anim->markElementDirty();
 						if (anim->isCompleted()) {
 							it = runningAnimations.erase(it);
 						} else {
-							anim->markElementDirty();
 							++it;
 						}
 					}

@@ -20,23 +20,17 @@ namespace squi {
 		};
 
 		struct OffsetRenderObject : SingleChildRenderObject {
-			void positionContentAt(const Rect &newBounds) override {
-				auto *widget = this->getWidgetAs<Offset>();
-				if (widget->calculateContentBounds) {
-					auto contentBounds = widget->calculateContentBounds(newBounds, *this);
-					SingleChildRenderObject::positionContentAt(contentBounds);
-					pos = contentBounds.getTopLeft();
-				} else {
-					SingleChildRenderObject::positionContentAt(newBounds);
-				}
-			}
+			Rect lastBounds = Rect::fromPosSize({}, {});
+			Rect lastCalculatedBounds = Rect::fromPosSize({}, {});
+
+			void positionContentAt(const Rect &newBounds) override;
 		};
 
 		static std::shared_ptr<RenderObject> createRenderObject() {
 			return std::make_shared<OffsetRenderObject>();
 		}
 
-		void updateRenderObject(RenderObject *renderObject) const {}
+		void updateRenderObject(RenderObject *renderObject) const;
 
 		static Args getArgs() {
 			return {

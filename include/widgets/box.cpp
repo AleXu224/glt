@@ -44,7 +44,7 @@ namespace squi {
 	}
 
 	void Box::updateRenderObject(RenderObject *renderObject) const {
-		if (auto boxRenderObject = dynamic_cast<BoxRenderObject *>(renderObject)) {
+		if (auto *boxRenderObject = dynamic_cast<BoxRenderObject *>(renderObject)) {
 			auto *app = renderObject->getApp();
 
 			auto &quad = boxRenderObject->data->quad;

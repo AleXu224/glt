@@ -1,5 +1,6 @@
 #include "contextMenu.hpp"
 
+#include "slideIn.hpp"
 #include "widgets/animatedText.hpp"
 #include "widgets/box.hpp"
 #include "widgets/button.hpp"
@@ -130,54 +131,56 @@ namespace squi {
 						auto rect = renderObject.getLayoutRect();
 						return Rect::fromPosSize(position, rect.size());
 					},
-					.child = Card{
-						.widget{
-							.width = Size::Shrink,
-							.height = Size::Shrink,
-							.sizeConstraints = BoxConstraints{
-								.minWidth = 100.f,
+					.child = SlideIn{
+						.child = Card{
+							.widget{
+								.width = Size::Shrink,
+								.height = Size::Shrink,
+								.sizeConstraints = BoxConstraints{
+									.minWidth = 100.f,
+								},
+								.padding = Padding{1.f, 4.f},
 							},
-							.padding = Padding{1.f, 4.f},
-						},
-						.child = Column{
-							.children = [this]() {
-								Children ret;
+							.child = Column{
+								.children = [this]() {
+									Children ret;
 
-								for (const auto &item: items) {
-									std::visit(
-										utils::overloaded{
-											[&](const ContextMenu::Button &button) {
-												ret.emplace_back(ContextMenuButton{
-													.label = button.text,
-													.onClick = button.callback,
-													.onClose = this->onClose,
-												});
+									for (const auto &item: items) {
+										std::visit(
+											utils::overloaded{
+												[&](const ContextMenu::Button &button) {
+													ret.emplace_back(ContextMenuButton{
+														.label = button.text,
+														.onClick = button.callback,
+														.onClose = this->onClose,
+													});
+												},
+												[&](const ContextMenu::Toggle &button) {
+													ret.emplace_back(ContextMenuToggle{
+														.label = button.text,
+														.onClick = button.callback,
+														.currentValue = button.value,
+														.onClose = this->onClose,
+													});
+												},
+												[&](const ContextMenu::Divider &) {
+													ret.emplace_back(Box{
+														.widget{
+															.width = Size::Expand,
+															.height = 1.f,
+															.margin = Margin{1.f}.withBottom(2.f),
+														},
+														.color = Color::white * 0.0837f,
+													});
+												},
 											},
-											[&](const ContextMenu::Toggle &button) {
-												ret.emplace_back(ContextMenuToggle{
-													.label = button.text,
-													.onClick = button.callback,
-													.currentValue = button.value,
-													.onClose = this->onClose,
-												});
-											},
-											[&](const ContextMenu::Divider &) {
-												ret.emplace_back(Box{
-													.widget{
-														.width = Size::Expand,
-														.height = 1.f,
-														.margin = Margin{1.f}.withBottom(2.f),
-													},
-													.color = Color::white * 0.0837f,
-												});
-											},
-										},
-										item
-									);
-								}
+											item
+										);
+									}
 
-								return ret;
-							}(),
+									return ret;
+								}(),
+							},
 						},
 					},
 				},
