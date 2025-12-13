@@ -9,6 +9,7 @@ namespace squi {
 	struct TextBox : StatefulWidget {
 		// Args
 		Key key;
+		Args widget{};
 		bool disabled = false;
 		TextInput::Controller controller{};
 		std::function<std::optional<std::string>(const std::string &)> validator;

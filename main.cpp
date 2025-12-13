@@ -12,6 +12,7 @@
 #include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/liteFilter.hpp"
+#include "widgets/numberBox.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"
 
@@ -60,6 +61,7 @@ struct Test : StatefulWidget {
 		Animated<float> rotation{.from = 0.f};
 		Animated<float> scale{.from = 1.f};
 		bool disabled = false;
+		double number = 0.0;
 
 		bool toggled = false;
 
@@ -71,6 +73,22 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return Column{
 				.children{
+					NumberBox{
+						.value = number,
+						.onChange = [this](double val) {
+							setState([&]() {
+								number = val;
+							});
+						},
+					},
+					NumberBox{
+						.value = number,
+						.onChange = [this](double val) {
+							setState([&]() {
+								number = val;
+							});
+						},
+					},
 					TextBox{
 						.disabled = disabled,
 						.controller = controller,
@@ -78,6 +96,17 @@ struct Test : StatefulWidget {
 							std::println("Validating: {}", text);
 							if (text.contains("error")) {
 								return "Error: Text contains the word 'error'";
+							}
+							return {};
+						},
+					},
+					TextBox{
+						.disabled = disabled,
+						.controller = controller,
+						.validator = [](const std::string &text) -> std::optional<std::string> {
+							std::println("Validating: {}", text);
+							if (text.contains("errorz")) {
+								return "Error: Text contains the word 'errorz'";
 							}
 							return {};
 						},
@@ -223,7 +252,8 @@ int main(int /*unused*/, char ** /*unused*/) {
 							Children ret;
 							for (uint32_t i = 0; i < count; i++) {
 								ret.push_back(
-									Text{.text = "Item " + std::to_string(offset + i + 1)});
+									Text{.text = "Item " + std::to_string(offset + i + 1)}
+								);
 							}
 							return Column{
 								.spacing = 5.f,

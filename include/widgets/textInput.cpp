@@ -43,9 +43,10 @@ namespace squi {
 
 	void TextInput::State::setText(const std::string &newText) {
 		if (text == newText) return;
-		setState([this, &newText]() {
+		setState([this, newText]() {
 			text = newText;
 		});
+		controller.setText(newText);
 		if (widget->onTextChanged) widget->onTextChanged(text);
 	}
 
@@ -100,10 +101,13 @@ namespace squi {
 					cursor = static_cast<int64_t>(pos);
 				});
 			} else if (cursor > 0) {
+				bool isCursorAtEnd = cursor == static_cast<int64_t>(text.size());
 				setText(std::format("{}{}", text.substr(0, cursor - 1), text.substr(cursor)));
-				setState([&]() {
-					--cursor;
-				});
+				if (!isCursorAtEnd) {
+					setState([&]() {
+						--cursor;
+					});
+				}
 			}
 		}
 	}

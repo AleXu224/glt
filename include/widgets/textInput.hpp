@@ -13,19 +13,13 @@ namespace squi {
 		private:
 			struct ControlBlock {
 				Observable<const std::string &> textObservable{};
-				std::optional<std::string> initialText{};
-				std::string *textPtr = nullptr;
+				std::string text{};
 			};
 			std::shared_ptr<ControlBlock> controlBlock = std::make_shared<ControlBlock>();
 
-			void mount(std::string &text) {
-				controlBlock->textPtr = &text;
-			}
-
 		public:
-			Controller() = default;
-			Controller(const std::string &initial) {
-				controlBlock->initialText = initial;
+			Controller(const std::string &initial = "") {
+				controlBlock->text = initial;
 			}
 
 			[[nodiscard]] Observer<const std::string &> getTextObserver(const std::function<void(const std::string &)> &callback) const {
@@ -33,12 +27,17 @@ namespace squi {
 			}
 
 			void setText(const std::string &text) const {
-				controlBlock->textObservable.notify(text);
+				if (controlBlock->text == text) return;
+				controlBlock->text = text;
+				controlBlock->textObservable.notify(controlBlock->text);
 			}
 
 			[[nodiscard]] const std::string &getText() const {
-				assert(controlBlock->textPtr);
-				return *controlBlock->textPtr;
+				return controlBlock->text;
+			}
+
+			bool operator==(const Controller &other) const {
+				return controlBlock == other.controlBlock;
 			}
 
 			friend TextInput;
@@ -65,14 +64,22 @@ namespace squi {
 
 			void initState() override {
 				controller = widget->controller;
-				controller.mount(text);
-				text = controller.controlBlock->initialText.value_or("");
+				text = controller.getText();
 				textObserver = controller.getTextObserver([this](const std::string &newText) {
 					setText(newText);
+					clampCursors();
 				});
 			}
 
-			void widgetUpdated() override {}
+			void widgetUpdated() override {
+				if (controller == widget->controller) return;
+				controller = widget->controller;
+				text = controller.getText();
+				textObserver = controller.getTextObserver([this](const std::string &newText) {
+					setText(newText);
+					clampCursors();
+				});
+			}
 
 			void clampCursors();
 

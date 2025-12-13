@@ -34,11 +34,17 @@ namespace squi {
 
 		auto style = theme.fromStatus(status);
 
+		auto constraints = widget->widget.sizeConstraints.value_or(BoxConstraints{
+			.minWidth = 100.f,
+			.maxWidth = 200.f,
+		});
+
+		auto modifiedWidget = widget->widget;
+		modifiedWidget.width = modifiedWidget.width.value_or(Size::Wrap);
+		modifiedWidget.height = modifiedWidget.height.value_or(Size::Wrap);
+
 		return Column{
-			.widget{
-				.width = Size::Wrap,
-				.height = Size::Wrap,
-			},
+			.widget = modifiedWidget,
 			.spacing = 4.f,
 			.children{
 				Gesture{
@@ -90,10 +96,7 @@ namespace squi {
 								TextInput{
 									.widget{
 										.alignment = Alignment::CenterLeft,
-										.sizeConstraints = BoxConstraints{
-											.minWidth = 100.f,
-											.maxWidth = 200.f,
-										},
+										.sizeConstraints = constraints,
 										.margin = Margin{}.withHorizontal(12.f),
 									},
 									.controller = widget->controller,
