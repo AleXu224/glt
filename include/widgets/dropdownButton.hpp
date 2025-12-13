@@ -10,6 +10,7 @@ namespace squi {
 		// Args
 		Key key;
 		Button::Theme theme = Button::Theme::Standard();
+		bool disabled = false;
 		std::string text;
 		decltype(ContextMenu::items) items;
 

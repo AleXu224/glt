@@ -14,6 +14,7 @@ namespace squi {
 				contextMenuPosition = renderObject.getRect().getBottomLeft();
 			},
 			.child = Button{
+				.disabled = widget->disabled,
 				.onStatusChange = [&](Button::ButtonStatus status) {
 					setState([&]() {
 						this->status = status;
