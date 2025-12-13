@@ -15,11 +15,13 @@ namespace squi {
 		};
 		struct Divider {};
 
+		using Item = std::variant<Button, Toggle, Divider>;
+
 		// Args
 		Key key;
 		vec2 position;
 		std::function<void()> onClose;
-		std::vector<std::variant<Button, Toggle, Divider>> items;
+		std::vector<Item> items;
 
 		[[nodiscard]] Child build(const Element &) const;
 	};
