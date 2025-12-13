@@ -1,6 +1,7 @@
 #include "core/app.hpp"
 
 #include "include/widgets/column.hpp"
+#include "include/widgets/container.hpp"
 #include "include/widgets/dropdownButton.hpp"
 #include "include/widgets/expander.hpp"
 #include "include/widgets/grid.hpp"
@@ -178,6 +179,19 @@ struct Test : StatefulWidget {
 									std::println("Other toggle is now: {}", val);
 								},
 							},
+						},
+					},
+					Container{
+						.widget{
+							.width = 300.f,
+							.height = 100.f,
+							.padding = Padding{10.f},
+						},
+						.shouldClipContent = true,
+						.child = Text{
+							.text = "This is some text inside a container that clips its content. "
+									"When the text is too long, it should be clipped to fit within the container's bounds. "
+									"This ensures that any overflowing content does not disrupt the overall layout of the application.",
 						},
 					},
 				},
