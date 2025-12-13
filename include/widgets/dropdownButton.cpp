@@ -42,7 +42,7 @@ namespace squi {
 					.crossAxisAlignment = Flex::Alignment::center,
 					.children{
 						AnimatedText{
-							.text = "button",
+							.text = widget->text,
 							.fontSize = widget->theme.fromStatus(status).textSize,
 							.color = widget->theme.fromStatus(status).textColor,
 						},
