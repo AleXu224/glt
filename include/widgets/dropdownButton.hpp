@@ -9,9 +9,9 @@ namespace squi {
 	struct DropdownButton : StatefulWidget {
 		// Args
 		Key key;
+		Button::Theme theme = Button::Theme::Standard();
 		std::string text;
 		decltype(ContextMenu::items) items;
-		Button::Theme theme = Button::Theme::Standard();
 
 		struct State : WidgetState<DropdownButton> {
 			vec2 contextMenuPosition;
