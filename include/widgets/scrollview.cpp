@@ -17,6 +17,9 @@ namespace squi {
 	}
 
 	Child ScrollView::State::build(const Element &) {
+		auto newScrollWidget = widget->scrollWidget;
+		newScrollWidget.height = newScrollWidget.height.value_or(Size::Shrink);
+
 		return Gesture{
 			.onUpdate = [this](const Gesture::State &state) {
 				if (state.hovered) {
@@ -35,7 +38,7 @@ namespace squi {
 				.widget = widget->widget,
 				.children{
 					Scrollable{
-						.widget = widget->scrollWidget,
+						.widget = newScrollWidget,
 						.alignment = widget->alignment,
 						.direction = widget->direction,
 						.spacing = widget->spacing,

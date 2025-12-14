@@ -123,12 +123,12 @@ namespace Engine {
 		vk::raii::DescriptorPool createDescriptorPool() {
 			vk::DescriptorPoolSize size{
 				.type = vk::DescriptorType::eUniformBuffer,
-				.descriptorCount = instance.frames.size(),
+				.descriptorCount = static_cast<uint32_t>(instance.frames.size()),
 			};
 
 			vk::DescriptorPoolCreateInfo createInfo{
 				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-				.maxSets = instance.frames.size(),
+				.maxSets = static_cast<uint32_t>(instance.frames.size()),
 				.poolSizeCount = 1,
 				.pPoolSizes = &size,
 			};

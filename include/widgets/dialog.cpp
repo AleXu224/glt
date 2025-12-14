@@ -54,6 +54,7 @@ namespace squi {
 			.widget{
 				.width = widget->width,
 				.height = Size::Wrap,
+				.alignment = Alignment::Center,
 				.padding = 1.f,
 			},
 			.color = Color::css(32, 32, 32, 1.f),

@@ -55,7 +55,7 @@ namespace squi {
 									  .widget{
 										  .margin = Margin{}.withLeft(16.f),
 									  },
-									  .icon = expanded ? 0xe316 : 0xe313,
+									  .icon = expanded ? static_cast<char32_t>(0xe316) : static_cast<char32_t>(0xe313),
 									  .theme = Button::Theme::Subtle(),
 									  .onClick = [this](void) {
 										  setState([this]() {

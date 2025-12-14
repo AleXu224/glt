@@ -70,6 +70,31 @@ namespace squi::core {
 		const std::string &getValue() const { return value; }
 	};
 
+	struct IndexKey : public KeyBase {
+	private:
+		int64_t value;
+
+	public:
+		IndexKey(int64_t value) : value(value) {}
+
+		bool operator==(const KeyBase &other) const override {
+			if (const auto *otherValueKey = dynamic_cast<const IndexKey *>(&other)) {
+				return value == otherValueKey->value;
+			}
+			return false;
+		}
+
+		[[nodiscard]] std::size_t hash() const override {
+			return std::hash<int64_t>{}(value);
+		}
+
+		[[nodiscard]] std::string toString() const override {
+			return "[IndexKey " + std::to_string(value) + "]";
+		}
+
+		[[nodiscard]] const int64_t &getValue() const { return value; }
+	};
+
 	struct ObjectKey : public KeyBase {
 	private:
 		const void *object;

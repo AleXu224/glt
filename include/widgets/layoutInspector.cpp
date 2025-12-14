@@ -261,6 +261,7 @@ namespace squi {
 						},
 						Text{.text = std::format("Margin: t:{}, r:{}, b:{}, l:{}", renderObject->margin.top, renderObject->margin.right, renderObject->margin.bottom, renderObject->margin.left)},
 						Text{.text = std::format("Padding: t:{}, r:{}, b:{}, l:{}", renderObject->padding.top, renderObject->padding.right, renderObject->padding.bottom, renderObject->padding.left)},
+						Text{.text = std::format("Alignment: {}x{}", renderObject->alignment.horizontal, renderObject->alignment.vertical)},
 						Text{.widget{.margin = Margin{}.withTop(8.f)}, .text = "Sizing:", .fontSize = 20.f},
 						Text{
 							.text = std::format("Size: {}x{}", renderObject->size.x, renderObject->size.y),
