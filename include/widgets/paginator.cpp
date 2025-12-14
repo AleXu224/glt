@@ -56,6 +56,7 @@ namespace squi {
 
 		return Column{
 			.widget = widget->widget,
+			.crossAxisAlignment = Flex::Alignment::center,
 			.spacing = 10.f,
 			.children = {
 				content,
