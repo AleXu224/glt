@@ -143,7 +143,7 @@ namespace squi::core {
 	}
 
 	void RenderObject::positionAt(const Rect &newBounds) {
-		pos = newBounds.posFromAlignment(alignment, getLayoutRect()) + margin.getPositionOffset();
+		pos = newBounds.posFromAlignment(alignment.value_or(Alignment::TopLeft), getLayoutRect()) + margin.getPositionOffset();
 
 		auto wrapWidth = (std::holds_alternative<Size>(width) && std::get<Size>(width) == Size::Wrap);
 		auto wrapHeight = (std::holds_alternative<Size>(height) && std::get<Size>(height) == Size::Wrap);
@@ -152,12 +152,12 @@ namespace squi::core {
 		auto offset = padding.getPositionOffset() + margin.getPositionOffset();
 
 		// If the widget is wrapping then allow the content to be positioned relative to the parent bounds
-		if (wrapWidth) {
+		if (wrapWidth && !alignment.has_value()) {
 			contentBounds.left = newBounds.left + offset.x;
 			contentBounds.right = newBounds.right - offset.x;
 		}
 
-		if (wrapHeight) {
+		if (wrapHeight && !alignment.has_value()) {
 			contentBounds.top = newBounds.top + offset.y;
 			contentBounds.bottom = newBounds.bottom - offset.y;
 		}
@@ -212,8 +212,8 @@ namespace squi::core {
 			height = args.height.value_or(Size::Expand);
 			app->needsRelayout = true;
 		}
-		if (alignment != args.alignment.value_or(Alignment::TopLeft)) {
-			alignment = args.alignment.value_or(Alignment::TopLeft);
+		if (alignment != args.alignment) {
+			alignment = args.alignment;
 			app->needsReposition = true;
 		}
 		if (sizeConstraints != args.sizeConstraints.value_or(BoxConstraints{})) {

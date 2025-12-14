@@ -56,7 +56,7 @@ namespace squi::core {
 
 		std::variant<float, Size> width = Size::Expand;
 		std::variant<float, Size> height = Size::Expand;
-		Alignment alignment = Alignment::TopLeft;
+		std::optional<Alignment> alignment{};
 		BoxConstraints sizeConstraints{};
 		Margin margin{};
 		Margin padding{};
