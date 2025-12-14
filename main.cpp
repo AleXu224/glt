@@ -6,6 +6,7 @@
 #include "include/widgets/expander.hpp"
 #include "include/widgets/grid.hpp"
 #include "include/widgets/iconButton.hpp"
+#include "include/widgets/image.hpp"
 #include "include/widgets/paginator.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/textBox.hpp"
@@ -74,6 +75,9 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return Column{
 				.children{
+					Image{
+						.image = ImageProvider::fromUrl("https://www.google.com/logos/doodles/2025/seasonal-holidays-2025-6753651837110711.4-la1f1f1f.gif"),
+					},
 					NumberBox{
 						.value = number,
 						.onChange = [this](double val) {

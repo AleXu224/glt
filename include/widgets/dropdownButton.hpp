@@ -11,7 +11,7 @@ namespace squi {
 		Key key;
 		Button::Theme theme = Button::Theme::Standard();
 		bool disabled = false;
-		std::string text;
+		std::string text = "Dropdown";
 		decltype(ContextMenu::items) items;
 
 		struct State : WidgetState<DropdownButton> {

@@ -9,5 +9,9 @@ namespace squi {
 
 		[[nodiscard]] static ImageProvider fromFile(const std::string &path);
 		[[nodiscard]] static ImageProvider fromUrl(const std::string &url);
+
+		bool operator==(const ImageProvider &other) const {
+			return key == other.key;
+		}
 	};
 }// namespace squi
