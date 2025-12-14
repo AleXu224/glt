@@ -62,7 +62,7 @@ namespace squi {
 							});
 							if (widget->onSelectRenderObject) widget->onSelectRenderObject(this->widget->renderObjectPtr);
 						},
-						.content = Row{
+						.child = Row{
 							.widget{
 								.height = Size::Shrink,
 								.alignment = Alignment::CenterLeft,

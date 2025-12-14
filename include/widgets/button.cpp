@@ -74,7 +74,7 @@ namespace squi {
 					return child;
 				}
 			},
-			widget->content
+			widget->child
 		);
 	}
 	[[nodiscard]] core::Args Button::State::getArgs() const {

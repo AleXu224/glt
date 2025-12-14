@@ -56,7 +56,7 @@ namespace squi {
 		bool disabled;
 		std::function<void(ButtonStatus)> onStatusChange{};
 		std::function<void()> onClick{};
-		std::variant<std::string, Child> content = "Button";
+		std::variant<std::string, Child> child = "Button";
 
 		struct State : WidgetState<Button> {
 			ButtonStatus status = ButtonStatus::resting;

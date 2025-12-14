@@ -3,7 +3,7 @@
 #include "widgets/fontIcon.hpp"
 
 namespace squi {
-	core::Child IconButton::State::build(const Element &element) {
+	core::Child IconButton::State::build(const Element &) {
 		return Button{
 			.widget = [&]() {
 				auto args = widget->widget;
@@ -17,7 +17,7 @@ namespace squi {
 				});
 			},
 			.onClick = widget->onClick,
-			.content = FontIcon{
+			.child = FontIcon{
 				.size = 16.f,
 				.color = widget->theme.fromStatus(this->status).textColor,
 				.icon = widget->icon,

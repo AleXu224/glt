@@ -125,7 +125,7 @@ struct Test : StatefulWidget {
 								}
 							});
 						},
-						.content = "Test",
+						.child = "Test",
 					},
 					Button{
 						.onClick = [this]() {
@@ -133,7 +133,7 @@ struct Test : StatefulWidget {
 								disabled = !disabled;
 							});
 						},
-						.content = "Toggle Disabled",
+						.child = "Toggle Disabled",
 					},
 					Transform{
 						.scale = vec2{scale},
@@ -147,7 +147,7 @@ struct Test : StatefulWidget {
 									scale = toggled ? 2.f : 1.f;
 								});
 							},
-							.content = "Toggle",
+							.child = "Toggle",
 						},
 					},
 					Box{
@@ -223,12 +223,12 @@ struct Test2 : StatefulWidget {
 								toggle = !toggle;
 							});
 						},
-						.content = "Toggle",
+						.child = "Toggle",
 					},
 					Button{
 						.theme = Button::Theme::Accent(),
 						.disabled = toggle,
-						.content = "Button",
+						.child = "Button",
 					},
 					ColorChanger{},
 					ColorChanger{},
@@ -352,14 +352,14 @@ int main(int /*unused*/, char ** /*unused*/) {
 						.subtitle = "This is a subtitle",
 						.action = Button{
 							.theme = Button::Theme::Accent(),
-							.content = "Action",
+							.child = "Action",
 						},
 						.content = Column{
 							.children{
 								Text{.text = "This is the content of the expander."},
 								Text{.text = "It can be anything you want."},
 								Button{
-									.content = "A button inside the expander",
+									.child = "A button inside the expander",
 								},
 								IconButton{},
 							},

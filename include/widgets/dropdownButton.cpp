@@ -36,7 +36,7 @@ namespace squi {
 						},
 					});
 				},
-				.content = Row{
+				.child = Row{
 					.widget{
 						.alignment = Alignment::CenterLeft,
 					},

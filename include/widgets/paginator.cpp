@@ -37,7 +37,7 @@ namespace squi {
 							if (current_page > 0) current_page--;
 						});
 					},
-					.content = "Previous",
+					.child = "Previous",
 				},
 				Text{
 					.text = "Page " + std::to_string(current_page + 1) + " of " + std::to_string(totalPages),
@@ -49,7 +49,7 @@ namespace squi {
 							if (current_page < totalPages - 1) current_page++;
 						});
 					},
-					.content = "Next",
+					.child = "Next",
 				},
 			},
 		};

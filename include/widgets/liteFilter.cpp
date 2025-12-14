@@ -20,7 +20,7 @@ namespace squi {
 			return Button{
 				.theme = theme,
 				.onClick = onClick,
-				.content = name,
+				.child = name,
 			};
 		}
 	};

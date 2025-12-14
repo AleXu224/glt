@@ -43,7 +43,7 @@ namespace squi {
 					if (this->onClose) this->onClose();
 					Navigator::of(element).popOverlay();
 				},
-				.content = label,
+				.child = label,
 			};
 		}
 	};
@@ -86,7 +86,7 @@ namespace squi {
 						if (widget->onClose) widget->onClose();
 						Navigator::of(element).popOverlay();
 					},
-					.content = Row{
+					.child = Row{
 						.crossAxisAlignment = Flex::Alignment::center,
 						.spacing = 4.f,
 						.children{

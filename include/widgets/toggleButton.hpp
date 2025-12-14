@@ -10,7 +10,7 @@ namespace squi {
 		bool disabled = false;
 		bool active = false;
 		std::function<void(bool)> onToggle;
-		std::variant<std::string, Child> content = "Toggle";
+		std::variant<std::string, Child> child = "Toggle";
 
 		[[nodiscard]] Child build(const Element &) const {
 			return Button{
@@ -19,7 +19,7 @@ namespace squi {
 				.onClick = [this]() {
 					if (onToggle) onToggle(!active);
 				},
-				.content = content,
+				.child = child,
 			};
 		}
 	};
