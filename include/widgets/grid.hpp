@@ -12,7 +12,7 @@ namespace squi {
 
 		// Args
 		Key key;
-		Args args;
+		Args widget;
 		std::variant<int, MinSize> columnCount;
 		float spacing = 0.0f;
 		Children children;
