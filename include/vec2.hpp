@@ -93,8 +93,12 @@ namespace squi {
 			return os;
 		}
 
+		std::string toString() const {
+			return std::format("vec2({}, {})", x, y);
+		}
+		
 		void print() const {
-			std::println("vec2({}, {})", x, y);
+			std::println("{}", toString());
 		}
 	};
 }// namespace squi

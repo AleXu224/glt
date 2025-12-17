@@ -84,6 +84,7 @@ namespace squi {
 
 	core::Child LiteFilter::State::build(const Element &) {
 		return Row{
+			.crossAxisAlignment = Flex::Alignment::center,
 			.spacing = 4.f,
 			.children = createButtons(),
 		};
