@@ -76,7 +76,23 @@ namespace squi::core {
 			contentConstraints.minHeight = 0.f;
 		}
 
-		const auto contentSize = calculateContentSize(contentConstraints, final);
+		auto contentSize = calculateContentSize(contentConstraints, final);
+
+		bool needsContentSizeRecalc = false;
+		if (extConstraints.shrinkWidth && contentSize.x + paddingOffset.x < extConstraints.minWidth) {
+			needsContentSizeRecalc = true;
+			contentConstraints.maxWidth = extConstraints.minWidth - paddingOffset.x;
+			contentConstraints.shrinkWidth = false;
+		}
+		if (extConstraints.shrinkHeight && contentSize.y + paddingOffset.y < extConstraints.minHeight) {
+			needsContentSizeRecalc = true;
+			contentConstraints.maxHeight = extConstraints.minHeight - paddingOffset.y;
+			contentConstraints.shrinkHeight = false;
+		}
+		if (needsContentSizeRecalc) {
+			contentSize = calculateContentSize(contentConstraints, final);
+		}
+
 		extConstraints.minWidth = std::clamp(contentSize.x + paddingOffset.x, extConstraints.minWidth, extConstraints.maxWidth);
 		extConstraints.minHeight = std::clamp(contentSize.y + paddingOffset.y, extConstraints.minHeight, extConstraints.maxHeight);
 
