@@ -69,7 +69,7 @@ namespace Engine {
 
 			auto res = device.waitForFences(*fence, true, 100000000);
 			if (res != vk::Result::eSuccess) {
-				throw std::runtime_error("Failed finishing the command buffer for command queue");
+				throw std::runtime_error(std::format("Failed finishing the command buffer for command queue, error {}", vk::to_string(res)));
 			}
 		}
 	};
