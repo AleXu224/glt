@@ -90,7 +90,7 @@ vk::raii::ImageView Engine::Texture::createImageView(const Args &args) const {
 		},
 	};
 
-	return {Vulkan::device().resource, createInfo};
+	return {Vulkan::device(), createInfo};
 }
 
 vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
@@ -112,7 +112,7 @@ vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
 		.borderColor = vk::BorderColor::eFloatTransparentBlack,
 	};
 
-	return {Vulkan::device().resource, createInfo};
+	return {Vulkan::device(), createInfo};
 }
 
 vk::raii::DeviceMemory Engine::Texture::createMemory() const {
@@ -123,7 +123,7 @@ vk::raii::DeviceMemory Engine::Texture::createMemory() const {
 		.memoryTypeIndex = findMemoryType(reqs.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal),
 	};
 
-	return {Vulkan::device().resource, allocInfo};
+	return {Vulkan::device(), allocInfo};
 }
 
 void Engine::Texture::generateMipmaps() {
@@ -240,7 +240,7 @@ vk::raii::Image Engine::Texture::createImage(const Args &args) {
 		.initialLayout = vk::ImageLayout::eUndefined,
 	};
 
-	return {Vulkan::device().resource, createInfo};
+	return {Vulkan::device(), createInfo};
 }
 
 vk::Format Engine::Texture::formatFromChannels(uint32_t channels) {
@@ -319,7 +319,7 @@ Engine::TextureWriter::TextureWriter(uint32_t width, uint32_t height, vk::raii::
 		.sharingMode = vk::SharingMode::eExclusive,
 	};
 
-	stagingBuffer = {Vulkan::device().resource, bufferInfo};
+	stagingBuffer = {Vulkan::device(), bufferInfo};
 
 	auto stagingBufferMemReqs = stagingBuffer.getMemoryRequirements();
 	vk::MemoryAllocateInfo stagingAllocInfo{
@@ -330,7 +330,7 @@ Engine::TextureWriter::TextureWriter(uint32_t width, uint32_t height, vk::raii::
 		),
 	};
 
-	stagingMemory = {Vulkan::device().resource, stagingAllocInfo};
+	stagingMemory = {Vulkan::device(), stagingAllocInfo};
 	stagingBuffer.bindMemory(*stagingMemory, 0);
 
 	// Map the staging buffer memory

@@ -53,7 +53,7 @@ namespace Engine {
 					.pImageInfo = &bufferInfo,
 				};
 
-				Vulkan::device().resource.updateDescriptorSets(descriptorWrite, {});
+				Vulkan::device().updateDescriptorSets(descriptorWrite, {});
 			}
 		}
 
@@ -91,7 +91,7 @@ namespace Engine {
 			};
 
 			return vk::raii::DescriptorSetLayout{
-				Vulkan::device().resource,
+				Vulkan::device(),
 				createInfo,
 			};
 		}
@@ -119,7 +119,7 @@ namespace Engine {
 				.pPoolSizes = &size,
 			};
 
-			return Vulkan::device().resource.createDescriptorPool(createInfo);
+			return Vulkan::device().createDescriptorPool(createInfo);
 		}
 
 		[[nodiscard]] std::vector<vk::raii::DescriptorSet> createDescriptorSets() const {
@@ -131,7 +131,7 @@ namespace Engine {
 				.pSetLayouts = setLayouts.data(),
 			};
 
-			return Vulkan::device().resource.allocateDescriptorSets(allocInfo);
+			return Vulkan::device().allocateDescriptorSets(allocInfo);
 		}
 	};
 }// namespace Engine

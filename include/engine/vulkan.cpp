@@ -52,13 +52,13 @@ Engine::Vulkan::QueueFamilyIndices Engine::Vulkan::findQueueFamilies(const vk::r
 Engine::LockedResource<vk::raii::Queue> Engine::Vulkan::getGraphicsQueue() {
 	static std::mutex mtx{};
 	auto indices = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
-	return {std::scoped_lock{mtx}, Vulkan::device().resource.getQueue(indices.graphicsFamily.value(), 0)};
+	return {std::scoped_lock{mtx}, Vulkan::device().getQueue(indices.graphicsFamily.value(), 0)};
 }
 
 Engine::LockedResource<vk::raii::Queue> Engine::Vulkan::getPresentQueue() {
 	static std::mutex mtx{};
 	auto indices = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
-	return {std::scoped_lock{mtx}, Vulkan::device().resource.getQueue(indices.presentFamily.value(), 0)};
+	return {std::scoped_lock{mtx}, Vulkan::device().getQueue(indices.presentFamily.value(), 0)};
 }
 
 std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCommandBuffer() {
@@ -69,11 +69,11 @@ std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCo
 		.queueFamilyIndex = props.graphicsFamily.value(),
 	};
 
-	auto commandPool = Vulkan::device().resource.createCommandPool(poolInfo);
+	auto commandPool = Vulkan::device().createCommandPool(poolInfo);
 
 	return {
 		std::move(commandPool),
-		std::move(Vulkan::device().resource.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+		std::move(Vulkan::device().allocateCommandBuffers(vk::CommandBufferAllocateInfo{
 																	   .commandPool = *commandPool,
 																	   .level = vk::CommandBufferLevel::ePrimary,
 																	   .commandBufferCount = 1,
@@ -88,12 +88,12 @@ void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
 		.pCommandBuffers = &*cmd,
 	};
 
-	vk::raii::Fence fence{Vulkan::device().resource, vk::FenceCreateInfo{}};
+	vk::raii::Fence fence{Vulkan::device(), vk::FenceCreateInfo{}};
 
 	auto graphicsQueue = Vulkan::getGraphicsQueue();
 	graphicsQueue.resource.submit(submitInfo, *fence);
 
-	auto &device = Vulkan::device().resource;
+	auto &device = Vulkan::device();
 
 	auto res = device.waitForFences(*fence, true, 100000000);
 	if (res != vk::Result::eSuccess) {
@@ -233,8 +233,8 @@ vk::raii::PhysicalDevice &Engine::Vulkan::physicalDevice() {
 	return _;
 }
 
-Engine::LockedResource<vk::raii::Device &> Engine::Vulkan::device() {
-	static std::mutex mtx{};
+vk::raii::Device & Engine::Vulkan::device() {
+	// static std::mutex mtx{};
 	static vk::raii::Device _ = []() {
 		auto &deviceExt = deviceExtensions();
 		auto indices = findQueueFamilies(physicalDevice());
@@ -265,5 +265,5 @@ Engine::LockedResource<vk::raii::Device &> Engine::Vulkan::device() {
 
 		return vk::raii::Device{physicalDevice(), createInfo};
 	}();
-	return {std::scoped_lock{mtx}, _};
+	return _;
 }

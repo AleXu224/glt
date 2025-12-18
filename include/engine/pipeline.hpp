@@ -69,8 +69,8 @@ namespace Engine {
 		~Pipeline() = default;
 
 		Pipeline(const Args &args)
-			: fragmentShader(Vulkan::device().resource, args.fragmentShader),
-			  vertexShader(Vulkan::device().resource, args.vertexShader),
+			: fragmentShader(Vulkan::device(), args.fragmentShader),
+			  vertexShader(Vulkan::device(), args.vertexShader),
 			  basicUniform({.instance = args.instance}),
 			  uniforms([&]() -> std::tuple<Uniform<Uniforms>...> {
 				  return [&]<size_t... I>(const std::index_sequence<I...> &) {
@@ -264,7 +264,7 @@ namespace Engine {
 				.pPushConstantRanges = {&pushConstantRange},
 			};
 
-			layout = Vulkan::device().resource.createPipelineLayout(pipelineLayoutInfo);
+			layout = Vulkan::device().createPipelineLayout(pipelineLayoutInfo);
 
 			vk::GraphicsPipelineCreateInfo pipelineInfo{
 				.stageCount = 2,
@@ -284,7 +284,7 @@ namespace Engine {
 				.basePipelineIndex = -1,
 			};
 
-			pipeline = Vulkan::device().resource.createGraphicsPipeline(nullptr, pipelineInfo);
+			pipeline = Vulkan::device().createGraphicsPipeline(nullptr, pipelineInfo);
 		}
 
 		std::function<void()> currentPipelineFlush = [&] {
@@ -472,7 +472,7 @@ namespace Engine {
 				.sharingMode = vk::SharingMode::eExclusive,
 			};
 
-			auto buffer = Vulkan::device().resource.createBuffer(bufferInfo);
+			auto buffer = Vulkan::device().createBuffer(bufferInfo);
 
 			vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
@@ -481,7 +481,7 @@ namespace Engine {
 				.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties),
 			};
 
-			auto bufferMemory = Vulkan::device().resource.allocateMemory(allocInfo);
+			auto bufferMemory = Vulkan::device().allocateMemory(allocInfo);
 
 			buffer.bindMemory(*bufferMemory, 0);
 
@@ -507,7 +507,7 @@ namespace Engine {
 				.commandBufferCount = 1,
 			};
 
-			auto cmdBuffers = Vulkan::device().resource.allocateCommandBuffers(allocInfo);
+			auto cmdBuffers = Vulkan::device().allocateCommandBuffers(allocInfo);
 			auto &cmdBuffer = cmdBuffers.front();
 
 			vk::CommandBufferBeginInfo beginInfo{

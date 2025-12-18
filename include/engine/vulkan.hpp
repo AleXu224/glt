@@ -36,6 +36,6 @@ namespace Engine {
 		static bool checkValidationLayers();
 		static vk::raii::Instance &instance();
 		static vk::raii::PhysicalDevice &physicalDevice();
-		static LockedResource<vk::raii::Device &> device();
+		static vk::raii::Device &device();
 	};
 }// namespace Engine

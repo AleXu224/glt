@@ -31,12 +31,12 @@ void Engine::Runner::run(const std::function<bool()> &preDraw, const std::functi
 		while (!glfwWindowShouldClose(instance.window.ptr)) {
 			draw();
 		}
-		Vulkan::device().resource.waitIdle();
+		Vulkan::device().waitIdle();
 		cleanupFunc();
 	} catch (const std::exception &e) {
 		std::println("Error: {}", e.what());
 
-		Vulkan::device().resource.waitIdle();
+		Vulkan::device().waitIdle();
 		cleanupFunc();
 		return;
 	}
@@ -56,7 +56,7 @@ void Engine::Runner::draw() {
 
 	if (!preDraw()) return;
 
-	auto resFence = Vulkan::device().resource.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
+	auto resFence = Vulkan::device().waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);
 	if (resFence != vk::Result::eSuccess) throw std::runtime_error("Timeout waiting for render fence");
 	instance.currentFrame.get().resourceLock.clear();
 
@@ -76,7 +76,7 @@ void Engine::Runner::draw() {
 		return;
 	}
 
-	Vulkan::device().resource.resetFences(*instance.currentFrame.get().renderFence);
+	Vulkan::device().resetFences(*instance.currentFrame.get().renderFence);
 
 	auto &cmd = instance.currentFrame.get().commandBuffer;
 	cmd.reset();

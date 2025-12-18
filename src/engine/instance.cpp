@@ -26,7 +26,7 @@ Instance::Instance(WindowOptions options)
 		  ret.reserve(swapChainImages.size());
 		  auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 		  for (size_t i = 0; i < swapChainImages.size(); i++) {
-			  ret.emplace_back(i, Vulkan::device().resource, props.graphicsFamily.value());
+			  ret.emplace_back(i, Vulkan::device(), props.graphicsFamily.value());
 		  }
 
 		  return ret;
@@ -38,7 +38,7 @@ void Engine::Instance::recreateSwapChain() {
 	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
 	if (width == 0 || height == 0) return;
-	Vulkan::device().resource.waitIdle();
+	Vulkan::device().waitIdle();
 
 	auto swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities);
@@ -50,7 +50,7 @@ void Engine::Instance::recreateSwapChain() {
 	swapChainFramebuffers = createFramebuffers();
 
 	for (auto &frame: frames) {
-		frame.recreateCommandBuffer(Vulkan::device().resource);
+		frame.recreateCommandBuffer(Vulkan::device());
 	}
 }
 
@@ -119,7 +119,7 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating, const 
 		createInfo.pQueueFamilyIndices = nullptr;// Optional
 	}
 
-	return Vulkan::device().resource.createSwapchainKHR(createInfo);
+	return Vulkan::device().createSwapchainKHR(createInfo);
 }
 
 std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
@@ -162,7 +162,7 @@ std::vector<vk::raii::ImageView> Engine::Instance::createImageViews() {
 			},
 		};
 
-		ret.emplace_back(Vulkan::device().resource.createImageView(createInfo));
+		ret.emplace_back(Vulkan::device().createImageView(createInfo));
 	}
 
 	return ret;
@@ -209,7 +209,7 @@ vk::raii::RenderPass Engine::Instance::createRenderPass() {
 		.pDependencies = &dependency,
 	};
 
-	return Vulkan::device().resource.createRenderPass(renderPassInfo);
+	return Vulkan::device().createRenderPass(renderPassInfo);
 }
 
 std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
@@ -226,7 +226,7 @@ std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 			.layers = 1,
 		};
 
-		ret.emplace_back(Vulkan::device().resource.createFramebuffer(framebufferInfo));
+		ret.emplace_back(Vulkan::device().createFramebuffer(framebufferInfo));
 	}
 
 	return ret;

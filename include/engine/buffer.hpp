@@ -16,12 +16,12 @@ namespace Engine {
 		};
 
 		Buffer(const Args &args)
-			: buffer(Vulkan::device().resource, vk::BufferCreateInfo{
+			: buffer(Vulkan::device(), vk::BufferCreateInfo{
 													.size = args.size,
 													.usage = args.usage,
 													.sharingMode = vk::SharingMode::eExclusive,
 												}),
-			  memory(Vulkan::device().resource, vk::MemoryAllocateInfo{
+			  memory(Vulkan::device(), vk::MemoryAllocateInfo{
 													.allocationSize = buffer.getMemoryRequirements().size,
 													.memoryTypeIndex = findMemoryType(buffer.getMemoryRequirements().memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
 												}),

@@ -61,7 +61,7 @@ std::shared_ptr<FontStore::Font> FontStore::getFont(const FontProvider &provider
 std::unordered_map<std::string, std::weak_ptr<FontStore::Font>> &FontStore::fonts() {
 	// Make sure device is constructed before the font store
 	[[maybe_unused]] static bool pre = []() {
-		[[maybe_unused]] auto val = Engine::Vulkan::device();
+		[[maybe_unused]] auto &val = Engine::Vulkan::device();
 		return true;
 	}();
 
