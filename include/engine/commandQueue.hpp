@@ -41,6 +41,11 @@ namespace Engine {
 			return std::scoped_lock<std::mutex>{mtx};
 		}
 
+		static inline void cleanup() {
+			std::scoped_lock lock{mtx};
+			storage.clear();
+		}
+
 		static inline void frameEnd() {
 			std::scoped_lock lock{mtx};
 
@@ -66,8 +71,6 @@ namespace Engine {
 			if (res != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed finishing the command buffer");
 			}
-
-			storage.clear();
 		}
 	};
 }// namespace Engine
