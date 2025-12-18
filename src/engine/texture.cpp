@@ -379,7 +379,6 @@ void Engine::TextureWriter::write() {
 	};
 
 	cmd->copyBufferToImage(*stagingBuffer, **image, vk::ImageLayout::eTransferDstOptimal, region);
-	std::println("TextureWriter::write: Copied buffer to image");
 
 	transitionFunc(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader);
 
