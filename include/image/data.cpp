@@ -7,7 +7,10 @@
 #include "loader.hpp"
 #include "networking.hpp"
 
+#include "engine/commandQueue.hpp"
 #include "engine/texture.hpp"
+#include "vulkan.hpp"
+
 
 using namespace squi;
 
@@ -62,18 +65,22 @@ std::future<ImageData> ImageData::fromFileAsync(const std::string &path) {
 }
 
 std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
+	auto &[pool, cmd] = Engine::CommandQueue::pushStorage(Engine::Vulkan::makeCommandBuffer());
+
+	cmd.begin({});
 	auto texture = std::make_shared<Engine::Texture>(Engine::Texture::Args{
 		.width = width,
 		.height = height,
 		.channels = channels,
 		.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
+		.cmd = &cmd,
 	});
 	// auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{
 	// 	.aspectMask = vk::ImageAspectFlagBits::eColor,
 	// 	.mipLevel = 0,
 	// 	.arrayLayer = 0,
 	// });
-	auto writer = texture->getWriter();
+	auto writer = texture->getWriter(&cmd);
 	for (uint32_t row = 0; row < height; row++) {
 		memcpy(
 			reinterpret_cast<uint8_t *>(writer.memory) + row * width * channels,
@@ -82,6 +89,10 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 		);
 	}
 	writer.write();
-	texture->generateMipmaps();
+	texture->generateMipmaps(&cmd);
+	cmd.end();
+
+	Engine::CommandQueue::pushCommandBuffer(&cmd);
+
 	return texture;
 }

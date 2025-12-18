@@ -74,10 +74,10 @@ std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCo
 	return {
 		std::move(commandPool),
 		std::move(Vulkan::device().allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-																	   .commandPool = *commandPool,
-																	   .level = vk::CommandBufferLevel::ePrimary,
-																	   .commandBufferCount = 1,
-																   })
+															  .commandPool = *commandPool,
+															  .level = vk::CommandBufferLevel::ePrimary,
+															  .commandBufferCount = 1,
+														  })
 					  .front())
 	};
 }
@@ -164,7 +164,7 @@ bool Engine::Vulkan::checkValidationLayers() {
 }
 
 vk::raii::Instance &Engine::Vulkan::instance() {
-	static vk::raii::Instance _ = []() {
+	static vk::raii::Instance instance = []() {
 		if (debugBuild && !checkValidationLayers()) {
 			std::println("The required validation layers are not available, proceeding without them");
 			validationLayersAvailable = false;
@@ -200,7 +200,7 @@ vk::raii::Instance &Engine::Vulkan::instance() {
 		// FIXME: add logic for dealing with bad contexts
 		return vk::raii::Instance{context(), createInfo};
 	}();
-	return _;
+	return instance;
 }
 
 vk::raii::PhysicalDevice &Engine::Vulkan::physicalDevice() {
@@ -233,7 +233,7 @@ vk::raii::PhysicalDevice &Engine::Vulkan::physicalDevice() {
 	return _;
 }
 
-vk::raii::Device & Engine::Vulkan::device() {
+vk::raii::Device &Engine::Vulkan::device() {
 	// static std::mutex mtx{};
 	static vk::raii::Device _ = []() {
 		auto &deviceExt = deviceExtensions();

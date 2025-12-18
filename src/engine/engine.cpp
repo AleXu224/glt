@@ -1,5 +1,6 @@
 #include "engine.hpp"
 #include "chrono"
+#include "commandQueue.hpp"
 #include "frame.hpp"
 #include "instance.hpp"
 #include "iostream"
@@ -138,6 +139,8 @@ void Engine::Runner::draw() {
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &*instance.currentFrame.get().renderSemaphore,
 	};
+
+	// Engine::CommandQueue::frameEnd();
 
 	Vulkan::getGraphicsQueue().resource.submit(submitInfo, *instance.currentFrame.get().renderFence);
 
