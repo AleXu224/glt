@@ -49,6 +49,11 @@ void Engine::Runner::draw() {
 
 	instance.currentFrame = getCurrentFrame();
 
+	for (const auto &task: instance.nextFrameTasks) {
+		task();
+	}
+	instance.nextFrameTasks.clear();
+
 	if (!preDraw()) return;
 
 	auto resFence = Vulkan::device().resource.waitForFences(*instance.currentFrame.get().renderFence, 1, 1000000000);

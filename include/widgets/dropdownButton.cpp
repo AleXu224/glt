@@ -41,6 +41,7 @@ namespace squi {
 						.alignment = Alignment::CenterLeft,
 					},
 					.crossAxisAlignment = Flex::Alignment::center,
+					.spacing = 4.f,
 					.children{
 						AnimatedText{
 							.text = widget->text,

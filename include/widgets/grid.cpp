@@ -71,7 +71,7 @@ namespace squi {
 						.minHeight = minSize.y,
 						.maxHeight = maxSize.y,
 						.shrinkWidth = false,
-						.shrinkHeight = true,
+						.shrinkHeight = false,
 					},
 					final
 				);

@@ -58,11 +58,20 @@ namespace Engine {
 		}
 
 		~SamplerUniform() {
-			auto thread = std::thread([texture = std::move(texture), descriptorPool = std::move(descriptorPool), descriptorSets = std::move(descriptorSets)] {
-				// Wait for the device to be done using the descriptor sets
-				Vulkan::device().resource.waitIdle();
+			struct DataHolder {
+				vk::raii::DescriptorPool descriptorPool;
+				std::vector<vk::raii::DescriptorSet> descriptorSets;
+				std::shared_ptr<Texture> texture;
+			};
+
+			auto data = std::make_shared<DataHolder>(DataHolder{
+				.descriptorPool = std::move(descriptorPool),
+				.descriptorSets = std::move(descriptorSets),
+				.texture = std::move(texture),
 			});
-			thread.detach();
+
+			// Delay destruction to the next frame to avoid issues with in-flight frames
+			instance.nextFrameTasks.emplace_back([data] {});
 		}
 
 		vk::DescriptorSet getDescriptorSet() const {

@@ -69,6 +69,10 @@ namespace squi {
 
 			[[nodiscard]] Args getArgs() const;
 
+			void initState() override {
+				updateStatus();
+			}
+
 			void widgetUpdated() override {
 				updateStatus();
 			}

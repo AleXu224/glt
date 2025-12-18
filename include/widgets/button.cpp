@@ -110,7 +110,7 @@ namespace squi {
 				updateStatus();
 			},
 			.onClick = [this](const Gesture::State &) {
-				if (widget->onClick) {
+				if (widget->onClick && !widget->disabled) {
 					widget->onClick();
 				}
 			},

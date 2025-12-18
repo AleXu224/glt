@@ -18,7 +18,14 @@ namespace squi {
 
 	Child ScrollView::State::build(const Element &) {
 		auto newScrollWidget = widget->scrollWidget;
-		newScrollWidget.height = newScrollWidget.height.value_or(Size::Shrink);
+		switch (widget->direction) {
+			case Axis::Horizontal:
+				newScrollWidget.width = newScrollWidget.width.value_or(Size::Shrink);
+				break;
+			case Axis::Vertical:
+				newScrollWidget.height = newScrollWidget.height.value_or(Size::Shrink);
+				break;
+		}
 
 		return Gesture{
 			.onUpdate = [this](const Gesture::State &state) {

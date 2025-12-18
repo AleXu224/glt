@@ -90,7 +90,10 @@ namespace squi {
 					if (auto *imageRenderObject = renderObject->as<ImageRenderObject>()) {
 						auto *app = renderObject->getApp();
 						imageRenderObject->data->sampler = app->samplerStore.getSampler(app->engine.instance, Store::Texture::getTexture(image));
-						app->needsRelayout = true;
+						std::scoped_lock _{app->taskMtx};
+						app->preUpdateTasks.emplace_back([app]() {
+							app->needsRelayout = true;
+						});
 					}
 				});
 

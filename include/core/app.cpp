@@ -123,6 +123,14 @@ namespace squi::core {
 			auto &renderObject = *renderObjectElem.renderObject;
 			engine.run(
 				[&]() -> bool {
+					{
+						std::scoped_lock lock{taskMtx};
+						for (const auto &task: preUpdateTasks) {
+							task();
+						}
+						preUpdateTasks.clear();
+					}
+
 					static thread_local bool firstRun = true;
 					if (!runningAnimations.empty() || (!firstRun && inputQueue.waitForInput()))
 						inputState.parseInput(inputQueue.pop());

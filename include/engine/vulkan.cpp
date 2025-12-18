@@ -93,7 +93,9 @@ void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
 	auto graphicsQueue = Vulkan::getGraphicsQueue();
 	graphicsQueue.resource.submit(submitInfo, *fence);
 
-	auto res = Vulkan::device().resource.waitForFences(*fence, true, 100000000);
+	auto &device = Vulkan::device().resource;
+
+	auto res = device.waitForFences(*fence, true, 100000000);
 	if (res != vk::Result::eSuccess) {
 		throw std::runtime_error("Failed finishing the command buffer");
 	}

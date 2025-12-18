@@ -26,6 +26,8 @@ namespace Engine {
 		vk::raii::RenderPass renderPass;
 		std::vector<vk::raii::Framebuffer> swapChainFramebuffers;
 
+		std::vector<std::function<void()>> nextFrameTasks{};
+
 		std::vector<Frame> frames;
 		std::reference_wrapper<Frame> currentFrame;
 
@@ -139,7 +141,7 @@ namespace Engine {
 		[[nodiscard]] vk::raii::SurfaceKHR createSurface() const;
 
 		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating);
-		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating, const SwapChainSupportDetails& swapChainSupport);
+		[[nodiscard]] vk::raii::SwapchainKHR createSwapChain(bool recreating, const SwapChainSupportDetails &swapChainSupport);
 		[[nodiscard]] std::vector<vk::Image> createSwapChainImages() const;
 		[[nodiscard]] vk::Format createSwapChainImageFormat();
 		[[nodiscard]] vk::Extent2D createExtent();

@@ -268,6 +268,9 @@ namespace squi {
 						Text{
 							.text = std::format("Size: {}x{}", renderObject->size.x, renderObject->size.y),
 						},
+						Text{
+							.text = std::format("Position: {}x{}", renderObject->pos.x, renderObject->pos.y),
+						},
 					},
 				},
 			};
