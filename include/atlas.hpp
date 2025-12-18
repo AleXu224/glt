@@ -27,6 +27,7 @@ namespace squi {
 		};
 		// Allocating on the heap because it's too big for the stack
 		std::vector<Row> rows{};
+		std::vector<unsigned char> shadowBuffer = std::vector<unsigned char>(AtlasSize * AtlasSize, 0);
 		size_t availableHeight = AtlasSize;
 
 		std::string key;

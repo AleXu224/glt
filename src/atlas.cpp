@@ -58,21 +58,30 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	// 	.mipLevel = 0,
 	// 	.arrayLayer = 0,
 	// });
+
+	for (int y = 0; y < height; y++) {
+		auto yOffset = static_cast<ptrdiff_t>(y * AtlasSize + usedRow->yOffset * AtlasSize);
+		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
+		memcpy(shadowBuffer.data() + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
+	}
+
 	if (!this->textureWriter) {
 		auto cmd = Engine::CommandQueue::makeCommandBuffer();
 		cmd->commandBuffer.begin({});
 		this->textureWriter = this->texture->getWriter(
 			cmd,
 			{
-				.makeReadable = true,
+				.makeReadable = false,
 			}
 		);
-	}
-	auto *textureData = reinterpret_cast<unsigned char *>(this->textureWriter->memory);
-	for (int y = 0; y < height; y++) {
-		auto yOffset = static_cast<ptrdiff_t>(y * AtlasSize + usedRow->yOffset * AtlasSize);
-		auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
-		memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
+		memcpy(this->textureWriter->memory, shadowBuffer.data(), AtlasSize * AtlasSize);
+	} else {
+		auto *textureData = reinterpret_cast<unsigned char *>(this->textureWriter->memory);
+		for (int y = 0; y < height; y++) {
+			auto yOffset = static_cast<ptrdiff_t>(y * AtlasSize + usedRow->yOffset * AtlasSize);
+			auto xOffset = static_cast<ptrdiff_t>(AtlasSize - usedRow->availableWidth);
+			memcpy(textureData + yOffset + xOffset, data + static_cast<ptrdiff_t>(y * width), width);
+		}
 	}
 
 	// Prepare return values
@@ -93,9 +102,9 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 ImageProvider squi::Atlas::getProvier() {
 	return ImageProvider{
 		.key = key,
-		.provider = [&]() -> ImageData {
+		.provider = [this]() -> ImageData {
 			return ImageData{
-				.data = std::vector<unsigned char>(AtlasSize * AtlasSize, 0),
+				.data = shadowBuffer,
 				.width = AtlasSize,
 				.height = AtlasSize,
 				.channels = 1,

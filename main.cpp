@@ -73,10 +73,12 @@ struct Test : StatefulWidget {
 		}
 
 		Child build(const Element &) override {
-			return Column{
+			return ScrollView{
 				.children{
 					Image{
-						.image = ImageProvider::fromUrl("https://www.google.com/logos/doodles/2025/seasonal-holidays-2025-6753651837110711.4-la1f1f1f.gif"),
+						.image = ImageProvider{
+							.key = FontStore::defaultFont.key,
+						},
 					},
 					NumberBox{
 						.value = number,

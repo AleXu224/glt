@@ -241,13 +241,6 @@ namespace squi::core {
 						inputState.frameEnd();
 					}
 
-					for (const auto &font: FontStore::fonts()) {
-						auto fontPtr = font.second.lock();
-						if (!fontPtr) continue;
-
-						fontPtr->writePendingTextures();
-					}
-
 					if (needsRedraw || needsRelayout || needsReposition || forceRedraw) {
 						needsRedraw = false;
 						needsRelayout = false;
@@ -261,6 +254,13 @@ namespace squi::core {
 				},
 				[&]() {
 					renderObject.draw();
+
+					for (const auto &font: FontStore::fonts()) {
+						auto fontPtr = font.second.lock();
+						if (!fontPtr) continue;
+
+						fontPtr->writePendingTextures();
+					}
 				},
 				[&]() {
 					rootElement->unmount();
