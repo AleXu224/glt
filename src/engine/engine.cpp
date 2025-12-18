@@ -140,7 +140,7 @@ void Engine::Runner::draw() {
 		.pSignalSemaphores = &*instance.currentFrame.get().renderSemaphore,
 	};
 
-	// Engine::CommandQueue::frameEnd();
+	Engine::CommandQueue::frameEnd();
 
 	Vulkan::getGraphicsQueue().resource.submit(submitInfo, *instance.currentFrame.get().renderFence);
 

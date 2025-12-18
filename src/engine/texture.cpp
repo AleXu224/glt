@@ -1,9 +1,11 @@
 #include "engine/texture.hpp"
 
+#include "engine/commandQueue.hpp"
 #include "engine/utils.hpp"
 #include "vulkan.hpp"
 
-void Engine::Texture::transitionLayout(vk::raii::CommandBuffer *cmd, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
+
+void Engine::Texture::transitionLayout(BufferContainer cmd, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
 	vk::ImageSubresourceRange subresourceRange{
 		.aspectMask = vk::ImageAspectFlagBits::eColor,
 		.baseMipLevel = 0,
@@ -38,12 +40,12 @@ void Engine::Texture::transitionLayout(vk::raii::CommandBuffer *cmd, vk::ImageLa
 		.subresourceRange = subresourceRange,
 	};
 
-	cmd->pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, imageMemBarrier);
+	cmd->commandBuffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, imageMemBarrier);
 }
 
 Engine::Texture::Texture(const Args &args)
-	: image(createImage(args)),
-	  memory(createMemory()),
+	: image(std::make_shared<vk::raii::Image>(createImage(args))),
+	  memory(std::make_shared<vk::raii::DeviceMemory>(createMemory())),
 	  sampler(createSampler(args)),
 	  view(createImageView(args)),
 	  width(args.width),
@@ -59,6 +61,9 @@ Engine::Texture::Texture(const Args &args)
 	);
 	memset(writer.memory, 0, width * height * channels);
 	writer.write();
+
+	args.cmd->pushResource(image);
+	args.cmd->pushResource(memory);
 
 	if (mipLevels > 1) {
 		generateMipmaps(args.cmd);
@@ -89,7 +94,7 @@ vk::raii::ImageView Engine::Texture::createImageView(const Args &args) const {
 }
 
 vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
-	image.bindMemory(*memory, 0);
+	image->bindMemory(**memory, 0);
 
 	vk::SamplerCreateInfo createInfo{
 		.magFilter = vk::Filter::eLinear,
@@ -111,7 +116,7 @@ vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
 }
 
 vk::raii::DeviceMemory Engine::Texture::createMemory() const {
-	auto reqs = image.getMemoryRequirements();
+	auto reqs = image->getMemoryRequirements();
 
 	vk::MemoryAllocateInfo allocInfo{
 		.allocationSize = reqs.size,
@@ -121,7 +126,7 @@ vk::raii::DeviceMemory Engine::Texture::createMemory() const {
 	return {Vulkan::device(), allocInfo};
 }
 
-void Engine::Texture::generateMipmaps(vk::raii::CommandBuffer *cmd) {
+void Engine::Texture::generateMipmaps(BufferContainer cmd) {
 	int32_t mipWidth = width;
 	int32_t mipHeight = height;
 
@@ -146,14 +151,14 @@ void Engine::Texture::generateMipmaps(vk::raii::CommandBuffer *cmd) {
 		imageMemBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
 		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		cmd->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
 
 		imageMemBarrier.subresourceRange.baseMipLevel = i;
 		imageMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
 		imageMemBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
 		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		cmd->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
 
 		vk::ImageBlit blit{
 			.srcSubresource{
@@ -178,7 +183,7 @@ void Engine::Texture::generateMipmaps(vk::raii::CommandBuffer *cmd) {
 			},
 		};
 
-		cmd->blitImage(
+		cmd->commandBuffer.blitImage(
 			*this->image,
 			vk::ImageLayout::eTransferSrcOptimal,
 			*this->image,
@@ -194,14 +199,14 @@ void Engine::Texture::generateMipmaps(vk::raii::CommandBuffer *cmd) {
 		imageMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		cmd->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
 
 		imageMemBarrier.subresourceRange.baseMipLevel = i;
 		imageMemBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
 		imageMemBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		cmd->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {}, imageMemBarrier);
 
 		if (mipWidth > 1) mipWidth /= 2;
 		if (mipHeight > 1) mipHeight /= 2;
@@ -250,9 +255,9 @@ vk::Format Engine::Texture::formatFromChannels(uint32_t channels) {
 	}
 }
 
-Engine::TextureWriter Engine::Texture::getWriter(vk::raii::CommandBuffer *cmd, Engine::TextureWriter::Args args) {
+Engine::TextureWriter Engine::Texture::getWriter(BufferContainer cmd, Engine::TextureWriter::Args args) {
 	return Engine::TextureWriter(
-		width, height, image, cmd, &preservedResources,
+		width, height, *image, cmd,
 		[this, cmd](vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
 			transitionLayout(cmd, oldLayout, newLayout, srcStageMask, dstStageMask);
 		},
@@ -269,8 +274,7 @@ Engine::TextureWriter::TextureWriter(TextureWriter &&other)
 	  cmd(std::move(other.cmd)),
 	  stagingBuffer(std::move(other.stagingBuffer)),
 	  stagingMemory(std::move(other.stagingMemory)),
-	  transitionFunc(std::move(other.transitionFunc)),
-	  preservedResources(other.preservedResources) {
+	  transitionFunc(std::move(other.transitionFunc)) {
 	other.valid = false;
 }
 
@@ -284,7 +288,6 @@ Engine::TextureWriter &Engine::TextureWriter::operator=(TextureWriter &&other) {
 	this->stagingBuffer = std::move(other.stagingBuffer);
 	this->stagingMemory = std::move(other.stagingMemory);
 	this->transitionFunc = std::move(other.transitionFunc);
-	this->preservedResources = other.preservedResources;
 
 	other.valid = false;
 	return *this;
@@ -294,12 +297,11 @@ Engine::TextureWriter::TextureWriter(
 	uint32_t width,
 	uint32_t height,
 	vk::raii::Image &image,
-	vk::raii::CommandBuffer *cmd,
-	std::vector<std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>> *preservedResources,
+	BufferContainer cmd,
 	std::function<void(vk::ImageLayout, vk::ImageLayout, vk::PipelineStageFlags, vk::PipelineStageFlags)> transitionFunc,
 	Args args
 )
-	: width(width), height(height), image(&image), cmd(std::move(cmd)), transitionFunc(transitionFunc), preservedResources(preservedResources) {
+	: width(width), height(height), image(&image), cmd(std::move(cmd)), transitionFunc(transitionFunc) {
 	vk::ImageLayout srcLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 	vk::PipelineStageFlags srcFlags = vk::PipelineStageFlagBits::eFragmentShader;
 	if (args.first) {
@@ -317,9 +319,9 @@ Engine::TextureWriter::TextureWriter(
 		.sharingMode = vk::SharingMode::eExclusive,
 	};
 
-	stagingBuffer = {Vulkan::device(), bufferInfo};
+	stagingBuffer = std::make_shared<vk::raii::Buffer>(Vulkan::device(), bufferInfo);
 
-	auto stagingBufferMemReqs = stagingBuffer.getMemoryRequirements();
+	auto stagingBufferMemReqs = stagingBuffer->getMemoryRequirements();
 	vk::MemoryAllocateInfo stagingAllocInfo{
 		.allocationSize = stagingBufferMemReqs.size,
 		.memoryTypeIndex = findMemoryType(
@@ -328,11 +330,11 @@ Engine::TextureWriter::TextureWriter(
 		),
 	};
 
-	stagingMemory = {Vulkan::device(), stagingAllocInfo};
-	stagingBuffer.bindMemory(*stagingMemory, 0);
+	stagingMemory = std::make_shared<vk::raii::DeviceMemory>(Vulkan::device(), stagingAllocInfo);
+	stagingBuffer->bindMemory(*stagingMemory, 0);
 
 	// Map the staging buffer memory
-	memory = stagingMemory.mapMemory(0, reqs.size);
+	memory = stagingMemory->mapMemory(0, reqs.size);
 	valid = true;
 
 	if (args.makeReadable) {
@@ -352,7 +354,7 @@ Engine::TextureWriter::TextureWriter(
 			.imageExtent{width, height, 1},
 		};
 
-		cmd->copyImageToBuffer(*image, vk::ImageLayout::eTransferSrcOptimal, *stagingBuffer, region);
+		this->cmd->commandBuffer.copyImageToBuffer(*image, vk::ImageLayout::eTransferSrcOptimal, *stagingBuffer, region);
 		transitionFunc(vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer);
 	}
 }
@@ -361,7 +363,7 @@ void Engine::TextureWriter::write() {
 	if (!valid) return;
 	valid = false;
 
-	stagingMemory.unmapMemory();
+	stagingMemory->unmapMemory();
 
 	// Copy data from staging buffer to image
 	vk::BufferImageCopy region{
@@ -378,13 +380,12 @@ void Engine::TextureWriter::write() {
 		.imageExtent = {width, height, 1},
 	};
 
-	cmd->copyBufferToImage(*stagingBuffer, **image, vk::ImageLayout::eTransferDstOptimal, region);
+	cmd->commandBuffer.copyBufferToImage(*stagingBuffer, **image, vk::ImageLayout::eTransferDstOptimal, region);
 
 	transitionFunc(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader);
 
-	if (preservedResources) {
-		preservedResources->emplace_back(std::move(stagingBuffer), std::move(stagingMemory));
-	}
+	cmd->pushResource(stagingBuffer);
+	cmd->pushResource(stagingMemory);
 }
 
 Engine::TextureWriter::~TextureWriter() {

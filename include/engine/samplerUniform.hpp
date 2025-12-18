@@ -7,7 +7,6 @@
 #include "vulkanIncludes.hpp"
 #include <functional>
 #include <ranges>
-#include <thread>
 #include <utility>
 
 

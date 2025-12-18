@@ -3,7 +3,6 @@
 #include <cstddef>
 
 #include "engine/commandQueue.hpp"
-#include "engine/vulkan.hpp"
 #include "store/texture.hpp"
 #include "texture.hpp"
 
@@ -60,16 +59,14 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	// 	.arrayLayer = 0,
 	// });
 	if (!this->textureWriter) {
-		auto &pair = Engine::CommandQueue::pushStorage(Engine::Vulkan::makeCommandBuffer());
-		pair.second.begin({});
+		auto cmd = Engine::CommandQueue::makeCommandBuffer();
+		cmd->commandBuffer.begin({});
 		this->textureWriter = this->texture->getWriter(
-			&pair.second,
+			cmd,
 			{
 				.makeReadable = true,
 			}
 		);
-		pair.second.end();
-		Engine::CommandQueue::pushCommandBuffer(&pair.second);
 	}
 	auto *textureData = reinterpret_cast<unsigned char *>(this->textureWriter->memory);
 	for (int y = 0; y < height; y++) {
@@ -110,7 +107,9 @@ ImageProvider squi::Atlas::getProvier() {
 void squi::Atlas::writePendingTextures() {
 	if (this->textureWriter) {
 		this->textureWriter->write();
-		Engine::CommandQueue::pushCommandBuffer(this->textureWriter->getCmd());
+		auto cmd = this->textureWriter->getCmd();
+		cmd->commandBuffer.end();
+		Engine::CommandQueue::push(cmd);
 		this->textureWriter.reset();
 	}
 }
