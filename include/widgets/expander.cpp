@@ -3,6 +3,7 @@
 #include "widgets/box.hpp"
 #include "widgets/column.hpp"
 #include "widgets/row.hpp"
+#include "widgets/slideIn.hpp"
 #include "widgets/text.hpp"
 
 namespace squi {
@@ -68,15 +69,18 @@ namespace squi {
 					},
 				},
 				expanded//
-					? Box{
-						  .widget{
-							  .height = Size::Shrink,
+					? SlideIn{
+						  .direction = Direction::top,
+						  .child = Box{
+							  .widget{
+								  .height = Size::Shrink,
+							  },
+							  .color = Color::white * 0.0326f,
+							  .borderColor = Color::black * 0.1f,
+							  .borderWidth = BorderWidth{1.f}.withTop(0.f),
+							  .borderPosition = Box::BorderPosition::outset,
+							  .child = widget->content,
 						  },
-						  .color = Color::white * 0.0326f,
-						  .borderColor = Color::black * 0.1f,
-						  .borderWidth = BorderWidth{1.f}.withTop(0.f),
-						  .borderPosition = Box::BorderPosition::outset,
-						  .child = widget->content,
 					  }
 					: Child{},
 			}

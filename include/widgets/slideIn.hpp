@@ -10,6 +10,7 @@ namespace squi {
 		Key key;
 		Args widget;
 		Direction direction = Direction::top;
+		bool followChild = false;
 		Child child;
 
 		struct State : WidgetState<SlideIn> {

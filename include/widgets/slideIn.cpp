@@ -7,6 +7,9 @@ namespace squi {
 		auto newWidget = widget->widget;
 		newWidget.width = newWidget.width.value_or(Size::Wrap);
 		newWidget.height = newWidget.height.value_or(Size::Wrap);
+		if (!widget->followChild) {
+			newWidget.alignment = newWidget.alignment.value_or(Alignment::TopLeft);
+		}
 
 		return Container{
 			.widget = newWidget,

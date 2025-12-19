@@ -35,6 +35,8 @@ namespace squi {
 			void popOverlay() const;
 
 			void popPage() const;
+
+			bool is(const Element &element) const;
 		};
 
 		static Context of(const Element &element);

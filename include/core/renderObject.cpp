@@ -179,6 +179,18 @@ namespace squi::core {
 		}
 
 		positionContentAt(contentBounds);
+
+		if (!wrapWidth && !wrapHeight) return;
+		auto children = getChildren();
+		if (children.empty()) return;
+		auto &firstChild = children.front();
+		if (wrapWidth && !alignment.has_value()) {
+			pos.x = firstChild->getLayoutRect().left - padding.left;
+		}
+
+		if (wrapHeight && !alignment.has_value()) {
+			pos.y = firstChild->getLayoutRect().top - padding.top;
+		}
 	}
 
 	void RenderObject::draw() {

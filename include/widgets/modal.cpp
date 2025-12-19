@@ -2,6 +2,7 @@
 #include "navigator.hpp"
 #include "widgets/box.hpp"
 #include "widgets/gestureDetector.hpp"
+#include "widgets/slideIn.hpp"
 #include "widgets/stack.hpp"
 
 
@@ -19,22 +20,30 @@ namespace squi {
 						}
 					},
 					.child = Box{
-						.color{0.f, 0.f, 0.f, 0.4f},
+						.color = backgroundColor,
 					},
 				},
-				widget->child,
+				SlideIn{
+					.direction = Direction::bottom,
+					.followChild = true,
+					.child = widget->child,
+				},
 			},
 		};
 	}
 
 	void Modal::State::observeCloseEvent() {
 		closeObserver = widget->closeEvent.observe([this]() {
-			Navigator::of(*this->element).popOverlay();
+			if (Navigator::of(*this->element).is(*this->element))
+				Navigator::of(*this->element).popOverlay();
 		});
 	}
 
 	void Modal::State::initState() {
 		observeCloseEvent();
+
+		backgroundColor.mount(this);
+		backgroundColor = Color{0.f, 0.f, 0.f, 0.4f};
 	}
 
 	void Modal::State::widgetUpdated() {

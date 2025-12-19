@@ -46,6 +46,18 @@ namespace squi::core {
 		getApp()->postRepositionTasks.emplace_back(task);
 	}
 
+	bool Element::isChildOf(const Child &child) const {
+		if (!child) return false;
+		auto currentElement = this;
+		while (currentElement) {
+			if (currentElement->widget.get() == child.get()) {
+				return true;
+			}
+			currentElement = currentElement->parent;
+		}
+		return false;
+	}
+
 	ElementPtr Element::updateChild(ElementPtr child, const WidgetPtr &newWidget, size_t index, size_t depth) {
 		if (!newWidget || (child && child->shouldDispose)) {
 			if (child) {

@@ -19,6 +19,12 @@ namespace squi {
 
 			[[nodiscard]] Children createButtons();
 
+			void initState() override {
+				for (size_t i = 0; i < widget->items.size(); ++i) {
+					selectedIndices.insert(i);
+				}
+			}
+
 			Child build(const Element &element) override;
 		};
 	};

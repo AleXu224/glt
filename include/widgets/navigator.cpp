@@ -93,4 +93,16 @@ namespace squi {
 			),
 		};
 	}
+
+	bool Navigator::Context::is(const Element &element) const {
+		if (auto nav = navigator.lock()) {
+			if (nav->pages.empty()) return false;
+			if (nav->pages.back().overlays.empty()) {
+				return element.isChildOf(nav->pages.back().page);
+			} else {
+				return element.isChildOf(nav->pages.back().overlays.back());
+			}
+		}
+		return false;
+	}
 }// namespace squi
