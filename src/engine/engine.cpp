@@ -160,8 +160,5 @@ void Engine::Runner::draw() {
 		outdatedFramebuffer = true;
 	}
 	instance.frameEnd();
-	
-	Engine::CommandQueue::cleanup();
-
 	frameNumber++;
 }

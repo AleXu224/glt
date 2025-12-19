@@ -47,11 +47,16 @@ namespace Engine {
 		}
 
 		static inline void frameEnd() {
-			std::scoped_lock lock{mtx};
+			std::vector<BufferContainer> toSubmit;
+			{
+				std::scoped_lock lock{mtx};
+				if (storage.empty()) return;
+				toSubmit.swap(storage);
+			}
 
 			std::vector<vk::CommandBuffer> cmds;
-			cmds.reserve(storage.size());
-			for (auto cmdContainer: storage) {
+			cmds.reserve(toSubmit.size());
+			for (auto &cmdContainer: toSubmit) {
 				cmds.push_back(*cmdContainer->commandBuffer);
 			}
 

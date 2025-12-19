@@ -149,16 +149,16 @@ void Engine::Texture::generateMipmaps(BufferContainer cmd) {
 		imageMemBarrier.subresourceRange.baseMipLevel = i - 1;
 		imageMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		imageMemBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
 
 		imageMemBarrier.subresourceRange.baseMipLevel = i;
-		imageMemBarrier.oldLayout = vk::ImageLayout::eUndefined;
+		imageMemBarrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		imageMemBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+		imageMemBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
 		imageMemBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
+		cmd->commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader, vk::PipelineStageFlagBits::eTransfer, {}, {}, {}, imageMemBarrier);
 
 		vk::ImageBlit blit{
 			.srcSubresource{

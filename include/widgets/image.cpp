@@ -93,6 +93,7 @@ namespace squi {
 						std::scoped_lock _{app->taskMtx};
 						app->preUpdateTasks.emplace_back([app]() {
 							app->needsRelayout = true;
+							app->inputQueue.push(StateChange{});
 						});
 					}
 				});
