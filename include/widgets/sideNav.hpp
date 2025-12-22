@@ -15,6 +15,7 @@ namespace squi {
 		Key key;
 		Args widget;
 		std::function<void()> backAction;
+		bool defaultExpanded = true;
 		std::vector<Page> pages{};
 
 		struct State : WidgetState<SideNav> {
@@ -24,6 +25,7 @@ namespace squi {
 
 			void initState() override {
 				navWidth.mount(this);
+				expanded = widget->defaultExpanded;
 			}
 
 			Child build(const Element &element) override;
