@@ -9,6 +9,7 @@
 #include "include/widgets/image.hpp"
 #include "include/widgets/paginator.hpp"
 #include "include/widgets/scrollview.hpp"
+#include "include/widgets/sideNav.hpp"
 #include "include/widgets/textBox.hpp"
 #include "include/widgets/topNav.hpp"
 #include "widgets/animatedBox.hpp"
@@ -261,6 +262,28 @@ int main(int /*unused*/, char ** /*unused*/) {
 		},
 		.child = TopNav{
 			.pages{
+				TopNav::Page{
+					.name = "Test Side Nav",
+					.content = SideNav{
+						.backAction = []() {
+							std::println("Back action triggered");
+						},
+						.pages{
+							SideNav::Page{
+								.name = "Page 1",
+								.content = Text{.text = "This is page 1"},
+							},
+							SideNav::Page{
+								.name = "Page 2",
+								.content = Text{.text = "This is page 2"},
+							},
+							SideNav::Page{
+								.name = "Page 3",
+								.content = Text{.text = "This is page 3"},
+							},
+						},
+					},
+				},
 				TopNav::Page{
 					.name = "Test Paginator",
 					.content = Paginator{
