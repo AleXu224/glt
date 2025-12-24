@@ -154,6 +154,7 @@ namespace squi {
 		if (!app) return;
 
 		state.inputState = &app->inputState;
+		state.renderObject = this;
 	}
 
 	bool Gesture::DetectorRenderObject::canClick() const {

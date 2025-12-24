@@ -26,6 +26,7 @@ namespace squi {
 
 		Child child{};
 
+		struct DetectorRenderObject;
 		struct State {
 			const InputState *inputState = nullptr;
 			// Wether the cursor is directly above the widget, without a stacked widget being on top
@@ -40,6 +41,7 @@ namespace squi {
 
 			vec2 scrollDelta{};
 			vec2 dragStart{};
+			DetectorRenderObject *renderObject = nullptr;
 
 			// Get how much the scroll has moved in the last frame
 			[[nodiscard]] const vec2 &getScroll() const;

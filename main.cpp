@@ -11,6 +11,7 @@
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/sideNav.hpp"
 #include "include/widgets/textBox.hpp"
+#include "include/widgets/tooltip.hpp"
 #include "include/widgets/topNav.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
@@ -271,7 +272,10 @@ int main(int /*unused*/, char ** /*unused*/) {
 						.pages{
 							SideNav::Page{
 								.name = "Page 1",
-								.content = Text{.text = "This is page 1"},
+								.content = Tooltip{
+									.text = "This is a tooltip for Page 1",
+									.child = Text{.text = "This is page 1"},
+								},
 							},
 							SideNav::Page{
 								.name = "Page 2",

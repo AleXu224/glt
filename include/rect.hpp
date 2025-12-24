@@ -52,6 +52,15 @@ namespace squi {
 			return *this;
 		}
 
+		Rect withOffset(vec2 offset) const {
+			Rect r = *this;
+			r.left += offset.x;
+			r.right += offset.x;
+			r.top += offset.y;
+			r.bottom += offset.y;
+			return r;
+		}
+
 		[[nodiscard]] bool contains(const vec2 &position) const {
 			return position.x >= left && position.x < right && position.y >= top && position.y < bottom;
 		}

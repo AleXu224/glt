@@ -63,19 +63,51 @@ namespace squi {
 		});
 	}
 
-	void Navigator::Context::popOverlay() const {
+	void Navigator::Context::popOverlay(Key key) const {
 		auto nav = navigator.lock();
 		if (!nav) return;
 		if (nav->pages.empty()) return;
+		if (key) {
+			auto &overlays = nav->pages.back().overlays;
+			auto it = std::find_if(
+				overlays.begin(),
+				overlays.end(),
+				[&key](const Child &child) {
+					return child->getKey() == *key;
+				}
+			);
+			if (it != overlays.end()) {
+				nav->setState([&]() {
+					overlays.erase(it);
+				});
+			}
+			return;
+		}
 		nav->setState([&]() {
 			nav->pages.back().overlays.pop_back();
 		});
 	}
 
-	void Navigator::Context::popPage() const {
+	void Navigator::Context::popPage(Key key) const {
 		auto nav = navigator.lock();
 		if (!nav) return;
 		if (nav->pages.empty()) return;
+		if (key) {
+			auto &pages = nav->pages;
+			auto it = std::find_if(
+				pages.begin(),
+				pages.end(),
+				[&key](const Page &page) {
+					return page.page->getKey() == *key;
+				}
+			);
+			if (it != pages.end()) {
+				nav->setState([&]() {
+					pages.erase(it);
+				});
+			}
+			return;
+		}
 		nav->setState([&]() {
 			nav->pages.pop_back();
 		});

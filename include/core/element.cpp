@@ -311,7 +311,7 @@ namespace squi::core {
 		this->attachRenderObject();
 	}
 
-	RenderObjectElement *RenderObjectElement::getAncestorRenderObjectElement(Element *element) {
+	RenderObjectElement *RenderObjectElement::getAncestorRenderObjectElement(const Element *element) {
 		Element *ancestor = element->parent;
 		while (ancestor) {
 			if (auto *roe = dynamic_cast<RenderObjectElement *>(ancestor)) {

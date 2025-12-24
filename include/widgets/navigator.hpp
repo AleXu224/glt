@@ -32,9 +32,9 @@ namespace squi {
 			void pop() const;
 
 			void popOverlays() const;
-			void popOverlay() const;
+			void popOverlay(Key key = nullptr) const;
 
-			void popPage() const;
+			void popPage(Key key = nullptr) const;
 
 			bool is(const Element &element) const;
 		};

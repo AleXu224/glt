@@ -131,10 +131,10 @@ namespace squi::core {
 
 		void updateIndex(size_t index) override;
 
+		static RenderObjectElement *getAncestorRenderObjectElement(const Element *element);
 	private:
 		void attachRenderObject();
 		void detachRenderObject();
-		static RenderObjectElement *getAncestorRenderObjectElement(Element *element);
 	};
 
 	struct SingleChildRenderObjectElement : RenderObjectElement {
