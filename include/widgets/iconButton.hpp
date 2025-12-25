@@ -10,6 +10,7 @@ namespace squi {
 		Args widget;
 		char32_t icon = 0xef4a;
 		Button::Theme theme = Button::Theme::Standard();
+		bool disabled = false;
 		std::function<void()> onClick{};
 
 		struct State : WidgetState<IconButton> {

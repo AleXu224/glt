@@ -11,6 +11,7 @@ namespace squi {
 				return args;
 			}(),
 			.theme = widget->theme,
+			.disabled = widget->disabled,
 			.onStatusChange = [this](Button::ButtonStatus status) {
 				setState([this, status]() {
 					this->status = status;

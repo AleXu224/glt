@@ -7,6 +7,7 @@ namespace squi {
 	struct ToggleButton : StatelessWidget {
 		// Args
 		Key key;
+		Args widget{};
 		bool disabled = false;
 		bool active = false;
 		std::function<void(bool)> onToggle;
@@ -14,6 +15,7 @@ namespace squi {
 
 		[[nodiscard]] Child build(const Element &) const {
 			return Button{
+				.widget = widget,
 				.theme = active ? Button::Theme::Accent() : Button::Theme::Standard(),
 				.disabled = disabled,
 				.onClick = [this]() {

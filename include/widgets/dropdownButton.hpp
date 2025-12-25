@@ -9,6 +9,7 @@ namespace squi {
 	struct DropdownButton : StatefulWidget {
 		// Args
 		Key key;
+		Args widget{};
 		Button::Theme theme = Button::Theme::Standard();
 		bool disabled = false;
 		std::string text = "Dropdown";

@@ -1,10 +1,12 @@
 #include "expander.hpp"
 #include "iconButton.hpp"
+#include "utils.hpp"
 #include "widgets/box.hpp"
 #include "widgets/column.hpp"
 #include "widgets/row.hpp"
 #include "widgets/slideIn.hpp"
 #include "widgets/text.hpp"
+
 
 namespace squi {
 	core::Child Expander::State::build(const Element &) {
@@ -34,13 +36,22 @@ namespace squi {
 								},
 								.spacing = 4.f,
 								.children{
-									widget->title.empty()//
-										? Child{}
-										: Text{
-											  .text = widget->title,
-											  .fontSize = 14.f,
-											  .color = Color::white,
-										  },
+									std::visit(
+										utils::overloaded{
+											[](const std::string &val) -> Child {
+												if (val.empty()) return Child{};
+												return Text{
+													.text = val,
+													.fontSize = 14.f,
+													.color = Color::white,
+												};
+											},
+											[](const Child &val) -> Child {
+												return val;
+											},
+										},
+										widget->title
+									),
 									widget->subtitle.empty()//
 										? Child{}
 										: Text{
@@ -51,7 +62,7 @@ namespace squi {
 								},
 							},
 							widget->action ? widget->action : Child{},
-							widget->content//
+							widget->content && !widget->alwaysExpanded//
 								? IconButton{
 									  .widget{
 										  .margin = Margin{}.withLeft(16.f),
