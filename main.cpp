@@ -11,6 +11,7 @@
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/sideNav.hpp"
 #include "include/widgets/textBox.hpp"
+#include "include/widgets/toggleSwitch.hpp"
 #include "include/widgets/tooltip.hpp"
 #include "include/widgets/topNav.hpp"
 #include "widgets/animatedBox.hpp"
@@ -77,9 +78,14 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return ScrollView{
 				.children{
-					Image{
-						.image = ImageProvider{
-							.key = FontStore::defaultFont.key,
+					ToggleSwitch{
+						.active = toggled,
+						.onToggle = [this](bool val) {
+							setState([&]() {
+								toggled = val;
+								rotation = toggled ? 45.f : 0.f;
+								scale = toggled ? 2.f : 1.f;
+							});
 						},
 					},
 					NumberBox{
@@ -200,6 +206,11 @@ struct Test : StatefulWidget {
 							.text = "This is some text inside a container that clips its content. "
 									"When the text is too long, it should be clipped to fit within the container's bounds. "
 									"This ensures that any overflowing content does not disrupt the overall layout of the application.",
+						},
+					},
+					Image{
+						.image = ImageProvider{
+							.key = FontStore::defaultFont.key,
 						},
 					},
 				},
