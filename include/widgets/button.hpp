@@ -47,6 +47,13 @@ namespace squi {
 				}
 				throw std::runtime_error("Invalid button status");
 			}
+
+			void forAll(auto &&callback) {
+				callback(resting);
+				callback(hovered);
+				callback(active);
+				callback(disabled);
+			}
 		};
 
 		// Args
