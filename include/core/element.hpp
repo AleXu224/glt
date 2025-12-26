@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/key.hpp"
 #include "renderObject.hpp"
 #include "state.hpp"
 #include <cassert>
@@ -17,14 +18,17 @@ namespace squi::core {
 		bool mounted = false;
 		bool shouldDispose = false;
 
+		static inline std::unordered_map<size_t, ConstElementPtr> globalKeyRegistry;
+		static ConstElementPtr getElementForGlobalKey(const Key &key);
+		static void registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element);
+		static void unregisterGlobalKey(const GlobalKey &key);
+
 		Element(const Element &) = delete;
 		Element(Element &&) = delete;
 		Element &operator=(const Element &) = delete;
 		Element &operator=(Element &&) = delete;
 
-		Element(const WidgetPtr &widget) : widget(widget) {
-			assert(widget != nullptr);
-		};
+		Element(const WidgetPtr &widget);
 
 		virtual ~Element() = default;
 
@@ -33,19 +37,9 @@ namespace squi::core {
 			return static_cast<T *>(widget.get());
 		}
 
-		virtual void mount(Element *parent, size_t index, size_t depth) {
-			this->dirty = true;
-			this->parent = parent;
-			this->root = parent ? parent->root : this;
-			this->mounted = true;
-			this->index = index;
-			this->depth = depth;
-		}
+		virtual void mount(Element *parent, size_t index, size_t depth);
 
-		virtual void update(const WidgetPtr &newWidget) {
-			assert(this->mounted);
-			this->widget = newWidget;
-		}
+		virtual void update(const WidgetPtr &newWidget);
 
 		virtual void rebuild();
 
@@ -132,6 +126,7 @@ namespace squi::core {
 		void updateIndex(size_t index) override;
 
 		static RenderObjectElement *getAncestorRenderObjectElement(const Element *element);
+
 	private:
 		void attachRenderObject();
 		void detachRenderObject();

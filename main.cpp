@@ -10,6 +10,7 @@
 #include "include/widgets/paginator.hpp"
 #include "include/widgets/scrollview.hpp"
 #include "include/widgets/sideNav.hpp"
+#include "include/widgets/slider.hpp"
 #include "include/widgets/textBox.hpp"
 #include "include/widgets/toggleSwitch.hpp"
 #include "include/widgets/tooltip.hpp"
@@ -67,6 +68,7 @@ struct Test : StatefulWidget {
 		Animated<float> scale{.from = 1.f};
 		bool disabled = false;
 		double number = 0.0;
+		float sliderVal = 25.f;
 
 		bool toggled = false;
 
@@ -78,6 +80,20 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return ScrollView{
 				.children{
+					Slider{
+						.value = sliderVal,
+						.ticks = Slider::TickInterval{
+							5.f,
+						},
+						.onChange = [this](float val) {
+							auto newVal = std::round(val);
+							if (newVal != sliderVal) {
+								setState([&]() {
+									sliderVal = std::round(val);
+								});
+							}
+						},
+					},
 					ToggleSwitch{
 						.active = toggled,
 						.onToggle = [this](bool val) {

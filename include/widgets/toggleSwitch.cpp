@@ -3,6 +3,7 @@
 #include "widgets/animatedBox.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/row.hpp"
+#include "widgets/text.hpp"
 
 
 namespace squi {
@@ -49,7 +50,19 @@ namespace squi {
 				if (widget->onToggle) widget->onToggle(!widget->active);
 			},
 			.child = Row{
+				.widget{
+					.width = Size::Wrap,
+					.height = Size::Wrap,
+				},
+				.crossAxisAlignment = Row::Alignment::center,
+				.spacing = 8.f,
 				.children{
+					widget->statePosition == ToggleSwitch::StatePosition::Left//
+						? Text{
+							  .text = widget->active ? "On" : "Off",
+							  .color = Color::white,
+						  }
+						: Child{},
 					AnimatedBox{
 						.widget{
 							.width = 40.f,
@@ -73,6 +86,12 @@ namespace squi {
 							.borderRadius = hovered && !widget->disabled ? 7.f : 6.f,
 						},
 					},
+					widget->statePosition == ToggleSwitch::StatePosition::Right//
+						? Text{
+							  .text = widget->active ? "On" : "Off",
+							  .color = Color::white,
+						  }
+						: Child{},
 				},
 			},
 		};

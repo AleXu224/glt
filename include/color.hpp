@@ -20,6 +20,7 @@ namespace squi {
 		Color(const glm::vec4 &vec);
 		static Color css(int r, int g, int b, float a = 1.f);
 		static Color rgba(int r, int g, int b, float a = 1.f);
+		static Color rgb(int r, int g, int b);
 		static Color css(int rgb, float a = 1.f);
 
 		[[nodiscard]] operator glm::vec4() const;

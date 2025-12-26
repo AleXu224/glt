@@ -38,6 +38,27 @@ namespace squi {
 		});
 	}
 
+	void Navigator::Context::pushOrReplaceOverlay(const Child &child) const {
+		auto nav = navigator.lock();
+		if (!nav) return;
+		if (nav->pages.empty()) return;
+		auto &overlays = nav->pages.back().overlays;
+		auto it = std::find_if(
+			overlays.begin(),
+			overlays.end(),
+			[&child](const Child &existingChild) {
+				return existingChild->getKey() == child->getKey();
+			}
+		);
+		nav->setState([&]() {
+			if (it != overlays.end()) {
+				*it = child;
+			} else {
+				overlays.emplace_back(child);
+			}
+		});
+	}
+
 	void Navigator::Context::pop() const {
 		auto nav = navigator.lock();
 		if (!nav) return;

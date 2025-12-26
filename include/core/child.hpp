@@ -20,4 +20,5 @@ namespace squi::core {
 	using RenderObjectPtr = std::shared_ptr<RenderObject>;
 	using Context = std::shared_ptr<Element>;
 	using ElementPtr = std::shared_ptr<Element>;
+	using ConstElementPtr = std::shared_ptr<const Element>;
 }// namespace squi::core

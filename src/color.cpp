@@ -66,6 +66,9 @@ Color Color::css(int r, int g, int b, float a) {
 Color Color::rgba(int r, int g, int b, float a) {
 	return {r, g, b, static_cast<int>(a * 255.f)};
 }
+Color Color::rgb(int r, int g, int b) {
+	return {r, g, b, 255};
+}
 
 Color Color::css(int rgb, float a) {
 	return {static_cast<uint32_t>((rgb << 8) + static_cast<uint8_t>(a * 255.f))};

@@ -19,13 +19,14 @@ namespace squi::core {
 		virtual bool operator==(const KeyBase &other) const = 0;
 		[[nodiscard]] virtual std::size_t hash() const = 0;
 		[[nodiscard]] virtual std::string toString() const = 0;
+		virtual void registerWithElement(const Element &element) const {}
 
 		operator std::shared_ptr<const KeyBase>(this auto &&self) {
 			return std::make_shared<const std::remove_cvref_t<decltype(self)>>(std::forward<decltype(self)>(self));
 		}
 	};
 
-	struct NullKey : public KeyBase {
+	struct NullKey final : public KeyBase {
 		bool operator==(std::nullptr_t) const override {
 			return true;
 		}
@@ -45,7 +46,7 @@ namespace squi::core {
 
 	const inline std::shared_ptr<const KeyBase> nullKey = std::make_shared<NullKey>();
 
-	struct ValueKey : public KeyBase {
+	struct ValueKey final : public KeyBase {
 	private:
 		std::string value;
 
@@ -70,7 +71,7 @@ namespace squi::core {
 		const std::string &getValue() const { return value; }
 	};
 
-	struct IndexKey : public KeyBase {
+	struct IndexKey final : public KeyBase {
 	private:
 		int64_t value;
 
@@ -95,7 +96,7 @@ namespace squi::core {
 		[[nodiscard]] const int64_t &getValue() const { return value; }
 	};
 
-	struct ObjectKey : public KeyBase {
+	struct ObjectKey final : public KeyBase {
 	private:
 		const void *object;
 
@@ -118,6 +119,32 @@ namespace squi::core {
 		}
 
 		const void *getObject() const { return object; }
+	};
+
+	struct GlobalKey final : public KeyBase {
+	private:
+		static inline uint64_t nextId = 0;
+		uint64_t id;
+
+	public:
+		GlobalKey() : id(nextId++) {}
+
+		bool operator==(const KeyBase &other) const override {
+			if (const auto *otherGlobalKey = dynamic_cast<const GlobalKey *>(&other)) {
+				return id == otherGlobalKey->id;
+			}
+			return false;
+		}
+		std::size_t hash() const override {
+			return std::hash<uint64_t>{}(id);
+		}
+		std::string toString() const override {
+			return "[GlobalKey " + std::to_string(id) + "]";
+		}
+
+		void registerWithElement(const Element &element) const override;
+
+		~GlobalKey() override;
 	};
 
 	using Key = std::shared_ptr<const KeyBase>;

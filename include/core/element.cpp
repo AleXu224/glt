@@ -6,11 +6,50 @@
 
 namespace squi::core {
 	// Element
+	Element::Element(const WidgetPtr &widget) : std::enable_shared_from_this<Element>(), widget(widget) {
+		assert(widget != nullptr);
+	};
+
+	ConstElementPtr Element::getElementForGlobalKey(const Key &key) {
+		if (!key) return nullptr;
+		if (!dynamic_cast<const GlobalKey *>(key.get())) {
+			return nullptr;
+		}
+		auto it = globalKeyRegistry.find(key->hash());
+		if (it != globalKeyRegistry.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+	void Element::registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element) {
+		globalKeyRegistry[key.hash()] = element;
+	}
+	void Element::unregisterGlobalKey(const GlobalKey &key) {
+		globalKeyRegistry.erase(key.hash());
+	}
+
 	App *Element::getApp() const {
 		assert(this->root != nullptr);
 		auto *root = dynamic_cast<RootWidget::Element *>(this->root);
 		assert(root);
 		return root->app;
+	}
+
+	void Element::mount(Element *parent, size_t index, size_t depth) {
+		this->dirty = true;
+		this->parent = parent;
+		this->root = parent ? parent->root : this;
+		this->mounted = true;
+		this->index = index;
+		this->depth = depth;
+
+		widget->getKey().registerWithElement(*this);
+	}
+
+	void Element::update(const WidgetPtr &newWidget) {
+		assert(this->mounted);
+		this->widget = newWidget;
+		widget->getKey().registerWithElement(*this);
 	}
 
 	void Element::rebuild() {

@@ -28,6 +28,7 @@ namespace squi {
 			void push(const Child &child) const;
 
 			void pushOverlay(const Child &child) const;
+			void pushOrReplaceOverlay(const Child &child) const;
 
 			void pop() const;
 
