@@ -147,6 +147,10 @@ namespace squi {
 		};
 	}
 
+	Navigator::Context Navigator::of(const WidgetStateBase *state) {
+		return Navigator::of(*state->element);
+	}
+
 	bool Navigator::Context::is(const Element &element) const {
 		if (auto nav = navigator.lock()) {
 			if (nav->pages.empty()) return false;

@@ -41,5 +41,6 @@ namespace squi {
 		};
 
 		static Context of(const Element &element);
+		static Context of(const WidgetStateBase *state);
 	};
 }// namespace squi
