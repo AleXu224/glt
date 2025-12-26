@@ -7,6 +7,7 @@
 namespace squi {
 	struct ToggleSwitch : StatefulWidget {
 		// Args
+		#undef None
 		enum class StatePosition {
 			Left,
 			Right,

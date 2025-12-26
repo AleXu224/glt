@@ -72,7 +72,7 @@ namespace Engine {
 
 			auto &device = Vulkan::device();
 
-			auto res = device.waitForFences(*fence, true, 100000000);
+			auto res = device.waitForFences(*fence, true, UINT64_MAX);
 			if (res != vk::Result::eSuccess) {
 				throw std::runtime_error(std::format("Failed finishing the command buffer for command queue, error {}", vk::to_string(res)));
 			}

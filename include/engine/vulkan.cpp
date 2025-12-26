@@ -95,7 +95,7 @@ void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
 
 	auto &device = Vulkan::device();
 
-	auto res = device.waitForFences(*fence, true, 100000000);
+	auto res = device.waitForFences(*fence, true, UINT64_MAX);
 	if (res != vk::Result::eSuccess) {
 		throw std::runtime_error("Failed finishing the command buffer");
 	}
