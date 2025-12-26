@@ -12,15 +12,19 @@ namespace squi::core {
 
 	ConstElementPtr Element::getElementForGlobalKey(const Key &key) {
 		if (!key) return nullptr;
-		if (!dynamic_cast<const GlobalKey *>(key.get())) {
+		return getElementForGlobalKey(*key);
+	}
+	ConstElementPtr Element::getElementForGlobalKey(const KeyBase &key) {
+		if (!dynamic_cast<const GlobalKey *>(&key)) {
 			return nullptr;
 		}
-		auto it = globalKeyRegistry.find(key->hash());
+		auto it = globalKeyRegistry.find(key.hash());
 		if (it != globalKeyRegistry.end()) {
 			return it->second;
 		}
 		return nullptr;
 	}
+
 	void Element::registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element) {
 		globalKeyRegistry[key.hash()] = element;
 	}

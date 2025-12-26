@@ -20,6 +20,7 @@ namespace squi::core {
 
 		static inline std::unordered_map<size_t, ConstElementPtr> globalKeyRegistry;
 		static ConstElementPtr getElementForGlobalKey(const Key &key);
+		static ConstElementPtr getElementForGlobalKey(const KeyBase &key);
 		static void registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element);
 		static void unregisterGlobalKey(const GlobalKey &key);
 

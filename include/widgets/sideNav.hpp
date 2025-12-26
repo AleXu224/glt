@@ -24,8 +24,10 @@ namespace squi {
 			bool expanded = true;
 
 			void initState() override {
-				navWidth.mount(this);
 				expanded = widget->defaultExpanded;
+				navWidth.from = expanded ? 320.f : 48.f;
+				navWidth.to = expanded ? 320.f : 48.f;
+				navWidth.mount(this);
 			}
 
 			Child build(const Element &element) override;

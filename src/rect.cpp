@@ -42,3 +42,16 @@ Rect Rect::transformed(const glm::mat4 &m) const {
 		vec2{*maxX, *maxY}
 	};
 }
+[[nodiscard]] squi::Rect squi::Rect::dragInside(Rect other) const {
+	if (other.left < left) {
+		other.offset(vec2{left - other.left, 0.f});
+	} else if (other.right > right) {
+		other.offset(vec2{right - other.right, 0.f});
+	}
+	if (other.top < top) {
+		other.offset(vec2{0.f, top - other.top});
+	} else if (other.bottom > bottom) {
+		other.offset(vec2{0.f, bottom - other.bottom});
+	}
+	return other;
+}

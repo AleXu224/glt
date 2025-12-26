@@ -104,6 +104,8 @@ namespace squi {
 
 		[[nodiscard]] Rect transformed(const glm::mat4 &m) const;
 
+		[[nodiscard]] Rect dragInside(Rect other) const;
+
 		bool operator==(const Rect &other) const = default;
 	};
 }// namespace squi

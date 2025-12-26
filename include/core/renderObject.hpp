@@ -197,7 +197,7 @@ namespace squi::core {
 		void drawContent() override;
 
 		void update() override {
-			for (const auto &child: children) {
+			for (const auto &child: std::views::reverse(children)) {
 				child->update();
 			}
 		}

@@ -5,12 +5,12 @@
 #include "widgets/box.hpp"
 #include "widgets/button.hpp"
 #include "widgets/card.hpp"
-#include "widgets/column.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/navigator.hpp"
 #include "widgets/offset.hpp"
 #include "widgets/row.hpp"
+#include "widgets/scrollview.hpp"
 #include "widgets/stack.hpp"
 
 #include "utils.hpp"
@@ -127,21 +127,26 @@ namespace squi {
 					},
 				},
 				Offset{
-					.calculateContentBounds = [&](auto, const SingleChildRenderObject &renderObject) -> Rect {
-						auto rect = renderObject.getLayoutRect();
-						return Rect::fromPosSize(position, rect.size());
+					.calculateContentBounds = [&](Rect rect, const SingleChildRenderObject &renderObject) -> Rect {
+						auto objRect = Rect::fromPosSize(position, renderObject.getLayoutRect().size());
+						return rect.dragInside(objRect);
 					},
 					.child = SlideIn{
 						.child = Card{
 							.widget{
 								.width = Size::Shrink,
-								.height = Size::Shrink,
+								.height = Size::Wrap,
 								.sizeConstraints = BoxConstraints{
 									.minWidth = 100.f,
 								},
-								.padding = Padding{1.f, 4.f},
 							},
-							.child = Column{
+							.child = ScrollView{
+								.widget{
+									.height = Size::Wrap,
+								},
+								.scrollWidget{
+									.padding = Padding{1.f, 4.f},
+								},
 								.children = [this]() {
 									Children ret;
 
