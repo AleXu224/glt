@@ -6,9 +6,6 @@
 #include "widgets/misc/scrollViewData.hpp"
 
 
-#include <GLFW/glfw3.h>
-
-
 namespace squi {
 	struct ScrollView : StatefulWidget {
 		// Args
