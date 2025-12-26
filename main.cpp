@@ -15,9 +15,11 @@
 #include "include/widgets/toggleSwitch.hpp"
 #include "include/widgets/tooltip.hpp"
 #include "include/widgets/topNav.hpp"
+#include "include/widgets/visibility.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/liteFilter.hpp"
+#include "widgets/navigator.hpp"
 #include "widgets/numberBox.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"
@@ -102,6 +104,12 @@ struct Test : StatefulWidget {
 								rotation = toggled ? 45.f : 0.f;
 								scale = toggled ? 2.f : 1.f;
 							});
+						},
+					},
+					Visibility{
+						.visible = !toggled,
+						.child = Text{
+							.text = "This text is visible when not disabled",
 						},
 					},
 					NumberBox{
@@ -281,6 +289,24 @@ struct Test2 : StatefulWidget {
 	};
 };
 
+struct NavigatorTestPage : StatelessWidget {
+	// Args
+	Key key;
+	Args widget{};
+
+	[[nodiscard]] Child build(const Element &element) const {
+		return Button{
+			.onClick = [&]() {
+				Navigator::of(element).push(Button{
+					.onClick = [&]() {
+						Navigator::of(element).pop();
+					},
+				});
+			},
+		};
+	}
+};
+
 int main(int /*unused*/, char ** /*unused*/) {
 
 	App app{
@@ -314,6 +340,10 @@ int main(int /*unused*/, char ** /*unused*/) {
 							},
 						},
 					},
+				},
+				TopNav::Page{
+					.name = "Test Navigator",
+					.content = NavigatorTestPage{},
 				},
 				TopNav::Page{
 					.name = "Test Paginator",

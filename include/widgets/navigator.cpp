@@ -1,6 +1,7 @@
 #include "widgets/navigator.hpp"
 
 #include "widgets/stack.hpp"
+#include "widgets/visibility.hpp"
 
 namespace squi {
 	void Navigator::State::initState() {
@@ -9,11 +10,20 @@ namespace squi {
 
 	core::Child Navigator::State::build(const Element &) {
 		if (pages.empty()) return nullptr;
-		const auto &page = pages.back();
-		std::vector<Child> content{};
-		content.reserve(page.overlays.size() + 1);
-		content.push_back(page.page);
-		content.insert(content.end(), page.overlays.begin(), page.overlays.end());
+		Children content{};
+		for (const auto &page: pages) {
+			bool isTop = &page == &pages.back();
+			content.emplace_back(Visibility{
+				.visible = isTop,
+				.child = page.page,
+			});
+			for (const auto &overlay: page.overlays) {
+				content.emplace_back(Visibility{
+					.visible = isTop,
+					.child = overlay,
+				});
+			}
+		}
 
 		return Stack{
 			.widget = widget->widget,
