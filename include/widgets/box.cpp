@@ -31,8 +31,8 @@ namespace squi {
 	void Box::BoxRenderObject::drawSelf() {
 		if (!data->pipeline) return;
 
-		data->quad.size = size;
-		data->quad.position = pos;
+		data->quad.size = size.rounded();
+		data->quad.position = pos.rounded();
 
 		data->pipeline->bind();
 		auto index = data->pipeline->getIndexes();

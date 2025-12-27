@@ -25,10 +25,9 @@ float borderDistance(vec2 coords, vec2 halfRes, vec2 radius) {
 	vec2 posRight = vec2(halfRes.x, clamp(coords.y, 0.f, halfRes.y - radius.y));
 	float distTop = length(posTop - coords);
 	float distRight = length(posRight - coords);
-	float edgeDist =
-		distTop < distRight ? coords.y - halfRes.y : coords.x - halfRes.x;
+	float edgeDist = distTop < distRight ? coords.y - halfRes.y : coords.x - halfRes.x;
 
-	float finalDist = p2.x < 0.f || p2.y < 0.f ? edgeDist : distCorner;
+	float finalDist = p2.x <= 0.f || p2.y <= 0.f ? edgeDist : distCorner;
 	return finalDist;
 }
 
@@ -37,8 +36,9 @@ void main() {
 	// Border size order: top, right, bottom, left
 	vec2 borderSize = vec2(fragUv.x < 0.5 ? fragBorderSizes.w : fragBorderSizes.y, fragUv.y < 0.5 ? fragBorderSizes.x : fragBorderSizes.z);
 	// Border radius order: topleft, topright, bottomright, bottomleft
-	float borderRadius = fragUv.x < 0.5 ? (fragUv.y < 0.5 ? fragBorderRadiuses.x : fragBorderRadiuses.w) : (fragUv.y < 0.5 ? fragBorderRadiuses.y
-																														: fragBorderRadiuses.z);
+	float borderRadius = fragUv.x < 0.5//
+						   ? (fragUv.y < 0.5 ? fragBorderRadiuses.x : fragBorderRadiuses.w)
+						   : (fragUv.y < 0.5 ? fragBorderRadiuses.y : fragBorderRadiuses.z);
 
 	vec2 coords = (fragUv * fragSize);
 	vec2 halfSize = fragSize / 2.f;

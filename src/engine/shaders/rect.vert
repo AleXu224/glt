@@ -1,11 +1,13 @@
 #version 450
 layout(push_constant) uniform PushConstants {
-    mat4 model;
-} pushConstants;
+	mat4 model;
+}
+pushConstants;
 
 layout(binding = 0) uniform Ubo {
 	mat4 view;
-} ubo;
+}
+ubo;
 
 layout(location = 0) in vec4 inColor;
 layout(location = 1) in vec4 inBorderColor;
@@ -24,11 +26,12 @@ layout(location = 5) out vec4 fragBorderRadiuses;
 
 
 void main() {
-	vec2 pos = inPos + inUv * inSize;
+	vec2 inUvScaled = inUv * 2.0 - 1.0;
+	vec2 pos = inPos + inUv * inSize + inUvScaled /* Add a 1 pixel padding for anti aliasing */;
 	gl_Position = ubo.view * pushConstants.model * vec4(pos, 1.0, 1.0);
 	fragColor = inColor;
 	fragBorderColor = inBorderColor;
-	fragUv = inUv;
+	fragUv = inUv + (vec2(1.0) / inSize) * inUvScaled;// Adjust UVs for anti-aliasing
 	fragSize = inSize;
 	fragBorderRadiuses = inBorderRadiuses;
 	fragBorderSizes = inBorderSizes;

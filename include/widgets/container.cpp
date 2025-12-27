@@ -24,7 +24,7 @@ namespace squi {
 	void Container::ContainerRenderObject::drawContent() {
 		auto *app = this->getApp();
 		if (shouldClipContent) {
-			app->engine.instance.pushScissor(getRect());
+			app->engine.instance.pushScissor(getRect().rounded());
 		}
 		SingleChildRenderObject::drawContent();
 		if (shouldClipContent) {
