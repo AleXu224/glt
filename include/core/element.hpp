@@ -18,7 +18,15 @@ namespace squi::core {
 		bool mounted = false;
 		bool shouldDispose = false;
 
-		static inline std::unordered_map<size_t, ConstElementPtr> globalKeyRegistry;
+		struct GlobalKeyRegistry {
+			bool isDestroying = false;
+			std::unordered_map<size_t, ConstElementPtr> map{};
+			GlobalKeyRegistry() : isDestroying(false) {}
+			~GlobalKeyRegistry() {
+				isDestroying = true;
+			}
+		};
+		static inline GlobalKeyRegistry globalKeyRegistry;
 		static ConstElementPtr getElementForGlobalKey(const Key &key);
 		static ConstElementPtr getElementForGlobalKey(const KeyBase &key);
 		static void registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element);

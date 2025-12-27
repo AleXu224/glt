@@ -18,18 +18,19 @@ namespace squi::core {
 		if (!dynamic_cast<const GlobalKey *>(&key)) {
 			return nullptr;
 		}
-		auto it = globalKeyRegistry.find(key.hash());
-		if (it != globalKeyRegistry.end()) {
+		auto it = globalKeyRegistry.map.find(key.hash());
+		if (it != globalKeyRegistry.map.end()) {
 			return it->second;
 		}
 		return nullptr;
 	}
 
 	void Element::registerGlobalKey(const GlobalKey &key, const ConstElementPtr &element) {
-		globalKeyRegistry[key.hash()] = element;
+		globalKeyRegistry.map[key.hash()] = element;
 	}
 	void Element::unregisterGlobalKey(const GlobalKey &key) {
-		globalKeyRegistry.erase(key.hash());
+		if (globalKeyRegistry.isDestroying) return;
+		globalKeyRegistry.map.erase(key.hash());
 	}
 
 	App *Element::getApp() const {
