@@ -15,6 +15,7 @@ namespace squi {
 			},
 			.child = Button{
 				.widget = widget->widget,
+				.theme = widget->theme,
 				.disabled = widget->disabled,
 				.onStatusChange = [&](Button::ButtonStatus status) {
 					setState([&]() {

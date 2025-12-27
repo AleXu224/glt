@@ -9,7 +9,6 @@ namespace squi {
 	}
 
 	core::Child Navigator::State::build(const Element &) {
-		if (pages.empty()) return nullptr;
 		Children content{};
 		for (const auto &page: pages) {
 			bool isTop = &page == &pages.back();

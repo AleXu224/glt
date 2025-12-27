@@ -30,6 +30,9 @@ namespace squi {
 					} else {
 						ret.top = bounds.top - element.size.y;
 					}
+					ret.right = ret.left + element.size.x;
+					ret.bottom = ret.top + element.size.y;
+					ret = rect.dragInside(ret);
 					return ret;
 				},
 				.child = SlideIn{
@@ -39,6 +42,9 @@ namespace squi {
 						.widget{
 							.width = Size::Wrap,
 							.height = Size::Wrap,
+							.sizeConstraints = BoxConstraints{
+								.maxWidth = 600.f,
+							},
 							.padding = 8.f,
 						},
 						.color = Color::rgb(44, 44, 44),
@@ -48,6 +54,7 @@ namespace squi {
 						.borderPosition = Box::BorderPosition::outset,
 						.child = Text{
 							.text = text,
+							.lineWrap = true,
 							.color = Color::white,
 						},
 					},
@@ -96,6 +103,9 @@ namespace squi {
 				} else {
 					ret.top = bounds.top - element.size.y;
 				}
+				ret.right = ret.left + element.size.x;
+				ret.bottom = ret.top + element.size.y;
+				ret = rect.dragInside(ret);
 				return ret;
 			},
 			.child = SlideIn{
@@ -105,6 +115,9 @@ namespace squi {
 					.widget{
 						.width = Size::Wrap,
 						.height = Size::Wrap,
+						.sizeConstraints = BoxConstraints{
+							.maxWidth = 600.f,
+						},
 						.padding = 8.f,
 					},
 					.color = Color::rgb(44, 44, 44),
@@ -114,6 +127,7 @@ namespace squi {
 					.borderPosition = Box::BorderPosition::outset,
 					.child = Text{
 						.text = widget->text,
+						.lineWrap = true,
 						.color = Color::white,
 					},
 				},
