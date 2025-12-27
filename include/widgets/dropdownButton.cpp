@@ -40,6 +40,7 @@ namespace squi {
 				},
 				.child = Row{
 					.widget{
+						.width = Size::Wrap,
 						.alignment = Alignment::CenterLeft,
 					},
 					.crossAxisAlignment = Flex::Alignment::center,
@@ -48,6 +49,7 @@ namespace squi {
 						AnimatedText{
 							.text = widget->text,
 							.fontSize = widget->theme.fromStatus(status).textSize,
+							.lineWrap = true,
 							.color = widget->theme.fromStatus(status).textColor,
 						},
 						Transform{

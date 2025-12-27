@@ -80,7 +80,7 @@ namespace squi {
 	[[nodiscard]] core::Args Button::State::getArgs() const {
 		// Make the button shrink to the contents by default
 		auto args = widget->widget;
-		args.width = args.width.value_or(Size::Shrink);
+		args.width = args.width.value_or(Size::Wrap);
 		args.height = args.height.value_or(Size::Shrink);
 		args.padding = args.padding.value_or(Padding{12.f, 6.f});
 		args.sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{

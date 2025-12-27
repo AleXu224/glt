@@ -82,6 +82,14 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return ScrollView{
 				.children{
+					Box{
+						.widget{
+							.width = 100.f,
+							.height = 100.f,
+						},
+						.color = Color::white,
+						.borderRadius = 1.5f,
+					},
 					Slider{
 						.value = sliderVal,
 						.ticks = Slider::TickInterval{
