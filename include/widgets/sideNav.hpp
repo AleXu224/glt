@@ -7,7 +7,7 @@ namespace squi {
 	struct SideNav : StatefulWidget {
 		struct Page {
 			std::string name;
-			char32_t icon = 0xef4a;
+			std::variant<int32_t, Child> icon = 0xef4a;
 			Child content;
 		};
 

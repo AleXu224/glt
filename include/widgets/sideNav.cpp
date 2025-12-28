@@ -1,5 +1,6 @@
 #include "sideNav.hpp"
 #include "theme.hpp"
+#include "utils.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/animatedText.hpp"
 #include "widgets/column.hpp"
@@ -68,9 +69,19 @@ namespace squi {
 									.direction = Axis::Horizontal,
 									.spacing = 16.f,
 									.children = {
-										FontIcon{
-											.icon = widget->page.icon,
-										},
+										std::visit(//
+											utils::overloaded{
+												[](int32_t iconCode) -> Child {
+													return FontIcon{
+														.icon = iconCode,
+													};
+												},
+												[](const Child &iconChild) -> Child {
+													return iconChild;
+												},
+											},
+											widget->page.icon
+										),
 										widget->expanded//
 											? AnimatedText{
 												  .text = widget->page.name,

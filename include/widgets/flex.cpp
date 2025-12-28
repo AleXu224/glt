@@ -73,6 +73,9 @@ namespace squi {
 			}
 		}
 
+		this->totalMainAxisSize = totalMainAxis;
+		this->totalSpacingSize = spacingOffset;
+
 		if (direction == Axis::Horizontal) {
 			return {
 				totalMainAxis + spacingOffset,
@@ -88,11 +91,51 @@ namespace squi {
 	void Flex::FlexRenderObject::positionContentAt(const Rect &newBounds) {
 		// auto mainAxisSize = direction == Axis::Horizontal ? newBounds.width() : newBounds.height();
 		auto crossAxisSize = direction == Axis::Horizontal ? newBounds.height() : newBounds.width();
+		auto mainAxisSize = direction == Axis::Horizontal ? newBounds.width() : newBounds.height();
+
 		auto cursor = newBounds.getTopLeft();
 		const auto initialCrossAxis = direction == Axis::Horizontal ? cursor.y : cursor.x;
 
 		auto &cursorMainAxis = direction == Axis::Horizontal ? cursor.x : cursor.y;
 		auto &cursorCrossAxis = direction == Axis::Horizontal ? cursor.y : cursor.x;
+
+		auto spacingUsed = spacing;
+
+		switch (justifyContent) {
+			case JustifyContent::start:
+				// No change
+				break;
+			case JustifyContent::center: {
+				cursorMainAxis += (mainAxisSize - (this->totalMainAxisSize + this->totalSpacingSize)) / 2.0f;
+				break;
+			}
+			case JustifyContent::end: {
+				cursorMainAxis += mainAxisSize - (this->totalMainAxisSize + this->totalSpacingSize);
+				break;
+			}
+			case JustifyContent::spaceBetween: {
+				if (children.size() > 1) {
+					spacingUsed = (mainAxisSize - this->totalMainAxisSize) / static_cast<float>(children.size() - 1);
+				}
+				break;
+			}
+			case JustifyContent::spaceAround: {
+				if (children.size() > 0) {
+					float space = (mainAxisSize - this->totalMainAxisSize - this->totalSpacingSize) / static_cast<float>(children.size());
+					cursorMainAxis += space / 2.0f;
+					spacingUsed = space + spacing;
+				}
+				break;
+			}
+			case JustifyContent::spaceEvenly: {
+				if (children.size() > 0) {
+					float space = (mainAxisSize - this->totalMainAxisSize - this->totalSpacingSize) / static_cast<float>(children.size() + 1);
+					cursorMainAxis += space;
+					spacingUsed = space + spacing;
+				}
+				break;
+			}
+		}
 
 		for (auto &child: children) {
 			if (!child) continue;
@@ -112,7 +155,7 @@ namespace squi {
 			}
 
 			child->positionAt(childSize.offset(cursor));
-			cursorMainAxis += (direction == Axis::Horizontal ? childSize.width() : childSize.height()) + spacing;
+			cursorMainAxis += (direction == Axis::Horizontal ? childSize.width() : childSize.height()) + spacingUsed;
 		}
 	}
 
@@ -131,6 +174,11 @@ namespace squi {
 
 			if (flexRenderObject->crossAxisAlignment != crossAxisAlignment) {
 				flexRenderObject->crossAxisAlignment = crossAxisAlignment;
+				app->needsReposition = true;
+			}
+
+			if (flexRenderObject->justifyContent != justifyContent) {
+				flexRenderObject->justifyContent = justifyContent;
 				app->needsReposition = true;
 			}
 

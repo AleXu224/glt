@@ -46,6 +46,7 @@ namespace squi {
 				.height = Size::Shrink,
 				.padding = 24.f,
 			},
+			.justifyContent = Row::JustifyContent::end,
 			.spacing = 8.f,
 			.children = widget->buttons,
 		};

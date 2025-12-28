@@ -27,7 +27,7 @@ float borderDistance(vec2 coords, vec2 halfRes, vec2 radius) {
 	float distRight = length(posRight - coords);
 	float edgeDist = distTop < distRight ? coords.y - halfRes.y : coords.x - halfRes.x;
 
-	float finalDist = p2.x <= 0.f || p2.y <= 0.f ? edgeDist : distCorner;
+	float finalDist = p2.x <= 0.f || p2.y <= 0.f || radius.x <= 0.f || radius.y <= 0.f ? edgeDist : distCorner;
 	return finalDist;
 }
 

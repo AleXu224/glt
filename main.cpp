@@ -21,6 +21,7 @@
 #include "widgets/liteFilter.hpp"
 #include "widgets/navigator.hpp"
 #include "widgets/numberBox.hpp"
+#include "widgets/row.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"
 
@@ -315,6 +316,88 @@ struct NavigatorTestPage : StatelessWidget {
 	}
 };
 
+struct JustifyTestPage : StatefulWidget {
+	// Args
+	Key key;
+	Args widget{};
+
+	struct State : WidgetState<JustifyTestPage> {
+		float spacing = 0.f;
+		uint32_t itemCount = 3;
+
+		Children createContent() {
+			Children ret{
+				Slider{
+					.minValue = 0.f,
+					.maxValue = 10.f,
+					.value = static_cast<float>(itemCount),
+					.ticks = Slider::TickInterval{1.f},
+					.onChange = [this](float newVal) {
+						auto newCount = static_cast<uint32_t>(std::round(newVal));
+						if (newCount != itemCount) {
+							setState([&]() {
+								itemCount = newCount;
+							});
+						}
+					},
+				},
+				Slider{
+					.minValue = 0.f,
+					.maxValue = 50.f,
+					.value = spacing,
+					.onChange = [this](float val) {
+						setState([&]() {
+							spacing = val;
+						});
+					},
+				},
+			};
+			constexpr auto justifyOptions = std::array{
+				Flex::JustifyContent::start,
+				Flex::JustifyContent::center,
+				Flex::JustifyContent::end,
+				Flex::JustifyContent::spaceBetween,
+				Flex::JustifyContent::spaceAround,
+				Flex::JustifyContent::spaceEvenly,
+			};
+			for (const auto &option: justifyOptions) {
+				ret.emplace_back(
+					Row{
+						.widget{
+							.height = 50.f,
+						},
+						.justifyContent = option,
+						.spacing = spacing,
+						.children = [&]() {
+							Children children;
+							for (uint32_t i = 0; i < itemCount; i++) {
+								children.push_back(
+									Box{
+										.widget{
+											.width = 50.f,
+											.height = 50.f,
+										},
+										.color = Color::fromHSV(static_cast<float>(i) / static_cast<float>(itemCount), 0.8f, 0.8f),
+									}
+								);
+							}
+							return children;
+						}(),
+					}
+				);
+			}
+			return ret;
+		}
+
+		Child build(const Element &element) override {
+			return Column{
+				.spacing = 20.f,
+				.children = createContent(),
+			};
+		}
+	};
+};
+
 int main(int /*unused*/, char ** /*unused*/) {
 
 	App app{
@@ -352,6 +435,10 @@ int main(int /*unused*/, char ** /*unused*/) {
 				TopNav::Page{
 					.name = "Test Navigator",
 					.content = NavigatorTestPage{},
+				},
+				TopNav::Page{
+					.name = "Test Justify",
+					.content = JustifyTestPage{},
 				},
 				TopNav::Page{
 					.name = "Test Paginator",

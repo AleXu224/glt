@@ -6,10 +6,12 @@
 namespace squi {
 	struct Row : StatelessWidget {
 		using Alignment = Flex::Alignment;
+		using JustifyContent = Flex::JustifyContent;
 		// Args
 		Key key{};
 		Args widget{};
 		Alignment crossAxisAlignment = Alignment::start;
+		JustifyContent justifyContent = JustifyContent::start;
 		float spacing = 0.f;
 		Children children{};
 
@@ -18,6 +20,7 @@ namespace squi {
 				.widget = widget,
 				.direction = Axis::Horizontal,
 				.crossAxisAlignment = crossAxisAlignment,
+				.justifyContent = justifyContent,
 				.spacing = spacing,
 				.children = children,
 			};

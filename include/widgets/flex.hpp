@@ -10,11 +10,21 @@ namespace squi {
 			end,
 		};
 
+		enum class JustifyContent : uint8_t {
+			start,
+			center,
+			end,
+			spaceBetween,
+			spaceAround,
+			spaceEvenly,
+		};
+
 		// Args
 		Key key;
 		Args widget;
 		Axis direction = core::Axis::Horizontal;
 		Alignment crossAxisAlignment = Alignment::start;
+		JustifyContent justifyContent = JustifyContent::start;
 		float spacing = 0.0f;
 		std::vector<Child> children{};
 
@@ -34,7 +44,10 @@ namespace squi {
 
 			core::Axis direction = core::Axis::Horizontal;
 			Alignment crossAxisAlignment = Alignment::start;
+			JustifyContent justifyContent = JustifyContent::start;
 			float spacing = 0.0f;
+			float totalMainAxisSize = 0.0f;
+			float totalSpacingSize = 0.0f;
 
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 			[[nodiscard]] vec2 _calculateContentSize(BoxConstraints constraints, bool final, bool ignoreCrossAxisSize = false);

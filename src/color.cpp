@@ -74,6 +74,56 @@ Color Color::css(int rgb, float a) {
 	return {static_cast<uint32_t>((rgb << 8) + static_cast<uint8_t>(a * 255.f))};
 }
 
+squi::Color squi::Color::fromHSV(float h, float s, float v, float a) {
+	float r, g, b;
+
+	int i = static_cast<int>(h * 6);
+	float f = h * 6 - i;
+	float p = v * (1 - s);
+	float q = v * (1 - f * s);
+	float t = v * (1 - (1 - f) * s);
+
+	switch (i % 6) {
+		case 0:
+			r = v;
+			g = t;
+			b = p;
+			break;
+		case 1:
+			r = q;
+			g = v;
+			b = p;
+			break;
+		case 2:
+			r = p;
+			g = v;
+			b = t;
+			break;
+		case 3:
+			r = p;
+			g = q;
+			b = v;
+			break;
+		case 4:
+			r = t;
+			g = p;
+			b = v;
+			break;
+		case 5:
+			r = v;
+			g = p;
+			b = q;
+			break;
+		default:
+			r = 0;
+			g = 0;
+			b = 0;
+			break;
+	}
+
+	return Color(r, g, b, a);
+}
+
 Color::operator glm::vec4() const {
 	return {
 		static_cast<float>(r) / 255.0f,
@@ -130,8 +180,79 @@ Color Color::operator*(const float &multiplier) const {
 }
 
 Color Color::transparent = Color::css(0x0, 0.f);
-Color Color::black = Color::css(0x0, 1.f);
+Color Color::black = Color::css(0x000000);
+Color Color::silver = Color::css(0xc0c0c0);
+Color Color::gray = Color::css(0x808080);
+Color Color::white = Color::css(0xffffff);
+Color Color::maroon = Color::css(0x800000);
+Color Color::red = Color::css(0xff0000);
+Color Color::purple = Color::css(0x800080);
+Color Color::fuchsia = Color::css(0xff00ff);
+Color Color::green = Color::css(0x008000);
+Color Color::lime = Color::css(0x00ff00);
+Color Color::olive = Color::css(0x808000);
+Color Color::yellow = Color::css(0xffff00);
+Color Color::navy = Color::css(0x000080);
+Color Color::blue = Color::css(0x0000ff);
+Color Color::teal = Color::css(0x008080);
+Color Color::aqua = Color::css(0x00ffff);
 
+Color Color::aliceblue = Color::css(0xf0f8ff);
+Color Color::antiquewhite = Color::css(0xfaebd7);
+Color Color::aquamarine = Color::css(0x7fffd4);
+Color Color::azure = Color::css(0xf0ffff);
+Color Color::beige = Color::css(0xf5f5dc);
+Color Color::bisque = Color::css(0xffe4c4);
+Color Color::blanchedalmond = Color::css(0xffebcd);
+Color Color::blueviolet = Color::css(0x8a2be2);
+Color Color::brown = Color::css(0xa52a2a);
+Color Color::burlywood = Color::css(0xdeb887);
+Color Color::cadetblue = Color::css(0x5f9ea0);
+Color Color::chartreuse = Color::css(0x7fff00);
+Color Color::chocolate = Color::css(0xd2691e);
+Color Color::coral = Color::css(0xff7f50);
+Color Color::cornflowerblue = Color::css(0x6495ed);
+Color Color::cornsilk = Color::css(0xfff8dc);
+Color Color::crimson = Color::css(0xdc143c);
+Color Color::cyan = Color::css(0x00ffff);
+Color Color::darkblue = Color::css(0x00008b);
+Color Color::darkcyan = Color::css(0x008b8b);
+Color Color::darkgoldenrod = Color::css(0xb8860b);
+Color Color::darkgray = Color::css(0xa9a9a9);
+Color Color::darkgreen = Color::css(0x006400);
+Color Color::darkgrey = Color::css(0xa9a9a9);
+Color Color::darkkhaki = Color::css(0xbdb76b);
+Color Color::darkmagenta = Color::css(0x8b008b);
+Color Color::darkolivegreen = Color::css(0x556b2f);
+Color Color::darkorange = Color::css(0xff8c00);
+Color Color::darkorchid = Color::css(0x9932cc);
+Color Color::darkred = Color::css(0x8b0000);
+Color Color::darksalmon = Color::css(0xe9967a);
+Color Color::darkseagreen = Color::css(0x8fbc8f);
+Color Color::darkslateblue = Color::css(0x483d8b);
+Color Color::darkslategray = Color::css(0x2f4f4f);
+Color Color::darkslategrey = Color::css(0x2f4f4f);
+Color Color::darkturquoise = Color::css(0x00ced1);
+Color Color::darkviolet = Color::css(0x9400d3);
+Color Color::deeppink = Color::css(0xff1493);
+Color Color::deepskyblue = Color::css(0x00bfff);
+Color Color::dimgray = Color::css(0x696969);
+Color Color::dimgrey = Color::css(0x696969);
+Color Color::dodgerblue = Color::css(0x1e90ff);
+Color Color::firebrick = Color::css(0xb22222);
+Color Color::floralwhite = Color::css(0xfffaf0);
+Color Color::forestgreen = Color::css(0x228b22);
+Color Color::gainsboro = Color::css(0xdcdcdc);
+Color Color::ghostwhite = Color::css(0xf8f8ff);
+Color Color::gold = Color::css(0xffd700);
+Color Color::goldenrod = Color::css(0xdaa520);
+Color Color::greenyellow = Color::css(0xadff2f);
+Color Color::grey = Color::css(0x808080);
+Color Color::honeydew = Color::css(0xf0fff0);
+Color Color::hotpink = Color::css(0xff69b4);
+Color Color::indianred = Color::css(0xcd5c5c);
+Color Color::indigo = Color::css(0x4b0082);
+Color Color::ivory = Color::css(0xfffff0);
 Color Color::khaki = Color::css(0xf0e68c);
 Color Color::lavender = Color::css(0xe6e6fa);
 Color Color::lavenderblush = Color::css(0xfff0f5);
@@ -152,11 +273,9 @@ Color Color::lightslategray = Color::css(0x778899);
 Color Color::lightslategrey = Color::css(0x778899);
 Color Color::lightsteelblue = Color::css(0xb0c4de);
 Color Color::lightyellow = Color::css(0xffffe0);
-Color Color::lime = Color::css(0x00ff00);
 Color Color::limegreen = Color::css(0x32cd32);
 Color Color::linen = Color::css(0xfaf0e6);
 Color Color::magenta = Color::css(0xff00ff);
-Color Color::maroon = Color::css(0x800000);
 Color Color::mediumaquamarine = Color::css(0x66cdaa);
 Color Color::mediumblue = Color::css(0x0000cd);
 Color Color::mediumorchid = Color::css(0xba55d3);
@@ -171,9 +290,7 @@ Color Color::mintcream = Color::css(0xf5fffa);
 Color Color::mistyrose = Color::css(0xffe4e1);
 Color Color::moccasin = Color::css(0xffe4b5);
 Color Color::navajowhite = Color::css(0xffdead);
-Color Color::navy = Color::css(0x000080);
 Color Color::oldlace = Color::css(0xfdf5e6);
-Color Color::olive = Color::css(0x808000);
 Color Color::olivedrab = Color::css(0x6b8e23);
 Color Color::orange = Color::css(0xffa500);
 Color Color::orangered = Color::css(0xff4500);
@@ -188,8 +305,7 @@ Color Color::peru = Color::css(0xcd853f);
 Color Color::pink = Color::css(0xffc0cb);
 Color Color::plum = Color::css(0xdda0dd);
 Color Color::powderblue = Color::css(0xb0e0e6);
-Color Color::purple = Color::css(0x800080);
-Color Color::red = Color::css(0xff0000);
+Color Color::rebeccapurple = Color::css(0x663399);
 Color Color::rosybrown = Color::css(0xbc8f8f);
 Color Color::royalblue = Color::css(0x4169e1);
 Color Color::saddlebrown = Color::css(0x8b4513);
@@ -198,7 +314,6 @@ Color Color::sandybrown = Color::css(0xf4a460);
 Color Color::seagreen = Color::css(0x2e8b57);
 Color Color::seashell = Color::css(0xfff5ee);
 Color Color::sienna = Color::css(0xa0522d);
-Color Color::silver = Color::css(0xc0c0c0);
 Color Color::skyblue = Color::css(0x87ceeb);
 Color Color::slateblue = Color::css(0x6a5acd);
 Color Color::slategray = Color::css(0x708090);
@@ -207,15 +322,12 @@ Color Color::snow = Color::css(0xfffafa);
 Color Color::springgreen = Color::css(0x00ff7f);
 Color Color::steelblue = Color::css(0x4682b4);
 Color Color::tan = Color::css(0xd2b48c);
-Color Color::teal = Color::css(0x008080);
 Color Color::thistle = Color::css(0xd8bfd8);
 Color Color::tomato = Color::css(0xff6347);
 Color Color::turquoise = Color::css(0x40e0d0);
 Color Color::violet = Color::css(0xee82ee);
 Color Color::wheat = Color::css(0xf5deb3);
-Color Color::white = Color::css(0xffffff);
 Color Color::whitesmoke = Color::css(0xf5f5f5);
-Color Color::yellow = Color::css(0xffff00);
 Color Color::yellowgreen = Color::css(0x9acd32);
 
 bool squi::Color::isLight() const {
