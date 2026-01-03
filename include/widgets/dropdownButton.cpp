@@ -40,10 +40,11 @@ namespace squi {
 				},
 				.child = Row{
 					.widget{
-						.width = Size::Wrap,
+						.width = widget->widget.width ? widget->widget.width : Size::Wrap,
 						.alignment = Alignment::CenterLeft,
 					},
 					.crossAxisAlignment = Flex::Alignment::center,
+					.justifyContent = Flex::JustifyContent::spaceBetween,
 					.spacing = 4.f,
 					.children{
 						AnimatedText{

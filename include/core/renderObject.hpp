@@ -86,7 +86,7 @@ namespace squi::core {
 		[[nodiscard]] Rect getRect() const;
 		[[nodiscard]] Rect getContentRect() const;
 		[[nodiscard]] Rect getLayoutRect() const;
-	
+
 		[[nodiscard]] virtual Rect getHitcheckRect() const;
 
 		[[nodiscard]] Sizing getSizing(Axis axis) const {

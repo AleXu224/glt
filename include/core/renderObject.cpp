@@ -326,5 +326,4 @@ namespace squi::core {
 			child->draw();
 		}
 	}
-
 }// namespace squi::core

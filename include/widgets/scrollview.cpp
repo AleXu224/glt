@@ -1,5 +1,6 @@
 #include "widgets/scrollview.hpp"
 
+#include "contentSizingOverride.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/scrollable.hpp"
 #include "widgets/scrollbar.hpp"
@@ -44,14 +45,18 @@ namespace squi {
 			.child = Stack{
 				.widget = widget->widget,
 				.children{
-					Scrollable{
-						.widget = newScrollWidget,
-						.alignment = widget->alignment,
-						.direction = widget->direction,
-						.spacing = widget->spacing,
-						.scroll = scroll,
-						.controller = controller,
-						.children = widget->children,
+					ContentSizingOverride{
+						.widthSizing = widget->direction == Axis::Horizontal ? std::make_optional(Sizing::Expand) : std::nullopt,
+						.heightSizing = widget->direction == Axis::Vertical ? std::make_optional(Sizing::Expand) : std::nullopt,
+						.child = Scrollable{
+							.widget = newScrollWidget,
+							.alignment = widget->alignment,
+							.direction = widget->direction,
+							.spacing = widget->spacing,
+							.scroll = scroll,
+							.controller = controller,
+							.children = widget->children,
+						},
 					},
 					Scrollbar{
 						.direction = widget->direction,
