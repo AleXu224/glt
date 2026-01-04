@@ -45,11 +45,11 @@ namespace squi::core {
 		Engine::WindowOptions windowOptions{
 			.name = "Squi App",
 		};
+		Child child;
 		Engine::Runner engine{
 			windowOptions
 		};
 
-		Child child;
 
 		Store::Sampler samplerStore{};
 		Store::Pipeline pipelineStore{};
@@ -71,6 +71,8 @@ namespace squi::core {
 		static inline std::mutex pollMtx{};
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
+		
+		std::future<void> finished{};
 
 		struct ElementComparator {
 			static bool operator()(const Element *a, const Element *b) {
@@ -84,6 +86,10 @@ namespace squi::core {
 		std::vector<std::function<void()>> postRepositionTasks{};
 		std::vector<std::function<void()>> preUpdateTasks{};
 
+		static inline std::mutex mainThreadTasksMtx{};
+		static inline std::vector<std::function<void()>> mainThreadTasks{};
+		static std::shared_future<void> addMainThreadTask(const std::function<void()> &task);
+
 		std::shared_ptr<RootRenderObject> rootRenderObject = [this]() {
 			auto ret = std::make_shared<RootRenderObject>();
 			ret->root = ret.get();
@@ -93,6 +99,8 @@ namespace squi::core {
 
 		ElementPtr rootElement = Child(RootWidget{.app = this, .rootRenderObject = rootRenderObject, .child = child})->_createElement();
 
-		void run();
+		void initialize();
+
+		static void runAllWindows();
 	};
 }// namespace squi::core

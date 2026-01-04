@@ -562,7 +562,8 @@ int main(int /*unused*/, char ** /*unused*/) {
 			},
 		},
 	};
-	app.run();
+	app.initialize();
+	App::runAllWindows();
 
 	return 0;
 }

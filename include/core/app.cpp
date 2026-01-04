@@ -12,18 +12,20 @@
 
 
 namespace squi::core {
-	void App::run() {
+	void App::initialize() {
 		auto &window = engine.instance.window.ptr;
 		{
 			std::scoped_lock lock{Engine::Window::_windowMtx};
 			windowMap[window] = this;
 			glfwSetWindowMaximizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int maximized) {
 				std::scoped_lock wnd{windowMapMtx};
+				if (!App::windowMap.contains(windowPtr)) return;
 				auto *window = windowMap[windowPtr];
 				if (window->maximizeCallback) window->maximizeCallback(static_cast<bool>(maximized));
 			});
 			glfwSetFramebufferSizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int width, int height) {
 				std::scoped_lock wnd{windowMapMtx};
+				if (!App::windowMap.contains(windowPtr)) return;
 				auto *window = windowMap[windowPtr];
 				std::scoped_lock swp{window->engine.swapChainMtx};
 				if (window->resizeCallback) window->resizeCallback(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
@@ -32,6 +34,7 @@ namespace squi::core {
 			});
 			glfwSetCursorPosCallback(window, [](GLFWwindow *m_window, double xpos, double ypos) {
 				std::scoped_lock _{windowMapMtx};
+				if (!App::windowMap.contains(m_window)) return;
 				auto *window = App::windowMap.at(m_window);
 				window->inputQueue.push(CursorPosInput{
 					.xPos = static_cast<float>(xpos),
@@ -40,6 +43,7 @@ namespace squi::core {
 			});
 			glfwSetCharCallback(window, [](GLFWwindow *m_window, unsigned int codepoint) {
 				std::scoped_lock _{windowMapMtx};
+				if (!App::windowMap.contains(m_window)) return;
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(CodepointInput{
 					.character = static_cast<char>(codepoint),
@@ -47,6 +51,7 @@ namespace squi::core {
 			});
 			glfwSetScrollCallback(window, [](GLFWwindow *m_window, double xoffset, double yoffset) {
 				std::scoped_lock _{windowMapMtx};
+				if (!App::windowMap.contains(m_window)) return;
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(ScrollInput{
 					.xOffset = static_cast<float>(xoffset),
@@ -56,6 +61,7 @@ namespace squi::core {
 			glfwSetKeyCallback(window, [](GLFWwindow *m_window, int key, int /*scancode*/, int action, int mods) {
 				std::scoped_lock _{windowMapMtx};
 				//		Screen::getCurrentScreen()->animationRunning();
+				if (!App::windowMap.contains(m_window)) return;
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(KeyInput{
 					.key = static_cast<GestureKey>(key),
@@ -66,6 +72,7 @@ namespace squi::core {
 			glfwSetMouseButtonCallback(window, [](GLFWwindow *m_window, int button, int action, int mods) {
 				std::scoped_lock _{windowMapMtx};
 				//		Screen::getCurrentScreen()->animationRunning();
+				if (!App::windowMap.contains(m_window)) return;
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(MouseInput{
 					.button = static_cast<GestureMouseKey>(button),
@@ -75,6 +82,7 @@ namespace squi::core {
 			});
 			glfwSetCursorEnterCallback(window, [](GLFWwindow *m_window, int entered) {
 				std::scoped_lock _{windowMapMtx};
+				if (!App::windowMap.contains(m_window)) return;
 				auto &window = App::windowMap.at(m_window);
 				window->inputQueue.push(CursorEntered{
 					.entered = static_cast<bool>(entered),
@@ -116,8 +124,7 @@ namespace squi::core {
 				DwmSetWindowAttribute(hwnd, 1029, &micaOld, sizeof(micaOld));
 		}
 #endif
-
-		std::thread([&]() {
+		finished = std::async(std::launch::async, [&]() {
 			rootElement->mount(nullptr, 0, 0);
 			auto &renderObjectElem = dynamic_cast<RenderObjectElement &>(*rootElement);
 			auto &renderObject = *renderObjectElem.renderObject;
@@ -264,19 +271,22 @@ namespace squi::core {
 				},
 				[&]() {
 					rootElement->unmount();
-					std::println("Cleaning up!");
+					auto task = App::addMainThreadTask([this]() {
+						windowMap.erase(engine.instance.window.ptr);
+						// glfwHideWindow(engine.instance.window.ptr);
+						engine.instance.window.destroy();
+					});
+					// Wake up the main thread in order to get it to close the window
+					// Otherwise it will just wait until there is another input before doing so
+					// leading to a circumstance where you can click the close button but the window stays
+					glfwPostEmptyEvent();
+					task.wait();
 				}
 			);
+		});
+	}
 
-			std::println("Cleaned up!");
-			std::scoped_lock _{windowMapMtx};
-			windowsToDestroy.emplace_back(this);
-			// Wake up the main thread in order to get it to close the window
-			// Otherwise it will just wait until there is another input before doing so
-			// leading to a circumstance where you can click the close button but the window stays
-			glfwPostEmptyEvent();
-		}).detach();
-
+	void App::runAllWindows() {
 		while (!windowMap.empty()) {
 			{
 				std::scoped_lock _{windowMapMtx};
@@ -286,14 +296,24 @@ namespace squi::core {
 					window->engine.instance.window.destroy();
 				}
 			}
+			{
+				std::scoped_lock lock{mainThreadTasksMtx};
+				for (const auto &task: mainThreadTasks) {
+					task();
+				}
+				mainThreadTasks.clear();
+			}
 			glfwWaitEvents();
 		}
+
+		std::println("Cleaning up!");
 
 		for (const auto &[key, font]: FontStore::fonts()) {
 			if (!font.expired()) {
 				std::println("Found non expired font, {} uses", font.use_count());
 			}
 		}
+		std::println("Cleaned up!");
 	}
 
 	Child RootWidget::Element::build() {
@@ -311,5 +331,17 @@ namespace squi::core {
 
 	void RootWidget::Element::unmount() {
 		squi::core::SingleChildRenderObjectElement::unmount();
+	}
+
+	std::shared_future<void> App::addMainThreadTask(const std::function<void()> &task) {
+		std::scoped_lock lock{mainThreadTasksMtx};
+		auto promise = std::make_shared<std::promise<void>>();
+		auto fut = promise->get_future().share();
+		mainThreadTasks.push_back([promise = std::move(promise), task]() mutable {
+			task();
+			promise->set_value();
+		});
+		glfwPostEmptyEvent();
+		return fut;
 	}
 }// namespace squi::core

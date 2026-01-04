@@ -22,6 +22,7 @@ void Engine::Window::destroy() {
 	if (destroyed) return;
 	destroyed = true;
 	glfwDestroyWindow(ptr);
+	destroyPromise.set_value();
 }
 
 Engine::Window::~Window() {

@@ -19,10 +19,9 @@ namespace Engine {
 
 		GLFWwindow *ptr;
 		bool destroyed = false;
+		std::promise<void> destroyPromise{};
 
-		Window(const Window &) = default;
 		Window(Window &&) = delete;
-		Window &operator=(const Window &) = default;
 		Window &operator=(Window &&) = delete;
 
 		Window(WindowOptions options);
