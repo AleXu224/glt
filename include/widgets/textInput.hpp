@@ -60,6 +60,13 @@ namespace squi {
 			std::optional<int64_t> selectionStart;
 			float scroll = 0.f;
 
+			std::chrono::steady_clock::time_point lastClickTime = std::chrono::steady_clock::now();
+			int clickCount = 0;
+			int64_t lastClickedIndex = 0;
+			enum class DragType { Char, Word, Line } dragType = DragType::Char;
+			int64_t pivot = 0;
+			std::pair<int64_t, int64_t> pivotRange{ 0, 0 };
+
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 
 			void initState() override {
@@ -91,8 +98,8 @@ namespace squi {
 
 			void handleTextInput(const Gesture::State &state);
 
-			[[nodiscard]] uint64_t getPrevWordStart() const;
-			[[nodiscard]] uint64_t getNextWordStart() const;
+			[[nodiscard]] uint64_t getPrevWordStart(int64_t position) const;
+			[[nodiscard]] uint64_t getNextWordStart(int64_t position) const;
 
 			void handleBackspace(const Gesture::State &state);
 			void handleDelete(const Gesture::State &state);
@@ -105,6 +112,12 @@ namespace squi {
 			void handleCopy(const Gesture::State &state) const;
 			void handleCut(const Gesture::State &state);
 			void handlePaste(const Gesture::State &state);
+
+			void handleMousePress(const Gesture::State &state);
+			void handleMouseDrag(const Gesture::State &state);
+			[[nodiscard]] int64_t indexFromPos(float x) const;
+			[[nodiscard]] std::pair<int64_t, int64_t> getWordRange(int64_t index) const;
+			[[nodiscard]] float getRelativeCursorX(const Gesture::State &state) const;
 
 			[[nodiscard]] Child getSelectionBox(uint32_t widthToStart) const;
 			[[nodiscard]] Child getCursorBox(uint32_t widthToCursor) const;

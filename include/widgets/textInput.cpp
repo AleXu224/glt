@@ -1,5 +1,6 @@
 #include "widgets/textInput.hpp"
 
+#include "core/app.hpp"
 #include "offset.hpp"
 #include "theme.hpp"
 #include "widgets/box.hpp"
@@ -74,14 +75,14 @@ namespace squi {
 		}
 	}
 
-	uint64_t TextInput::State::getPrevWordStart() const {
-		auto pos = text.find_last_of(' ', cursor - 1);
+	uint64_t TextInput::State::getPrevWordStart(int64_t position) const {
+		auto pos = text.find_last_of(' ', position - 1);
 		if (pos == std::string::npos) pos = 0;
 		return pos;
 	}
 
-	uint64_t TextInput::State::getNextWordStart() const {
-		auto pos = text.find_first_of(' ', cursor + 1);
+	uint64_t TextInput::State::getNextWordStart(int64_t position) const {
+		auto pos = text.find_first_of(' ', position + 1);
 		if (pos == std::string::npos) pos = text.size();
 		return pos;
 	}
@@ -94,7 +95,7 @@ namespace squi {
 			}
 			const auto &keyState = key.value();
 			if (keyState.mods & static_cast<int>(GestureMod::control) && cursor > 0) {
-				auto pos = getPrevWordStart();
+				auto pos = getPrevWordStart(cursor);
 
 				setText(std::format("{}{}", text.substr(0, pos), text.substr(cursor)));
 				setState([&]() {
@@ -119,7 +120,7 @@ namespace squi {
 			} else {
 				const auto &keyState = key.value();
 				if (keyState.mods & static_cast<int>(GestureMod::control) && cursor < static_cast<int64_t>(text.size())) {
-					auto pos = getNextWordStart();
+					auto pos = getNextWordStart(cursor);
 
 					setText(std::format("{}{}", text.substr(0, cursor), text.substr(pos)));
 				} else if (cursor < static_cast<int64_t>(text.size())) {
@@ -147,7 +148,7 @@ namespace squi {
 
 			if (cursor > 0 && !removedSelection) {
 				if (key->mods & static_cast<int>(GestureMod::control)) {
-					auto pos = getPrevWordStart();
+					auto pos = getPrevWordStart(cursor);
 
 					setState([&]() {
 						cursor = static_cast<int64_t>(pos);
@@ -179,7 +180,7 @@ namespace squi {
 
 			if (cursor < static_cast<int64_t>(text.size()) && !removedSelection) {
 				if (key->mods & static_cast<int>(GestureMod::control)) {
-					auto pos = getNextWordStart();
+					auto pos = getNextWordStart(cursor);
 
 					setState([&]() {
 						cursor = static_cast<int64_t>(pos);
@@ -271,6 +272,134 @@ namespace squi {
 		}
 	}
 
+	int64_t TextInput::State::indexFromPos(float x) const {
+		if (text.empty()) return 0;
+
+		// Filter out UTF-8 continuation bytes
+		std::vector<int64_t> indices;
+		indices.reserve(text.size() + 1);
+		for (size_t i = 0; i < text.size(); ++i) {
+			unsigned char c = static_cast<unsigned char>(text[i]);
+			if ((c & 0xC0) != 0x80) indices.push_back(i);
+		}
+		indices.push_back(text.size());
+
+		auto it = std::lower_bound(indices.begin(), indices.end(), x, [&](int64_t idx, float val) {
+			auto [w, h] = font->getTextSizeSafe(text.substr(0, idx), 14.f);
+			return static_cast<float>(w) < val;
+		});
+
+		int64_t indexRight = (it == indices.end()) ? indices.back() : *it;
+		if (it == indices.begin()) return indexRight;
+
+		int64_t indexLeft = *(it - 1);
+		float widthRight = std::get<0>(font->getTextSizeSafe(text.substr(0, indexRight), 14.f));
+		float widthLeft = std::get<0>(font->getTextSizeSafe(text.substr(0, indexLeft), 14.f));
+
+		if (std::abs(widthRight - x) < std::abs(widthLeft - x)) return indexRight;
+		return indexLeft;
+	}
+
+	std::pair<int64_t, int64_t> TextInput::State::getWordRange(int64_t index) const {
+		if (text.empty()) return {0, 0};
+		auto idx = std::clamp(index, static_cast<int64_t>(0), static_cast<int64_t>(text.size()));
+		if (idx == static_cast<int64_t>(text.size()) && idx > 0) idx--;
+
+		auto isSpace = [&](int64_t i) {
+			if (i < 0 || i >= static_cast<int64_t>(text.size())) return false;
+			return text[i] == ' ';
+		};
+		bool targetIsSpace = isSpace(idx);
+
+		int64_t s = idx;
+		while (s > 0 && isSpace(s - 1) == targetIsSpace)
+			s--;
+
+		int64_t e = idx;
+		while (e < static_cast<int64_t>(text.size()) && isSpace(e) == targetIsSpace)
+			e++;
+
+		return {s, e};
+	}
+
+	[[nodiscard]] float TextInput::State::getRelativeCursorX(const Gesture::State &state) const {
+		float paddingLeft = widget->widget.padding.value_or(Padding{}).left;
+		float marginLeft = widget->widget.margin.value_or(Margin{}).left;
+		return state.getCursorPos().x - state.renderObject->getRect().left + scroll - paddingLeft - marginLeft;
+	}
+
+	void TextInput::State::handleMousePress(const Gesture::State &state) {
+		if (!state.renderObject) return;
+
+		float localX = getRelativeCursorX(state);
+
+		int64_t newCursor = indexFromPos(localX);
+
+		auto now = state.renderObject->app->frameStartTime;
+		if (now - lastClickTime < std::chrono::milliseconds(500) && newCursor == lastClickedIndex)
+			clickCount++;
+		else
+			clickCount = 1;
+		lastClickTime = now;
+		lastClickedIndex = newCursor;
+
+		if (clickCount > 3) clickCount = 2;
+
+		if (clickCount == 1) {
+			dragType = DragType::Char;
+			setState([&]() {
+				cursor = newCursor;
+				if (!state.inputState || !state.inputState->isKeyDown(GestureKey::leftShift))
+					selectionStart = std::nullopt;
+				pivot = newCursor;
+			});
+		} else if (clickCount == 2) {
+			dragType = DragType::Word;
+			auto range = getWordRange(newCursor);
+			pivotRange = range;
+			setState([&]() {
+				selectionStart = range.first;
+				cursor = range.second;
+			});
+		} else if (clickCount == 3) {
+			dragType = DragType::Line;
+			pivotRange = {0, static_cast<int64_t>(text.size())};
+			setState([&]() {
+				selectionStart = 0;
+				cursor = static_cast<int64_t>(text.size());
+			});
+		}
+	}
+
+	void TextInput::State::handleMouseDrag(const Gesture::State &state) {
+		if (!state.renderObject) return;
+
+		float localX = getRelativeCursorX(state);
+
+		int64_t newPos = indexFromPos(localX);
+
+		if (dragType == DragType::Char) {
+			setState([&]() {
+				if (!selectionStart.has_value()) selectionStart = pivot;
+				cursor = newPos;
+			});
+		} else if (dragType == DragType::Word) {
+			auto currentWord = getWordRange(newPos);
+			setState([&]() {
+				if (newPos >= pivotRange.second) {
+					selectionStart = pivotRange.first;
+					cursor = currentWord.second;
+				} else if (newPos <= pivotRange.first) {
+					selectionStart = pivotRange.second;
+					cursor = currentWord.first;
+				} else {
+					selectionStart = pivotRange.first;
+					cursor = pivotRange.second;
+				}
+			});
+		}
+	}
+
 	Child TextInput::State::getSelectionBox(uint32_t widthToStart) const {
 		if (!selectionStart.has_value()) return nullptr;
 		auto selectionMin = getSelectionMin();
@@ -342,6 +471,12 @@ namespace squi {
 		scroll = std::clamp(scroll, minScroll, maxScroll);
 
 		return Gesture{
+			.onPress = [this](const Gesture::State &state) {
+				handleMousePress(state);
+			},
+			.onDrag = [this](const Gesture::State &state) {
+				handleMouseDrag(state);
+			},
 			.onUpdate = [this](const Gesture::State &state) {
 				if (!widget->active)
 					return;
