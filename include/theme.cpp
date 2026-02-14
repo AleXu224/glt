@@ -1,6 +1,8 @@
 #include "theme.hpp"
 
+#include "core/app.hpp"
 #include "widgets/themeOverride.hpp"
+
 
 #ifdef _WIN32
 #include "guiddef.h"
@@ -15,12 +17,12 @@ namespace squi {
 		if (themeOverride) {
 			return themeOverride->widget->theme;
 		}
-		return Theme{};
+		return element.getApp()->theme;
 	}
 
 	Theme Theme::of(const core::Element *element) {
-		if (element) return of(*element);
-		return Theme{};
+		assert(element);
+		return of(*element);
 	}
 	std::optional<Color> Theme::getSystemAccentColor() {
 #ifndef _WIN32

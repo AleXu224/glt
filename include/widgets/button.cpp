@@ -20,6 +20,10 @@ namespace squi {
 			.disabled{.backgroundColor = 0xFFFFFF28, .borderColor = Color::transparent, .textColor = isLight ? Color::white * 0.5f : Color::white * 0.36f},
 		};
 	}
+	Button::Theme Button::Theme::Accent(const Element *element) {
+		assert(element);
+		return Accent(*element);
+	}
 
 	Button::Theme Button::Theme::Standard() {
 		return {

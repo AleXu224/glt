@@ -31,6 +31,7 @@ namespace squi {
 			Style disabled;
 
 			static Theme Accent(const Element &element);
+			static Theme Accent(const Element *element);
 			static Theme Standard();
 			static Theme Subtle();
 

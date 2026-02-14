@@ -6,6 +6,7 @@
 #include "inputQueue.hpp"
 #include "store/pipeline.hpp"
 #include "store/sampler.hpp"
+#include "theme.hpp"
 #include "widget.hpp"
 #include <map>
 #include <unordered_set>
@@ -46,6 +47,7 @@ namespace squi::core {
 			.name = "Squi App",
 		};
 		Child child;
+		Theme theme{};
 		Engine::Runner engine{
 			windowOptions
 		};
