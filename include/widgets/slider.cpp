@@ -31,7 +31,7 @@ namespace squi {
 		auto newWidget = widget->widget;
 		newWidget.height = newWidget.height.value_or(32.f);
 
-		auto accentColor = ThemeManager::getTheme().accent;
+		auto accentColor = Theme::of(element).accent;
 
 		constexpr float handleSize = 20.f;
 		constexpr float barPadding = 4.f;

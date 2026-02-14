@@ -1,5 +1,6 @@
 #include "core/app.hpp"
 
+#include "include/widgets/builder.hpp"
 #include "include/widgets/column.hpp"
 #include "include/widgets/container.hpp"
 #include "include/widgets/dropdownButton.hpp"
@@ -12,6 +13,7 @@
 #include "include/widgets/sideNav.hpp"
 #include "include/widgets/slider.hpp"
 #include "include/widgets/textBox.hpp"
+#include "include/widgets/themeOverride.hpp"
 #include "include/widgets/toggleSwitch.hpp"
 #include "include/widgets/tooltip.hpp"
 #include "include/widgets/topNav.hpp"
@@ -83,26 +85,36 @@ struct Test : StatefulWidget {
 		Child build(const Element &) override {
 			return ScrollView{
 				.children{
-					Box{
-						.widget{
-							.width = 100.f,
-							.height = 100.f,
+					ThemeOverride{
+						.theme = Theme{
+							.accent = Color::orange,
 						},
-						.color = Color::white,
-						.borderRadius = 1.5f,
+						.child = Builder{
+							.builder = [&](const Element &element) -> Child {
+								return Button{
+									.theme = Button::Theme::Accent(element),
+									.child = "This button is themed",
+								};
+							},
+						},
 					},
-					Slider{
-						.value = sliderVal,
-						.ticks = Slider::TickInterval{
-							5.f,
+					ThemeOverride{
+						.theme = Theme{
+							.accent = Color::red,
 						},
-						.onChange = [this](float val) {
-							auto newVal = std::round(val);
-							if (newVal != sliderVal) {
-								setState([&]() {
-									sliderVal = std::round(val);
-								});
-							}
+						.child = Slider{
+							.value = sliderVal,
+							.ticks = Slider::TickInterval{
+								5.f,
+							},
+							.onChange = [this](float val) {
+								auto newVal = std::round(val);
+								if (newVal != sliderVal) {
+									setState([&]() {
+										sliderVal = std::round(val);
+									});
+								}
+							},
 						},
 					},
 					ToggleSwitch{
@@ -260,7 +272,7 @@ struct Test2 : StatefulWidget {
 		bool toggle = false;
 		Button::ButtonStatus status = Button::ButtonStatus::resting;
 
-		Child build(const Element &) override {
+		Child build(const Element &element) override {
 			return ScrollView{
 				.direction = Axis::Horizontal,
 				.spacing = 2.f,
@@ -274,7 +286,7 @@ struct Test2 : StatefulWidget {
 						.child = "Toggle",
 					},
 					Button{
-						.theme = Button::Theme::Accent(),
+						.theme = Button::Theme::Accent(element),
 						.disabled = toggle,
 						.child = "Button",
 					},
@@ -532,7 +544,6 @@ int main(int /*unused*/, char ** /*unused*/) {
 						.title = "Expander Title",
 						.subtitle = "This is a subtitle",
 						.action = Button{
-							.theme = Button::Theme::Accent(),
 							.child = "Action",
 						},
 						.content = Column{

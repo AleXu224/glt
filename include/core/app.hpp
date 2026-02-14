@@ -81,6 +81,7 @@ namespace squi::core {
 		};
 		std::map<Element *, std::weak_ptr<Element>, ElementComparator> dirtyElements{};
 		std::unordered_set<AnimationController *> runningAnimations{};
+		InheritedMap inheritedMap{};
 		std::mutex taskMtx{};
 		std::vector<std::function<void()>> postLayoutTasks{};
 		std::vector<std::function<void()>> postRepositionTasks{};

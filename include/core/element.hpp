@@ -10,6 +10,7 @@ namespace squi::core {
 		WidgetPtr widget;
 		Element *parent = nullptr;
 		Element *root = nullptr;
+		InheritedMap *inheritedMap = nullptr;
 		size_t depth = 0;
 		static inline uint64_t nextId = 1;
 		const uint64_t id = nextId++;

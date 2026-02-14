@@ -25,7 +25,7 @@ namespace squi {
 	}
 
 	core::Child ToggleSwitch::State::build(const Element &element) {
-		auto usedTheme = widget->active ? getActiveTheme() : getTheme();
+		auto usedTheme = widget->active ? getActiveTheme(element) : getTheme();
 		auto style = usedTheme.fromStatus(status);
 
 		return Gesture{
@@ -104,8 +104,8 @@ namespace squi {
 			.disabled{.backgroundColor = Color::rgba(255, 255, 255, 0), .borderColor = Color::rgba(255, 255, 255, 0.1581), .textColor = Color::rgba(255, 255, 255, 0.3628)},
 		};
 	}
-	Button::Theme ToggleSwitch::State::getActiveTheme() {
-		auto accent = ThemeManager::getTheme().accent;
+	Button::Theme ToggleSwitch::State::getActiveTheme(const Element &element) {
+		auto accent = Theme::of(element).accent;
 
 		return {
 			.resting{.backgroundColor = accent, .borderColor = accent, .textColor = Color::black},

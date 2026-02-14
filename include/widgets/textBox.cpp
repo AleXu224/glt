@@ -24,7 +24,7 @@ namespace squi {
 		}
 	}
 
-	Child TextBox::State::build(const Element &) {
+	Child TextBox::State::build(const Element &element) {
 		static auto theme = []() {
 			auto ret = Button::Theme::Standard();
 			ret.active.textColor = Color::white;
@@ -85,7 +85,7 @@ namespace squi {
 											case Button::ButtonStatus::disabled:
 												return Color::transparent;
 											case Button::ButtonStatus::active:
-												return ThemeManager::getTheme().accent;
+												return Theme::of(element).accent;
 											default:
 												return Color::white * 0.54f;
 										}

@@ -16,7 +16,7 @@ namespace squi {
 		bool isSelected{false};
 		std::function<void()> onClick;
 
-		[[nodiscard]] Child build(const Element &) const {
+		[[nodiscard]] Child build(const Element &element) const {
 			return Gesture{
 				.onClick = [this](auto &&) {
 					if (this->onClick) this->onClick();
@@ -40,7 +40,7 @@ namespace squi {
 									  .height = 3.f,
 									  .alignment = Alignment::BottomCenter,
 								  },
-								  .color = ThemeManager::getTheme().accent,
+								  .color = Theme::of(element).accent,
 								  .borderRadius = 2.f,
 							  }
 							: Child{},

@@ -10,8 +10,8 @@ namespace squi {
 		bool selected = false;
 		std::function<void()> onClick;
 
-		[[nodiscard]] Child build(const Element &) const {
-			auto theme = selected ? Button::Theme::Accent() : Button::Theme::Standard();
+		[[nodiscard]] Child build(const Element &element) const {
+			auto theme = selected ? Button::Theme::Accent(element) : Button::Theme::Standard();
 			theme.resting.borderRadius = 16.f;
 			theme.hovered.borderRadius = 16.f;
 			theme.active.borderRadius = 16.f;

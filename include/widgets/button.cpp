@@ -8,8 +8,8 @@
 
 
 namespace squi {
-	Button::Theme Button::Theme::Accent() {
-		auto theme = ThemeManager::getTheme();
+	Button::Theme Button::Theme::Accent(const Element &element) {
+		auto theme = squi::Theme::of(element);
 		auto accentColor = theme.accent;
 		auto isLight = accentColor.isLight();
 

@@ -58,7 +58,7 @@ namespace squi {
 										.height = 16.f,
 										.alignment = Alignment::CenterLeft,
 									},
-									.color = widget->isSelected ? ThemeManager::getTheme().accent : Color::transparent,
+									.color = widget->isSelected ? Theme::of(element).accent : Color::transparent,
 									.borderRadius = 2.f,
 								},
 								Scrollable{

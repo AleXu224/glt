@@ -44,6 +44,7 @@ namespace squi::core {
 		this->dirty = true;
 		this->parent = parent;
 		this->root = parent ? parent->root : this;
+		this->inheritedMap = this->inheritedMap ? this->inheritedMap : (parent ? parent->inheritedMap : &getApp()->inheritedMap);
 		this->mounted = true;
 		this->index = index;
 		this->depth = depth;

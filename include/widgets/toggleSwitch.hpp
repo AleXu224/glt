@@ -24,7 +24,7 @@ namespace squi {
 		struct State : WidgetState<ToggleSwitch> {
 			static Button::Theme getTheme();
 
-			static Button::Theme getActiveTheme();
+			static Button::Theme getActiveTheme(const Element &element);
 
 			Button::ButtonStatus status = Button::ButtonStatus::resting;
 			bool active = false;

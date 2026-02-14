@@ -410,7 +410,7 @@ namespace squi {
 				14.f
 			);
 		}
-		auto theme = ThemeManager::getTheme();
+		auto theme = Theme::of(element);
 		return Offset{
 			.calculateContentBounds = [widthToStart](const Rect &bounds, const SingleChildRenderObject &) -> Rect {
 				auto ret = bounds;

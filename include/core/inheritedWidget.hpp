@@ -1,68 +1,60 @@
 #pragma once
 
-#include "widget.hpp"
-#include <typeindex>
-#include <unordered_map>
+#include "core/core.hpp"
+#include "core/widget.hpp"
 
 
 namespace squi::core {
-	struct InheritedWidget : Widget {
-		virtual bool updateShouldNotify(const InheritedWidget *oldWidget) const = 0;
+	template<class T>
+	concept HasContext = requires(T &&t) {
+		typename std::remove_cvref_t<T>::Context;
+		{ std::declval<typename std::remove_cvref_t<T>::Context>().widget } -> std::same_as<const T * &&>;
 	};
 
-	struct InheritedElement : ComponentElement {
-		std::unordered_map<std::type_index, std::shared_ptr<InheritedWidget>> dependencies;
+	template<class T>
+	struct InheritedWidget : StatelessWidget {
+		Child build(const Element &element) const {
+			return static_cast<const T *>(this)->child;
+		}
 
-		InheritedElement(const WidgetPtr &widget) : ComponentElement(widget) {}
+		struct Element : core::StatelessElement {
+			using ContextType = typename T::Context;
+			static_assert(HasContext<T>, "InheritedWidget requires a Context");
+			ContextType context;
+			InheritedMap inheritedMapCopy;
 
-		void mount(Element *parent, size_t index, size_t depth) override {
-			ComponentElement::mount(parent, index, depth);
-			// Inherit dependencies from parent
-			if (parent) {
-				if (auto *inheritedParent = dynamic_cast<InheritedElement *>(parent)) {
-					dependencies = inheritedParent->dependencies;
+			Element(const StatelessWidgetPtr &widget) : StatelessElement(widget), context(static_cast<const T *>(widget.get())) {}
+
+			void update(const WidgetPtr &newWidget) override {
+				context.widget = static_cast<const T *>(newWidget.get());
+				StatelessElement::update(newWidget);
+			}
+
+			void mount(core::Element *parent, size_t index, size_t depth) override {
+				this->inheritedMapCopy = *parent->inheritedMap;
+				this->inheritedMap = &this->inheritedMapCopy;
+				this->inheritedMap->emplace(this->widget->getTypeHash(), this);
+				StatelessElement::mount(parent, index, depth);
+			}
+
+			Child build() override {
+				if (auto inheritedWidget = std::static_pointer_cast<InheritedWidget<T>>(widget)) {
+					return inheritedWidget->_build(*this);
 				}
+				return nullptr;
 			}
-			// Add this widget if it's an InheritedWidget
-			if (auto inheritedWidget = std::static_pointer_cast<InheritedWidget>(widget)) {
-				auto *rawPtr = inheritedWidget.get();
-				std::type_index typeIndex(typeid(*rawPtr));
-				dependencies[typeIndex] = inheritedWidget;
+		};
+
+		static auto of(const core::Element &element) {
+			if (auto it = element.inheritedMap->find(typeid(T).hash_code()); it != element.inheritedMap->end()) {
+				return &static_cast<Element *>(it->second)->context;
 			}
+			return static_cast<typename T::Context *>(nullptr);
 		}
 
-		template<typename T>
-		std::shared_ptr<T> dependOnInheritedWidgetOfExactType() const {
-			auto it = dependencies.find(std::type_index(typeid(T)));
-			if (it != dependencies.end()) {
-				return std::static_pointer_cast<T>(it->second);
-			}
-			return nullptr;
-		}
-
-		void update(const WidgetPtr &newWidget) override {
-			auto oldInheritedWidget = std::static_pointer_cast<InheritedWidget>(widget);
-			ComponentElement::update(newWidget);
-
-			auto newInheritedWidget = std::static_pointer_cast<InheritedWidget>(newWidget);
-			if (newInheritedWidget) {
-				bool shouldNotify = !oldInheritedWidget || newInheritedWidget->updateShouldNotify(oldInheritedWidget.get());
-
-				auto *rawPtr = newInheritedWidget.get();
-				std::type_index typeIndex(typeid(*rawPtr));
-				dependencies[typeIndex] = newInheritedWidget;
-
-				if (shouldNotify) {
-					// Notify dependent elements that they need to rebuild
-					notifyDependents();
-				}
-			}
-		}
-
-	private:
-		void notifyDependents() {
-			// In a real implementation, this would traverse the subtree and
-			// mark elements that depend on this inherited widget as dirty
+		static auto of(const WidgetStateBase *state) {
+			return of(*state->element);
 		}
 	};
+
 }// namespace squi::core

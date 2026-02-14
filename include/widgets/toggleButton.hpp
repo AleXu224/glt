@@ -13,10 +13,10 @@ namespace squi {
 		std::function<void(bool)> onToggle;
 		std::variant<std::string, Child> child = "Toggle";
 
-		[[nodiscard]] Child build(const Element &) const {
+		[[nodiscard]] Child build(const Element &element) const {
 			return Button{
 				.widget = widget,
-				.theme = active ? Button::Theme::Accent() : Button::Theme::Standard(),
+				.theme = active ? Button::Theme::Accent(element) : Button::Theme::Standard(),
 				.disabled = disabled,
 				.onClick = [this]() {
 					if (onToggle) onToggle(!active);

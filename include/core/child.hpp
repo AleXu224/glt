@@ -21,4 +21,6 @@ namespace squi::core {
 	using Context = std::shared_ptr<Element>;
 	using ElementPtr = std::shared_ptr<Element>;
 	using ConstElementPtr = std::shared_ptr<const Element>;
+
+	using InheritedMap = std::unordered_map<int64_t, Element *>;
 }// namespace squi::core
