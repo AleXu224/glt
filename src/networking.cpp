@@ -53,7 +53,10 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 				cursor = lineEnd + 2;
 				break;
 			}
-			const auto value = line.substr(colon + 2);
+			auto value = line.substr(colon + 1);
+			// Trim whitespace from header value
+			value = value.substr(value.find_first_not_of(" \t"));
+			value = std::string_view(value.begin(), std::next(value.begin(), value.find_last_not_of(" \t") + 1));
 			ret.headers.emplace(key, value);
 		}
 
