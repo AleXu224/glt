@@ -19,10 +19,12 @@ namespace squi {
 			vec2 contextMenuPosition;
 			Button::ButtonStatus status = Button::ButtonStatus::resting;
 			Animated<float> chevronRotation;
+			Key dropdownKey;
 
 			void initState() override {
 				chevronRotation.duration = 200ms;
 				chevronRotation.mount(this);
+				dropdownKey = std::make_shared<IndexKey>(element->id);
 			}
 
 			Child build(const Element &element) override;

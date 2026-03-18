@@ -27,7 +27,7 @@ namespace squi::core {
 	};
 
 	template<class T>
-	struct WidgetState : WidgetStateBase {
+	struct WidgetState : WidgetStateBase, std::enable_shared_from_this<typename T::State> {
 		const T *widget = nullptr;
 
 		void setWidget(const std::shared_ptr<Widget> &newWidget) override {

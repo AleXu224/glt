@@ -27,12 +27,16 @@ namespace squi {
 						chevronRotation = 180.f;
 					});
 					Navigator::of(element).pushOverlay(Wrapper{
-						.onUnmount = [&]() {
-							setState([&]() {
-								chevronRotation = 0.f;
-							});
+						.key = dropdownKey,
+						.onUnmount = [self = this->weak_from_this()]() {
+							if (auto shared = self.lock()) {
+								shared->setState([&]() {
+									shared->chevronRotation = 0.f;
+								});
+							}
 						},
 						.child = ContextMenu{
+							.overlayKey = dropdownKey,
 							.position = contextMenuPosition,
 							.items = widget->items,
 						},

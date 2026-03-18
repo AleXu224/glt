@@ -23,8 +23,8 @@ namespace squi {
 	Child Scrollbar::State::build(const Element &) {
 		// Wrap the whole thing in a layout builder so that we can get the sizing of the scrollable
 		return LayoutBuilder{
-			.builder = [this](BoxConstraints) -> Child {
-				if (widget->controller->contentMainAxis <= widget->controller->viewMainAxis)
+			.builder = [this](BoxConstraints constraints) -> Child {
+				if (std::round(widget->controller->contentMainAxis) <= std::round(widget->controller->viewMainAxis))
 					return nullptr;
 
 				return Gesture{

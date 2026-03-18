@@ -120,7 +120,7 @@ namespace squi {
 				Gesture{
 					.onClick = [&](const Gesture::State &) {
 						if (onClose) onClose();
-						Navigator::of(element).popOverlay();
+						Navigator::of(element).popOverlay(overlayKey);
 					},
 					.child = Box{
 						.color = Color::transparent,

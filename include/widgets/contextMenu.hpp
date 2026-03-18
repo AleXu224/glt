@@ -19,6 +19,7 @@ namespace squi {
 
 		// Args
 		Key key;
+		Key overlayKey;
 		vec2 position;
 		std::function<void()> onClose;
 		std::vector<Item> items;
