@@ -71,7 +71,7 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 		.width = width,
 		.height = height,
 		.channels = channels,
-		.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
+		.mipLevels = 1,
 		.cmd = cmd,
 	});
 	// auto layout = texture->image.getSubresourceLayout(vk::ImageSubresource{

@@ -63,8 +63,55 @@ namespace squi {
 		if (!data->pipeline) return;
 		if (!data->sampler) return;
 
+		const auto &properties = *data->sampler->texture;
+		const float aspectRatio = static_cast<float>(properties.width) / static_cast<float>(properties.height);
+
+		const auto widgetSize = this->size;
+		vec2 size;
+		switch (this->fit) {
+			case Fit::none: {
+				size = vec2{
+					static_cast<float>(properties.width),
+					static_cast<float>(properties.height),
+				};
+				break;
+			}
+			case Fit::fill: {
+				size = widgetSize;
+				break;
+			}
+			case Fit::cover: {
+				if (widgetSize.x / widgetSize.y > aspectRatio) {
+					size = vec2{
+						widgetSize.x,
+						widgetSize.x / aspectRatio,
+					};
+				} else {
+					size = vec2{
+						widgetSize.y * aspectRatio,
+						widgetSize.y,
+					};
+				}
+				break;
+			}
+			case Fit::contain: {
+				if (widgetSize.x / widgetSize.y > aspectRatio) {
+					size = vec2{
+						widgetSize.y * aspectRatio,
+						widgetSize.y,
+					};
+				} else {
+					size = vec2{
+						widgetSize.x,
+						widgetSize.x / aspectRatio,
+					};
+				}
+				break;
+			}
+		}
+
 		data->quad.size = size;
-		data->quad.position = pos;
+		data->quad.position = getRect().posFromAlignment(Alignment::Center, Rect::fromPosSize(pos, size));
 
 		data->pipeline->bindWithSampler(*data->sampler);
 		auto index = data->pipeline->getIndexes();

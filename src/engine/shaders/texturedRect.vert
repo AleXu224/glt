@@ -12,9 +12,11 @@ layout(location = 1) in vec2 inPos;
 layout(location = 2) in vec2 inUv;
 
 layout(location = 0) out vec2 fragUv;
+layout(location = 1) out vec2 texelSize;
 
 void main() {
 	vec2 pos = inPos + inUv * inSize;
 	gl_Position = ubo.view * pushConstants.model * vec4(pos, 1.0, 1.0);
 	fragUv = inUv;
+	texelSize = vec2(1.0) / inSize;
 }

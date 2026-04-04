@@ -21,7 +21,7 @@ namespace squi {
 		BorderWidth borderWidth{0.0f};
 		BorderRadius borderRadius{0.0f};
 		BorderPosition borderPosition{BorderPosition::inset};
-		bool shouldClipContent = true;
+		bool shouldClipContent = false;
 		Child child;
 
 		struct Element : core::SingleChildRenderObjectElement {
