@@ -2,8 +2,8 @@
 
 #include "axis.hpp"
 #include "boxConstraints.hpp"
-#include "child.hpp"
 #include "core/alignment.hpp"
+#include "forwards.hpp"
 #include "memory"
 #include "rect.hpp"
 #include "vec2.hpp"

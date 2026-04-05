@@ -1,6 +1,6 @@
 #pragma once
 
-#include "child.hpp"
+#include "forwards.hpp"
 #include <functional>
 
 namespace squi::core {

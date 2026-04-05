@@ -17,7 +17,7 @@ namespace squi {
 			.font = FontStore::defaultFontBold,
 		};
 
-		auto contentBox = Box{
+		Child contentBox = Box{
 			.widget{.height = Size::Wrap},
 			.color = Color::css(255, 255, 255, 0.0538f),
 			.borderColor = Color::css(0, 0, 0, 0.1f),
@@ -51,7 +51,7 @@ namespace squi {
 			.children = widget->buttons,
 		};
 
-		auto dialog = Box{
+		Child dialog = Box{
 			.widget{
 				.width = widget->width,
 				.height = Size::Wrap,

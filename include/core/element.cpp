@@ -338,7 +338,7 @@ namespace squi::core {
 	void RenderObjectElement::update(const WidgetPtr &newWidget) {
 		Element::update(newWidget);
 
-		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(newWidget)) {
+		if (auto renderWidget = std::static_pointer_cast<RenderObjectWidget>(newWidget.widget)) {
 			renderObject->updateWidgetArgs(renderWidget->_getWidgetArgs());
 			renderWidget->_updateRenderObject(renderObject.get());
 		}

@@ -22,7 +22,7 @@ namespace squi {
 
 		auto content = widget->builder(offset, count);
 
-		auto controls = Row{
+		Child controls = Row{
 			.widget{
 				.width = Size::Shrink,
 				.alignment = Alignment::Center,

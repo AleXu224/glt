@@ -72,7 +72,7 @@ namespace squi::utils {
 	}
 
 	template<class RetType, std::ranges::range... Ranges>
-	consteval auto mergeRanges(Ranges ...ranges) {
+	consteval auto mergeRanges(Ranges... ranges) {
 		constexpr size_t totalSize = (ranges.size() + ...);
 		std::array<RetType, totalSize> ret{};
 		size_t it = 0;
@@ -82,8 +82,7 @@ namespace squi::utils {
 					ret[it++] = elem;
 				}
 			}(),
-			...
-		);
+			...);
 
 		return ret;
 	}
@@ -116,5 +115,26 @@ namespace squi::utils {
 	template<class... Ts>
 	struct overloaded : Ts... {
 		using Ts::operator()...;
+	};
+
+	template<class T>
+	struct Container {
+		std::shared_ptr<T> ptr;
+
+		Container(const T &value) : ptr(std::make_shared<T>(value)) {}
+		Container(T &&value) : ptr(std::make_shared<T>(std::move(value))) {}
+		Container() : ptr(std::make_shared<T>()) {};
+
+		T &get() {
+			return *ptr;
+		}
+
+		operator T &() {
+			return *ptr;
+		}
+
+		operator const T &() const {
+			return *ptr;
+		}
 	};
 }// namespace squi::utils

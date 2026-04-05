@@ -26,7 +26,7 @@ namespace squi::core {
 			Element(const StatelessWidgetPtr &widget) : StatelessElement(widget), context(static_cast<const T *>(widget.get())) {}
 
 			void update(const WidgetPtr &newWidget) override {
-				context.widget = static_cast<const T *>(newWidget.get());
+				context.widget = static_cast<const T *>(newWidget.widget.get());
 				StatelessElement::update(newWidget);
 			}
 

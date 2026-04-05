@@ -1,6 +1,6 @@
 #pragma once
 
-#include "child.hpp"
+#include "forwards.hpp"
 #include "key.hpp"
 #include "renderObject.hpp"
 #include <concepts>
@@ -41,7 +41,7 @@ namespace squi::core {
 
 	template<class T>
 	concept StateLike = requires(T a) {
-		{ a.build(std::declval<const Element &>()) } -> std::same_as<WidgetPtr>;
+		{ a.build(std::declval<const Element &>()) } -> std::same_as<Child>;
 	};
 
 	template<class T>
@@ -52,7 +52,7 @@ namespace squi::core {
 
 	template<class T>
 	concept StatelessWidgetLike = requires(T a) {
-		{ a.build(std::declval<const Element &>()) } -> std::same_as<WidgetPtr>;
+		{ a.build(std::declval<const Element &>()) } -> std::same_as<Child>;
 	};
 
 	template<class T>
