@@ -1,10 +1,15 @@
 #include "topNav.hpp"
 #include "widgets/box.hpp"
 #include "widgets/column.hpp"
+#include "widgets/fontIcon.hpp"
 #include "widgets/gestureDetector.hpp"
+#include "widgets/row.hpp"
 #include "widgets/scrollview.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
+
+
+#include "utils.hpp"
 
 #include "theme.hpp"
 
@@ -26,12 +31,35 @@ namespace squi {
 						.width = Size::Shrink,
 					},
 					.children{
-						Text{
+						Row{
 							.widget{
+								.width = Size::Wrap,
+								.height = Size::Wrap,
 								.alignment = Alignment::Center,
 								.margin = Margin{12.f, 0.f},
 							},
-							.text = page.name,
+							.spacing = 8.f,
+							.children{
+								std::visit(//
+									utils::overloaded{
+										[&](int32_t icon) -> Child {
+											return FontIcon{
+												.icon = icon,
+											};
+										},
+										[&](const Child &child) -> Child {
+											return child;
+										},
+										[&](std::monostate) -> Child {
+											return Child{};
+										},
+									},
+									page.icon
+								),
+								Text{
+									.text = page.name,
+								},
+							},
 						},
 						isSelected//
 							? Box{
