@@ -4,10 +4,10 @@
 #include "quad.hpp"
 
 namespace squi {
-	using BoxPipeline = Engine::Pipeline<Engine::Quad::Vertex>;
+	using BoxPipeline = glt::Engine::Pipeline<glt::Engine::Quad::Vertex>;
 
 	struct BoxData {
-		Engine::Quad quad;
+		glt::Engine::Quad quad;
 		std::shared_ptr<BoxPipeline> pipeline;
 	};
 }// namespace squi

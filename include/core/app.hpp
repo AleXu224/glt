@@ -43,12 +43,12 @@ namespace squi::core {
 	};
 
 	struct App {
-		Engine::WindowOptions windowOptions{
+		glt::Engine::WindowOptions windowOptions{
 			.name = "Squi App",
 		};
 		Child child;
 		Theme theme{};
-		Engine::Runner engine{
+		glt::Engine::Runner engine{
 			windowOptions
 		};
 

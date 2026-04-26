@@ -10,7 +10,7 @@
 
 namespace squi::Store {
 	struct Texture {
-		[[nodiscard]] static std::shared_ptr<Engine::Texture> getTexture(const ImageProvider &provider) {
+		[[nodiscard]] static std::shared_ptr<glt::Engine::Texture> getTexture(const ImageProvider &provider) {
 			auto &self = _getInstance();
 
 			{
@@ -46,6 +46,6 @@ namespace squi::Store {
 		}
 
 		std::mutex _dataMtx{};
-		std::unordered_map<std::string, std::weak_ptr<Engine::Texture>> _data{};
+		std::unordered_map<std::string, std::weak_ptr<glt::Engine::Texture>> _data{};
 	};
 }// namespace squi::Store

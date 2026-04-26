@@ -15,10 +15,10 @@
 #include <tuple>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct TextQuad;
 	struct Texture;
-}// namespace Engine
+}// namespace glt::Engine
 
 namespace squi {
 	struct FontStore {
@@ -85,8 +85,8 @@ namespace squi {
 
 			[[nodiscard]] uint32_t getLineHeight(float size);
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});
-			[[nodiscard]] std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
-			[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
+			[[nodiscard]] std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth = {});
+			[[nodiscard]] std::shared_ptr<glt::Engine::Texture> getTexture() const;
 			[[nodiscard]] ImageProvider getImageProvider() const;
 			void writePendingTextures();
 			static inline std::mutex fontMtx{};

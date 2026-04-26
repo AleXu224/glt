@@ -6,7 +6,7 @@
 
 struct GLFWwindow;
 
-namespace Engine {
+namespace glt::Engine {
 	struct WindowOptions {
 		std::string name = "Glt Window";
 		uint32_t width = 800;
@@ -30,4 +30,4 @@ namespace Engine {
 
 		~Window();
 	};
-}// namespace Engine
+}// namespace glt::Engine

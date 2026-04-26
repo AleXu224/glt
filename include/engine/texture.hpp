@@ -4,7 +4,7 @@
 
 #include "functional"
 
-namespace Engine {
+namespace glt::Engine {
 	struct TextureWriter {
 		struct Args {
 			bool first = false;
@@ -79,4 +79,4 @@ namespace Engine {
 
 		TextureWriter getWriter(BufferContainer cmd, TextureWriter::Args args = {});
 	};
-}// namespace Engine
+}// namespace glt::Engine

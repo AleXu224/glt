@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 	std::stringstream output;
 	output << "#pragma once\n";
 	output << "#include <array>\n\n";
-	output << "namespace Engine {\n";
+	output << "namespace glt::Engine {\n";
 	output << "\tnamespace Shaders {\n";
 	output << "\t\tconstexpr std::array<char, " << shaderContents.size() << "> " << newName << " = {";
 	for (const char &c: shaderContents) {

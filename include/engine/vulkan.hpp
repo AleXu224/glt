@@ -4,7 +4,7 @@
 #include "vulkanIncludes.hpp"
 #include <mutex>
 
-namespace Engine {
+namespace glt::Engine {
 	template<class T>
 	struct LockedResource {
 		std::scoped_lock<std::mutex> mtx;
@@ -21,7 +21,7 @@ namespace Engine {
 				return graphicsFamily.has_value() && presentFamily.has_value();
 			}
 		};
-		[[nodiscard]] static Engine::Vulkan::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &physicalDevice);
+		[[nodiscard]] static glt::Engine::Vulkan::QueueFamilyIndices findQueueFamilies(const vk::raii::PhysicalDevice &physicalDevice);
 
 		[[nodiscard]] static LockedResource<vk::raii::Queue> getGraphicsQueue();
 		[[nodiscard]] static LockedResource<vk::raii::Queue> getPresentQueue();
@@ -38,4 +38,4 @@ namespace Engine {
 		static vk::raii::PhysicalDevice &physicalDevice();
 		static vk::raii::Device &device();
 	};
-}// namespace Engine
+}// namespace glt::Engine

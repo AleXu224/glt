@@ -3,7 +3,7 @@
 #include "vulkan.hpp"
 #include <any>
 
-namespace Engine {
+namespace glt::Engine {
 	struct CommandBufferContainer {
 		vk::raii::CommandPool commandPool;
 		vk::raii::CommandBuffer commandBuffer;
@@ -78,4 +78,4 @@ namespace Engine {
 			}
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

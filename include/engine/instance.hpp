@@ -12,7 +12,7 @@
 #include <vulkan/vulkan_structs.hpp>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct Instance {
 		Window window;
 		vk::raii::SurfaceKHR surface;
@@ -152,9 +152,9 @@ namespace Engine {
 
 		[[nodiscard]] bool checkValidationLayers() const;
 
-		[[nodiscard]] Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
+		[[nodiscard]] glt::Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
 		[[nodiscard]] static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
 		[[nodiscard]] static vk::PresentModeKHR chooseSwapPresentMode();
 		[[nodiscard]] vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const;
 	};
-}// namespace Engine
+}// namespace glt::Engine

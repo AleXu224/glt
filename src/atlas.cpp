@@ -66,7 +66,7 @@ std::tuple<vec2, vec2, bool> Atlas::add(const uint16_t &width, const uint16_t &h
 	}
 
 	if (!this->textureWriter) {
-		auto cmd = Engine::CommandQueue::makeCommandBuffer();
+		auto cmd = glt::Engine::CommandQueue::makeCommandBuffer();
 		cmd->commandBuffer.begin({});
 		this->textureWriter = this->texture->getWriter(
 			cmd,
@@ -118,11 +118,11 @@ void squi::Atlas::writePendingTextures() {
 		this->textureWriter->write();
 		auto cmd = this->textureWriter->getCmd();
 		cmd->commandBuffer.end();
-		Engine::CommandQueue::push(cmd);
+		glt::Engine::CommandQueue::push(cmd);
 		this->textureWriter.reset();
 	}
 }
 
-std::shared_ptr<Engine::Texture> squi::Atlas::getTexture() const {
+std::shared_ptr<glt::Engine::Texture> squi::Atlas::getTexture() const {
 	return texture;
 }

@@ -9,7 +9,7 @@
 
 #include <utility>
 
-using namespace Engine;
+using namespace glt::Engine;
 
 Instance::Instance(WindowOptions options)
 	: window(std::move(options)),
@@ -24,7 +24,7 @@ Instance::Instance(WindowOptions options)
 	  frames{[&] {
 		  std::vector<Frame> ret{};
 		  ret.reserve(swapChainImages.size());
-		  auto props = Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
+		  auto props = glt::Engine::Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 		  for (size_t i = 0; i < swapChainImages.size(); i++) {
 			  ret.emplace_back(i, Vulkan::device(), props.graphicsFamily.value());
 		  }
@@ -33,7 +33,7 @@ Instance::Instance(WindowOptions options)
 	  }()},
 	  currentFrame(frames.front()) {}
 
-void Engine::Instance::recreateSwapChain() {
+void glt::Engine::Instance::recreateSwapChain() {
 	int width = 0;
 	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
@@ -54,7 +54,7 @@ void Engine::Instance::recreateSwapChain() {
 	}
 }
 
-vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
+vk::raii::SurfaceKHR glt::Engine::Instance::createSurface() const {
 #ifdef _WIN32
 	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo{
 		.hinstance = Vulkan::loader().has_value() ? Vulkan::loader()->m_library : Vulkan::fallbackLoader()->m_library,
@@ -75,11 +75,11 @@ vk::raii::SurfaceKHR Engine::Instance::createSurface() const {
 #endif
 }
 
-vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating) {
+vk::raii::SwapchainKHR glt::Engine::Instance::createSwapChain(bool recreating) {
 	return createSwapChain(recreating, querySwapChainSupport(Vulkan::physicalDevice()));
 }
 
-vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating, const SwapChainSupportDetails& swapChainSupport) {
+vk::raii::SwapchainKHR glt::Engine::Instance::createSwapChain(bool recreating, const SwapChainSupportDetails &swapChainSupport) {
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	vk::PresentModeKHR presentMode = chooseSwapPresentMode();
 
@@ -122,23 +122,23 @@ vk::raii::SwapchainKHR Engine::Instance::createSwapChain(bool recreating, const 
 	return Vulkan::device().createSwapchainKHR(createInfo);
 }
 
-std::vector<vk::Image> Engine::Instance::createSwapChainImages() const {
+std::vector<vk::Image> glt::Engine::Instance::createSwapChainImages() const {
 	return swapChain.getImages();
 }
 
-vk::Format Engine::Instance::createSwapChainImageFormat() {
+vk::Format glt::Engine::Instance::createSwapChainImageFormat() {
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	return surfaceFormat.format;
 }
 
-vk::Extent2D Engine::Instance::createExtent() {
+vk::Extent2D glt::Engine::Instance::createExtent() {
 	SwapChainSupportDetails swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	vk::Extent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 	return extent;
 }
 
-std::vector<vk::raii::ImageView> Engine::Instance::createImageViews() {
+std::vector<vk::raii::ImageView> glt::Engine::Instance::createImageViews() {
 	std::vector<vk::raii::ImageView> ret{};
 	ret.reserve(swapChainImages.size());
 
@@ -168,7 +168,7 @@ std::vector<vk::raii::ImageView> Engine::Instance::createImageViews() {
 	return ret;
 }
 
-vk::raii::RenderPass Engine::Instance::createRenderPass() {
+vk::raii::RenderPass glt::Engine::Instance::createRenderPass() {
 	vk::AttachmentDescription colorAttachment{
 		.format = swapChainImageFormat,
 		.samples = vk::SampleCountFlagBits::e1,
@@ -212,7 +212,7 @@ vk::raii::RenderPass Engine::Instance::createRenderPass() {
 	return Vulkan::device().createRenderPass(renderPassInfo);
 }
 
-std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
+std::vector<vk::raii::Framebuffer> glt::Engine::Instance::createFramebuffers() {
 	std::vector<vk::raii::Framebuffer> ret{};
 	ret.reserve(swapChainImageViews.size());
 
@@ -232,7 +232,7 @@ std::vector<vk::raii::Framebuffer> Engine::Instance::createFramebuffers() {
 	return ret;
 }
 
-Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) const {
+glt::Engine::Instance::SwapChainSupportDetails glt::Engine::Instance::querySwapChainSupport(const vk::raii::PhysicalDevice &device) const {
 	SwapChainSupportDetails details;
 
 	details.capabilities = device.getSurfaceCapabilitiesKHR(*surface);
@@ -242,7 +242,7 @@ Engine::Instance::SwapChainSupportDetails Engine::Instance::querySwapChainSuppor
 	return details;
 }
 
-vk::Extent2D Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const {
+vk::Extent2D glt::Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const {
 	if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
 		return capabilities.currentExtent;
 
@@ -261,11 +261,11 @@ vk::Extent2D Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR
 	return actualExtent;
 }
 
-vk::PresentModeKHR Engine::Instance::chooseSwapPresentMode() {
+vk::PresentModeKHR glt::Engine::Instance::chooseSwapPresentMode() {
 	return vk::PresentModeKHR::eImmediate;
 }
 
-vk::SurfaceFormatKHR Engine::Instance::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
+vk::SurfaceFormatKHR glt::Engine::Instance::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
 	for (const auto &availableFormat: availableFormats) {
 		if (availableFormat.format == vk::Format::eB8G8R8A8Unorm && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
 			return availableFormat;

@@ -7,7 +7,7 @@
 #include <vulkan/vulkan_structs.hpp>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct Shader {
 		size_t bufferIndex = 0;
 
@@ -32,4 +32,4 @@ namespace Engine {
 			module = device.createShaderModule(createinfo);
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

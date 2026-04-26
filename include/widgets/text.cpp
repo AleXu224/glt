@@ -20,8 +20,8 @@ namespace squi {
 			.key = "squiTextPipeline",
 			.provider = [&]() {
 				return TextPipeline::Args{
-					.vertexShader = Engine::Shaders::textRectvert,
-					.fragmentShader = Engine::Shaders::textRectfrag,
+					.vertexShader = glt::Engine::Shaders::textRectvert,
+					.fragmentShader = glt::Engine::Shaders::textRectfrag,
 					.instance = app->engine.instance,
 				};
 			},

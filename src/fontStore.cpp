@@ -61,7 +61,7 @@ std::shared_ptr<FontStore::Font> FontStore::getFont(const FontProvider &provider
 std::unordered_map<std::string, std::weak_ptr<FontStore::Font>> &FontStore::fonts() {
 	// Make sure device is constructed before the font store
 	[[maybe_unused]] static bool pre = []() {
-		[[maybe_unused]] auto &val = Engine::Vulkan::device();
+		[[maybe_unused]] auto &val = glt::Engine::Vulkan::device();
 		return true;
 	}();
 
@@ -219,7 +219,7 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	return {widestLine, lineCount * lineHeight};
 }
 
-std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
+std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
 	std::lock_guard lock{fontMtx};
 	if (!face) return {{}, 0.f, 0.f};
 	const int32_t maxWidthClamped = [&]() -> int32_t {
@@ -228,8 +228,8 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 		}
 		return std::numeric_limits<int32_t>::max();
 	}();
-	std::vector<std::vector<Engine::TextQuad>> quads{};
-	quads.resize(1, std::vector<Engine::TextQuad>{});
+	std::vector<std::vector<glt::Engine::TextQuad>> quads{};
+	quads.resize(1, std::vector<glt::Engine::TextQuad>{});
 	struct CharData {
 		Font::CharInfo &charInfo;
 		int32_t offsetX = 0;
@@ -256,7 +256,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 			return static_cast<float>(i);
 		};
 		for (const auto &charData: currentWordCharData) {
-			quads.back().emplace_back(Engine::TextQuad::Args{
+			quads.back().emplace_back(glt::Engine::TextQuad::Args{
 				.color{color},
 				.position{pos},
 				.size{charData.charInfo.size},
@@ -284,7 +284,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 		});
 		int32_t whiteSpaceSize = 0;
 		for (const auto &charData: std::span<CharData>(currentWordCharData.begin(), it)) {
-			quads.back().emplace_back(Engine::TextQuad::Args{
+			quads.back().emplace_back(glt::Engine::TextQuad::Args{
 				.color{color},
 				.position{pos},
 				.size{charData.charInfo.size},
@@ -341,7 +341,7 @@ std::tuple<std::vector<std::vector<Engine::TextQuad>>, float, float> FontStore::
 	return {quads, widestLine, quads.size() * lineHeight};
 }
 
-std::shared_ptr<Engine::Texture> squi::FontStore::Font::getTexture() const {
+std::shared_ptr<glt::Engine::Texture> squi::FontStore::Font::getTexture() const {
 	return impl->atlas.getTexture();
 }
 

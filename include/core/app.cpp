@@ -15,7 +15,7 @@ namespace squi::core {
 	void App::initialize() {
 		auto &window = engine.instance.window.ptr;
 		{
-			std::scoped_lock lock{Engine::Window::_windowMtx};
+			std::scoped_lock lock{glt::Engine::Window::_windowMtx};
 			windowMap[window] = this;
 			glfwSetWindowMaximizeCallback(engine.instance.window.ptr, [](GLFWwindow *windowPtr, int maximized) {
 				std::scoped_lock wnd{windowMapMtx};
@@ -244,7 +244,7 @@ namespace squi::core {
 					bool forceRedraw = inputState.isKeyPressedOrRepeat(GestureKey::f9);
 
 					{
-						std::scoped_lock lock{Engine::Window::_windowMtx};
+						std::scoped_lock lock{glt::Engine::Window::_windowMtx};
 						inputState.frameEnd();
 					}
 

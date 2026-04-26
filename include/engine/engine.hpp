@@ -5,7 +5,7 @@
 #include <functional>
 
 using namespace std::chrono_literals;
-namespace Engine {
+namespace glt::Engine {
 	struct Runner {
 		Instance instance;
 
@@ -31,4 +31,4 @@ namespace Engine {
 		std::function<void()> drawFunc{};
 		std::function<void()> cleanupFunc{};
 	};
-}// namespace Engine
+}// namespace glt::Engine

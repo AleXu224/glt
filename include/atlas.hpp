@@ -32,8 +32,8 @@ namespace squi {
 
 		std::string key;
 
-		std::shared_ptr<Engine::Texture> texture;
-		std::optional<Engine::TextureWriter> textureWriter = std::nullopt;
+		std::shared_ptr<glt::Engine::Texture> texture;
+		std::optional<glt::Engine::TextureWriter> textureWriter = std::nullopt;
 
 
 	public:
@@ -42,7 +42,7 @@ namespace squi {
 		std::tuple<vec2 /*uvTopLeft*/, vec2 /*uvBottomRight*/, bool /*success*/>
 		add(const uint16_t &width, const uint16_t &height, unsigned char *data);
 
-		[[nodiscard]] std::shared_ptr<Engine::Texture> getTexture() const;
+		[[nodiscard]] std::shared_ptr<glt::Engine::Texture> getTexture() const;
 		[[nodiscard]] ImageProvider getProvier();
 
 		void writePendingTextures();

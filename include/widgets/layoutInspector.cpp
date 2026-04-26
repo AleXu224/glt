@@ -135,7 +135,7 @@ namespace squi {
 		std::optional<Value> value;
 
 		struct LayoutInspectorOverlayRenderObject : SingleChildRenderObject {
-			using InspectorPipeline = Engine::Pipeline<Engine::InspectorQuad::Vertex>;
+			using InspectorPipeline = glt::Engine::Pipeline<glt::Engine::InspectorQuad::Vertex>;
 
 			std::optional<Value> value;
 			std::shared_ptr<InspectorPipeline> pipeline;
@@ -150,8 +150,8 @@ namespace squi {
 					.key = "squiLayoutInspectorOverlayPipeline",
 					.provider = [&]() {
 						return InspectorPipeline::Args{
-							.vertexShader = Engine::Shaders::inspectorQuadvert,
-							.fragmentShader = Engine::Shaders::inspectorQuadfrag,
+							.vertexShader = glt::Engine::Shaders::inspectorQuadvert,
+							.fragmentShader = glt::Engine::Shaders::inspectorQuadfrag,
 							.instance = app->engine.instance,
 						};
 					},
@@ -161,7 +161,7 @@ namespace squi {
 			void drawSelf() override {
 				if (!value.has_value()) return;
 				if (!pipeline) return;
-				Engine::InspectorQuad quad{Engine::InspectorQuad::Args{
+				glt::Engine::InspectorQuad quad{glt::Engine::InspectorQuad::Args{
 					.position = value->bounds.getTopLeft(),
 					.size = value->bounds.size(),
 					.margins = value->margin,

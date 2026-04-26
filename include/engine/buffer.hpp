@@ -4,7 +4,7 @@
 #include "vulkan.hpp"
 #include "vulkanIncludes.hpp"
 
-namespace Engine {
+namespace glt::Engine {
 	struct Buffer {
 		vk::raii::Buffer buffer;
 		vk::raii::DeviceMemory memory;
@@ -17,16 +17,16 @@ namespace Engine {
 
 		Buffer(const Args &args)
 			: buffer(Vulkan::device(), vk::BufferCreateInfo{
-													.size = args.size,
-													.usage = args.usage,
-													.sharingMode = vk::SharingMode::eExclusive,
-												}),
+										   .size = args.size,
+										   .usage = args.usage,
+										   .sharingMode = vk::SharingMode::eExclusive,
+									   }),
 			  memory(Vulkan::device(), vk::MemoryAllocateInfo{
-													.allocationSize = buffer.getMemoryRequirements().size,
-													.memoryTypeIndex = findMemoryType(buffer.getMemoryRequirements().memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
-												}),
+										   .allocationSize = buffer.getMemoryRequirements().size,
+										   .memoryTypeIndex = findMemoryType(buffer.getMemoryRequirements().memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
+									   }),
 			  mappedMemory(memory.mapMemory(0, buffer.getMemoryRequirements().size)) {
 			buffer.bindMemory(*memory, 0);
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <functional>
-namespace Engine {
+namespace glt::Engine {
 	template<class... T>
 	struct GetterSetter {
 		using type = typename std::tuple_element<0, std::tuple<T...>>::type;
@@ -40,4 +40,4 @@ namespace Engine {
 	private:
 		std::tuple<std::reference_wrapper<T>...> obj;
 	};
-}// namespace Engine
+}// namespace glt::Engine

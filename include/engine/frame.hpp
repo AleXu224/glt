@@ -4,7 +4,7 @@
 #include "vulkanIncludes.hpp"
 #include <vulkan/vulkan_raii.hpp>
 
-namespace Engine {
+namespace glt::Engine {
 	struct Frame {
 		const size_t index;
 		vk::raii::CommandPool commandPool = nullptr;
@@ -22,4 +22,4 @@ namespace Engine {
 
 		void transitionSwapchainImage(vk::Image image, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) const;
 	};
-}// namespace Engine
+}// namespace glt::Engine

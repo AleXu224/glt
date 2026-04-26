@@ -5,7 +5,7 @@
 #include "vulkan.hpp"
 
 
-void Engine::Texture::transitionLayout(BufferContainer cmd, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
+void glt::Engine::Texture::transitionLayout(BufferContainer cmd, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
 	vk::ImageSubresourceRange subresourceRange{
 		.aspectMask = vk::ImageAspectFlagBits::eColor,
 		.baseMipLevel = 0,
@@ -43,7 +43,7 @@ void Engine::Texture::transitionLayout(BufferContainer cmd, vk::ImageLayout oldL
 	cmd->commandBuffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, imageMemBarrier);
 }
 
-Engine::Texture::Texture(const Args &args)
+glt::Engine::Texture::Texture(const Args &args)
 	: image(std::make_shared<vk::raii::Image>(createImage(args))),
 	  memory(std::make_shared<vk::raii::DeviceMemory>(createMemory())),
 	  sampler(createSampler(args)),
@@ -70,7 +70,7 @@ Engine::Texture::Texture(const Args &args)
 	}
 }
 
-vk::raii::ImageView Engine::Texture::createImageView(const Args &args) const {
+vk::raii::ImageView glt::Engine::Texture::createImageView(const Args &args) const {
 	vk::ImageViewCreateInfo createInfo{
 		.image = *image,
 		.viewType = vk::ImageViewType::e2D,
@@ -93,7 +93,7 @@ vk::raii::ImageView Engine::Texture::createImageView(const Args &args) const {
 	return {Vulkan::device(), createInfo};
 }
 
-vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
+vk::raii::Sampler glt::Engine::Texture::createSampler(const Args &args) const {
 	image->bindMemory(**memory, 0);
 
 	vk::SamplerCreateInfo createInfo{
@@ -115,7 +115,7 @@ vk::raii::Sampler Engine::Texture::createSampler(const Args &args) const {
 	return {Vulkan::device(), createInfo};
 }
 
-vk::raii::DeviceMemory Engine::Texture::createMemory() const {
+vk::raii::DeviceMemory glt::Engine::Texture::createMemory() const {
 	auto reqs = image->getMemoryRequirements();
 
 	vk::MemoryAllocateInfo allocInfo{
@@ -126,7 +126,7 @@ vk::raii::DeviceMemory Engine::Texture::createMemory() const {
 	return {Vulkan::device(), allocInfo};
 }
 
-void Engine::Texture::generateMipmaps(BufferContainer cmd) {
+void glt::Engine::Texture::generateMipmaps(BufferContainer cmd) {
 	int32_t mipWidth = width;
 	int32_t mipHeight = height;
 
@@ -213,7 +213,7 @@ void Engine::Texture::generateMipmaps(BufferContainer cmd) {
 	}
 }
 
-vk::raii::Image Engine::Texture::createImage(const Args &args) {
+vk::raii::Image glt::Engine::Texture::createImage(const Args &args) {
 	vk::ImageCreateInfo createInfo{
 		.imageType = vk::ImageType::e2D,
 		.format = formatFromChannels(args.channels),
@@ -234,7 +234,7 @@ vk::raii::Image Engine::Texture::createImage(const Args &args) {
 	return {Vulkan::device(), createInfo};
 }
 
-vk::Format Engine::Texture::formatFromChannels(uint32_t channels) {
+vk::Format glt::Engine::Texture::formatFromChannels(uint32_t channels) {
 	switch (channels) {
 		case 4: {
 			return vk::Format::eR8G8B8A8Unorm;
@@ -255,8 +255,8 @@ vk::Format Engine::Texture::formatFromChannels(uint32_t channels) {
 	}
 }
 
-Engine::TextureWriter Engine::Texture::getWriter(BufferContainer cmd, Engine::TextureWriter::Args args) {
-	return Engine::TextureWriter(
+glt::Engine::TextureWriter glt::Engine::Texture::getWriter(BufferContainer cmd, glt::Engine::TextureWriter::Args args) {
+	return glt::Engine::TextureWriter(
 		width, height, *image, cmd,
 		[this, cmd](vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask) {
 			transitionLayout(cmd, oldLayout, newLayout, srcStageMask, dstStageMask);
@@ -265,7 +265,7 @@ Engine::TextureWriter Engine::Texture::getWriter(BufferContainer cmd, Engine::Te
 	);
 }
 
-Engine::TextureWriter::TextureWriter(TextureWriter &&other)
+glt::Engine::TextureWriter::TextureWriter(TextureWriter &&other)
 	: memory(std::move(other.memory)),
 	  valid(std::move(other.valid)),
 	  width(std::move(other.width)),
@@ -278,7 +278,7 @@ Engine::TextureWriter::TextureWriter(TextureWriter &&other)
 	other.valid = false;
 }
 
-Engine::TextureWriter &Engine::TextureWriter::operator=(TextureWriter &&other) {
+glt::Engine::TextureWriter &glt::Engine::TextureWriter::operator=(TextureWriter &&other) {
 	this->memory = std::move(other.memory);
 	this->valid = std::move(other.valid);
 	this->width = std::move(other.width);
@@ -293,7 +293,7 @@ Engine::TextureWriter &Engine::TextureWriter::operator=(TextureWriter &&other) {
 	return *this;
 }
 
-Engine::TextureWriter::TextureWriter(
+glt::Engine::TextureWriter::TextureWriter(
 	uint32_t width,
 	uint32_t height,
 	vk::raii::Image &image,
@@ -359,7 +359,7 @@ Engine::TextureWriter::TextureWriter(
 	}
 }
 
-void Engine::TextureWriter::write() {
+void glt::Engine::TextureWriter::write() {
 	if (!valid) return;
 	valid = false;
 
@@ -388,6 +388,6 @@ void Engine::TextureWriter::write() {
 	cmd->pushResource(stagingMemory);
 }
 
-Engine::TextureWriter::~TextureWriter() {
+glt::Engine::TextureWriter::~TextureWriter() {
 	write();
 }

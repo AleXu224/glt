@@ -4,7 +4,7 @@
 #include "future"
 #include "vector"
 
-namespace Engine {
+namespace glt::Engine {
 	struct Texture;
 }
 
@@ -21,6 +21,6 @@ namespace squi {
 		static std::future<ImageData> fromUrlAsync(const std::string &url);
 		static std::future<ImageData> fromFileAsync(const std::string &path);
 
-		[[nodiscard]] std::shared_ptr<Engine::Texture> createTexture() const;
+		[[nodiscard]] std::shared_ptr<glt::Engine::Texture> createTexture() const;
 	};
 }// namespace squi

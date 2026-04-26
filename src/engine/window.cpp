@@ -3,9 +3,9 @@
 #include <string>
 
 
-using namespace Engine;
+using namespace glt::Engine;
 
-Engine::Window::Window(WindowOptions options)
+glt::Engine::Window::Window(WindowOptions options)
 	: ptr() {
 	std::scoped_lock windowCreationLock{_windowMtx};
 	[[maybe_unused]] static bool glfwIniter = []() {
@@ -18,13 +18,13 @@ Engine::Window::Window(WindowOptions options)
 	ptr = glfwCreateWindow(options.width, options.height, options.name.c_str(), nullptr, nullptr);
 }
 
-void Engine::Window::destroy() {
+void glt::Engine::Window::destroy() {
 	if (destroyed) return;
 	destroyed = true;
 	glfwDestroyWindow(ptr);
 	destroyPromise.set_value();
 }
 
-Engine::Window::~Window() {
+glt::Engine::Window::~Window() {
 	if (!destroyed) destroy();
 }

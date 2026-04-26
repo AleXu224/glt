@@ -1,12 +1,12 @@
 #pragma once
+#include "getterSetter.hpp"
 #include "pipeline.hpp"
 #include "vulkanIncludes.hpp"
 #include <array>
 #include <cstddef>
-#include "getterSetter.hpp"
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct TexturedQuad {
 		struct Vertex {
 			alignas(8) glm::vec2 size;
@@ -49,7 +49,6 @@ namespace Engine {
 		std::array<uint16_t, 6> indices{};
 
 	public:
-
 		GetterSetter<glm::vec2, glm::vec2, glm::vec2, glm::vec2> position{
 			vertices[0].pos,
 			vertices[1].pos,
@@ -103,4 +102,4 @@ namespace Engine {
 			};
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

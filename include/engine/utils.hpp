@@ -8,7 +8,7 @@
 #include <utility>
 
 
-namespace Engine {
+namespace glt::Engine {
 	[[maybe_unused]] static uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
 		auto memProperties = Vulkan::physicalDevice().getMemoryProperties();
 
@@ -30,4 +30,4 @@ namespace Engine {
 	static inline std::array<T, N> generateArray(const std::function<T(size_t)> &generator) {
 		return _generateArray<T, N>(generator, std::make_index_sequence<N>{});
 	}
-}// namespace Engine
+}// namespace glt::Engine

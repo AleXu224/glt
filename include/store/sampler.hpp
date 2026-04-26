@@ -10,12 +10,12 @@
 
 namespace squi::Store {
 	struct Sampler {
-		[[nodiscard]] std::shared_ptr<Engine::SamplerUniform> getSampler(Engine::Instance &instance, std::shared_ptr<Engine::Texture> texture) {
+		[[nodiscard]] std::shared_ptr<glt::Engine::SamplerUniform> getSampler(glt::Engine::Instance &instance, std::shared_ptr<glt::Engine::Texture> texture) {
 			// FIXME: make this async
 			std::scoped_lock lock{_dataMtx};
 
 			auto createSampler = [&]() {
-				return std::make_shared<Engine::SamplerUniform>(Engine::SamplerUniform::Args{
+				return std::make_shared<glt::Engine::SamplerUniform>(glt::Engine::SamplerUniform::Args{
 					.instance = instance,
 					.texture = texture,
 				});
@@ -37,6 +37,6 @@ namespace squi::Store {
 
 	private:
 		std::mutex _dataMtx{};
-		std::unordered_map<Engine::Texture *, std::weak_ptr<Engine::SamplerUniform>> _data{};
+		std::unordered_map<glt::Engine::Texture *, std::weak_ptr<glt::Engine::SamplerUniform>> _data{};
 	};
 }// namespace squi::Store

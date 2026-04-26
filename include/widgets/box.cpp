@@ -9,7 +9,7 @@
 
 
 namespace squi {
-	Box::BoxRenderObject::BoxRenderObject() : data(std::make_unique<BoxData>(Engine::Quad::Args{})) {}
+	Box::BoxRenderObject::BoxRenderObject() : data(std::make_unique<BoxData>(glt::Engine::Quad::Args{})) {}
 
 	void Box::BoxRenderObject::init() {
 		auto *app = this->getApp();
@@ -20,8 +20,8 @@ namespace squi {
 			.key = "squiBoxPipeline",
 			.provider = [&]() {
 				return BoxPipeline::Args{
-					.vertexShader = Engine::Shaders::rectvert,
-					.fragmentShader = Engine::Shaders::rectfrag,
+					.vertexShader = glt::Engine::Shaders::rectvert,
+					.fragmentShader = glt::Engine::Shaders::rectfrag,
 					.instance = app->engine.instance,
 				};
 			},

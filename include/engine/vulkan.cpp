@@ -21,8 +21,8 @@ inline std::vector<const char *> &deviceExtensions() {
 	return _;
 };
 
-Engine::Vulkan::QueueFamilyIndices Engine::Vulkan::findQueueFamilies(const vk::raii::PhysicalDevice &physicalDevice) {
-	Engine::Vulkan::QueueFamilyIndices indices{};
+glt::Engine::Vulkan::QueueFamilyIndices glt::Engine::Vulkan::findQueueFamilies(const vk::raii::PhysicalDevice &physicalDevice) {
+	glt::Engine::Vulkan::QueueFamilyIndices indices{};
 
 	auto queueFamilies = physicalDevice.getQueueFamilyProperties();
 
@@ -49,19 +49,19 @@ Engine::Vulkan::QueueFamilyIndices Engine::Vulkan::findQueueFamilies(const vk::r
 	return indices;
 }
 
-Engine::LockedResource<vk::raii::Queue> Engine::Vulkan::getGraphicsQueue() {
+glt::Engine::LockedResource<vk::raii::Queue> glt::Engine::Vulkan::getGraphicsQueue() {
 	static std::mutex mtx{};
 	auto indices = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 	return {std::scoped_lock{mtx}, Vulkan::device().getQueue(indices.graphicsFamily.value(), 0)};
 }
 
-Engine::LockedResource<vk::raii::Queue> Engine::Vulkan::getPresentQueue() {
+glt::Engine::LockedResource<vk::raii::Queue> glt::Engine::Vulkan::getPresentQueue() {
 	static std::mutex mtx{};
 	auto indices = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 	return {std::scoped_lock{mtx}, Vulkan::device().getQueue(indices.presentFamily.value(), 0)};
 }
 
-std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCommandBuffer() {
+std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> glt::Engine::Vulkan::makeCommandBuffer() {
 	auto props = Vulkan::findQueueFamilies(Vulkan::physicalDevice());
 
 	vk::CommandPoolCreateInfo poolInfo{
@@ -82,7 +82,7 @@ std::pair<vk::raii::CommandPool, vk::raii::CommandBuffer> Engine::Vulkan::makeCo
 	};
 }
 
-void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
+void glt::Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
 	vk::SubmitInfo submitInfo{
 		.commandBufferCount = 1,
 		.pCommandBuffers = &*cmd,
@@ -101,19 +101,19 @@ void Engine::Vulkan::finishCommandBuffer(vk::raii::CommandBuffer &cmd) {
 	}
 }
 
-std::optional<Engine::DynamicLoader> &Engine::Vulkan::loader() {
+std::optional<glt::Engine::DynamicLoader> &glt::Engine::Vulkan::loader() {
 	static std::optional<DynamicLoader> _ = []() {
 		try {
 			return std::optional{DynamicLoader{}};
 		} catch (std::exception &) {
 			std::println("System doesn't have a vulkan loader");
-			return std::optional<Engine::DynamicLoader>{};
+			return std::optional<glt::Engine::DynamicLoader>{};
 		}
 	}();
 
 	return _;
 }
-std::optional<Engine::DynamicLoader> &Engine::Vulkan::fallbackLoader() {
+std::optional<glt::Engine::DynamicLoader> &glt::Engine::Vulkan::fallbackLoader() {
 	const std::string fallbackLoader{
 #ifdef _WIN32
 		"vk_swiftshader.dll"
@@ -128,14 +128,14 @@ std::optional<Engine::DynamicLoader> &Engine::Vulkan::fallbackLoader() {
 			return std::optional{DynamicLoader{fallbackLoader}};
 		} catch (std::exception &) {
 			std::println("Loading fallback {} failed", fallbackLoader);
-			return std::optional<Engine::DynamicLoader>{};
+			return std::optional<glt::Engine::DynamicLoader>{};
 		}
 	}();
 
 	return _;
 }
 
-vk::raii::Context &Engine::Vulkan::context() {
+vk::raii::Context &glt::Engine::Vulkan::context() {
 	auto *loaderPtr = &loader();
 	if (!loaderPtr->has_value()) loaderPtr = &fallbackLoader();
 	if (!loaderPtr->has_value()) throw std::runtime_error("Failed finding a suitable loader");
@@ -145,7 +145,7 @@ vk::raii::Context &Engine::Vulkan::context() {
 	return _;
 }
 
-bool Engine::Vulkan::checkValidationLayers() {
+bool glt::Engine::Vulkan::checkValidationLayers() {
 	auto availableLayers = context().enumerateInstanceLayerProperties();
 
 	for (const auto &layer: validationLayers) {
@@ -163,7 +163,7 @@ bool Engine::Vulkan::checkValidationLayers() {
 	return true;
 }
 
-vk::raii::Instance &Engine::Vulkan::instance() {
+vk::raii::Instance &glt::Engine::Vulkan::instance() {
 	static vk::raii::Instance instance = []() {
 		if (debugBuild && !checkValidationLayers()) {
 			std::println("The required validation layers are not available, proceeding without them");
@@ -203,7 +203,7 @@ vk::raii::Instance &Engine::Vulkan::instance() {
 	return instance;
 }
 
-vk::raii::PhysicalDevice &Engine::Vulkan::physicalDevice() {
+vk::raii::PhysicalDevice &glt::Engine::Vulkan::physicalDevice() {
 
 	static vk::raii::PhysicalDevice _ = []() {
 		auto &deviceExt = deviceExtensions();
@@ -233,7 +233,7 @@ vk::raii::PhysicalDevice &Engine::Vulkan::physicalDevice() {
 	return _;
 }
 
-vk::raii::Device &Engine::Vulkan::device() {
+vk::raii::Device &glt::Engine::Vulkan::device() {
 	// static std::mutex mtx{};
 	static vk::raii::Device _ = []() {
 		auto &deviceExt = deviceExtensions();

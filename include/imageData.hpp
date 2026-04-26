@@ -4,13 +4,13 @@
 #include "texturedQuad.hpp"
 
 namespace squi {
-	using ImagePipeline = Engine::Pipeline<Engine::TexturedQuad::Vertex, true>;
+	using ImagePipeline = glt::Engine::Pipeline<glt::Engine::TexturedQuad::Vertex, true>;
 	struct ImageDataImpl {
-		Engine::TexturedQuad quad{Engine::TexturedQuad::Args{
+		glt::Engine::TexturedQuad quad{glt::Engine::TexturedQuad::Args{
 			.position{0, 0},
 			.size{0, 0},
 		}};
-		std::shared_ptr<Engine::SamplerUniform> sampler;
+		std::shared_ptr<glt::Engine::SamplerUniform> sampler;
 		std::shared_ptr<ImagePipeline> pipeline;
 	};
 }// namespace squi

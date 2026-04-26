@@ -9,7 +9,7 @@
 #include <vulkan/vulkan_enums.hpp>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct PushConstant {
 		glm::mat4 model = glm::mat4(1.f);
 	};
@@ -148,4 +148,4 @@ namespace Engine {
 			return Vulkan::device().allocateDescriptorSets(allocInfo);
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

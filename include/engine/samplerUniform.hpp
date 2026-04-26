@@ -10,7 +10,7 @@
 #include <utility>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct SamplerUniform : public std::enable_shared_from_this<SamplerUniform> {
 		struct Args {
 			Instance &instance;
@@ -133,4 +133,4 @@ namespace Engine {
 			return Vulkan::device().allocateDescriptorSets(allocInfo);
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

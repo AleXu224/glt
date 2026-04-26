@@ -6,7 +6,7 @@
 #include <cstddef>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct InspectorQuad {
 		struct Vertex {
 			alignas(16) glm::vec4 margins;
@@ -126,4 +126,4 @@ namespace Engine {
 			};
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

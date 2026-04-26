@@ -6,7 +6,7 @@
 #include <cstddef>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct TextQuad {
 		struct Vertex {
 			alignas(16) glm::vec4 color;
@@ -80,7 +80,7 @@ namespace Engine {
 			vertices[2].pos = newPos;
 			vertices[3].pos = newPos;
 		}
-		void setColor(const squi::Color& newColor) {
+		void setColor(const squi::Color &newColor) {
 			vertices[0].color = newColor;
 			vertices[1].color = newColor;
 			vertices[2].color = newColor;
@@ -148,4 +148,4 @@ namespace Engine {
 			};
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

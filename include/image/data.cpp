@@ -63,11 +63,11 @@ std::future<ImageData> ImageData::fromFileAsync(const std::string &path) {
 	});
 }
 
-std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
-	auto cmd = Engine::CommandQueue::makeCommandBuffer();
+std::shared_ptr<glt::Engine::Texture> ImageData::createTexture() const {
+	auto cmd = glt::Engine::CommandQueue::makeCommandBuffer();
 
 	cmd->commandBuffer.begin({});
-	auto texture = std::make_shared<Engine::Texture>(Engine::Texture::Args{
+	auto texture = std::make_shared<glt::Engine::Texture>(glt::Engine::Texture::Args{
 		.width = width,
 		.height = height,
 		.channels = channels,
@@ -91,7 +91,7 @@ std::shared_ptr<Engine::Texture> ImageData::createTexture() const {
 	texture->generateMipmaps(cmd);
 	cmd->commandBuffer.end();
 
-	Engine::CommandQueue::push(cmd);
+	glt::Engine::CommandQueue::push(cmd);
 
 	return texture;
 }

@@ -16,7 +16,7 @@ extern "C" __declspec(dllimport) FARPROC __stdcall GetProcAddress(HINSTANCE hMod
 #endif
 
 // Copied from vulkan.hpp since the whole class is disabled when VULKAN_HPP_ENABLE_DYNAMIC_LOADER_TOOL is set to 0
-namespace Engine {
+namespace glt::Engine {
 	class DynamicLoader {
 	public:
 		DynamicLoader(std::string const &vulkanLibraryName = {}) {
@@ -102,4 +102,4 @@ namespace Engine {
 #error unsupported platform
 #endif
 	};
-}// namespace Engine
+}// namespace glt::Engine

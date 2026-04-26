@@ -13,19 +13,19 @@
 
 #include "GLFW/glfw3.h"
 
-Engine::Runner::Runner(WindowOptions options) : instance(std::move(options)) {}
+glt::Engine::Runner::Runner(WindowOptions options) : instance(std::move(options)) {}
 
-Engine::Frame &Engine::Runner::getCurrentFrame() {
+glt::Engine::Frame &glt::Engine::Runner::getCurrentFrame() {
 	return instance.frames.at(frameNumber % instance.frames.size());
 }
 
-void Engine::Runner::recreateSwapChain() {
+void glt::Engine::Runner::recreateSwapChain() {
 	instance.recreateSwapChain();
 	resized = false;
 	outdatedFramebuffer = false;
 }
 
-void Engine::Runner::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
+void glt::Engine::Runner::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
 	this->preDraw = preDraw;
 	this->drawFunc = drawFunc;
 	try {
@@ -43,7 +43,7 @@ void Engine::Runner::run(const std::function<bool()> &preDraw, const std::functi
 	}
 }
 
-void Engine::Runner::draw() {
+void glt::Engine::Runner::draw() {
 	auto newFrameStartTime = std::chrono::steady_clock::now();
 	deltaTime = newFrameStartTime - frameStartTime;
 	frameStartTime = newFrameStartTime;
@@ -140,7 +140,7 @@ void Engine::Runner::draw() {
 		.pSignalSemaphores = &*instance.currentFrame.get().renderSemaphore,
 	};
 
-	Engine::CommandQueue::frameEnd();
+	glt::Engine::CommandQueue::frameEnd();
 
 	Vulkan::getGraphicsQueue().resource.submit(submitInfo, *instance.currentFrame.get().renderFence);
 

@@ -6,7 +6,7 @@
 #include <cstddef>
 
 
-namespace Engine {
+namespace glt::Engine {
 	struct Quad {
 		struct Vertex {
 			alignas(16) glm::vec4 color;
@@ -240,4 +240,4 @@ namespace Engine {
 			};
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine

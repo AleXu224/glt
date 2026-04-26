@@ -7,7 +7,7 @@
 #include "store/texture.hpp"
 
 namespace squi {
-	Image::ImageRenderObject::ImageRenderObject() : data(std::make_unique<ImageDataImpl>(Engine::TexturedQuad::Args{})) {}
+	Image::ImageRenderObject::ImageRenderObject() : data(std::make_unique<ImageDataImpl>(glt::Engine::TexturedQuad::Args{})) {}
 
 	void Image::ImageRenderObject::init() {
 		auto *app = this->getApp();
@@ -18,8 +18,8 @@ namespace squi {
 			.key = "squiImagePipeline",
 			.provider = [&]() {
 				return ImagePipeline::Args{
-					.vertexShader = Engine::Shaders::texturedRectvert,
-					.fragmentShader = Engine::Shaders::texturedRectfrag,
+					.vertexShader = glt::Engine::Shaders::texturedRectvert,
+					.fragmentShader = glt::Engine::Shaders::texturedRectfrag,
 					.instance = app->engine.instance,
 				};
 			},

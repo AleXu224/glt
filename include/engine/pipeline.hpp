@@ -16,7 +16,7 @@
 #include <vulkan/vulkan_enums.hpp>
 
 
-namespace Engine {
+namespace glt::Engine {
 	template<class Vertex, bool hasTexture = false, class... Uniforms>
 	struct Pipeline : public std::enable_shared_from_this<Pipeline<Vertex, hasTexture, Uniforms...>> {
 		struct Args {
@@ -536,4 +536,4 @@ namespace Engine {
 			graphicsQueue.resource.waitIdle();
 		}
 	};
-}// namespace Engine
+}// namespace glt::Engine
