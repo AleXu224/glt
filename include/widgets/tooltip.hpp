@@ -3,13 +3,17 @@
 #include "core/core.hpp"
 
 namespace squi {
-	struct Tooltip : StatelessWidget {
+	struct Tooltip : StatefulWidget {
 		// Args
 		Key key;
 		std::string text;
 		Child child;
 
-		[[nodiscard]] Child build(const Element &) const;
+		struct State : WidgetState<Tooltip> {
+			~State();
+
+			Child build(const Element &element) override;
+		};
 	};
 
 	struct TooltipWithTarget : StatefulWidget {
@@ -20,6 +24,8 @@ namespace squi {
 		Child child;
 
 		struct State : WidgetState<TooltipWithTarget> {
+			~State();
+
 			Child build(const Element &element) override;
 		};
 	};

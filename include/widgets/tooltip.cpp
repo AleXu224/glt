@@ -62,17 +62,20 @@ namespace squi {
 			};
 		}
 	};
-
-	[[nodiscard]] core::Child Tooltip::build(const Element &element) const {
+	Tooltip::State::~State() {
+		const Key tooltipKey = std::make_shared<ValueKey>(std::format("tooltip_{}", reinterpret_cast<uintptr_t>(element)));
+		Navigator::of(*element).popOverlay(tooltipKey);
+	};
+	core::Child Tooltip::State::build(const Element &element) {
 		return Gesture{
-			.onEnter = [this, &element](Gesture::State state) {
+			.onEnter = [&element, this](Gesture::State state) {
 				auto renderObject = state.renderObject;
 				const Key tooltipKey = std::make_shared<ValueKey>(std::format("tooltip_{}", reinterpret_cast<uintptr_t>(&element)));
 				Navigator::of(element).pushOverlay(
 					TooltipBox{
 						.key = tooltipKey,
 						.bounds = renderObject->getRect(),
-						.text = text,
+						.text = widget->text,
 					}
 				);
 			},
@@ -80,9 +83,14 @@ namespace squi {
 				const Key tooltipKey = std::make_shared<ValueKey>(std::format("tooltip_{}", reinterpret_cast<uintptr_t>(&element)));
 				Navigator::of(element).popOverlay(tooltipKey);
 			},
-			.child = child,
+			.child = widget->child,
 		};
 	}
+
+	TooltipWithTarget::State::~State() {
+		const Key tooltipKey = std::make_shared<ValueKey>(std::format("tooltip_{}", reinterpret_cast<uintptr_t>(element)));
+		Navigator::of(*element).popOverlay(tooltipKey);
+	};
 	core::Child TooltipWithTarget::State::build(const Element &element) {
 		return Offset{
 			.calculateContentBounds = [this](const Rect &rect, const SingleChildRenderObject &element) {
@@ -134,4 +142,5 @@ namespace squi {
 			},
 		};
 	}
+
 }// namespace squi
