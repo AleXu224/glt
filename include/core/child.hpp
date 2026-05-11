@@ -18,7 +18,7 @@ namespace squi::core {
 		Child &operator=(const Child &) = default;
 		Child &operator=(Child &&) = default;
 
-		Child(nullptr_t) : widget(nullptr) {};
+		Child(std::nullptr_t) : widget(nullptr) {};
 		Child(const std::shared_ptr<Widget> &widget) : widget(widget) {}
 
 		operator bool() const {
