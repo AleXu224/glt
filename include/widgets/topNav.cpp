@@ -44,7 +44,7 @@ namespace squi {
 									utils::overloaded{
 										[&](int32_t icon) -> Child {
 											return FontIcon{
-												.icon = icon,
+												.icon = static_cast<char32_t>(icon),
 											};
 										},
 										[&](const Child &child) -> Child {
