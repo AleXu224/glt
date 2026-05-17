@@ -279,13 +279,13 @@ namespace squi {
 
 	void LayoutInspector::State::initState() {
 		onHoverRenderObject = [this](const std::pair<bool, std::weak_ptr<RenderObject>> &hover) {
-			if (hover.second.lock() != hoveredRenderObject.lock()) {
+			if (hover.first) {
 				setState([&]() {
-					hoveredRenderObject = hover.second.lock();
+					hoveredRenderObjects.insert(hover.second);
 				});
-			} else if (!hover.first) {
+			} else {
 				setState([&]() {
-					hoveredRenderObject.reset();
+					hoveredRenderObjects.erase(hover.second);
 				});
 			}
 		};
@@ -322,7 +322,8 @@ namespace squi {
 							},
 							LayoutInspectorOverlay{
 								.value = [&]() -> std::optional<LayoutInspectorOverlay::Value> {
-									auto renderObject = hoveredRenderObject.lock();
+									if (hoveredRenderObjects.empty()) return std::nullopt;
+									auto renderObject = hoveredRenderObjects.begin()->lock();
 									if (!renderObject) return std::optional<LayoutInspectorOverlay::Value>{};
 									return LayoutInspectorOverlay::Value{
 										.margin = renderObject->margin,

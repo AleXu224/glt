@@ -1,5 +1,4 @@
 #include "offset.hpp"
-#include "core/app.hpp"
 
 namespace squi {
 	void Offset::OffsetRenderObject::positionContentAt(const Rect &newBounds) {
@@ -18,8 +17,7 @@ namespace squi {
 	void Offset::updateRenderObject(RenderObject *renderObject) const {
 		if (auto *offsetRenderObject = dynamic_cast<OffsetRenderObject *>(renderObject)) {
 			if (offsetRenderObject->lastCalculatedBounds != calculateContentBounds(offsetRenderObject->lastBounds, *offsetRenderObject)) {
-				auto *app = renderObject->getApp();
-				app->needsReposition = true;
+				offsetRenderObject->element->markNeedsReposition();
 			}
 		}
 	}

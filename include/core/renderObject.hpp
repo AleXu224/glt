@@ -58,6 +58,8 @@ namespace squi::core {
 		std::variant<float, Size> height = Size::Expand;
 		std::optional<Alignment> alignment{};
 		BoxConstraints sizeConstraints{};
+		BoxConstraints parentSizeConstraints{};
+		Rect parentBounds = Rect(vec2{0, 0}, vec2{0, 0});
 		Margin margin{};
 		Margin padding{};
 

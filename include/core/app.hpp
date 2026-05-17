@@ -60,8 +60,6 @@ namespace squi::core {
 		InputQueue inputQueue{};
 
 		bool needsRedraw = true;
-		bool needsRelayout = true;
-		bool needsReposition = true;
 		bool drewLastFrame = false;
 		std::function<void(bool)> maximizeCallback{};
 		std::function<void(uint32_t, uint32_t)> resizeCallback{};
@@ -73,7 +71,7 @@ namespace squi::core {
 		static inline std::mutex pollMtx{};
 		static inline std::unordered_map<GLFWwindow *, App *> windowMap{};
 		static inline std::vector<App *> windowsToDestroy{};
-		
+
 		std::future<void> finished{};
 
 		struct ElementComparator {
@@ -81,7 +79,14 @@ namespace squi::core {
 				return a->id < b->id;
 			}
 		};
+		struct RenderObjectComparator {
+			static bool operator()(const Element *a, const Element *b) {
+				return reinterpret_cast<uintptr_t>(a) < reinterpret_cast<uintptr_t>(b);
+			}
+		};
 		std::map<Element *, std::weak_ptr<Element>, ElementComparator> dirtyElements{};
+		std::map<Element *, std::weak_ptr<RenderObject>, RenderObjectComparator> dirtyReposition{};
+		std::map<Element *, std::weak_ptr<RenderObject>, RenderObjectComparator> dirtyResize{};
 		std::unordered_set<AnimationController *> runningAnimations{};
 		InheritedMap inheritedMap{};
 		std::mutex taskMtx{};

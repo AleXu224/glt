@@ -2,6 +2,7 @@
 
 #include "core/animated.hpp"
 #include "core/core.hpp"
+#include <set>
 
 namespace squi {
 	struct LayoutInspectorItem : StatefulWidget {
@@ -35,7 +36,7 @@ namespace squi {
 		struct State : WidgetState<LayoutInspector> {
 			std::weak_ptr<RenderObject> contentRenderObject;
 			bool visible = false;
-			std::weak_ptr<RenderObject> hoveredRenderObject;
+			std::set<std::weak_ptr<RenderObject>, std::owner_less<std::weak_ptr<RenderObject>>> hoveredRenderObjects;
 			std::weak_ptr<RenderObject> selectedRenderObject;
 			std::function<void(const std::pair<bool, std::weak_ptr<RenderObject>> &)> onHoverRenderObject;
 			std::function<void(const std::weak_ptr<RenderObject> &)> onSelectRenderObject;

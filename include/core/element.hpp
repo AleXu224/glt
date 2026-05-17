@@ -63,8 +63,8 @@ namespace squi::core {
 
 		void markNeedsRebuild();
 
-		void markNeedsRelayout() const;
-		void markNeedsReposition() const;
+		void markNeedsRelayout();
+		void markNeedsReposition();
 		void markNeedsRedraw() const;
 
 		void dispose() {

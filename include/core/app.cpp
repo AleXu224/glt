@@ -146,8 +146,16 @@ namespace squi::core {
 					firstRun = false;
 					if (engine.resized || engine.outdatedFramebuffer) {
 						engine.recreateSwapChain();
-						needsRelayout = true;
+						dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
 					}
+					renderObject.parentSizeConstraints = BoxConstraints{
+						.maxWidth = static_cast<float>(engine.instance.swapChainExtent.width),
+						.maxHeight = static_cast<float>(engine.instance.swapChainExtent.height)
+					};
+					renderObject.parentBounds = Rect{
+						vec2{0.0f, 0.0f},
+						vec2{engine.instance.swapChainExtent.width, engine.instance.swapChainExtent.height},
+					};
 					drewLastFrame = false;
 
 					auto newFrameStartTime = std::chrono::steady_clock::now();
@@ -178,7 +186,7 @@ namespace squi::core {
 
 					renderObject.update();
 
-					while (!dirtyElements.empty() || needsRelayout) {
+					while (!dirtyElements.empty() || !dirtyResize.empty() || !dirtyReposition.empty()) {
 						while (!dirtyElements.empty()) {
 							auto it = dirtyElements.begin();
 							auto elem = it->second.lock();
@@ -192,8 +200,8 @@ namespace squi::core {
 						}
 						dirtyElements.clear();
 
-						if (needsRelayout || needsReposition) needsRedraw = true;
-						if (needsRelayout) needsReposition = true;
+						if (!dirtyResize.empty() || !dirtyReposition.empty())
+							needsRedraw = true;
 
 						// if (needsRelayout) {
 						// 	std::println("Relayout needed");
@@ -205,37 +213,41 @@ namespace squi::core {
 
 						// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
 
-						if (needsRelayout) {
-							renderObject.calculateSize(
-								BoxConstraints{
-									.maxWidth = static_cast<float>(width),
-									.maxHeight = static_cast<float>(height),
-								},
+						while (!dirtyResize.empty()) {
+							auto it = dirtyResize.begin();
+							auto renderObject = it->second.lock();
+							if (!renderObject) {
+								dirtyResize.erase(it);
+								continue;
+							}
+							dirtyResize.erase(it);
+							dirtyReposition.insert_or_assign(renderObject->element, renderObject->weak_from_this());
+							renderObject->calculateSize(
+								renderObject->parentSizeConstraints,
 								true
 							);
 						}
-						needsRelayout = false;
 
 						for (const auto &task: postLayoutTasks) {
 							task();
 						}
 						postLayoutTasks.clear();
 
-						if (needsReposition) {
-							renderObject.positionAt(
-								Rect::fromPosSize(
-									vec2{0.0f, 0.0f},
-									vec2{static_cast<float>(width), static_cast<float>(height)}
-								)
-							);
+						while (!dirtyReposition.empty()) {
+							auto it = dirtyReposition.begin();
+							auto renderObject = it->second.lock();
+							if (!renderObject) {
+								dirtyReposition.erase(it);
+								continue;
+							}
+							dirtyReposition.erase(it);
+							renderObject->positionAt(renderObject->parentBounds);
 						}
 
 						for (const auto &task: postRepositionTasks) {
 							task();
 						}
 						postRepositionTasks.clear();
-
-						needsReposition = false;
 					}
 
 					inputState.g_activeArea.pop_back();
@@ -248,10 +260,8 @@ namespace squi::core {
 						inputState.frameEnd();
 					}
 
-					if (needsRedraw || needsRelayout || needsReposition || forceRedraw) {
+					if (needsRedraw || forceRedraw) {
 						needsRedraw = false;
-						needsRelayout = false;
-						needsReposition = false;
 
 						drewLastFrame = true;
 						return true;

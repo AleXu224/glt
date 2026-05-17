@@ -4,16 +4,14 @@
 namespace squi {
 	void Scrollable::updateRenderObject(RenderObject *renderObject) const {
 		if (auto *scrollableRenderObject = dynamic_cast<ScrollableRenderObject *>(renderObject)) {
-			auto *app = renderObject->getApp();
-
 			if (scroll != scrollableRenderObject->scroll) {
 				scrollableRenderObject->scroll = scroll;
-				app->needsReposition = true;
+				scrollableRenderObject->element->markNeedsReposition();
 			}
 
 			if (direction != scrollableRenderObject->direction) {
 				scrollableRenderObject->direction = direction;
-				app->needsRelayout = true;
+				scrollableRenderObject->element->markNeedsRelayout();
 			}
 
 			scrollableRenderObject->controller = controller;

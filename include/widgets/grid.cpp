@@ -1,5 +1,4 @@
 #include "grid.hpp"
-#include "core/app.hpp"
 #include <numeric>
 
 namespace squi {
@@ -115,15 +114,14 @@ namespace squi {
 	void Grid::updateRenderObject(RenderObject *renderObject) const {
 		// Update render object properties here
 		if (auto *gridRenderObject = dynamic_cast<GridRenderObject *>(renderObject)) {
-			auto *app = gridRenderObject->getApp();
 			if (gridRenderObject->columnCount != columnCount) {
 				gridRenderObject->columnCount = columnCount;
-				app->needsRelayout = true;
+				gridRenderObject->element->markNeedsRelayout();
 			}
 
 			if (gridRenderObject->spacing != spacing) {
 				gridRenderObject->spacing = spacing;
-				app->needsRelayout = true;
+				gridRenderObject->element->markNeedsRelayout();
 			}
 		}
 	}

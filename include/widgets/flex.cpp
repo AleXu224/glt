@@ -1,6 +1,5 @@
 #include "widgets/flex.hpp"
 
-#include "core/app.hpp"
 #include <algorithm>
 
 namespace squi {
@@ -166,25 +165,24 @@ namespace squi {
 	void Flex::updateRenderObject(RenderObject *renderObject) const {
 		// Update render object properties here
 		if (auto *flexRenderObject = dynamic_cast<FlexRenderObject *>(renderObject)) {
-			auto *app = flexRenderObject->getApp();
 			if (flexRenderObject->direction != direction) {
 				flexRenderObject->direction = direction;
-				app->needsRelayout = true;
+				flexRenderObject->element->markNeedsRelayout();
 			}
 
 			if (flexRenderObject->crossAxisAlignment != crossAxisAlignment) {
 				flexRenderObject->crossAxisAlignment = crossAxisAlignment;
-				app->needsReposition = true;
+				flexRenderObject->element->markNeedsReposition();
 			}
 
 			if (flexRenderObject->justifyContent != justifyContent) {
 				flexRenderObject->justifyContent = justifyContent;
-				app->needsReposition = true;
+				flexRenderObject->element->markNeedsReposition();
 			}
 
 			if (flexRenderObject->spacing != spacing) {
 				flexRenderObject->spacing = spacing;
-				app->needsRelayout = true;
+				flexRenderObject->element->markNeedsRelayout();
 			}
 		}
 	}

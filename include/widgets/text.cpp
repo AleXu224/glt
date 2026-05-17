@@ -121,24 +121,22 @@ namespace squi {
 
 	void Text::updateRenderObject(RenderObject *renderObject) const {
 		if (auto *textRenderObject = dynamic_cast<TextRenderObject *>(renderObject)) {
-			auto *app = renderObject->getApp();
-
 			if (textRenderObject->text != this->text) {
 				textRenderObject->text = std::string(this->text);
 				textRenderObject->forceRegen = true;
-				app->needsRelayout = true;
+				textRenderObject->element->markNeedsRelayout();
 			}
 
 			if (textRenderObject->fontSize != this->fontSize) {
 				textRenderObject->fontSize = this->fontSize;
 				textRenderObject->forceRegen = true;
-				app->needsRelayout = true;
+				textRenderObject->element->markNeedsRelayout();
 			}
 
 			if (textRenderObject->lineWrap != this->lineWrap) {
 				textRenderObject->lineWrap = this->lineWrap;
 				textRenderObject->forceRegen = true;
-				app->needsRelayout = true;
+				textRenderObject->element->markNeedsRelayout();
 			}
 
 			{
@@ -156,7 +154,7 @@ namespace squi {
 				if (textRenderObject->font != font) {
 					textRenderObject->font = font;
 					textRenderObject->forceRegen = true;
-					app->needsRelayout = true;
+					textRenderObject->element->markNeedsRelayout();
 				}
 			}
 
@@ -167,7 +165,7 @@ namespace squi {
 						quad.setColor(this->color);
 					}
 				}
-				app->needsRedraw = true;
+				textRenderObject->element->markNeedsRedraw();
 			}
 		}
 	}

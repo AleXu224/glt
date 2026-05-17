@@ -13,6 +13,9 @@ namespace squi::core {
 	}
 
 	vec2 RenderObject::calculateSize(BoxConstraints extConstraints, bool final) {
+		if (final) {
+			this->parentSizeConstraints = extConstraints;
+		}
 		const auto &intConstraints = sizeConstraints;
 
 		// Make it so that the constraints always allow the widget to be at least its margin + padding size
@@ -148,6 +151,7 @@ namespace squi::core {
 
 		if (final) {
 			// Can do stuff here that should only be done once the size is final
+			getApp()->dirtyResize.erase(this->element);
 			afterSizeCalculated();
 		}
 
@@ -159,6 +163,7 @@ namespace squi::core {
 	}
 
 	void RenderObject::positionAt(const Rect &newBounds) {
+		parentBounds = newBounds;
 		pos = newBounds.posFromAlignment(alignment.value_or(Alignment::TopLeft), getLayoutRect()) + margin.getPositionOffset();
 
 		auto wrapWidth = (std::holds_alternative<Size>(width) && std::get<Size>(width) == Size::Wrap);
@@ -230,31 +235,29 @@ namespace squi::core {
 	}
 
 	void RenderObject::updateWidgetArgs(const Args &args) {
-		auto *app = this->getApp();
-
 		if (width != args.width.value_or(Size::Expand)) {
 			width = args.width.value_or(Size::Expand);
-			app->needsRelayout = true;
+			element->markNeedsRelayout();
 		}
 		if (height != args.height.value_or(Size::Expand)) {
 			height = args.height.value_or(Size::Expand);
-			app->needsRelayout = true;
+			element->markNeedsRelayout();
 		}
 		if (alignment != args.alignment) {
 			alignment = args.alignment;
-			app->needsReposition = true;
+			element->markNeedsReposition();
 		}
 		if (sizeConstraints != args.sizeConstraints.value_or(BoxConstraints{})) {
 			sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{});
-			app->needsRelayout = true;
+			element->markNeedsRelayout();
 		}
 		if (margin != args.margin.value_or(Margin{})) {
 			margin = args.margin.value_or(Margin{});
-			app->needsRelayout = true;
+			element->markNeedsRelayout();
 		}
 		if (padding != args.padding.value_or(Padding{})) {
 			padding = args.padding.value_or(Padding{});
-			app->needsRelayout = true;
+			element->markNeedsRelayout();
 		}
 	}
 

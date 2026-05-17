@@ -1,8 +1,11 @@
 #include "element.hpp"
 
 #include "core/app.hpp"
+#include "utils.hpp"
 #include "widget.hpp"
+#include "widgets/stack.hpp"
 #include <map>
+
 
 namespace squi::core {
 	// Element
@@ -71,12 +74,152 @@ namespace squi::core {
 		getApp()->dirtyElements.insert_or_assign(this, weak_from_this());
 	}
 
-	void Element::markNeedsRelayout() const {
-		getApp()->needsRelayout = true;
+	void Element::markNeedsRelayout() {
+		auto &app = *getApp();
+		if (app.dirtyResize.contains(this)) {
+			return;
+		}
+		RenderObjectElement *ancestorElement = nullptr;
+		// Check if the element itself is a render object
+		if (auto *roe = dynamic_cast<RenderObjectElement *>(this)) {
+			ancestorElement = roe;
+		}
+		// Otherwise check if there is any parent render object element
+		if (!ancestorElement) {
+			ancestorElement = RenderObjectElement::getAncestorRenderObjectElement(this);
+		}
+		// This should never happen unless there is a corrupted widget tree, because the root widget is a render object widget
+		if (!ancestorElement) {
+			throw std::runtime_error("Element has no ancestor render object element");
+		}
+
+		bool verticalOk = false;
+		bool horizontalOk = false;
+		auto currentRenderObject = ancestorElement->renderObject.get();
+		auto resizeTarget = currentRenderObject;
+		while (!verticalOk || !horizontalOk) {
+			if (currentRenderObject == currentRenderObject->root) {
+				break;
+			}
+
+			if (!verticalOk) {
+				std::visit(//
+					utils::overloaded{
+						[&](float height) {
+							// Fixed sizing, no need to go further up
+							verticalOk = true;
+						},
+						[&](Size size) {
+							if (size == Size::Shrink) {
+								resizeTarget = currentRenderObject;
+							} else if (size == Size::Wrap) {
+								// Only consider if the resize target is its own child
+								// In any other case the resizing of this render object will not affect its size
+								if (currentRenderObject == resizeTarget->parent) {
+									resizeTarget = currentRenderObject;
+								}
+							}
+						},
+					},
+					currentRenderObject->height
+				);
+			}
+			if (!horizontalOk) {
+				std::visit(//
+					utils::overloaded{
+						[&](float width) {
+							// Fixed sizing, no need to go further up
+							horizontalOk = true;
+						},
+						[&](Size size) {
+							if (size == Size::Shrink) {
+								resizeTarget = currentRenderObject;
+							} else if (size == Size::Wrap) {
+								if (currentRenderObject == resizeTarget->parent) {
+									resizeTarget = currentRenderObject;
+								}
+							}
+						},
+					},
+					currentRenderObject->width
+				);
+			}
+			currentRenderObject = currentRenderObject->parent;
+		}
+		app.dirtyResize.insert_or_assign(resizeTarget->element, resizeTarget->weak_from_this());
+		// Additionally mark the element itself as dirty for fast lookup if the function is called again
+		app.dirtyResize.insert_or_assign(this, ancestorElement->renderObject->weak_from_this());
 	}
 
-	void Element::markNeedsReposition() const {
-		getApp()->needsReposition = true;
+	void Element::markNeedsReposition() {
+		auto &app = *getApp();
+		if (app.dirtyReposition.contains(this)) {
+			return;
+		}
+		RenderObjectElement *ancestorElement = nullptr;
+		// Check if the element itself is a render object
+		if (auto *roe = dynamic_cast<RenderObjectElement *>(this)) {
+			ancestorElement = roe;
+		}
+		// Otherwise check if there is any parent render object element
+		if (!ancestorElement) {
+			ancestorElement = RenderObjectElement::getAncestorRenderObjectElement(this);
+		}
+		// This should never happen unless there is a corrupted widget tree, because the root widget is a render object widget
+		if (!ancestorElement) {
+			throw std::runtime_error("Element has no ancestor render object element");
+		}
+
+		bool verticalOk = false;
+		bool horizontalOk = false;
+		auto currentRenderObject = ancestorElement->renderObject.get();
+		auto repositionTarget = currentRenderObject;
+		while (!verticalOk || !horizontalOk) {
+			if (currentRenderObject == currentRenderObject->root) {
+				break;
+			}
+
+			if (!verticalOk) {
+				std::visit(//
+					utils::overloaded{
+						[&](float height) {
+							// Fixed sizing, no need to go further up
+							verticalOk = true;
+						},
+						[&](Size size) {
+							if (size == Size::Wrap) {
+								repositionTarget = currentRenderObject;
+								return;
+							}
+							verticalOk = true;
+						},
+					},
+					currentRenderObject->height
+				);
+			}
+			if (!horizontalOk) {
+				std::visit(//
+					utils::overloaded{
+						[&](float width) {
+							// Fixed sizing, no need to go further up
+							horizontalOk = true;
+						},
+						[&](Size size) {
+							if (size == Size::Wrap) {
+								repositionTarget = currentRenderObject;
+								return;
+							}
+							horizontalOk = true;
+						},
+					},
+					currentRenderObject->width
+				);
+			}
+			currentRenderObject = currentRenderObject->parent;
+		}
+		app.dirtyReposition.insert_or_assign(repositionTarget->element, repositionTarget->weak_from_this());
+		// Additionally mark the element itself as dirty for fast lookup if the function is called again
+		app.dirtyReposition.insert_or_assign(this, ancestorElement->renderObject->weak_from_this());
 	}
 
 	void Element::markNeedsRedraw() const {
@@ -370,16 +513,20 @@ namespace squi::core {
 
 	void RenderObjectElement::attachRenderObject() {
 		auto *ancestorElement = getAncestorRenderObjectElement(this);
-		this->getApp()->needsRelayout = true;
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
+			ancestorElement->markNeedsRelayout();
 			ancestorElement->renderObject->addChild(this->renderObject, this->index);
 		}
 	}
 
 	void RenderObjectElement::detachRenderObject() {
 		auto *ancestorElement = getAncestorRenderObjectElement(this);
-		this->getApp()->needsRelayout = true;
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
+			if (ancestorElement->widget->getTypeHash() == typeid(Stack).hash_code()) {
+				this->markNeedsRelayout();
+			} else {
+				ancestorElement->markNeedsRelayout();
+			}
 			ancestorElement->renderObject->removeChild(this->renderObject);
 		}
 	}
