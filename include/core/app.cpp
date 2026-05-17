@@ -148,13 +148,15 @@ namespace squi::core {
 						engine.recreateSwapChain();
 						dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
 					}
+					const auto &width = static_cast<float>(engine.instance.swapChainExtent.width);
+					const auto &height = static_cast<float>(engine.instance.swapChainExtent.height);
 					renderObject.parentSizeConstraints = BoxConstraints{
-						.maxWidth = static_cast<float>(engine.instance.swapChainExtent.width),
-						.maxHeight = static_cast<float>(engine.instance.swapChainExtent.height)
+						.maxWidth = width,
+						.maxHeight = height
 					};
 					renderObject.parentBounds = Rect{
 						vec2{0.0f, 0.0f},
-						vec2{engine.instance.swapChainExtent.width, engine.instance.swapChainExtent.height},
+						vec2{width, height},
 					};
 					drewLastFrame = false;
 
@@ -162,15 +164,13 @@ namespace squi::core {
 					deltaTime = newFrameStartTime - frameStartTime;
 					frameStartTime = newFrameStartTime;
 
-					const auto &width = engine.instance.swapChainExtent.width;
-					const auto &height = engine.instance.swapChainExtent.height;
 					// state.width = static_cast<float>(width);
 					// state.height = static_cast<float>(height);
 					// state.root = this;
 
 					inputState.g_activeArea.emplace_back(
 						vec2{0.0f, 0.0f},
-						vec2{static_cast<float>(width), static_cast<float>(height)}
+						vec2{width, height}
 					);
 
 					// Update animations
