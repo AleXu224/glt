@@ -216,14 +216,14 @@ namespace squi::core {
 						while (!dirtyResize.empty()) {
 							auto it = dirtyResize.begin();
 							auto renderObject = it->second.lock();
-							if (!renderObject) {
+							if (!renderObject || !renderObject->parentSizeConstraints.has_value()) {
 								dirtyResize.erase(it);
 								continue;
 							}
 							dirtyResize.erase(it);
 							dirtyReposition.insert_or_assign(renderObject->element, renderObject->weak_from_this());
 							renderObject->calculateSize(
-								renderObject->parentSizeConstraints,
+								*renderObject->parentSizeConstraints,
 								true
 							);
 						}

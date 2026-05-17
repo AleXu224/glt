@@ -514,8 +514,13 @@ namespace squi::core {
 	void RenderObjectElement::attachRenderObject() {
 		auto *ancestorElement = getAncestorRenderObjectElement(this);
 		if (ancestorElement && ancestorElement->renderObject && this->renderObject) {
-			ancestorElement->markNeedsRelayout();
+			// ancestorElement->markNeedsRelayout();
 			ancestorElement->renderObject->addChild(this->renderObject, this->index);
+			if (ancestorElement->widget->getTypeHash() == typeid(Stack).hash_code() && this->renderObject->parentSizeConstraints.has_value()) {
+				this->markNeedsRelayout();
+			} else {
+				ancestorElement->markNeedsRelayout();
+			}
 		}
 	}
 
