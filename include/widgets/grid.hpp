@@ -7,13 +7,13 @@ namespace squi {
 		struct MinSize {
 			float value;
 
-            auto operator<=>(const MinSize &) const = default;
+			auto operator<=>(const MinSize &) const = default;
 		};
 
 		// Args
 		Key key;
 		Args widget;
-		std::variant<int, MinSize> columnCount;
+		std::variant<int, MinSize> columnCount = 1;
 		float spacing = 0.0f;
 		Children children;
 
@@ -31,15 +31,15 @@ namespace squi {
 		struct GridRenderObject : core::MultiChildRenderObject {
 			GridRenderObject() : core::MultiChildRenderObject() {}
 
-            std::variant<int, MinSize> columnCount;
+			std::variant<int, MinSize> columnCount = 1;
 			float spacing = 0.0f;
-            size_t columns = 1;
+			size_t columns = 1;
 			std::vector<float> rowHeights{};
 
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 			void positionContentAt(const Rect &newBounds) override;
 
-            [[nodiscard]] size_t computeColumnCount(float availableWidth) const;
+			[[nodiscard]] size_t computeColumnCount(float availableWidth) const;
 
 			void init() override;
 		};
