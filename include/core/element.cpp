@@ -144,6 +144,13 @@ namespace squi::core {
 					currentRenderObject->width
 				);
 			}
+
+			if (!verticalOk || !horizontalOk) {
+				if (currentRenderObject == resizeTarget->parent && currentRenderObject->getChildren().size() > 1) {
+					resizeTarget = currentRenderObject;
+				}
+			}
+
 			currentRenderObject = currentRenderObject->parent;
 		}
 		app.dirtyResize.insert_or_assign(resizeTarget->element, resizeTarget->weak_from_this());

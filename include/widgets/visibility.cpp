@@ -1,5 +1,4 @@
 #include "visibility.hpp"
-#include "core/app.hpp"
 
 namespace squi {
 	void Visibility::VisibilityRenderObject::update() {
@@ -26,7 +25,7 @@ namespace squi {
 		if (auto visibilityRenderObject = dynamic_cast<VisibilityRenderObject *>(renderObject)) {
 			if (visibilityRenderObject->visible != visible) {
 				visibilityRenderObject->visible = visible;
-				renderObject->getApp()->needsRedraw = true;
+				visibilityRenderObject->element->markNeedsRelayout();
 			}
 		}
 	}
