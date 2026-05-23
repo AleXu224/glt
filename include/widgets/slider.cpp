@@ -40,6 +40,20 @@ namespace squi {
 		auto ticks = computeTicks();
 
 		return Gesture{
+			.onEnter = [this](Gesture::State state) {
+				setState([&]() {
+					hovered = true;
+				});
+				createOrUpdateTooltip();
+			},
+			.onLeave = [this](Gesture::State state) {
+				if (!focused) {
+					Navigator::of(*this->element).popOverlay(tooltipKey);
+				}
+				setState([&]() {
+					hovered = false;
+				});
+			},
 			.onFocus = [this](Gesture::State state) {
 				setState([&]() {
 					focused = true;
@@ -47,7 +61,9 @@ namespace squi {
 				createOrUpdateTooltip();
 			},
 			.onFocusLoss = [this](Gesture::State state) {
-				Navigator::of(*this->element).popOverlay(tooltipKey);
+				if (!hovered) {
+					Navigator::of(*this->element).popOverlay(tooltipKey);
+				}
 				setState([&]() {
 					focused = false;
 				});

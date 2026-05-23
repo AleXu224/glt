@@ -28,6 +28,7 @@ namespace squi {
 			Key tooltipKey = GlobalKey{};
 			bool focused = false;
 			bool handleHovered = false;
+			bool hovered = false;
 
 			float getHandleInnerSize() const;
 			void createOrUpdateTooltip();
