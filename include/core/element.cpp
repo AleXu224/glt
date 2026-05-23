@@ -414,9 +414,9 @@ namespace squi::core {
 
 	void ComponentElement::rebuild() {
 		assert(this->mounted);
+		Element::rebuild();
 		auto newChildWidget = build();
 		this->child = updateChild(this->child, newChildWidget, this->index, this->depth + 1);
-		Element::rebuild();
 	}
 
 	void ComponentElement::update(const WidgetPtr &newWidget) {
