@@ -12,10 +12,39 @@ namespace squi::core {
 		return app;
 	}
 
+	void RenderObject::markSizeDirty() {
+		sizeDirty = true;
+		finalCache.valid = false;
+		nonFinalCache.clear();
+	}
+
 	vec2 RenderObject::calculateSize(BoxConstraints extConstraints, bool final) {
+		const BoxConstraints originalConstraints = extConstraints;
+
 		if (final) {
 			this->parentSizeConstraints = extConstraints;
 		}
+
+		// Early exit if nothing in this subtree has changed and we have a cached result
+		if (!sizeDirty) {
+			if (final) {
+				if (finalCache.valid && finalCache.constraints == originalConstraints) {
+					getApp()->dirtyResize.erase(this->element);
+					afterSizeCalculated();
+					return finalCache.size;
+				}
+			} else {
+				const auto it = nonFinalCache.find(originalConstraints);
+				if (it != nonFinalCache.end()) {
+					return it->second;
+				}
+				// A final-pass result carries the same size for the same constraints
+				if (finalCache.valid && finalCache.constraints == originalConstraints) {
+					return finalCache.size;
+				}
+			}
+		}
+
 		const auto &intConstraints = sizeConstraints;
 
 		// Make it so that the constraints always allow the widget to be at least its margin + padding size
@@ -99,23 +128,24 @@ namespace squi::core {
 		extConstraints.minWidth = std::clamp(contentSize.x + paddingOffset.x, extConstraints.minWidth, extConstraints.maxWidth);
 		extConstraints.minHeight = std::clamp(contentSize.y + paddingOffset.y, extConstraints.minHeight, extConstraints.maxHeight);
 
+		vec2 computedSize{};
 		std::visit(
 			utils::overloaded{
 				[&](const float &val) {
-					size.x = std::clamp(val, extConstraints.minWidth, extConstraints.maxWidth);
+					computedSize.x = std::clamp(val, extConstraints.minWidth, extConstraints.maxWidth);
 				},
 				[&](const Size &val) {
 					switch (val) {
 						case Size::Expand: {
 							if (extConstraints.shrinkWidth)
-								size.x = extConstraints.minWidth;
+								computedSize.x = extConstraints.minWidth;
 							else
-								size.x = extConstraints.maxWidth;
+								computedSize.x = extConstraints.maxWidth;
 							break;
 						}
 						case Size::Wrap:
 						case Size::Shrink: {
-							size.x = extConstraints.minWidth;
+							computedSize.x = extConstraints.minWidth;
 							break;
 						}
 					}
@@ -127,20 +157,20 @@ namespace squi::core {
 		std::visit(
 			utils::overloaded{
 				[&](const float &val) {
-					size.y = std::clamp(val, extConstraints.minHeight, extConstraints.maxHeight);
+					computedSize.y = std::clamp(val, extConstraints.minHeight, extConstraints.maxHeight);
 				},
 				[&](const Size &val) {
 					switch (val) {
 						case Size::Expand: {
 							if (extConstraints.shrinkHeight)
-								size.y = extConstraints.minHeight;
+								computedSize.y = extConstraints.minHeight;
 							else
-								size.y = extConstraints.maxHeight;
+								computedSize.y = extConstraints.maxHeight;
 							break;
 						}
 						case Size::Wrap:
 						case Size::Shrink: {
-							size.y = extConstraints.minHeight;
+							computedSize.y = extConstraints.minHeight;
 							break;
 						}
 					}
@@ -149,13 +179,19 @@ namespace squi::core {
 			height
 		);
 
+		const auto result = computedSize + marginOffset;
+
 		if (final) {
-			// Can do stuff here that should only be done once the size is final
+			this->size = computedSize;
+			finalCache = {originalConstraints, result, true};
+			sizeDirty = false;
 			getApp()->dirtyResize.erase(this->element);
 			afterSizeCalculated();
+		} else {
+			nonFinalCache.emplace(originalConstraints, result);
 		}
 
-		return size + marginOffset;
+		return result;
 	}
 
 	vec2 RenderObject::calculateContentSize(BoxConstraints, bool) {

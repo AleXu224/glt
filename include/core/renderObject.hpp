@@ -10,6 +10,7 @@
 #include "vector"
 #include <optional>
 #include <span>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 
@@ -63,6 +64,16 @@ namespace squi::core {
 		Margin margin{};
 		Margin padding{};
 
+		struct FinalSizeCache {
+			BoxConstraints constraints{};
+			vec2 size{};
+			bool valid = false;
+		};
+
+		bool sizeDirty = true;
+		FinalSizeCache finalCache{};
+		std::unordered_map<BoxConstraints, vec2, BoxConstraintsHash> nonFinalCache{};
+
 		RenderObject() = default;
 		RenderObject(const RenderObject &) = default;
 		RenderObject(RenderObject &&) = delete;
@@ -73,6 +84,7 @@ namespace squi::core {
 		App *getApp() const;
 
 		vec2 calculateSize(BoxConstraints constraints, bool final = false);
+		void markSizeDirty();
 		virtual vec2 calculateContentSize(BoxConstraints constraints, bool final);
 		virtual void afterSizeCalculated() {}
 

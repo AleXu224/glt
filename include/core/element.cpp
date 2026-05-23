@@ -96,7 +96,10 @@ namespace squi::core {
 		bool verticalOk = false;
 		bool horizontalOk = false;
 		auto currentRenderObject = ancestorElement->renderObject.get();
+		auto originalRenderObject = currentRenderObject;
 		auto resizeTarget = currentRenderObject;
+		auto previousResizeTarget = resizeTarget;
+		currentRenderObject->markSizeDirty();
 		while (!verticalOk || !horizontalOk) {
 			if (currentRenderObject == currentRenderObject->root) {
 				break;
@@ -107,7 +110,8 @@ namespace squi::core {
 					utils::overloaded{
 						[&](float height) {
 							// Fixed sizing, no need to go further up
-							verticalOk = true;
+							if (currentRenderObject != originalRenderObject)
+								verticalOk = true;
 						},
 						[&](Size size) {
 							if (size == Size::Shrink) {
@@ -129,7 +133,8 @@ namespace squi::core {
 					utils::overloaded{
 						[&](float width) {
 							// Fixed sizing, no need to go further up
-							horizontalOk = true;
+							if (currentRenderObject != originalRenderObject)
+								horizontalOk = true;
 						},
 						[&](Size size) {
 							if (size == Size::Shrink) {
@@ -151,6 +156,14 @@ namespace squi::core {
 				}
 			}
 
+			if (resizeTarget != previousResizeTarget) {
+				auto cursor = previousResizeTarget;
+				while (cursor != resizeTarget->parent) {
+					cursor->markSizeDirty();
+					cursor = cursor->parent;
+				}
+				previousResizeTarget = resizeTarget;
+			}
 			currentRenderObject = currentRenderObject->parent;
 		}
 		app.dirtyResize.insert_or_assign(resizeTarget->element, resizeTarget->weak_from_this());

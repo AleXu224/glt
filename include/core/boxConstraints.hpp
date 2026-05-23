@@ -2,6 +2,9 @@
 
 #include "margin.hpp"
 #include "vec2.hpp"
+#include <cstdint>
+#include <cstring>
+#include <functional>
 #include <limits>
 
 
@@ -78,6 +81,26 @@ namespace squi::core {
 
 		[[nodiscard]] BoxConstraints copy() const {
 			return *this;
+		}
+	};
+
+	struct BoxConstraintsHash {
+		std::size_t operator()(const BoxConstraints &bc) const noexcept {
+			auto combine = [](std::size_t seed, std::size_t val) {
+				return seed ^ (val + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+			};
+			auto floatHash = [](float f) {
+				std::uint32_t bits{};
+				std::memcpy(&bits, &f, sizeof(bits));
+				return std::hash<std::uint32_t>{}(bits);
+			};
+			std::size_t h = floatHash(bc.minWidth);
+			h = combine(h, floatHash(bc.maxWidth));
+			h = combine(h, floatHash(bc.minHeight));
+			h = combine(h, floatHash(bc.maxHeight));
+			h = combine(h, std::hash<bool>{}(bc.shrinkWidth));
+			h = combine(h, std::hash<bool>{}(bc.shrinkHeight));
+			return h;
 		}
 	};
 }// namespace squi::core
