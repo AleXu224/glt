@@ -81,7 +81,7 @@ void glt::Engine::Runner::draw() {
 
 	auto &cmd = instance.currentFrame.get().commandBuffer;
 	cmd.reset();
-	cmd.begin({});
+	cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
 	using namespace std::chrono_literals;
 

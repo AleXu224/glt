@@ -42,23 +42,49 @@ namespace glt::Engine {
 			return std::get<Ind>(uniforms);
 		}
 
-		size_t lastVertexBufferIndex = 0;
-		size_t vertexBufferIndex = 0;
-		size_t vertexArrIndex = 0;
+		struct PerFrameBuffers {
+			size_t lastVertexBufferIndex = 0;
+			size_t vertexBufferIndex = 0;
+			size_t vertexArrIndex = 0;
 
-		size_t lastIndexBufferIndex = 0;
-		size_t indexBufferIndex = 0;
-		size_t indexArrIndex = 0;
+			size_t lastIndexBufferIndex = 0;
+			size_t indexBufferIndex = 0;
+			size_t indexArrIndex = 0;
 
-		[[nodiscard]] Buffer &getCurrentVertexBuffer() {
-			return *vertexBuffers.at(vertexArrIndex);
+			uint32_t binds = 0;
+			uint32_t transformIndex = 0;
+			void const *lastBoundSampler = nullptr;
+
+			std::vector<std::unique_ptr<Buffer>> vertexBuffers{};
+			std::vector<std::unique_ptr<Buffer>> indexBuffers{};
+
+			[[nodiscard]] Buffer &getCurrentVertexBuffer() {
+				return *vertexBuffers.at(vertexArrIndex);
+			}
+			[[nodiscard]] Buffer &getCurrentIndexBuffer() {
+				return *indexBuffers.at(indexArrIndex);
+			}
+
+			[[nodiscard]] std::tuple<uint64_t, uint64_t> availableSpace(size_t vertexBufferSize, size_t indexBufferSize) const {
+				return {
+					static_cast<uint64_t>(vertexBufferSize) - static_cast<uint64_t>(vertexBufferIndex),
+					static_cast<uint64_t>(indexBufferSize) - static_cast<uint64_t>(indexBufferIndex),
+				};
+			}
+
+			[[nodiscard]] std::pair<size_t, size_t> getIndexes(size_t vertexBufferSize, size_t indexBufferSize) const {
+				return {vertexBufferIndex % vertexBufferSize, indexBufferIndex % indexBufferSize};
+			}
+		};
+
+		std::vector<PerFrameBuffers> perFrame{};
+
+		[[nodiscard]] PerFrameBuffers &currentFrameState() {
+			return perFrame[instance.currentFrame.get().index];
 		}
-		[[nodiscard]] Buffer &getCurrentIndexBuffer() {
-			return *indexBuffers.at(indexArrIndex);
+		[[nodiscard]] const PerFrameBuffers &currentFrameState() const {
+			return perFrame[instance.currentFrame.get().index];
 		}
-
-		std::vector<std::unique_ptr<Buffer>> vertexBuffers{};
-		std::vector<std::unique_ptr<Buffer>> indexBuffers{};
 
 		Pipeline(const Pipeline &) = delete;
 		Pipeline(Pipeline &) = delete;
@@ -90,38 +116,36 @@ namespace glt::Engine {
 					  -1.0f, -1.0f, 1.0f, 0.0f,
 					  0.0f, 0.0f, 0.0f, 1.0f
 				  };
+
+				  auto &state = currentFrameState();
+				  state.vertexArrIndex = 0;
+				  state.indexArrIndex = 0;
 			  })),
 			  frameEndListener(args.instance.frameEndEvent.observe([this] {
-				  lastVertexBufferIndex = 0;
-				  vertexBufferIndex = 0;
-				  vertexArrIndex = 0;
+				  auto &state = currentFrameState();
+				  state.lastVertexBufferIndex = 0;
+				  state.vertexBufferIndex = 0;
 
-				  lastIndexBufferIndex = 0;
-				  indexBufferIndex = 0;
-				  indexArrIndex = 0;
+				  state.lastIndexBufferIndex = 0;
+				  state.indexBufferIndex = 0;
 
-				  binds = 0;
+				  state.binds = 0;
 			  })),
 			  vertexBufferSize(args.vertexBufferSize),
 			  indexBufferSize(args.IndexBufferSize),
 			  instance(args.instance) {
-			float width = instance.swapChainExtent.width;
-			float height = instance.swapChainExtent.height;
-			basicUniform.getData().view = glm::mat4{
-				1.0f / (width / 2.f), 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f / (height / 2.f), 0.0f, 0.0f,
-				-1.0f, -1.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f
-			};
+			perFrame.resize(instance.frames.size());
 
-			vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-				.size = sizeof(Vertex) * args.vertexBufferSize,
-				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
-			}));
-			indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
-				.size = sizeof(uint16_t) * args.IndexBufferSize,
-				.usage = vk::BufferUsageFlagBits::eIndexBuffer,
-			}));
+			for (auto &f: perFrame) {
+				f.vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
+					.size = sizeof(Vertex) * args.vertexBufferSize,
+					.usage = vk::BufferUsageFlagBits::eVertexBuffer,
+				}));
+				f.indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
+					.size = sizeof(uint16_t) * args.IndexBufferSize,
+					.usage = vk::BufferUsageFlagBits::eIndexBuffer,
+				}));
+			}
 			vk::PipelineShaderStageCreateInfo vertShaderStageInfo{
 				.stage = vk::ShaderStageFlagBits::eVertex,
 				.module = *vertexShader.module,
@@ -291,20 +315,18 @@ namespace glt::Engine {
 			this->flush(true);
 		};
 
-		uint32_t binds = 0;
-		uint32_t transformIndex = 0;
-
 		void bind() {
+			auto &state = currentFrameState();
 			auto isPipelineBound = instance.currentPipeline == this;
-			auto isTransformBound = instance.getTransformIndex() == transformIndex;
+			auto isTransformBound = instance.getTransformIndex() == state.transformIndex;
 			if (isPipelineBound && isTransformBound) return;
 			if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
 
 			auto &cmd = instance.currentFrame.get().commandBuffer;
 			if (!isPipelineBound) {
 				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-				cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
-				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
+				cmd.bindVertexBuffers(0, *state.vertexBuffers.at(state.vertexArrIndex)->buffer, {0});
+				cmd.bindIndexBuffer(*state.indexBuffers.at(state.indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
 			}
 
 			// In either case we'll need to bind the descriptors so no need to check
@@ -323,25 +345,24 @@ namespace glt::Engine {
 				{}
 			);
 
-			transformIndex = instance.getTransformIndex();
+			state.transformIndex = instance.getTransformIndex();
 
 			instance.currentPipeline = this;
 			instance.currentPipelineFlush = &currentPipelineFlush;
-			if (binds == 0) {
+			if (state.binds == 0) {
 				instance.currentFrame.get().resourceLock.emplace_back(this->shared_from_this());
 			}
-			binds++;
+			state.binds++;
 		}
 
-		void const *lastBoundSampler = nullptr;
-
 		void bindWithSampler(const SamplerUniform &sampler) {
+			auto &state = currentFrameState();
 			auto &cmd = instance.currentFrame.get().commandBuffer;
-			if (instance.currentPipeline != this || lastBoundSampler != &sampler || instance.getTransformIndex() != transformIndex) {
+			if (instance.currentPipeline != this || state.lastBoundSampler != &sampler || instance.getTransformIndex() != state.transformIndex) {
 				if (instance.currentPipelineFlush) (*instance.currentPipelineFlush)();
 				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-				cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
-				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
+				cmd.bindVertexBuffers(0, *state.vertexBuffers.at(state.vertexArrIndex)->buffer, {0});
+				cmd.bindIndexBuffer(*state.indexBuffers.at(state.indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
 
 				auto descriptors = std::apply(
 					[&](auto &&...U) {
@@ -358,28 +379,25 @@ namespace glt::Engine {
 					{}
 				);
 
-				transformIndex = instance.getTransformIndex();
+				state.transformIndex = instance.getTransformIndex();
 
-				lastBoundSampler = &sampler;
-				if (binds == 0) {
+				state.lastBoundSampler = &sampler;
+				if (state.binds == 0) {
 					instance.currentFrame.get().resourceLock.emplace_back(this->shared_from_this());
 				}
 				instance.currentFrame.get().resourceLock.emplace_back(sampler.shared_from_this());
-				binds++;
+				state.binds++;
 			}
 			instance.currentPipeline = this;
 			instance.currentPipelineFlush = &currentPipelineFlush;
 		}
 
 		[[nodiscard]] std::tuple<uint64_t, uint64_t> availableSpace() const {
-			return {
-				static_cast<uint64_t>(vertexBufferSize) - static_cast<uint64_t>(vertexBufferIndex),
-				static_cast<uint64_t>(indexBufferSize) - static_cast<uint64_t>(indexBufferIndex),
-			};
+			return currentFrameState().availableSpace(vertexBufferSize, indexBufferSize);
 		}
 
 		[[nodiscard]] std::pair<size_t, size_t> getIndexes() const {
-			return {vertexBufferIndex % vertexBufferSize, indexBufferIndex % indexBufferSize};
+			return currentFrameState().getIndexes(vertexBufferSize, indexBufferSize);
 		}
 
 		struct Data {
@@ -388,74 +406,76 @@ namespace glt::Engine {
 		};
 
 		void addData(const Data &data) {
+			auto &state = currentFrameState();
 			assert(data.vertexes.size() < vertexBufferSize);
 			assert(data.indexes.size() < indexBufferSize);
 
-			auto [vertexSpace, indexSpace] = availableSpace();
+			auto [vertexSpace, indexSpace] = state.availableSpace(vertexBufferSize, indexBufferSize);
 
 			size_t vertexOffset = 0;
 
 			if (data.vertexes.size() >= vertexSpace || data.indexes.size() >= indexSpace) {
-				vertexOffset = vertexBufferIndex;
+				vertexOffset = state.vertexBufferIndex;
 
 				flush(false);
 			}
 
-			auto &vertexBuffer = getCurrentVertexBuffer();
-			auto &indexBuffer = getCurrentIndexBuffer();
+			auto &vertexBuffer = state.getCurrentVertexBuffer();
+			auto &indexBuffer = state.getCurrentIndexBuffer();
 
-			memcpy((Vertex *) vertexBuffer.mappedMemory + vertexBufferIndex, data.vertexes.data(), data.vertexes.size() * sizeof(Vertex));
-			memcpy((uint16_t *) indexBuffer.mappedMemory + indexBufferIndex, data.indexes.data(), data.indexes.size() * sizeof(uint16_t));
+			memcpy((Vertex *) vertexBuffer.mappedMemory + state.vertexBufferIndex, data.vertexes.data(), data.vertexes.size() * sizeof(Vertex));
+			memcpy((uint16_t *) indexBuffer.mappedMemory + state.indexBufferIndex, data.indexes.data(), data.indexes.size() * sizeof(uint16_t));
 			if (vertexOffset) {
 				for (size_t i = 0; i < data.indexes.size(); i++) {
 					*((uint16_t *) indexBuffer.mappedMemory + i) -= vertexOffset;
 				}
 			}
 
-			vertexBufferIndex += data.vertexes.size();
-			indexBufferIndex += data.indexes.size();
-			assert(indexBufferIndex <= indexBufferSize);
-			assert(vertexBufferIndex <= vertexBufferSize);
+			state.vertexBufferIndex += data.vertexes.size();
+			state.indexBufferIndex += data.indexes.size();
+			assert(state.indexBufferIndex <= indexBufferSize);
+			assert(state.vertexBufferIndex <= vertexBufferSize);
 		}
 
 		void flush(bool early) {
+			auto &state = currentFrameState();
 			auto &cmd = instance.currentFrame.get().commandBuffer;
-			if (indexBufferIndex - lastIndexBufferIndex != 0) {
-				assert(indexBufferIndex <= indexBufferSize);
+			if (state.indexBufferIndex - state.lastIndexBufferIndex != 0) {
+				assert(state.indexBufferIndex <= indexBufferSize);
 
 				PushConstant pushConstant{
 					.model = instance.getTransform(),
 				};
 
 				cmd.pushConstants<PushConstant>(*layout, vk::ShaderStageFlagBits::eVertex, 0, pushConstant);
-				cmd.drawIndexed(indexBufferIndex - lastIndexBufferIndex, 1, lastIndexBufferIndex, 0, 0);
+				cmd.drawIndexed(state.indexBufferIndex - state.lastIndexBufferIndex, 1, state.lastIndexBufferIndex, 0, 0);
 			}
 
 			if (early) {
-				lastVertexBufferIndex = vertexBufferIndex;
-				lastIndexBufferIndex = indexBufferIndex;
+				state.lastVertexBufferIndex = state.vertexBufferIndex;
+				state.lastIndexBufferIndex = state.indexBufferIndex;
 			} else {
-				lastVertexBufferIndex = 0;
-				vertexBufferIndex = 0;
-				vertexArrIndex++;
-				if (vertexArrIndex == vertexBuffers.size()) {
-					vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
+				state.lastVertexBufferIndex = 0;
+				state.vertexBufferIndex = 0;
+				state.vertexArrIndex++;
+				if (state.vertexArrIndex == state.vertexBuffers.size()) {
+					state.vertexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
 						.size = sizeof(Vertex) * vertexBufferSize,
 						.usage = vk::BufferUsageFlagBits::eVertexBuffer,
 					}));
 				}
-				cmd.bindVertexBuffers(0, *vertexBuffers.at(vertexArrIndex)->buffer, {0});
+				cmd.bindVertexBuffers(0, *state.vertexBuffers.at(state.vertexArrIndex)->buffer, {0});
 
-				lastIndexBufferIndex = 0;
-				indexBufferIndex = 0;
-				indexArrIndex++;
-				if (indexArrIndex == indexBuffers.size()) {
-					indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
+				state.lastIndexBufferIndex = 0;
+				state.indexBufferIndex = 0;
+				state.indexArrIndex++;
+				if (state.indexArrIndex == state.indexBuffers.size()) {
+					state.indexBuffers.emplace_back(std::make_unique<Buffer>(Buffer::Args{
 						.size = sizeof(uint16_t) * indexBufferSize,
 						.usage = vk::BufferUsageFlagBits::eIndexBuffer,
 					}));
 				}
-				cmd.bindIndexBuffer(*indexBuffers.at(indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
+				cmd.bindIndexBuffer(*state.indexBuffers.at(state.indexArrIndex)->buffer, 0, vk::IndexType::eUint16);
 			}
 		}
 

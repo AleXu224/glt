@@ -38,10 +38,16 @@ void glt::Engine::Instance::recreateSwapChain() {
 	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
 	if (width == 0 || height == 0) return;
-	Vulkan::device().waitIdle();
 
 	auto swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
-	swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities);
+	auto newExtent = chooseSwapExtent(swapChainSupport.capabilities);
+
+	if (newExtent.width == swapChainExtent.width && newExtent.height == swapChainExtent.height)
+		return;
+
+	Vulkan::device().waitIdle();
+
+	swapChainExtent = newExtent;
 	swapChain = createSwapChain(true, swapChainSupport);
 	swapChainImageFormat = createSwapChainImageFormat();
 	swapChainImages = createSwapChainImages();
@@ -261,7 +267,15 @@ vk::Extent2D glt::Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabiliti
 	return actualExtent;
 }
 
-vk::PresentModeKHR glt::Engine::Instance::chooseSwapPresentMode() {
+vk::PresentModeKHR glt::Engine::Instance::chooseSwapPresentMode() const {
+	// auto presentModes = Vulkan::physicalDevice().getSurfacePresentModesKHR(*surface);
+
+	// auto hasMode = [&](vk::PresentModeKHR mode) {
+	// 	return std::find(presentModes.begin(), presentModes.end(), mode) != presentModes.end();
+	// };
+
+	// if (hasMode(vk::PresentModeKHR::eMailbox)) return vk::PresentModeKHR::eMailbox;
+	// if (hasMode(vk::PresentModeKHR::eFifo)) return vk::PresentModeKHR::eFifo;
 	return vk::PresentModeKHR::eImmediate;
 }
 

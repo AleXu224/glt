@@ -154,7 +154,7 @@ namespace glt::Engine {
 
 		[[nodiscard]] glt::Engine::Instance::SwapChainSupportDetails querySwapChainSupport(const vk::raii::PhysicalDevice &device) const;
 		[[nodiscard]] static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
-		[[nodiscard]] static vk::PresentModeKHR chooseSwapPresentMode();
+		[[nodiscard]] vk::PresentModeKHR chooseSwapPresentMode() const;
 		[[nodiscard]] vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities) const;
 	};
 }// namespace glt::Engine
