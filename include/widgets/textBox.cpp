@@ -5,6 +5,7 @@
 #include "widgets/column.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
+#include "widgets/textArea.hpp"
 
 namespace squi {
 	void TextBox::State::updateStatus() {
@@ -67,7 +68,10 @@ namespace squi {
 					.child = AnimatedBox{
 						.widget{
 							.width = Size::Shrink,
-							.height = 32.f,
+							.height = widget->multiline ? SizeVariant(Size::Shrink) : 32.f,
+							.sizeConstraints = BoxConstraints{
+								.minHeight = 32.f,
+							},
 						},
 						.color = style.backgroundColor,
 						.borderColor = style.borderColor,
@@ -93,23 +97,44 @@ namespace squi {
 									.borderWidth = BorderWidth{}.withBottom((status == Button::ButtonStatus::active ? 2.f : 1.f)),
 									.borderRadius = style.borderRadius,
 								},
-								TextInput{
-									.widget{
-										.alignment = Alignment::CenterLeft,
-										.sizeConstraints = constraints,
-										.margin = Margin{}.withHorizontal(12.f),
-									},
-									.controller = widget->controller,
-									.onTextChanged = [this](const std::string &text) {
-										if (widget->validator) {
-											auto err = widget->validator(text);
-											setState([&]() {
-												errorMessage = err.value_or("");
-											});
-										}
-									},
-									.active = status == Button::ButtonStatus::active,
-								},
+								[&]() -> Child {
+									if (widget->multiline)
+										return TextArea{
+											.widget{
+												.alignment = Alignment::CenterLeft,
+												.sizeConstraints = constraints,
+												.padding = Padding{}.withHorizontal(12.f),
+											},
+											.controller = widget->controller,
+											.onTextChanged = [this](const std::string &text) {
+												if (widget->validator) {
+													auto err = widget->validator(text);
+													setState([&]() {
+														errorMessage = err.value_or("");
+													});
+												}
+											},
+											.active = status == Button::ButtonStatus::active,
+										};
+									else
+										return TextInput{
+											.widget{
+												.alignment = Alignment::CenterLeft,
+												.sizeConstraints = constraints,
+												.padding = Padding{}.withHorizontal(12.f).withVertical(4.f),
+											},
+											.controller = widget->controller,
+											.onTextChanged = [this](const std::string &text) {
+												if (widget->validator) {
+													auto err = widget->validator(text);
+													setState([&]() {
+														errorMessage = err.value_or("");
+													});
+												}
+											},
+											.active = status == Button::ButtonStatus::active,
+										};
+								}(),
 							},
 						},
 					},

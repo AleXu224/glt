@@ -171,6 +171,14 @@ struct Test : StatefulWidget {
 							return {};
 						},
 					},
+					TextBox{
+						.widget{
+							.sizeConstraints = BoxConstraints{
+								.minWidth = 200.f,
+							},
+						},
+						.multiline = true,
+					},
 					Button{
 						.onClick = [this]() {
 							setState([&]() {

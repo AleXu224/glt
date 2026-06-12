@@ -31,6 +31,10 @@ namespace squi {
 	}
 
 	vec2 Text::TextRenderObject::calculateContentSize(BoxConstraints constraints, bool) {
+		if (precomputedLayout) {
+			return {precomputedLayout->widestLine, precomputedLayout->totalHeight};
+		}
+
 		if (lineWrap || forceRegen) {
 			const auto &[width, height] = font->getTextSizeSafe(
 				text,
@@ -44,6 +48,10 @@ namespace squi {
 	}
 
 	void Text::TextRenderObject::afterSizeCalculated() {
+		if (precomputedLayout) {
+			return;
+		}
+
 		if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
 			lastAvailableSpace = size.x;
 			const auto lineHeight = font->getLineHeight(fontSize);
@@ -63,16 +71,20 @@ namespace squi {
 			}
 		}
 	}
+	void Text::TextRenderObject::positionQuadsAt(const vec2 &pos) {
+		const vec2 roundedPos = pos.rounded();
+		for (auto &quadVec: data->quads) {
+			for (auto &quad: quadVec) {
+				quad.setPos(roundedPos);
+			}
+		}
+	}
+
 
 	void Text::TextRenderObject::positionContentAt(const Rect &newBounds) {
 		const auto topLeft = newBounds.posFromAlignment(alignment.value_or(Alignment::TopLeft), textSize);
 		if (topLeft != lastPos) {
-			const vec2 roundedPos = topLeft.rounded();
-			for (auto &quadVec: data->quads) {
-				for (auto &quad: quadVec) {
-					quad.setPos(roundedPos);
-				}
-			}
+			positionQuadsAt(topLeft);
 			lastPos = topLeft;
 		}
 	}
@@ -121,11 +133,30 @@ namespace squi {
 
 	void Text::updateRenderObject(RenderObject *renderObject) const {
 		if (auto *textRenderObject = dynamic_cast<TextRenderObject *>(renderObject)) {
-			if (textRenderObject->text != this->text) {
-				textRenderObject->text = std::string(this->text);
-				textRenderObject->forceRegen = true;
-				textRenderObject->element->markNeedsRelayout();
-			}
+			std::visit(
+				utils::overloaded{
+					[&](const std::string &str) {
+						if (textRenderObject->precomputedLayout || textRenderObject->text != str) {
+							textRenderObject->text = str;
+							textRenderObject->precomputedLayout = nullptr;
+							textRenderObject->forceRegen = true;
+							textRenderObject->element->markNeedsRelayout();
+						}
+					},
+					[&](const std::shared_ptr<const TextLayout> &layout) {
+						if (textRenderObject->precomputedLayout != layout) {
+							textRenderObject->precomputedLayout = layout;
+							textRenderObject->data->quads = layout->quads;
+							textRenderObject->textSize = {layout->widestLine, layout->totalHeight};
+							textRenderObject->forceRegen = false;
+							const auto topLeft = textRenderObject->parentBounds.posFromAlignment(textRenderObject->alignment.value_or(Alignment::TopLeft), textRenderObject->textSize);
+							textRenderObject->positionQuadsAt(topLeft);
+							textRenderObject->element->markNeedsRelayout();
+						}
+					},
+				},
+				this->text
+			);
 
 			if (textRenderObject->fontSize != this->fontSize) {
 				textRenderObject->fontSize = this->fontSize;

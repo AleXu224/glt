@@ -3,16 +3,19 @@
 #include "core/core.hpp"
 #include "fontStore.hpp"
 #include "text/provider.hpp"
+#include <variant>
 
 
 namespace squi {
 	struct TextData;
 
+	using TextVariant = std::variant<std::string, std::shared_ptr<const TextLayout>>;
+
 	struct Text : RenderObjectWidget {
 		Key key;
 		Args widget{};
 
-		std::string text;
+		TextVariant text;
 		float fontSize{14.0f};
 		bool lineWrap{false};
 		std::variant<FontProvider, std::shared_ptr<FontStore::Font>> font = FontStore::defaultFont;
@@ -20,6 +23,7 @@ namespace squi {
 
 		struct TextRenderObject : RenderObject {
 			std::string text{};
+			std::shared_ptr<const TextLayout> precomputedLayout;
 			float fontSize{14.0f};
 			bool lineWrap{false};
 			std::shared_ptr<FontStore::Font> font{};
@@ -29,7 +33,6 @@ namespace squi {
 			vec2 lastPos{0};
 
 			bool forceRegen = false;
-
 			std::unique_ptr<TextData> data;
 
 			TextRenderObject();
@@ -38,6 +41,7 @@ namespace squi {
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 			void afterSizeCalculated() override;
 
+			void positionQuadsAt(const vec2 &pos);
 			void positionContentAt(const Rect &newBounds) override;
 
 			void drawContent() override;

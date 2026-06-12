@@ -11,6 +11,7 @@ namespace squi {
 		Key key;
 		Args widget{};
 		bool disabled = false;
+		bool multiline = false;
 		TextInput::Controller controller{};
 		std::function<std::optional<std::string>(const std::string &)> validator;
 

@@ -37,7 +37,7 @@ namespace squi {
 						scrollUpdater.notify(this->scroll - mainAxisScroll * 40.f);
 					}
 					// Allow scrolling horizontally when shift is held down
-					if (state.inputState->isKeyDown(GestureKey::leftShift) && widget->direction == Axis::Horizontal && scroll.y != 0.f) {
+					if ((state.inputState->isKeyDown(GestureKey::leftShift) || state.inputState->isKeyDown(GestureKey::rightShift)) && widget->direction == Axis::Horizontal && scroll.y != 0.f) {
 						scrollUpdater.notify(this->scroll - scroll.y * 40.f);
 					}
 				}

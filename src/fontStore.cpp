@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <print>
+#include <span>
 #include <string>
 
 #include "engine/textQuad.hpp"
@@ -180,6 +181,17 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	for (auto character: u32text) {
 		auto &charInfo = getCharInfo(character, sizeMap);
 
+		if (character == '\n') {
+			widestLine = std::max(currentLineWidth + currentWordWidth, widestLine);
+			currentLineWidth = 0;
+			currentWordWidth = 0;
+			currentWordWhitespace = 0;
+			++lineCount;
+			prevCharIndex = 0;
+			continue;
+		}
+		if (character == '\r') continue;
+
 		if (currentLineWidth != 0 || currentWordWidth != 0) {
 			currentWordWidth += charInfo.getKerning(face, prevCharIndex);
 
@@ -219,95 +231,140 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 	return {widestLine, lineCount * lineHeight};
 }
 
-std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
+TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::optional<float> maxWidth) {
 	std::lock_guard lock{fontMtx};
-	if (!face) return {{}, 0.f, 0.f};
+	TextLayout result{};
+	if (!face || !loaded) return result;
+
 	const int32_t maxWidthClamped = [&]() -> int32_t {
 		if (maxWidth.has_value()) {
 			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
 		}
 		return std::numeric_limits<int32_t>::max();
 	}();
-	std::vector<std::vector<glt::Engine::TextQuad>> quads{};
-	quads.resize(1, std::vector<glt::Engine::TextQuad>{});
-	struct CharData {
+	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(std::round(std::abs(size))));
+	const int32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	result.lineHeight = static_cast<float>(lineHeight);
+
+	auto &sizeMap = getSizeMap(size);
+
+	result.quads.resize(1);
+
+	struct QuadChar {
 		Font::CharInfo &charInfo;
 		int32_t offsetX = 0;
 		int32_t offsetY = 0;
 		char32_t character;
+		int64_t byteOffset = 0;
 	};
-	std::vector<CharData> currentWordCharData{};
+	std::vector<QuadChar> currentWordChars{};
+
 	int32_t widestLine = 0;
 	int32_t currentLineWidth = 0;
 	int32_t currentWordWidth = 0;
 	uint32_t previousCharIndex = 0;
-	if (!loaded) {
-		return {quads, 0, 0};
-	}
-	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
-	const int32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	uint32_t currentLineIndex = 0;
 
-	auto &sizeMap = getSizeMap(size);
+	const auto toFloat = [](int32_t i) {
+		return static_cast<float>(i);
+	};
 
 	const auto pushWordToLine = [&]() {
-		const auto lines = quads.size();
-		const uint32_t yOffset = (lines - 1) * lineHeight;
-		const auto toFloat = [](int32_t i) {
-			return static_cast<float>(i);
-		};
-		for (const auto &charData: currentWordCharData) {
-			quads.back().emplace_back(glt::Engine::TextQuad::Args{
-				.color{color},
-				.position{pos},
-				.size{charData.charInfo.size},
+		const uint32_t yOffset = currentLineIndex * lineHeight;
+		for (const auto &qc: currentWordChars) {
+			result.glyphs.push_back({
+				.byteOffset = qc.byteOffset,
+				.x = toFloat(currentLineWidth + qc.offsetX),
+				.advance = toFloat(qc.charInfo.advance),
+				.lineIndex = currentLineIndex,
+			});
+			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
+				.size{qc.charInfo.size},
 				.offset{
-					toFloat(currentLineWidth + charData.offsetX) + charData.charInfo.offset.x,
-					toFloat(static_cast<int32_t>(yOffset) + charData.offsetY) + charData.charInfo.offset.y,
+					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
+					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
 				},
-				.uvTopLeft = charData.charInfo.uvTopLeft,
-				.uvBottomRight = charData.charInfo.uvBottomRight,
+				.uvTopLeft = qc.charInfo.uvTopLeft,
+				.uvBottomRight = qc.charInfo.uvBottomRight,
 			});
 		}
-		currentWordCharData.clear();
+		currentWordChars.clear();
 
 		currentLineWidth += currentWordWidth;
 		currentWordWidth = 0;
 	};
 	const auto pushWhitespaceToLine = [&]() {
-		const auto lines = quads.size();
-		const uint32_t yOffset = (lines - 1) * lineHeight;
-		const auto toFloat = [](int32_t i) {
-			return static_cast<float>(i);
-		};
-		auto it = std::lower_bound(currentWordCharData.begin(), currentWordCharData.end(), ' ', [&](const CharData &a, char) {
+		const uint32_t yOffset = currentLineIndex * lineHeight;
+		auto it = std::lower_bound(currentWordChars.begin(), currentWordChars.end(), ' ', [&](const QuadChar &a, char) {
 			return a.character == ' ' && (a.offsetX + currentLineWidth + a.charInfo.advance) <= maxWidthClamped;
 		});
 		int32_t whiteSpaceSize = 0;
-		for (const auto &charData: std::span<CharData>(currentWordCharData.begin(), it)) {
-			quads.back().emplace_back(glt::Engine::TextQuad::Args{
-				.color{color},
-				.position{pos},
-				.size{charData.charInfo.size},
-				.offset{
-					toFloat(currentLineWidth + charData.offsetX) + charData.charInfo.offset.x,
-					toFloat(static_cast<int32_t>(yOffset) + charData.offsetY) + charData.charInfo.offset.y,
-				},
-				.uvTopLeft = charData.charInfo.uvTopLeft,
-				.uvBottomRight = charData.charInfo.uvBottomRight,
+		for (const auto &qc: std::span(currentWordChars.begin(), it)) {
+			result.glyphs.push_back({
+				.byteOffset = qc.byteOffset,
+				.x = toFloat(currentLineWidth + qc.offsetX),
+				.advance = toFloat(qc.charInfo.advance),
+				.lineIndex = currentLineIndex,
 			});
-			whiteSpaceSize += charData.charInfo.advance;
+			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
+				.size{qc.charInfo.size},
+				.offset{
+					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
+					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
+				},
+				.uvTopLeft = qc.charInfo.uvTopLeft,
+				.uvBottomRight = qc.charInfo.uvBottomRight,
+			});
+			whiteSpaceSize += qc.charInfo.advance;
 		}
-		currentWordCharData = std::vector<CharData>(it, currentWordCharData.end());
-		for (auto &charData: currentWordCharData) {
-			charData.offsetX -= whiteSpaceSize;
+		currentWordChars = std::vector<QuadChar>(it, currentWordChars.end());
+		for (auto &qc: currentWordChars) {
+			qc.offsetX -= whiteSpaceSize;
 		}
 		currentLineWidth += whiteSpaceSize;
 		currentWordWidth -= whiteSpaceSize;
 	};
+	const auto startNewLine = [&](std::optional<int64_t> newLineIndex = std::nullopt) {
+		widestLine = std::max(currentLineWidth, widestLine);
+		result.quads.emplace_back();
+		currentLineWidth = 0;
+		currentLineIndex = static_cast<uint32_t>(result.quads.size() - 1);
+		if (newLineIndex.has_value()) {
+			result.glyphs.emplace_back(TextLayout::Glyph{
+				.byteOffset = newLineIndex.value(),
+				.x = 0,
+				.advance = 0,
+				.lineIndex = currentLineIndex,
+			});
+		}
+	};
 
-	std::u32string u32text = utf8::utf8to32(text);
-	for (auto character: u32text) {
+	auto it = text.begin();
+	auto end = text.end();
+	int64_t byteOffset = 0;
+	while (it != end) {
+		auto prevIt = it;
+		char32_t character = utf8::next(it, end);
+		int64_t charByteOffset = byteOffset;
+		byteOffset += std::distance(prevIt, it);
+
 		auto &charInfo = getCharInfo(character, sizeMap);
+
+		if (character == '\n') {
+			currentWordChars.emplace_back(QuadChar{
+				.charInfo = getCharInfo(' ', sizeMap),
+				.offsetX = currentWordWidth,
+				.offsetY = face->size->metrics.ascender >> 6,
+				.character = ' ',
+				.byteOffset = charByteOffset,
+			});
+			result.newlineOffsets.push_back(charByteOffset + 1);
+			pushWordToLine();
+			startNewLine(charByteOffset);
+			previousCharIndex = 0;
+			continue;
+		}
+		if (character == '\r') continue;
 
 		if (currentLineWidth != 0 || currentWordWidth != 0) {
 			currentWordWidth += charInfo.getKerning(face, previousCharIndex);
@@ -317,19 +374,18 @@ std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontSt
 			}
 		}
 
-		currentWordCharData.emplace_back(CharData{
+		currentWordChars.emplace_back(QuadChar{
 			.charInfo = charInfo,
 			.offsetX = currentWordWidth,
 			.offsetY = face->size->metrics.ascender >> 6,
 			.character = character,
+			.byteOffset = charByteOffset,
 		});
 		currentWordWidth += charInfo.advance;
 
 		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > maxWidthClamped) {
 			pushWhitespaceToLine();
-			widestLine = std::max(currentLineWidth, widestLine);
-			quads.emplace_back();
-			currentLineWidth = 0;
+			startNewLine();
 		}
 
 		previousCharIndex = charInfo.index;
@@ -337,8 +393,21 @@ std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontSt
 	pushWordToLine();
 
 	widestLine = std::max(currentLineWidth, widestLine);
+	result.widestLine = static_cast<float>(widestLine);
+	result.totalHeight = static_cast<float>(result.quads.size() * lineHeight);
 
-	return {quads, widestLine, quads.size() * lineHeight};
+	return result;
+}
+
+std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
+	auto layout = textLayout(text, size, maxWidth);
+	for (auto &quadVec: layout.quads) {
+		for (auto &quad: quadVec) {
+			quad.setPos(pos);
+			quad.setColor(color);
+		}
+	}
+	return {std::move(layout.quads), layout.widestLine, layout.totalHeight};
 }
 
 std::shared_ptr<glt::Engine::Texture> squi::FontStore::Font::getTexture() const {

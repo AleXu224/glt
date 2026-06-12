@@ -5,9 +5,11 @@
 #include "observer.hpp"
 #include "widgets/gestureDetector.hpp"
 #include "widgets/misc/scrollViewData.hpp"
+#include "widgets/misc/textEditor.hpp"
 
 
 namespace squi {
+	struct TextArea;
 	struct TextInput : StatefulWidget {
 		struct Controller {
 		private:
@@ -40,7 +42,12 @@ namespace squi {
 				return controlBlock == other.controlBlock;
 			}
 
+			void notifyTextChanged() const {
+				controlBlock->textObservable.notify(controlBlock->text);
+			}
+
 			friend TextInput;
+			friend TextArea;
 		};
 
 		// Args
@@ -51,67 +58,58 @@ namespace squi {
 		bool active = false;
 
 		struct State : WidgetState<TextInput> {
-			ScrollViewData cachedScrollData{};
-			std::shared_ptr<ScrollViewData> scrollController = std::make_shared<ScrollViewData>();
+			TextEditor buffer;
 			Controller controller{};
 			Observer<const std::string &> textObserver{};
-			std::string text;
-			int64_t cursor = 0;
-			std::optional<int64_t> selectionStart;
+
+			ScrollViewData cachedScrollData{};
+			std::shared_ptr<ScrollViewData> scrollController = std::make_shared<ScrollViewData>();
+			bool manuallyScrolling = false;
 			float scroll = 0.f;
 
 			std::chrono::steady_clock::time_point lastClickTime = std::chrono::steady_clock::now();
 			int clickCount = 0;
 			int64_t lastClickedIndex = 0;
-			enum class DragType { Char, Word, Line } dragType = DragType::Char;
+			enum class DragType {
+				Char,
+				Word,
+				Line,
+			};
+			DragType dragType = DragType::Char;
 			int64_t pivot = 0;
-			std::pair<int64_t, int64_t> pivotRange{ 0, 0 };
+			std::pair<int64_t, int64_t> pivotRange{0, 0};
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 
 			void initState() override {
 				controller = widget->controller;
-				text = controller.getText();
+				buffer.text = &controller.controlBlock->text;
+				buffer.onTextChanged = [this](const std::string &text) {
+					buffer.regenerateLayout(font);
+					controller.notifyTextChanged();
+					if (widget->onTextChanged) widget->onTextChanged(text);
+				};
 				textObserver = controller.getTextObserver([this](const std::string &newText) {
-					setText(newText);
-					clampCursors();
+					buffer.regenerateLayout(font);
+					buffer.clampCursors();
 				});
+				buffer.regenerateLayout(font);
 			}
 
 			void widgetUpdated() override {
 				if (controller == widget->controller) return;
 				controller = widget->controller;
-				text = controller.getText();
+				buffer.text = &controller.controlBlock->text;
+				buffer.onTextChanged = [this](const std::string &text) {
+					buffer.regenerateLayout(font);
+					controller.notifyTextChanged();
+					if (widget->onTextChanged) widget->onTextChanged(text);
+				};
 				textObserver = controller.getTextObserver([this](const std::string &newText) {
-					setText(newText);
-					clampCursors();
+					buffer.regenerateLayout(font);
+					buffer.clampCursors();
 				});
 			}
-
-			void clampCursors();
-
-			[[nodiscard]] int64_t getSelectionMin() const;
-			[[nodiscard]] int64_t getSelectionMax() const;
-
-			void setText(const std::string &text);
-			void clearSelection();
-
-			void handleTextInput(const Gesture::State &state);
-
-			[[nodiscard]] uint64_t getPrevWordStart(int64_t position) const;
-			[[nodiscard]] uint64_t getNextWordStart(int64_t position) const;
-
-			void handleBackspace(const Gesture::State &state);
-			void handleDelete(const Gesture::State &state);
-			void handleLeftArrow(const Gesture::State &state);
-			void handleRightArrow(const Gesture::State &state);
-			void handleHome(const Gesture::State &state);
-			void handleEnd(const Gesture::State &state);
-			void handleEscape(const Gesture::State &state);
-			void handleSelectAll(const Gesture::State &state);
-			void handleCopy(const Gesture::State &state) const;
-			void handleCut(const Gesture::State &state);
-			void handlePaste(const Gesture::State &state);
 
 			void handleMousePress(const Gesture::State &state);
 			void handleMouseDrag(const Gesture::State &state);
