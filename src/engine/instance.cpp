@@ -89,7 +89,7 @@ vk::raii::SwapchainKHR glt::Engine::Instance::createSwapChain(bool recreating, c
 	vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	vk::PresentModeKHR presentMode = chooseSwapPresentMode();
 
-	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	uint32_t imageCount = swapChainSupport.capabilities.minImageCount;
 
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
 		imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -268,14 +268,16 @@ vk::Extent2D glt::Engine::Instance::chooseSwapExtent(const vk::SurfaceCapabiliti
 }
 
 vk::PresentModeKHR glt::Engine::Instance::chooseSwapPresentMode() const {
-	// auto presentModes = Vulkan::physicalDevice().getSurfacePresentModesKHR(*surface);
+	auto presentModes = Vulkan::physicalDevice().getSurfacePresentModesKHR(*surface);
 
-	// auto hasMode = [&](vk::PresentModeKHR mode) {
-	// 	return std::find(presentModes.begin(), presentModes.end(), mode) != presentModes.end();
-	// };
+	auto hasMode = [&](vk::PresentModeKHR mode) {
+		return std::find(presentModes.begin(), presentModes.end(), mode) != presentModes.end();
+	};
 
 	// if (hasMode(vk::PresentModeKHR::eMailbox)) return vk::PresentModeKHR::eMailbox;
-	// if (hasMode(vk::PresentModeKHR::eFifo)) return vk::PresentModeKHR::eFifo;
+	if (hasMode(vk::PresentModeKHR::eFifoRelaxed)) return vk::PresentModeKHR::eFifoRelaxed;
+	std::println("Fifo Relaxed not supported, falling back to regular Fifo");
+	if (hasMode(vk::PresentModeKHR::eFifo)) return vk::PresentModeKHR::eFifo;
 	return vk::PresentModeKHR::eImmediate;
 }
 

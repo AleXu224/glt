@@ -47,7 +47,7 @@ struct ColorChanger : StatefulWidget {
 					setState([this]() {
 						expanded = !expanded;
 						color = expanded ? Color::black : Color::royalblue;
-						width = expanded ? 100.f : 50.f;
+						width = expanded ? 200.f : 50.f;
 					});
 				},
 				.child = AnimatedBox{
@@ -55,7 +55,7 @@ struct ColorChanger : StatefulWidget {
 						.width = width,
 						.height = widget->size,
 					},
-					.duration = 500ms,
+					.duration = 1000ms,
 					.color = color,
 				},
 			};

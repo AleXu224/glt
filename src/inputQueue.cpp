@@ -71,6 +71,11 @@ bool squi::InputQueue::waitForInput() {
 	return false;
 }
 
+size_t squi::InputQueue::size() {
+	std::scoped_lock lock{inputMtx};
+	return inputQueue.size();
+};
+
 void squi::InputQueue::resetInputPromise() {
 	inputPromise = std::promise<void>{};
 	inputFuture = inputPromise.get_future();

@@ -47,6 +47,7 @@ namespace squi {
 		std::optional<InputTypes> pop();
 
 		bool waitForInput();
+		size_t size();
 
 	private:
 		std::mutex inputMtx{};

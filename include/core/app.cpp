@@ -139,126 +139,133 @@ namespace squi::core {
 					}
 
 					static thread_local bool firstRun = true;
-					if (!runningAnimations.empty() || (!firstRun && inputQueue.waitForInput()))
-						inputState.parseInput(inputQueue.pop());
+					size_t popCount = 1;
+					if (!runningAnimations.empty() || (!firstRun && inputQueue.waitForInput())) {
+						popCount = std::max(inputQueue.size(), popCount);
+					}
 
-					inputState.frameBegin();
+					bool forceRedraw = false;
 					firstRun = false;
-					if (engine.resized || engine.outdatedFramebuffer) {
-						engine.recreateSwapChain();
-						dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
-					}
-					const auto &width = static_cast<float>(engine.instance.swapChainExtent.width);
-					const auto &height = static_cast<float>(engine.instance.swapChainExtent.height);
-					renderObject.parentSizeConstraints = BoxConstraints{
-						.maxWidth = width,
-						.maxHeight = height
-					};
-					renderObject.parentBounds = Rect{
-						vec2{0.0f, 0.0f},
-						vec2{width, height},
-					};
-					drewLastFrame = false;
 
-					auto newFrameStartTime = std::chrono::steady_clock::now();
-					deltaTime = newFrameStartTime - frameStartTime;
-					frameStartTime = newFrameStartTime;
-
-					// state.width = static_cast<float>(width);
-					// state.height = static_cast<float>(height);
-					// state.root = this;
-
-					inputState.g_activeArea.emplace_back(
-						vec2{0.0f, 0.0f},
-						vec2{width, height}
-					);
-
-					// Update animations
-					for (auto it = runningAnimations.begin(); it != runningAnimations.end();) {
-						auto *anim = *it;
-						anim->markElementDirty();
-						if (anim->isCompleted()) {
-							it = runningAnimations.erase(it);
-						} else {
-							++it;
+					for (size_t i = 0; i < popCount; i++) {
+						inputState.parseInput(inputQueue.pop());
+						inputState.frameBegin();
+						if (engine.resized || engine.outdatedFramebuffer) {
+							engine.recreateSwapChain();
+							dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
 						}
-					}
+						const auto &width = static_cast<float>(engine.instance.swapChainExtent.width);
+						const auto &height = static_cast<float>(engine.instance.swapChainExtent.height);
+						renderObject.parentSizeConstraints = BoxConstraints{
+							.maxWidth = width,
+							.maxHeight = height
+						};
+						renderObject.parentBounds = Rect{
+							vec2{0.0f, 0.0f},
+							vec2{width, height},
+						};
+						drewLastFrame = false;
 
-					renderObject.update();
+						auto newFrameStartTime = std::chrono::steady_clock::now();
+						deltaTime = newFrameStartTime - frameStartTime;
+						frameStartTime = newFrameStartTime;
 
-					while (!dirtyElements.empty() || !dirtyResize.empty() || !dirtyReposition.empty()) {
-						while (!dirtyElements.empty()) {
-							auto it = dirtyElements.begin();
-							auto elem = it->second.lock();
-							if (!elem) {
+						// state.width = static_cast<float>(width);
+						// state.height = static_cast<float>(height);
+						// state.root = this;
+
+						inputState.g_activeArea.emplace_back(
+							vec2{0.0f, 0.0f},
+							vec2{width, height}
+						);
+
+						// Update animations
+						for (auto it = runningAnimations.begin(); it != runningAnimations.end();) {
+							auto *anim = *it;
+							anim->markElementDirty();
+							if (anim->isCompleted()) {
+								it = runningAnimations.erase(it);
+							} else {
+								++it;
+							}
+						}
+
+						renderObject.update();
+
+						while (!dirtyElements.empty() || !dirtyResize.empty() || !dirtyReposition.empty()) {
+							while (!dirtyElements.empty()) {
+								auto it = dirtyElements.begin();
+								auto elem = it->second.lock();
+								if (!elem) {
+									dirtyElements.erase(it);
+									continue;
+								}
 								dirtyElements.erase(it);
-								continue;
+								if (elem->mounted && elem->dirty)
+									elem->rebuild();
 							}
-							dirtyElements.erase(it);
-							if (elem->mounted && elem->dirty)
-								elem->rebuild();
-						}
-						dirtyElements.clear();
+							dirtyElements.clear();
 
-						if (!dirtyResize.empty() || !dirtyReposition.empty())
-							needsRedraw = true;
+							if (!dirtyResize.empty() || !dirtyReposition.empty())
+								needsRedraw = true;
 
-						// if (needsRelayout) {
-						// 	std::println("Relayout needed");
-						// } else if (needsReposition) {
-						// 	std::println("Reposition needed");
-						// } else if (needsRedraw) {
-						// 	std::println("Redraw needed");
-						// }
+							// if (needsRelayout) {
+							// 	std::println("Relayout needed");
+							// } else if (needsReposition) {
+							// 	std::println("Reposition needed");
+							// } else if (needsRedraw) {
+							// 	std::println("Redraw needed");
+							// }
 
-						// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
+							// std::println("Needs relayout: {}, Needs reposition: {}, Needs redraw: {}", needsRelayout, needsReposition, needsRedraw);
 
-						while (!dirtyResize.empty()) {
-							auto it = dirtyResize.begin();
-							auto renderObject = it->second.lock();
-							if (!renderObject || !renderObject->parentSizeConstraints.has_value()) {
+							while (!dirtyResize.empty()) {
+								auto it = dirtyResize.begin();
+								auto renderObject = it->second.lock();
+								if (!renderObject || !renderObject->parentSizeConstraints.has_value()) {
+									dirtyResize.erase(it);
+									continue;
+								}
 								dirtyResize.erase(it);
-								continue;
+								dirtyReposition.insert_or_assign(renderObject->element, renderObject->weak_from_this());
+								renderObject->calculateSize(
+									*renderObject->parentSizeConstraints,
+									true
+								);
 							}
-							dirtyResize.erase(it);
-							dirtyReposition.insert_or_assign(renderObject->element, renderObject->weak_from_this());
-							renderObject->calculateSize(
-								*renderObject->parentSizeConstraints,
-								true
-							);
-						}
 
-						for (const auto &task: postLayoutTasks) {
-							task();
-						}
-						postLayoutTasks.clear();
+							for (const auto &task: postLayoutTasks) {
+								task();
+							}
+							postLayoutTasks.clear();
 
-						while (!dirtyReposition.empty()) {
-							auto it = dirtyReposition.begin();
-							auto renderObject = it->second.lock();
-							if (!renderObject) {
+							while (!dirtyReposition.empty()) {
+								auto it = dirtyReposition.begin();
+								auto renderObject = it->second.lock();
+								if (!renderObject) {
+									dirtyReposition.erase(it);
+									continue;
+								}
 								dirtyReposition.erase(it);
-								continue;
+								renderObject->positionAt(renderObject->parentBounds);
 							}
-							dirtyReposition.erase(it);
-							renderObject->positionAt(renderObject->parentBounds);
+
+							for (const auto &task: postRepositionTasks) {
+								task();
+							}
+							postRepositionTasks.clear();
 						}
 
-						for (const auto &task: postRepositionTasks) {
-							task();
+						inputState.g_activeArea.pop_back();
+						if (!inputState.g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
+
+						forceRedraw = forceRedraw || inputState.isKeyPressedOrRepeat(GestureKey::f9);
+						{
+							std::scoped_lock lock{glt::Engine::Window::_windowMtx};
+							inputState.frameEnd();
 						}
-						postRepositionTasks.clear();
 					}
 
-					inputState.g_activeArea.pop_back();
-					if (!inputState.g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
-
-					bool forceRedraw = inputState.isKeyPressedOrRepeat(GestureKey::f9);
-
-					{
-						std::scoped_lock lock{glt::Engine::Window::_windowMtx};
-						inputState.frameEnd();
-					}
 
 					if (needsRedraw || forceRedraw) {
 						needsRedraw = false;
