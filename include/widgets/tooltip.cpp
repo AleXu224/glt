@@ -88,8 +88,7 @@ namespace squi {
 	}
 
 	TooltipWithTarget::State::~State() {
-		const Key tooltipKey = std::make_shared<ValueKey>(std::format("tooltip_{}", reinterpret_cast<uintptr_t>(element)));
-		Navigator::of(*element).popOverlay(tooltipKey);
+		Navigator::of(*element).popOverlay(widget->key);
 	};
 	core::Child TooltipWithTarget::State::build(const Element &element) {
 		return Offset{
@@ -98,7 +97,12 @@ namespace squi {
 				auto windowRect = app->rootRenderObject->getContentRect();
 
 				auto renderObject = Element::getElementForGlobalKey(widget->targetKey);
-				auto bounds = renderObject//
+				if (!renderObject || !renderObject->mounted) {
+					app->postRepositionTasks.emplace_back([this, element]() {
+						Navigator::of(*element.element).popOverlay(widget->key);
+					});
+				}
+				auto bounds = renderObject && renderObject->mounted//
 								? RenderObjectElement::getAncestorRenderObjectElement(renderObject.get())->renderObject->getRect()
 								: Rect::fromPosSize(vec2{}, vec2{});
 
