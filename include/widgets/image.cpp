@@ -138,8 +138,9 @@ namespace squi {
 						auto *app = renderObject->getApp();
 						imageRenderObject->data->sampler = app->samplerStore.getSampler(app->engine.instance, Store::Texture::getTexture(image));
 						std::scoped_lock _{app->taskMtx};
-						app->preUpdateTasks.emplace_back([app, imageRenderObject]() {
-							imageRenderObject->element->markNeedsRelayout();
+						app->preUpdateTasks.emplace_back([app, element = renderObject->element->shared_from_this()]() {
+							if (!element->mounted) return;
+							element->markNeedsRelayout();
 							app->inputQueue.push(StateChange{});
 						});
 					}

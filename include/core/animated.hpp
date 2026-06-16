@@ -19,14 +19,14 @@ namespace squi::core {
 		AnimatedController &operator=(const AnimatedController &) = delete;
 		AnimatedController &operator=(AnimatedController &&) noexcept = delete;
 
-		ElementPtr element = nullptr;
+		std::weak_ptr<Element> element = {};
 		App *app = nullptr;
 
 		[[nodiscard]] bool isCompleted() const override;
 
 		void markElementDirty() override {
-			if (element) {
-				element->markNeedsRebuild();
+			if (auto elementPtr = element.lock()) {
+				elementPtr->markNeedsRebuild();
 			}
 		}
 
@@ -48,12 +48,12 @@ namespace squi::core {
 		std::shared_ptr<AnimatedController> controller = std::make_shared<AnimatedController>();
 
 		void mount(WidgetStateBase *state) {
-			this->controller->element = state->element->shared_from_this();
+			this->controller->element = state->element->weak_from_this();
 			this->controller->app = state->element->getApp();
 		}
 
 		[[nodiscard]] bool isMounted() const {
-			return controller->app != nullptr;
+			return controller->app != nullptr && !controller->element.expired();
 		}
 
 		[[nodiscard]] bool isCompleted() const {
