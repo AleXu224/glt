@@ -139,6 +139,7 @@ namespace squi {
 
 		public:
 			Font(const FontProvider &provider);
+			~Font();
 
 			[[nodiscard]] uint32_t getLineHeight(float size);
 			[[nodiscard]] std::tuple<uint32_t, uint32_t> getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth = {});

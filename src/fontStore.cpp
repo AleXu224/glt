@@ -43,6 +43,10 @@ FontStore::Font::Font(const FontProvider &provider)
 	}
 }
 
+squi::FontStore::Font::~Font() {
+	FT_Done_Face(face);
+}
+
 std::shared_ptr<FontStore::Font> FontStore::getFont(const FontProvider &provider) {
 	std::scoped_lock lock{fontsMtx};
 	if (auto it = fonts().find(provider.key); it != fonts().end()) {
