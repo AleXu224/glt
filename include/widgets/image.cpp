@@ -133,12 +133,12 @@ namespace squi {
 
 			if (imageRenderObject->imageProvider != this->image) {
 				imageRenderObject->imageProvider = this->image;
-				auto imageLoadingThread = std::thread([renderObject = renderObject->shared_from_this(), image = image]() {
+				auto imageLoadingThread = std::thread([renderObject = renderObject->shared_from_this(), element = renderObject->element->shared_from_this(), image = image]() {
 					if (auto *imageRenderObject = renderObject->as<ImageRenderObject>()) {
 						auto *app = renderObject->getApp();
 						imageRenderObject->data->sampler = app->samplerStore.getSampler(app->engine.instance, Store::Texture::getTexture(image));
 						std::scoped_lock _{app->taskMtx};
-						app->preUpdateTasks.emplace_back([app, element = renderObject->element->shared_from_this()]() {
+						app->preUpdateTasks.emplace_back([app, element]() {
 							if (!element->mounted) return;
 							element->markNeedsRelayout();
 							app->inputQueue.push(StateChange{});
