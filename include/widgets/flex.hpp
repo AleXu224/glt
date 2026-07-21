@@ -53,6 +53,8 @@ namespace squi {
 			[[nodiscard]] vec2 _calculateContentSize(BoxConstraints constraints, bool final, bool ignoreCrossAxisSize = false);
 			void positionContentAt(const Rect &newBounds) override;
 
+			void drawContent() override;
+
 			void init() override;
 		};
 

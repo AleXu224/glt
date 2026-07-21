@@ -30,7 +30,7 @@ namespace squi {
 			Color color = Color::white;
 			vec2 textSize{};
 			vec2 lastAvailableSpace{0};
-			vec2 lastPos{0};
+			glm::mat4 offsetMatrix{1.f};
 
 			bool forceRegen = false;
 			std::unique_ptr<TextData> data;

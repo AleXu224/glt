@@ -64,7 +64,7 @@ namespace squi {
 				std::tie(data->quads, textSize.x, textSize.y) = font->generateQuads(
 					text,
 					fontSize,
-					lastPos.rounded(),
+					vec2{0.f},
 					color,
 					lineWrap ? std::optional<float>(size.x) : std::nullopt
 				);
@@ -73,20 +73,14 @@ namespace squi {
 	}
 	void Text::TextRenderObject::positionQuadsAt(const vec2 &pos) {
 		const vec2 roundedPos = pos.rounded();
-		for (auto &quadVec: data->quads) {
-			for (auto &quad: quadVec) {
-				quad.setPos(roundedPos);
-			}
-		}
+		offsetMatrix[3][0] = roundedPos.x;
+		offsetMatrix[3][1] = roundedPos.y;
 	}
 
 
 	void Text::TextRenderObject::positionContentAt(const Rect &newBounds) {
 		const auto topLeft = newBounds.posFromAlignment(alignment.value_or(Alignment::TopLeft), textSize);
-		if (topLeft != lastPos) {
-			positionQuadsAt(topLeft);
-			lastPos = topLeft;
-		}
+		positionQuadsAt(topLeft);
 	}
 
 	void Text::TextRenderObject::drawContent() {
@@ -95,6 +89,8 @@ namespace squi {
 
 		const auto pos = getContentRect().getTopLeft();
 		auto *app = this->getApp();
+
+		app->engine.instance.pushTransform(offsetMatrix);
 
 		data->pipeline->bindWithSampler(*data->sampler);
 		const auto clipRect = app->engine.instance.scissorStack.back().logical;
@@ -125,6 +121,8 @@ namespace squi {
 				data->pipeline->addData(quad.getData(vi, ii));
 			}
 		}
+
+		app->engine.instance.popTransform();
 	}
 
 	RenderObjectPtr Text::createRenderObject() {

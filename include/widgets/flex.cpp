@@ -1,4 +1,5 @@
 #include "widgets/flex.hpp"
+#include "core/app.hpp"
 
 #include <algorithm>
 
@@ -157,6 +158,28 @@ namespace squi {
 			cursorMainAxis += (direction == Axis::Horizontal ? childSize.width() : childSize.height()) + spacingUsed;
 		}
 	}
+	void Flex::FlexRenderObject::drawContent() {
+		auto visibleBounds = this->getApp()->engine.instance.scissorStack.back().logical;
+		auto boundsBegin = direction == Axis::Horizontal ? visibleBounds.left : visibleBounds.top;
+		auto boundsEnd = direction == Axis::Horizontal ? visibleBounds.right : visibleBounds.bottom;
+		auto it = std::lower_bound(children.begin(), children.end(), boundsBegin, [this](const RenderObjectPtr &child, float bounds) {
+			auto rect = child->getRect();
+			auto childEnd = direction == Axis::Horizontal ? rect.right : rect.bottom;
+			return childEnd < bounds;
+		});
+		auto itEnd = std::upper_bound(it, children.end(), boundsEnd, [this](float bounds, const RenderObjectPtr &child) {
+			auto rect = child->getRect();
+			auto childBegin = direction == Axis::Horizontal ? rect.left : rect.top;
+			return bounds < childBegin;
+		});
+
+		for (; it != itEnd; ++it) {
+			auto &child = *it;
+			if (!child) continue;
+			child->draw();
+		}
+	}
+
 
 	void Flex::FlexRenderObject::init() {
 		this->getWidgetAs<Flex>()->updateRenderObject(this);
