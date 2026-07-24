@@ -275,6 +275,8 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::o
 
 	const auto pushWordToLine = [&]() {
 		const uint32_t yOffset = currentLineIndex * lineHeight;
+		result.glyphs.reserve(result.glyphs.size() + currentWordChars.size());
+		result.quads.back().reserve(result.quads.back().size() + currentWordChars.size());
 		for (const auto &qc: currentWordChars) {
 			result.glyphs.push_back({
 				.byteOffset = qc.byteOffset,
