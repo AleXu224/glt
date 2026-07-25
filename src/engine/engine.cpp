@@ -13,6 +13,10 @@
 
 #include "GLFW/glfw3.h"
 
+#ifdef _WIN32
+#include <dwmapi.h>
+#endif
+
 glt::Engine::Runner::Runner(WindowOptions options) : instance(std::move(options)) {}
 
 glt::Engine::Frame &glt::Engine::Runner::getCurrentFrame() {
@@ -155,6 +159,12 @@ void glt::Engine::Runner::draw() {
 	try {
 		auto res2 = Vulkan::getGraphicsQueue().resource.presentKHR(presentInfo);
 		if (res2 != vk::Result::eSuccess) outdatedFramebuffer = true;
+#ifdef _WIN32
+		// Whenever there was a windowed fullscreen application there are is a certain issue on windows that causes the
+		// screen to flicker. I am guessing windows does some compositor shenanigans that cause this.
+		// In any case, calling DwmFlush here seems to fix it. I'll take that.
+		DwmFlush();
+#endif
 	} catch (const std::exception &e) {
 		std::cerr << e.what() << '\n';
 		outdatedFramebuffer = true;
