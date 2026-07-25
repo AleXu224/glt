@@ -97,4 +97,46 @@ namespace squi {
 			}
 		};
 	}
+	[[nodiscard]] core::Child ExpanderItem::build(const Element &) const {
+		return Row{
+			.widget{
+				.height = Size::Wrap,
+				.padding = Padding{}.withHorizontal(48.f).withVertical(8.f),
+			},
+			.crossAxisAlignment = Row::Alignment::center,
+			.justifyContent = Row::JustifyContent::spaceBetween,
+			.children{
+				Column{
+					.widget{
+						.width = Size::Shrink,
+						.height = Size::Shrink,
+					},
+					.children{
+						Text{
+							.text = title,
+							.fontSize = 14.f,
+							.color = Color::white,
+						},
+						subtitle.empty()//
+							? Child{}
+							: Text{
+								  .text = subtitle,
+								  .fontSize = 12.f,
+								  .color = Color::white * 0.7f,
+							  },
+					},
+				},
+				action ? action : Child{},
+			},
+		};
+	}
+	[[nodiscard]] core::Child ExpanderItemSpacer::build(const Element &) const {
+		auto newWidget = widget;
+		newWidget.height = widget.height.value_or(1.f);
+
+		return Box{
+			.widget = newWidget,
+			.color = Color::black * 0.2f,
+		};
+	}
 }// namespace squi

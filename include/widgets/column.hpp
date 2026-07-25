@@ -13,6 +13,7 @@ namespace squi {
 		Alignment crossAxisAlignment = Alignment::start;
 		JustifyContent justifyContent = JustifyContent::start;
 		float spacing = 0.f;
+		Child spacer;
 		Children children{};
 
 		[[nodiscard]] Child build(const Element &) const {
@@ -22,6 +23,7 @@ namespace squi {
 				.crossAxisAlignment = crossAxisAlignment,
 				.justifyContent = justifyContent,
 				.spacing = spacing,
+				.spacer = spacer,
 				.children = children,
 			};
 		}

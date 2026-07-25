@@ -25,4 +25,23 @@ namespace squi {
 			Child build(const Element &element) override;
 		};
 	};
+
+	struct ExpanderItem : StatelessWidget {
+		// Args
+		Key key;
+		Args widget{};
+		std::string title;
+		std::string subtitle;
+		Child action;
+
+		[[nodiscard]] Child build(const Element &) const;
+	};
+
+	struct ExpanderItemSpacer : StatelessWidget {
+		// Args
+		Key key;
+		Args widget{};
+
+		[[nodiscard]] Child build(const Element &) const;
+	};
 }// namespace squi

@@ -12,6 +12,7 @@
 #include "utils.hpp"
 
 #include "theme.hpp"
+#include "widgets/visibility.hpp"
 
 namespace squi {
 	struct TopNavButton : StatelessWidget {
@@ -72,6 +73,31 @@ namespace squi {
 								  .borderRadius = 2.f,
 							  }
 							: Child{},
+						page.badge.empty()//
+							? Child{}
+							: Box{
+								  .widget{
+									  .width = Size::Shrink,
+									  .height = Size::Shrink,
+									  .alignment = Alignment::TopRight,
+									  .sizeConstraints = BoxConstraints{
+										  .minWidth = 16.f,
+										  .minHeight = 16.f,
+									  },
+									  .margin = Margin{}.withTop(4.f),
+									  .padding = Padding{4.f, 0.f},
+								  },
+								  .color = Theme::of(element).accent,
+								  .borderRadius = 8.f,
+								  .child = Text{
+									  .widget{
+										  .alignment = Alignment::Center,
+									  },
+									  .text = page.badge,
+									  .fontSize = 12.f,
+									  .color = Theme::of(element).accent.isLight() ? Color::black : Color::white,
+								  },
+							  },
 					},
 				},
 			};
@@ -139,7 +165,20 @@ namespace squi {
 						.borderColor = Color::black * 0.1f,
 						.borderWidth = BorderWidth::Top(1.f),
 						.borderPosition = Box::BorderPosition::outset,
-						.child = widget->pages.at(currentPageIndex).content,
+						.child = Stack{
+							.children = [this]() {
+								Children ret;
+
+								for (const auto &[index, page]: widget->pages | std::views::enumerate) {
+									ret.emplace_back(Visibility{
+										.visible = index == currentPageIndex,
+										.child = page.content,
+									});
+								}
+
+								return ret;
+							}(),
+						},
 					},
 				},
 			},

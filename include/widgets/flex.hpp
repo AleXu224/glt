@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/core.hpp"
+#include "utils.hpp"
 
 namespace squi {
 	struct Flex : core::RenderObjectWidget {
@@ -26,6 +27,7 @@ namespace squi {
 		Alignment crossAxisAlignment = Alignment::start;
 		JustifyContent justifyContent = JustifyContent::start;
 		float spacing = 0.0f;
+		Child spacer;
 		std::vector<Child> children{};
 
 		struct Element : core::MultiChildRenderObjectElement {
@@ -33,6 +35,9 @@ namespace squi {
 
 			std::vector<Child> build() override {
 				if (auto flexWidget = std::static_pointer_cast<Flex>(widget)) {
+					if (flexWidget->spacer) {
+						return utils::addSpacers(flexWidget->children, flexWidget->spacer);
+					}
 					return flexWidget->children;
 				}
 				return {};

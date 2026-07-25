@@ -7,6 +7,7 @@ namespace squi {
 		struct Page {
 			std::string name;
 			std::variant<int32_t, Child, std::monostate> icon = std::monostate{};
+			std::string badge;
 			Child content;
 		};
 

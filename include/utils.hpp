@@ -137,4 +137,18 @@ namespace squi::utils {
 			return *ptr;
 		}
 	};
+
+	template<class T>
+	std::vector<T> addSpacers(const std::vector<T> &vec, const T &spacer) {
+		std::vector<T> ret;
+		ret.reserve(vec.size() * 2 - 1);
+		for (size_t i = 0; i < vec.size(); ++i) {
+			ret.push_back(vec[i]);
+			if (i < vec.size() - 1) {
+				ret.push_back(spacer);
+			}
+		}
+		return ret;
+	}
+
 }// namespace squi::utils
