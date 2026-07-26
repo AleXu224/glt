@@ -55,8 +55,13 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 			}
 			auto value = line.substr(colon + 1);
 			// Trim whitespace from header value
-			value = value.substr(value.find_first_not_of(" \t"));
-			value = std::string_view(value.begin(), std::next(value.begin(), value.find_last_not_of(" \t") + 1));
+			auto firstNonSpace = value.find_first_not_of(" \t");
+			if (firstNonSpace == std::string_view::npos) {
+				value = "";
+			} else {
+				value = value.substr(firstNonSpace);
+				value = std::string_view(value.begin(), std::next(value.begin(), value.find_last_not_of(" \t") + 1));
+			}
 			ret.headers.emplace(key, value);
 		}
 
@@ -95,82 +100,100 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 }
 
 Networking::Response Networking::get(const std::string &url) {
-	auto parsedUrl = skyr::url{url};
-	bool isHttps = parsedUrl.protocol().starts_with("https");
-	asio::ip::tcp::resolver resolver(ioContext);
-	asio::ip::tcp::socket socket(ioContext);
-	asio::ssl::context context(asio::ssl::context::method::tls_client);
-	asio::ssl::stream<asio::ip::tcp::socket &> stream(socket, context);
-	asio::error_code ec;
-	const auto protocol = parsedUrl.protocol().substr();
-	auto endpoint = resolver.resolve(parsedUrl.host(), protocol.substr(0, protocol.size() - 1), ec);
-	if (ec) {
-		return Response{
-			.body = "",
-			.success = false,
-			.error = std::format("Failed to resolve {}: {}", parsedUrl.host(), ec.message()),
-		};
-	}
+	std::string currentUrl = url;
+	constexpr int maxRedirects = 10;
 
-	if (isHttps) {
-		context.set_verify_mode(asio::ssl::verify_peer);
-		context.set_default_verify_paths();
-	}
-	ec = stream.lowest_layer().connect(endpoint->endpoint(), ec);
-	if (ec) {
-		return Response{
-			.body = "",
-			.success = false,
-			.error = std::format("Failed to connect to {}: {}", parsedUrl.host(), ec.message()),
-		};
-	}
-
-	SSL_set_tlsext_host_name(stream.native_handle(), parsedUrl.host().data());
-
-	ec = stream.handshake(asio::ssl::stream_base::client, ec);
-	if (ec) {
-		return Response{
-			.body = "",
-			.success = false,
-			.error = std::format("Failed to handshake with {}: {}", parsedUrl.host(), ec.message()),
-		};
-	}
-
-	std::stringstream ss;
-	ss << parsedUrl.pathname();
-	if (!parsedUrl.search_parameters().empty()) ss << "?" << parsedUrl.search_parameters().to_string();
-
-	stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nAccept: Accept: */*\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n", ss.str(), parsedUrl.host())), ec);
-	if (ec) {
-		return Response{
-			.body = "",
-			.success = false,
-			.error = std::format("Failed to send request to {}: {}", parsedUrl.host(), ec.message()),
-		};
-	}
-
-	std::string response;
-	std::array<char, 10ull * 1024> buffer{};
-	while (true) {
-		size_t len = stream.read_some(asio::buffer(buffer), ec);
-		if (!ec) {
-			// printf("Got %zu bytes\n", len);
-			// std::cout << std::string_view{buffer.data(), len} << std::endl;
-			response.append(buffer.data(), len);
-		} else {
-			break;
+	for (int redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+		auto parsedUrl = skyr::url{currentUrl};
+		const bool isHttps = parsedUrl.protocol().starts_with("https");
+		asio::ip::tcp::resolver resolver(ioContext);
+		asio::ip::tcp::socket socket(ioContext);
+		asio::ssl::context context(asio::ssl::context::method::tls_client);
+		asio::ssl::stream<asio::ip::tcp::socket &> stream(socket, context);
+		asio::error_code ec;
+		const auto protocol = parsedUrl.protocol().substr();
+		auto endpoint = resolver.resolve(parsedUrl.host(), protocol.substr(0, protocol.size() - 1), ec);
+		if (ec) {
+			return Response{
+				.body = "",
+				.success = false,
+				.error = std::format("Failed to resolve {}: {}", parsedUrl.host(), ec.message()),
+			};
 		}
+
+		if (isHttps) {
+			context.set_verify_mode(asio::ssl::verify_peer);
+			context.set_default_verify_paths();
+		}
+		ec = stream.lowest_layer().connect(endpoint->endpoint(), ec);
+		if (ec) {
+			return Response{
+				.body = "",
+				.success = false,
+				.error = std::format("Failed to connect to {}: {}", parsedUrl.host(), ec.message()),
+			};
+		}
+
+		SSL_set_tlsext_host_name(stream.native_handle(), parsedUrl.host().data());
+
+		ec = stream.handshake(asio::ssl::stream_base::client, ec);
+		if (ec) {
+			return Response{
+				.body = "",
+				.success = false,
+				.error = std::format("Failed to handshake with {}: {}", parsedUrl.host(), ec.message()),
+			};
+		}
+
+		std::stringstream ss;
+		ss << parsedUrl.pathname();
+		if (!parsedUrl.search_parameters().empty()) ss << "?" << parsedUrl.search_parameters().to_string();
+
+		stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: glt-net\r\nAccept: */*\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n", ss.str(), parsedUrl.host())), ec);
+		if (ec) {
+			return Response{
+				.body = "",
+				.success = false,
+				.error = std::format("Failed to send request to {}: {}", parsedUrl.host(), ec.message()),
+			};
+		}
+
+		std::string response;
+		std::array<char, 10ull * 1024> buffer{};
+		while (true) {
+			size_t len = stream.read_some(asio::buffer(buffer), ec);
+			if (!ec) {
+				response.append(buffer.data(), len);
+			} else {
+				break;
+			}
+		}
+
+		auto body = parseResponse(response);
+
+		if (body.statusCode == 301 || body.statusCode == 302 || body.statusCode == 303 || body.statusCode == 307 || body.statusCode == 308) {
+			if (body.headers.contains("location")) {
+				std::string location = body.headers.at("location");
+				if (location.starts_with('/')) {
+					location = parsedUrl.protocol().substr() + "://" + parsedUrl.host() + location;
+				}
+				currentUrl = location;
+				continue;
+			}
+		}
+
+		return Response{
+			.body = body.body,
+			.statusCode = body.statusCode,
+			.headers = body.headers,
+			.success = true,
+			.error = "",
+		};
 	}
-
-	// std::cout << response << std::endl;
-
-	auto body = parseResponse(response);
 
 	return Response{
-		.body = body.body,
-		.statusCode = body.statusCode,
-		.headers = body.headers,
-		.success = true,
-		.error = "",
+		.body = "",
+		.success = false,
+		.error = "Too many redirects",
 	};
 }
