@@ -29,7 +29,7 @@ namespace squi::core {
 		// The area that can be currently interacted with
 		// Take a scrollable for example: the content that is scrolled away is not interactable
 		std::vector<Rect> g_activeArea{};
-		vec2 g_dpi{96};
+		float scale = 1.f;
 		bool g_cursorInside{false};
 
 		void parseInput(const std::optional<InputTypes> &input);

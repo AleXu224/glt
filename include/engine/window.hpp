@@ -26,6 +26,8 @@ namespace glt::Engine {
 
 		Window(WindowOptions options);
 
+		float getScale() const;
+
 		void destroy();
 
 		~Window();

@@ -31,6 +31,7 @@ namespace squi {
 			vec2 textSize{};
 			vec2 lastAvailableSpace{0};
 			glm::mat4 offsetMatrix{1.f};
+			VoidObserver onScalingChanged{};
 
 			bool forceRegen = false;
 			std::unique_ptr<TextData> data;

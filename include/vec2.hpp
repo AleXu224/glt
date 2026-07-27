@@ -83,6 +83,10 @@ namespace squi {
 			return {std::roundf(x), std::roundf(y)};
 		}
 
+		[[nodiscard]] constexpr vec2 rounded(float scale) const {
+			return {std::roundf(x * scale) / scale, std::roundf(y * scale) / scale};
+		}
+
 		[[nodiscard]] constexpr operator glm::vec2() const {
 			return {x, y};
 		}
@@ -96,7 +100,7 @@ namespace squi {
 		std::string toString() const {
 			return std::format("vec2({}, {})", x, y);
 		}
-		
+
 		void print() const {
 			std::println("{}", toString());
 		}

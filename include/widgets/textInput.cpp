@@ -12,6 +12,41 @@
 #include <algorithm>
 
 namespace squi {
+	void TextInput::State::initState() {
+		controller = widget->controller;
+		buffer.text = &controller.controlBlock->text;
+		buffer.onTextChanged = [this](const std::string &text) {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			controller.notifyTextChanged();
+			if (widget->onTextChanged) widget->onTextChanged(text);
+		};
+		textObserver = controller.getTextObserver([this](const std::string &newText) {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			buffer.clampCursors();
+		});
+		scaleObserver = element->getApp()->surface.onScaleChange.observe([this]() {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			buffer.clampCursors();
+			element->markNeedsRebuild();
+		});
+		buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+	}
+
+	void TextInput::State::widgetUpdated() {
+		if (controller == widget->controller) return;
+		controller = widget->controller;
+		buffer.text = &controller.controlBlock->text;
+		buffer.onTextChanged = [this](const std::string &text) {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			controller.notifyTextChanged();
+			if (widget->onTextChanged) widget->onTextChanged(text);
+		};
+		textObserver = controller.getTextObserver([this](const std::string &newText) {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			buffer.clampCursors();
+		});
+	}
+
 	int64_t TextInput::State::indexFromPos(float x) const {
 		if (!buffer.cachedLayoutPtr || buffer.cachedLayoutPtr->glyphs.empty()) return 0;
 

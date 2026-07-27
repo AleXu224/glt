@@ -18,7 +18,7 @@ namespace squi {
 
 		std::function<void(const std::string &)> onTextChanged;
 
-		void regenerateLayout(const std::shared_ptr<FontStore::Font> &font);
+		void regenerateLayout(const std::shared_ptr<FontStore::Font> &font, float fontSize, float scale);
 
 		void clampCursors();
 

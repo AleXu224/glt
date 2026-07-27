@@ -2,6 +2,7 @@
 
 #include "core/animationController.hpp"
 #include "core/inputState.hpp"
+#include "core/surface.hpp"
 #include "engine/engine.hpp"
 #include "inputQueue.hpp"
 #include "store/pipeline.hpp"
@@ -14,7 +15,11 @@
 
 namespace squi::core {
 	struct App;
-	struct RootRenderObject : SingleChildRenderObject {};
+	struct RootRenderObject : SingleChildRenderObject {
+		vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
+		void positionContentAt(const Rect &newBounds) override;
+		void drawContent() override;
+	};
 
 	struct RootWidget : RenderObjectWidget {
 		Key key{};
@@ -56,6 +61,7 @@ namespace squi::core {
 		Store::Sampler samplerStore{};
 		Store::Pipeline pipelineStore{};
 		InputState inputState{};
+		Surface surface{};
 
 		InputQueue inputQueue{};
 

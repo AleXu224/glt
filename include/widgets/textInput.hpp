@@ -61,6 +61,7 @@ namespace squi {
 			TextEditor buffer;
 			Controller controller{};
 			Observer<const std::string &> textObserver{};
+			VoidObserver scaleObserver{};
 
 			ScrollViewData cachedScrollData{};
 			std::shared_ptr<ScrollViewData> scrollController = std::make_shared<ScrollViewData>();
@@ -81,35 +82,8 @@ namespace squi {
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 
-			void initState() override {
-				controller = widget->controller;
-				buffer.text = &controller.controlBlock->text;
-				buffer.onTextChanged = [this](const std::string &text) {
-					buffer.regenerateLayout(font);
-					controller.notifyTextChanged();
-					if (widget->onTextChanged) widget->onTextChanged(text);
-				};
-				textObserver = controller.getTextObserver([this](const std::string &newText) {
-					buffer.regenerateLayout(font);
-					buffer.clampCursors();
-				});
-				buffer.regenerateLayout(font);
-			}
-
-			void widgetUpdated() override {
-				if (controller == widget->controller) return;
-				controller = widget->controller;
-				buffer.text = &controller.controlBlock->text;
-				buffer.onTextChanged = [this](const std::string &text) {
-					buffer.regenerateLayout(font);
-					controller.notifyTextChanged();
-					if (widget->onTextChanged) widget->onTextChanged(text);
-				};
-				textObserver = controller.getTextObserver([this](const std::string &newText) {
-					buffer.regenerateLayout(font);
-					buffer.clampCursors();
-				});
-			}
+			void initState() override;
+			void widgetUpdated() override;
 
 			void handleMousePress(const Gesture::State &state);
 			void handleMouseDrag(const Gesture::State &state);

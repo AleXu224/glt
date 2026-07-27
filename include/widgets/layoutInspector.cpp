@@ -304,6 +304,14 @@ namespace squi {
 						visible = !visible;
 					});
 				}
+				auto &userScaleOffset = element->getApp()->surface.userScaleOffset;
+				if (state.isKeyPressedOrRepeat(GestureKey::equal, GestureMod::control)) {
+					userScaleOffset += 0.1f;
+				} else if (state.isKeyPressedOrRepeat(GestureKey::minus, GestureMod::control) && userScaleOffset > -0.9f) {
+					userScaleOffset -= 0.1f;
+				} else if (state.isKeyPressedOrRepeat(GestureKey::n0, GestureMod::control)) {
+					userScaleOffset = 0.f;
+				}
 			},
 			.child = Row{
 				.widget{},

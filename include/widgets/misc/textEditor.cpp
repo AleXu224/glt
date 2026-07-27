@@ -6,8 +6,8 @@
 #include <algorithm>
 
 namespace squi {
-	void TextEditor::regenerateLayout(const std::shared_ptr<FontStore::Font> &font) {
-		cachedLayoutPtr = std::make_shared<const TextLayout>(font->textLayout(*text, 14.f));
+	void TextEditor::regenerateLayout(const std::shared_ptr<FontStore::Font> &font, float fontSize, float scale) {
+		cachedLayoutPtr = std::make_shared<const TextLayout>(font->textLayout(*text, fontSize, {}, scale));
 	}
 
 	void TextEditor::clampCursors() {

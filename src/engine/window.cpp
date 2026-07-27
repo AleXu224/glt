@@ -18,6 +18,13 @@ glt::Engine::Window::Window(WindowOptions options)
 	ptr = glfwCreateWindow(options.width, options.height, options.name.c_str(), nullptr, nullptr);
 }
 
+float glt::Engine::Window::getScale() const {
+	float xScale = 1.f;
+	float yScale = 1.f;
+	glfwGetWindowContentScale(ptr, &xScale, &yScale);
+	return (xScale + yScale) / 2.f;
+}
+
 void glt::Engine::Window::destroy() {
 	if (destroyed) return;
 	destroyed = true;

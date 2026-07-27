@@ -28,6 +28,11 @@ namespace squi {
 		});
 
 		data->sampler = app->samplerStore.getSampler(app->engine.instance, font->getTexture());
+
+		onScalingChanged = app->surface.onScaleChange.observe([this]() {
+			forceRegen = true;
+			element->markNeedsRelayout();
+		});
 	}
 
 	vec2 Text::TextRenderObject::calculateContentSize(BoxConstraints constraints, bool) {
@@ -39,7 +44,8 @@ namespace squi {
 			const auto &[width, height] = font->getTextSizeSafe(
 				text,
 				fontSize,
-				lineWrap ? std::optional<float>(constraints.shrinkWidth && lineWrap ? 0.f : constraints.maxWidth) : std::nullopt
+				lineWrap ? std::optional<float>(constraints.shrinkWidth && lineWrap ? 0.f : constraints.maxWidth) : std::nullopt,
+				this->getApp()->surface.scale
 			);
 			return vec2{static_cast<float>(width), static_cast<float>(height)};
 		}
@@ -54,27 +60,29 @@ namespace squi {
 
 		if ((lineWrap && size.x != lastAvailableSpace) || forceRegen) {
 			lastAvailableSpace = size.x;
-			const auto lineHeight = font->getLineHeight(fontSize);
+			const auto scale = this->getApp()->surface.scale;
+			const auto lineHeight = font->getLineHeight(fontSize, scale);
 
 			// Will only recalculate the text layout under the following circumstances:
 			// 1. The available width is smaller than the cached text width
 			// 2. The cached text is wrapping (the text is occupying more than one line)
 			// - This is done because it would be really difficult to figure out if a change in available width would cause a layout change in this case
-			if (size.x < textSize.x || static_cast<uint32_t>(textSize.y) != lineHeight || forceRegen) {
+			if (size.x < textSize.x || static_cast<float>(textSize.y) != lineHeight || forceRegen) {
 				std::tie(data->quads, textSize.x, textSize.y) = font->generateQuads(
 					text,
 					fontSize,
 					vec2{0.f},
 					color,
-					lineWrap ? std::optional<float>(size.x) : std::nullopt
+					lineWrap ? std::optional<float>(size.x) : std::nullopt,
+					scale
 				);
 			}
 		}
 	}
 	void Text::TextRenderObject::positionQuadsAt(const vec2 &pos) {
-		const vec2 roundedPos = pos.rounded();
-		offsetMatrix[3][0] = roundedPos.x;
-		offsetMatrix[3][1] = roundedPos.y;
+		const vec2 snapped = this->getApp()->surface.snapLogical(pos);
+		offsetMatrix[3][0] = snapped.x;
+		offsetMatrix[3][1] = snapped.y;
 	}
 
 

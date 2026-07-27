@@ -105,6 +105,7 @@ namespace squi {
 			},
 			.crossAxisAlignment = Row::Alignment::center,
 			.justifyContent = Row::JustifyContent::spaceBetween,
+			.spacing = 8.f,
 			.children{
 				Column{
 					.widget{

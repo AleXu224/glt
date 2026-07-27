@@ -153,25 +153,26 @@ std::unordered_map<char32_t, FontStore::Font::CharInfo> &FontStore::Font::getSiz
 	return chars[size];
 }
 
-uint32_t FontStore::Font::getLineHeight(float size) {
+float FontStore::Font::getLineHeight(float logicalSize, float scale) {
 	if (!face) return 0;
-	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(size));
+	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(logicalSize * scale));
 
-	return (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	return static_cast<float>((face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6)) / scale;
 }
 
-std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view text, float size, std::optional<float> maxWidth) {
+std::tuple<float, float> FontStore::Font::getTextSizeSafe(std::string_view text, float logicalSize, std::optional<float> logicalMaxWidth, float scale) {
 	std::lock_guard lock{fontMtx};
 	if (!face) return {0, 0};
 	const int32_t maxWidthClamped = [&]() -> int32_t {
-		if (maxWidth.has_value()) {
-			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
+		if (logicalMaxWidth.has_value()) {
+			return static_cast<int32_t>(std::round(std::max(logicalMaxWidth.value() * scale, 0.0f)));
 		}
 		return std::numeric_limits<int32_t>::max();
 	}();
-	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(std::round(std::abs(size))) /* Size needs to be rounded*/);
+	const float pixelSize = std::round(std::abs(logicalSize) * scale);
+	FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(pixelSize) /* Size needs to be rounded*/);
 
-	auto &sizeMap = getSizeMap(size);
+	auto &sizeMap = getSizeMap(pixelSize);
 	uint32_t prevCharIndex = 0;
 	const uint32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
 
@@ -232,25 +233,26 @@ std::tuple<uint32_t, uint32_t> FontStore::Font::getTextSizeSafe(std::string_view
 
 	widestLine = std::max(currentLineWidth + currentWordWidth, widestLine);
 
-	return {widestLine, lineCount * lineHeight};
+	return {static_cast<float>(widestLine) / scale, static_cast<float>(static_cast<uint32_t>(lineCount) * lineHeight) / scale};
 }
 
-TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::optional<float> maxWidth) {
+TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize, std::optional<float> logicalMaxWidth, float scale) {
 	std::lock_guard lock{fontMtx};
 	TextLayout result{};
 	if (!face || !loaded) return result;
 
 	const int32_t maxWidthClamped = [&]() -> int32_t {
-		if (maxWidth.has_value()) {
-			return static_cast<int32_t>(std::round(std::max(maxWidth.value(), 0.0f)));
+		if (logicalMaxWidth.has_value()) {
+			return static_cast<int32_t>(std::round(std::max(logicalMaxWidth.value() * scale, 0.0f)));
 		}
 		return std::numeric_limits<int32_t>::max();
 	}();
-	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(std::round(std::abs(size))));
+	const float pixelSize = std::round(std::abs(logicalSize) * scale);
+	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(pixelSize));
 	const int32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
-	result.lineHeight = static_cast<float>(lineHeight);
+	result.lineHeight = static_cast<float>(lineHeight) / scale;
 
-	auto &sizeMap = getSizeMap(size);
+	auto &sizeMap = getSizeMap(pixelSize);
 
 	result.quads.resize(1);
 
@@ -273,6 +275,13 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::o
 		return static_cast<float>(i);
 	};
 
+	const auto physicalToLogical = [scale](int32_t v) {
+		return static_cast<float>(v) / scale;
+	};
+	const auto physicalVecToLogical = [scale](const vec2 &v) {
+		return v / scale;
+	};
+
 	const auto pushWordToLine = [&]() {
 		const uint32_t yOffset = currentLineIndex * lineHeight;
 		result.glyphs.reserve(result.glyphs.size() + currentWordChars.size());
@@ -280,16 +289,16 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::o
 		for (const auto &qc: currentWordChars) {
 			result.glyphs.push_back({
 				.byteOffset = qc.byteOffset,
-				.x = toFloat(currentLineWidth + qc.offsetX),
-				.advance = toFloat(qc.charInfo.advance),
+				.x = physicalToLogical(currentLineWidth + qc.offsetX),
+				.advance = physicalToLogical(qc.charInfo.advance),
 				.lineIndex = currentLineIndex,
 			});
 			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
-				.size{qc.charInfo.size},
-				.offset{
+				.size = physicalVecToLogical(qc.charInfo.size),
+				.offset = physicalVecToLogical(vec2{
 					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
 					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
-				},
+				}),
 				.uvTopLeft = qc.charInfo.uvTopLeft,
 				.uvBottomRight = qc.charInfo.uvBottomRight,
 			});
@@ -308,16 +317,16 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::o
 		for (const auto &qc: std::span(currentWordChars.begin(), it)) {
 			result.glyphs.push_back({
 				.byteOffset = qc.byteOffset,
-				.x = toFloat(currentLineWidth + qc.offsetX),
-				.advance = toFloat(qc.charInfo.advance),
+				.x = physicalToLogical(currentLineWidth + qc.offsetX),
+				.advance = physicalToLogical(qc.charInfo.advance),
 				.lineIndex = currentLineIndex,
 			});
 			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
-				.size{qc.charInfo.size},
-				.offset{
+				.size = physicalVecToLogical(qc.charInfo.size),
+				.offset = physicalVecToLogical(vec2{
 					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
 					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
-				},
+				}),
 				.uvTopLeft = qc.charInfo.uvTopLeft,
 				.uvBottomRight = qc.charInfo.uvBottomRight,
 			});
@@ -399,14 +408,14 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float size, std::o
 	pushWordToLine();
 
 	widestLine = std::max(currentLineWidth, widestLine);
-	result.widestLine = static_cast<float>(widestLine);
-	result.totalHeight = static_cast<float>(result.quads.size() * lineHeight);
+	result.widestLine = static_cast<float>(widestLine) / scale;
+	result.totalHeight = static_cast<float>(result.quads.size() * lineHeight) / scale;
 
 	return result;
 }
 
-std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float size, const vec2 &pos, const Color &color, std::optional<float> maxWidth) {
-	auto layout = textLayout(text, size, maxWidth);
+std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> FontStore::Font::generateQuads(std::string_view text, float logicalSize, const vec2 &pos, const Color &color, std::optional<float> logicalMaxWidth, float scale) {
+	auto layout = textLayout(text, logicalSize, logicalMaxWidth, scale);
 	for (auto &quadVec: layout.quads) {
 		for (auto &quad: quadVec) {
 			quad.setPos(pos);

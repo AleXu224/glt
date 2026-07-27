@@ -115,7 +115,7 @@ namespace squi::core {
 			utils::overloaded{
 				[&](const StateChange &) {},
 				[&](const CursorPosInput &input) {
-					setCursorPos(vec2{input.xPos, input.yPos} / (g_dpi / 96.f));
+					setCursorPos(vec2{input.xPos, input.yPos} / scale);
 				},
 				[&](const CodepointInput &input) {
 					g_textInput.append(1, input.character);

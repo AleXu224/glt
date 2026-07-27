@@ -22,6 +22,7 @@ namespace squi {
 
 			TextInput::Controller controller{};
 			Observer<const std::string &> textObserver{};
+			VoidObserver scaleObserver{};
 
 			std::shared_ptr<FontStore::Font> font = FontStore::getFont(FontStore::defaultFont);
 

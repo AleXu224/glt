@@ -16,15 +16,20 @@ namespace squi {
 		controller = widget->controller;
 		buffer.text = &controller.controlBlock->text;
 		buffer.onTextChanged = [this](const std::string &text) {
-			buffer.regenerateLayout(font);
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			controller.notifyTextChanged();
 			if (widget->onTextChanged) widget->onTextChanged(text);
 		};
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
-			buffer.regenerateLayout(font);
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
 		});
-		buffer.regenerateLayout(font);
+		scaleObserver = element->getApp()->surface.onScaleChange.observe([this]() {
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
+			buffer.clampCursors();
+			element->markNeedsRebuild();
+		});
+		buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 	}
 
 	void TextArea::State::widgetUpdated() {
@@ -32,12 +37,12 @@ namespace squi {
 		controller = widget->controller;
 		buffer.text = &controller.controlBlock->text;
 		buffer.onTextChanged = [this](const std::string &text) {
-			buffer.regenerateLayout(font);
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			controller.notifyTextChanged();
 			if (widget->onTextChanged) widget->onTextChanged(text);
 		};
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
-			buffer.regenerateLayout(font);
+			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
 		});
 	}
@@ -235,7 +240,7 @@ namespace squi {
 		float cursorY = static_cast<float>(cursorLine) * buffer.cachedLayoutPtr->lineHeight;
 
 		return Offset{
-			.calculateContentBounds = [cursorX, cursorY](const Rect &bounds, const SingleChildRenderObject &) -> Rect {
+			.calculateContentBounds = [cursorX, cursorY, lineHeight = buffer.cachedLayoutPtr->lineHeight](const Rect &bounds, const SingleChildRenderObject &) -> Rect {
 				auto ret = bounds;
 				ret.offset({cursorX, cursorY});
 				return ret;

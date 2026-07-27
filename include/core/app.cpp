@@ -12,6 +12,51 @@
 
 
 namespace squi::core {
+	vec2 RootRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
+		if (!child) return vec2{0};
+		const auto scale = app->surface.scale;
+		BoxConstraints childConstraints = constraints;
+		childConstraints.minWidth /= scale;
+		childConstraints.maxWidth /= scale;
+		childConstraints.minHeight /= scale;
+		childConstraints.maxHeight /= scale;
+		return child->calculateSize(childConstraints, final) * scale;
+	}
+
+	void RootRenderObject::positionContentAt(const Rect &newBounds) {
+		if (!child) return;
+		const auto scale = app->surface.scale;
+		Rect logical = newBounds;
+		logical.left /= scale;
+		logical.right /= scale;
+		logical.top /= scale;
+		logical.bottom /= scale;
+		child->positionAt(logical);
+	}
+
+	void RootRenderObject::drawContent() {
+		if (!child) return;
+		auto &inst = app->engine.instance;
+		const auto scale = app->surface.scale;
+
+		glm::mat4 scaleMat{1.f};
+		scaleMat[0][0] = scale;
+		scaleMat[1][1] = scale;
+		inst.pushTransform(scaleMat);
+
+		auto &rootScissor = inst.scissorStack.back();
+		const auto savedLogical = rootScissor.logical;
+		rootScissor.logical = Rect::fromPosSize(
+			{0.f, 0.f},
+			{savedLogical.width() / scale, savedLogical.height() / scale}
+		);
+
+		child->draw();
+
+		rootScissor.logical = savedLogical;
+		inst.popTransform();
+	}
+
 	void App::initialize() {
 		auto &window = engine.instance.window.ptr;
 		{
@@ -145,6 +190,18 @@ namespace squi::core {
 					}
 
 					bool forceRedraw = false;
+
+					{
+						const auto newScale = engine.instance.window.getScale() + surface.userScaleOffset;
+						const bool changed = (surface.scale != newScale);
+						surface.setScale(newScale);
+						inputState.scale = surface.scale;
+						if (changed) {
+							renderObject.element->markNeedsRebuild();
+							renderObject.element->markNeedsRelayout();
+						}
+					}
+
 					firstRun = false;
 
 					for (size_t i = 0; i < popCount; i++) {
@@ -176,7 +233,7 @@ namespace squi::core {
 
 						inputState.g_activeArea.emplace_back(
 							vec2{0.0f, 0.0f},
-							vec2{width, height}
+							surface.toLogical(vec2{width, height})
 						);
 
 						// Update animations
