@@ -18,6 +18,7 @@ namespace squi {
 		float minValue = 0.f;
 		float maxValue = 100.f;
 		float value = 0.f;
+		bool disabled = false;
 		using TicksVariant = std::variant<std::monostate, TickCount, TickInterval, std::vector<float>>;
 		TicksVariant ticks = std::monostate{};
 		std::function<void(float)> onChange;
@@ -33,11 +34,7 @@ namespace squi {
 			float getHandleInnerSize() const;
 			void createOrUpdateTooltip();
 
-			void widgetUpdated() override {
-				if (focused) {
-					createOrUpdateTooltip();
-				}
-			}
+			void widgetUpdated() override;
 
 			Child build(const Element &element) override;
 		};

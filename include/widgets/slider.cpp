@@ -27,6 +27,22 @@ namespace squi {
 		});
 	}
 
+	void Slider::State::widgetUpdated() {
+		if (focused) {
+			createOrUpdateTooltip();
+		}
+
+		if (widget->disabled) {
+			if (focused || handleHovered || hovered) {
+				Navigator::of(*this->element).popOverlay(tooltipKey);
+			}
+			focused = false;
+			handleHovered = false;
+			hovered = false;
+		}
+	}
+
+
 	core::Child Slider::State::build(const Element &element) {
 		auto newWidget = widget->widget;
 		newWidget.height = newWidget.height.value_or(32.f);
@@ -41,6 +57,7 @@ namespace squi {
 
 		return Gesture{
 			.onEnter = [this](Gesture::State state) {
+				if (widget->disabled) return;
 				setState([&]() {
 					hovered = true;
 				});
@@ -55,6 +72,7 @@ namespace squi {
 				});
 			},
 			.onFocus = [this](Gesture::State state) {
+				if (widget->disabled) return;
 				setState([&]() {
 					focused = true;
 				});
@@ -69,6 +87,7 @@ namespace squi {
 				});
 			},
 			.onDrag = [this](Gesture::State state) {
+				if (widget->disabled) return;
 				auto cursorPosRelative = state.getCursorPos() - state.renderObject->pos - vec2{handleSize / 2.f, 0.f};
 				float percent = cursorPosRelative.x / (state.renderObject->size.x - handleSize);
 				percent = std::clamp(percent, 0.f, 1.f);
@@ -99,7 +118,7 @@ namespace squi {
 											.width = barWidth,
 											.height = 4.f,
 										},
-										.color = accentColor,
+										.color = widget->disabled ? Color::rgba(255, 255, 255, 0.5442).mix(Color::white * 0.15f) : accentColor,
 										.borderRadius = BorderRadius{2.f}.withRight(0.f),
 									};
 								},
@@ -153,6 +172,7 @@ namespace squi {
 
 							return Gesture{
 								.onEnter = [this](Gesture::State state) {
+									if (widget->disabled) return;
 									setState([&]() {
 										handleHovered = true;
 									});
@@ -183,7 +203,7 @@ namespace squi {
 												.height = handleInnerSize,
 												.alignment = Alignment::Center,
 											},
-											.color = accentColor,
+											.color = widget->disabled ? Color::white * 0.15f : accentColor,
 											.borderRadius = BorderRadius{handleInnerSize / 2.f},
 										},
 									},
