@@ -33,8 +33,8 @@ namespace squi {
 
 		auto scale = this->getApp()->surface.scale;
 
-		data->quad.size = size.rounded(scale);
-		data->quad.position = pos.rounded(scale);
+		data->quad.size = shouldSnap ? size.rounded(scale) : size;
+		data->quad.position = shouldSnap ? pos.rounded(scale) : pos;
 
 		data->pipeline->bind();
 		auto index = data->pipeline->getIndexes();
@@ -81,6 +81,11 @@ namespace squi {
 				quad.borderSizes.bottom = this->borderWidth.bottom;
 				quad.borderSizes.left = this->borderWidth.left;
 
+				app->needsRedraw = true;
+			}
+
+			if (this->shouldSnap != boxRenderObject->shouldSnap) {
+				boxRenderObject->shouldSnap = this->shouldSnap;
 				app->needsRedraw = true;
 			}
 		}

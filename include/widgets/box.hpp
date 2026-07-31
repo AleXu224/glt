@@ -22,6 +22,7 @@ namespace squi {
 		BorderRadius borderRadius{0.0f};
 		BorderPosition borderPosition{BorderPosition::inset};
 		bool shouldClipContent = false;
+		bool shouldSnap = true;
 		Child child;
 
 		struct Element : core::SingleChildRenderObjectElement {
@@ -39,6 +40,7 @@ namespace squi {
 			std::unique_ptr<BoxData> data;
 
 			bool shouldClipContent = true;
+			bool shouldSnap = true;
 
 			BoxRenderObject();
 

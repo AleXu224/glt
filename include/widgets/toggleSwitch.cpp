@@ -84,6 +84,7 @@ namespace squi {
 							},
 							.color = style.textColor,
 							.borderRadius = hovered && !widget->disabled ? 7.f : 6.f,
+							.shouldSnap = false,
 						},
 					},
 					widget->statePosition == ToggleSwitch::StatePosition::Right//

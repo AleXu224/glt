@@ -19,6 +19,7 @@ namespace squi {
 		BorderRadius borderRadius{0.0f};
 		Box::BorderPosition borderPosition{Box::BorderPosition::inset};
 		bool shouldClipContent = true;
+		bool shouldSnap = true;
 		Child child;
 
 		struct State : WidgetState<AnimatedBox> {

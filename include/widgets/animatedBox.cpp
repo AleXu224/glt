@@ -100,6 +100,7 @@ namespace squi {
 			.borderRadius = borderRadius,
 			.borderPosition = widget->borderPosition,
 			.shouldClipContent = widget->shouldClipContent,
+			.shouldSnap = widget->shouldSnap,
 			.child = widget->child,
 		};
 	}

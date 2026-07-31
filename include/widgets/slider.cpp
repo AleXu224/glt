@@ -205,6 +205,7 @@ namespace squi {
 											},
 											.color = widget->disabled ? Color::white * 0.15f : accentColor,
 											.borderRadius = BorderRadius{handleInnerSize / 2.f},
+											.shouldSnap = false,
 										},
 									},
 								},
