@@ -98,33 +98,45 @@ namespace squi {
 		};
 	}
 	[[nodiscard]] core::Child ExpanderItem::build(const Element &) const {
+		auto newWidget = widget;
+		newWidget.height = widget.height.value_or(Size::Wrap);
+		newWidget.padding = widget.padding.value_or(Padding{}.withHorizontal(48.f).withVertical(8.f));
+
 		return Row{
-			.widget{
-				.height = Size::Wrap,
-				.padding = Padding{}.withHorizontal(48.f).withVertical(8.f),
-			},
+			.widget = newWidget,
 			.crossAxisAlignment = Row::Alignment::center,
 			.justifyContent = Row::JustifyContent::spaceBetween,
 			.spacing = 8.f,
 			.children{
-				Column{
+				Row{
 					.widget{
 						.width = Size::Shrink,
-						.height = Size::Shrink,
+						.height = Size::Wrap,
 					},
+					.crossAxisAlignment = Row::Alignment::center,
+					.spacing = 8.f,
 					.children{
-						Text{
-							.text = title,
-							.fontSize = 14.f,
-							.color = Color::white,
+						icon ? icon : Child{},
+						Column{
+							.widget{
+								.width = Size::Shrink,
+								.height = Size::Shrink,
+							},
+							.children{
+								Text{
+									.text = title,
+									.fontSize = 14.f,
+									.color = Color::white,
+								},
+								subtitle.empty()//
+									? Child{}
+									: Text{
+										  .text = subtitle,
+										  .fontSize = 12.f,
+										  .color = Color::white * 0.7f,
+									  },
+							},
 						},
-						subtitle.empty()//
-							? Child{}
-							: Text{
-								  .text = subtitle,
-								  .fontSize = 12.f,
-								  .color = Color::white * 0.7f,
-							  },
 					},
 				},
 				action ? action : Child{},
