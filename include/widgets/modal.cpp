@@ -26,6 +26,11 @@ namespace squi {
 				SlideIn{
 					.direction = Direction::bottom,
 					.followChild = true,
+					.visible = !closing,
+					.onDismiss = [this]() {
+						if (Navigator::of(*this->element).is(*this->element))
+							Navigator::of(*this->element).popOverlay();
+					},
 					.child = widget->child,
 				},
 			},
@@ -34,8 +39,11 @@ namespace squi {
 
 	void Modal::State::observeCloseEvent() {
 		closeObserver = widget->closeEvent.observe([this]() {
-			if (Navigator::of(*this->element).is(*this->element))
-				Navigator::of(*this->element).popOverlay();
+			if (closing) return;
+			setState([&]() {
+				closing = true;
+				backgroundColor = Color::transparent;
+			});
 		});
 	}
 

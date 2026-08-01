@@ -15,6 +15,7 @@ namespace squi {
 
 		struct State : WidgetState<Modal> {
 			VoidObserver closeObserver;
+			bool closing = false;
 			Animated<Color> backgroundColor{
 				.from = Color{0.f, 0.f, 0.f, 0.f},
 				.duration = 200ms,

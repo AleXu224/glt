@@ -1,5 +1,6 @@
 #include "core/app.hpp"
 
+#include "core/animationSequence.hpp"
 #include "include/widgets/builder.hpp"
 #include "include/widgets/column.hpp"
 #include "include/widgets/container.hpp"
@@ -18,12 +19,20 @@
 #include "include/widgets/tooltip.hpp"
 #include "include/widgets/topNav.hpp"
 #include "include/widgets/visibility.hpp"
+#include "theme.hpp"
 #include "widgets/animatedBox.hpp"
+#include "widgets/box.hpp"
+#include "widgets/button.hpp"
+#include "widgets/dialog.hpp"
 #include "widgets/fontIcon.hpp"
 #include "widgets/liteFilter.hpp"
 #include "widgets/navigator.hpp"
 #include "widgets/numberBox.hpp"
+#include "widgets/offset.hpp"
 #include "widgets/row.hpp"
+#include "widgets/slideIn.hpp"
+#include "widgets/stack.hpp"
+#include "widgets/text.hpp"
 #include "widgets/toggleButton.hpp"
 #include "widgets/transform.hpp"
 
@@ -418,6 +427,292 @@ struct JustifyTestPage : StatefulWidget {
 	};
 };
 
+struct OnCompleteDemo : StatefulWidget {
+	// Args
+	Key key;
+
+	struct State : WidgetState<OnCompleteDemo> {
+		Animated<float> width{.from = 100.f, .duration = 500ms};
+		bool expanded = false;
+
+		void initState() override {
+			width.mount(this);
+			width.onComplete = [this]() {
+				std::println("width is now {}", width.getValue());
+			};
+		}
+
+		Child build(const Element &) override {
+			return Column{
+				.spacing = 8.f,
+				.children{
+					Box{
+						.widget{
+							.width = width.getValue(),
+							.height = 40.f,
+						},
+						.color = Color::royalblue,
+						.borderRadius = BorderRadius{4.f},
+					},
+					Button{
+						.onClick = [this]() {
+							setState([this]() {
+								expanded = !expanded;
+								width = expanded ? 220.f : 100.f;
+							});
+						},
+						.child = "Toggle width",
+					},
+				},
+			};
+		}
+	};
+};
+
+struct SlideInToggleDemo : StatefulWidget {
+	// Args
+	Key key;
+
+	struct State : WidgetState<SlideInToggleDemo> {
+		bool visible = true;
+
+		Child build(const Element &) override {
+			return Column{
+				.spacing = 8.f,
+				.children{
+					Button{
+						.onClick = [this]() {
+							setState([this]() {
+								visible = !visible;
+							});
+						},
+						.child = visible ? "Hide" : "Show",
+					},
+					SlideIn{
+						.direction = Direction::top,
+						.visible = visible,
+						.onFinish = []() {
+							std::println("SlideIn entered");
+						},
+						.onDismiss = []() {
+							std::println("SlideIn left");
+						},
+						.child = Box{
+							.widget{
+								.width = 220.f,
+								.height = 60.f,
+							},
+							.color = Color::teal,
+							.borderRadius = 4.f,
+						},
+					},
+				},
+			};
+		}
+	};
+};
+
+struct BarState {
+	float width;
+	float offset;
+};
+
+template<>
+inline BarState Animator<BarState>::getValue(const BarState &from, const BarState &to, float t) {
+	return {
+		.width = Animator<float>::getValue(from.width, to.width, t),
+		.offset = Animator<float>::getValue(from.offset, to.offset, t),
+	};
+}
+
+struct LoadingBarDemo : StatefulWidget {
+	// Args
+	Key key;
+
+	struct State : WidgetState<LoadingBarDemo> {
+		AnimationSequence<BarState> sequence;
+
+		void initState() override {
+			sequence.mount(this);
+			sequence.from = {60.f, -100.f};
+			sequence.steps = {{
+				.to = BarState{160.f, 300.f},
+				.duration = 1200ms,
+				.curve = Curve::linear,
+			}};
+			sequence.repeat = true;
+			sequence.run();
+		}
+
+		Child build(const Element &element) override {
+			auto bar = sequence.getValue();
+			return Column{
+				.spacing = 8.f,
+				.children{
+					Container{
+						.widget{
+							.width = 300.f,
+							.height = 24.f,
+						},
+						.shouldClipContent = true,
+						.child = Stack{
+							.children{
+								Box{
+									.widget{
+										.width = 300.f,
+										.height = 24.f,
+									},
+									.color = Color::white * 0.1f,
+									.borderRadius = 4.f,
+								},
+								Offset{
+									.calculateContentBounds = [bar](const Rect &rect, const SingleChildRenderObject &) {
+										auto ret = rect;
+										ret.left += bar.offset;
+										return ret;
+									},
+									.child = Box{
+										.widget{
+											.width = bar.width,
+											.height = 24.f,
+										},
+										.color = Theme::of(element).accent,
+										.borderRadius = 4.f,
+									},
+								},
+							},
+						},
+					},
+					Row{
+						.spacing = 8.f,
+						.children{
+							Button{
+								.onClick = [this]() {
+									if (!sequence.isRunning()) {
+										sequence.run();
+									}
+								},
+								.child = "Start",
+							},
+							Button{
+								.onClick = [this]() {
+									if (sequence.isRunning()) {
+										sequence.stop();
+									}
+								},
+								.child = "Stop",
+							},
+						},
+					},
+				},
+			};
+		}
+	};
+};
+
+struct SequenceDemo : StatefulWidget {
+	// Args
+	Key key;
+
+	struct State : WidgetState<SequenceDemo> {
+		AnimationSequence<float> sequence;
+
+		void initState() override {
+			sequence.mount(this);
+		}
+
+		void start() {
+			sequence.from = 0.f;
+			sequence.steps = {
+				{
+					.to = 120.f,
+					.duration = 400ms,
+				},
+				{
+					.to = 0.f,
+					.duration = 400ms,
+					.curve = Curve::easeInOutCubic,
+				},
+			};
+			sequence.run();
+		}
+
+		Child build(const Element &) override {
+			float offset = sequence.getValue();
+			return Column{
+				.spacing = 8.f,
+				.children{
+					Offset{
+						.calculateContentBounds = [offset](const Rect &rect, const SingleChildRenderObject &) {
+							auto ret = rect;
+							ret.left += offset;
+							return ret;
+						},
+						.child = Box{
+							.widget{
+								.width = 80.f,
+								.height = 40.f,
+							},
+							.color = Color::turquoise,
+							.borderRadius = 4.f,
+						},
+					},
+					Button{
+						.onClick = [this]() {
+							start();
+						},
+						.child = "Run sequence",
+					},
+				},
+			};
+		}
+	};
+};
+
+struct AnimationsPage : StatefulWidget {
+	// Args
+	Key key;
+
+	struct State : WidgetState<AnimationsPage> {
+		Child build(const Element &element) override {
+			return Navigator{
+				.child = ScrollView{
+					.spacing = 16.f,
+					.children{
+						OnCompleteDemo{},
+						SlideInToggleDemo{},
+						LoadingBarDemo{},
+						SequenceDemo{},
+						Button{
+							.onClick = [&element]() {
+								auto closeEvent = VoidObservable{};
+								Navigator::of(element).pushOverlay(
+									Dialog{
+										.closeEvent = closeEvent,
+										.title = "Sliding dialog",
+										.content = Text{
+											.text = "Hello",
+										},
+										.buttons = {
+											Button{
+												.onClick = [closeEvent]() {
+													closeEvent.notify();
+												},
+												.child = "Close",
+											},
+										},
+									}
+								);
+							},
+							.child = "Open sliding dialog",
+						},
+					},
+				},
+			};
+		}
+	};
+};
+
 int main(int /*unused*/, char ** /*unused*/) {
 
 	App app{
@@ -569,6 +864,10 @@ int main(int /*unused*/, char ** /*unused*/) {
 				TopNav::Page{
 					.name = "Test 1",
 					.content = Test{},
+				},
+				TopNav::Page{
+					.name = "Animations",
+					.content = AnimationsPage{},
 				},
 				TopNav::Page{
 					.name = "Test 2",

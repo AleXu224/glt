@@ -3,6 +3,41 @@
 #include "widgets/offset.hpp"
 
 namespace squi {
+	void SlideIn::State::initState() {
+		offsetProgress.mount(this);
+		offsetProgress.duration = widget->duration;
+		offsetProgress.curve = widget->curve;
+		offsetProgress.onComplete = [this]() {
+			if (exiting) {
+				exiting = false;
+				if (widget->onDismiss) widget->onDismiss();
+			} else {
+				if (widget->onFinish) widget->onFinish();
+			}
+		};
+		if (widget->visible) {
+			offsetProgress = 0.f;
+		}
+	}
+
+	void SlideIn::State::widgetUpdated() {
+		offsetProgress.duration = widget->duration;
+		offsetProgress.curve = widget->curve;
+		if (widget->visible) {
+			if (exiting) {
+				exiting = false;
+				offsetProgress = 0.f;
+			} else if (offsetProgress.getValue() >= 1.f) {
+				offsetProgress = 0.f;
+			}
+		} else {
+			if (!exiting && offsetProgress.getValue() < 1.f) {
+				exiting = true;
+				offsetProgress = 1.f;
+			}
+		}
+	}
+
 	core::Child SlideIn::State::build(const Element &) {
 		auto newWidget = widget->widget;
 		newWidget.width = newWidget.width.value_or(Size::Wrap);
