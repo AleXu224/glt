@@ -2,8 +2,12 @@
 
 #include "core/core.hpp"
 
+#include <functional>
+#include <variant>
+#include <vector>
+
 namespace squi {
-	struct ContextMenu : StatelessWidget {
+	struct ContextMenu : StatefulWidget {
 		struct Button {
 			std::string text{};
 			std::function<void()> callback;
@@ -19,11 +23,24 @@ namespace squi {
 
 		// Args
 		Key key;
+		Args widget{};
 		Key overlayKey;
-		vec2 position;
+		Key targetKey{};
+		vec2 position{};
 		std::function<void()> onClose;
+		std::function<void(int64_t)> onSelectionChange;
 		std::vector<Item> items;
 
-		[[nodiscard]] Child build(const Element &) const;
+		struct State : WidgetState<ContextMenu> {
+			int64_t selectedIndex = -1;
+
+			void widgetUpdated() override;
+
+			void moveSelection(int64_t delta);
+			void activateSelected();
+			void close();
+
+			Child build(const Element &) override;
+		};
 	};
 }// namespace squi

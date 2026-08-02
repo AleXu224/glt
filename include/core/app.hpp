@@ -98,6 +98,7 @@ namespace squi::core {
 		std::mutex taskMtx{};
 		std::vector<std::function<void()>> postLayoutTasks{};
 		std::vector<std::function<void()>> postRepositionTasks{};
+		std::vector<std::function<void()>> postUpdateTasks{};
 		std::vector<std::function<void()>> preUpdateTasks{};
 
 		static inline std::mutex mainThreadTasksMtx{};

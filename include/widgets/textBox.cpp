@@ -1,8 +1,11 @@
 #include "widgets/textBox.hpp"
 
+#include "core/app.hpp"
 #include "theme.hpp"
 #include "widgets/animatedBox.hpp"
 #include "widgets/column.hpp"
+#include "widgets/contextMenu.hpp"
+#include "widgets/navigator.hpp"
 #include "widgets/stack.hpp"
 #include "widgets/text.hpp"
 #include "widgets/textArea.hpp"
@@ -23,6 +26,74 @@ namespace squi {
 				status = newStatus;
 			});
 		}
+	}
+
+	TextBox::State::~State() {
+		if (element && element->mounted) {
+			Navigator::of(*element).popOverlay(overlayKey);
+		}
+	}
+
+	void TextBox::State::widgetUpdated() {
+		updateStatus();
+		updateOverlay();
+	}
+
+	bool TextBox::State::isMouseButtonDown() {
+		auto *app = element->getApp();
+		for (const auto &[key, state]: app->inputState.g_mouseKeys) {
+			if (state.action == GestureAction::press || state.action == GestureAction::repeat) return true;
+		}
+		return false;
+	}
+
+	void TextBox::State::updateOverlay() {
+		if (isMouseButtonDown()) return;
+		if (!active || widget->suggestions.empty()) {
+			closeOverlay();
+			return;
+		}
+
+		std::vector<ContextMenu::Item> items;
+		items.reserve(widget->suggestions.size());
+		for (const auto &suggestion: widget->suggestions) {
+			items.emplace_back(ContextMenu::Button{
+				.text = suggestion.label,
+				.callback = suggestion.onSelect,
+			});
+		}
+
+		overlayShown = true;
+		Navigator::of(*element).pushOrReplaceOverlay(ContextMenu{
+			.key = overlayKey,
+			.widget{
+				.sizeConstraints{
+					.minWidth = 220.f,
+					.maxHeight = 320.f,
+				},
+			},
+			.overlayKey = overlayKey,
+			.targetKey = targetKey,
+			.onClose = [self = weak_from_this()]() {
+				if (auto state = self.lock()) state->closeOverlay();
+			},
+			.onSelectionChange = [self = weak_from_this()](int64_t index) {
+				if (auto state = self.lock()) state->menuSelectedIndex = index;
+			},
+			.items = std::move(items),
+		});
+	}
+
+	void TextBox::State::handleSubmit(const std::string &text) {
+		if (overlayShown && menuSelectedIndex >= 0) return;
+		if (widget->onSubmit) widget->onSubmit(text);
+	}
+
+	void TextBox::State::closeOverlay() {
+		if (!overlayShown) return;
+		overlayShown = false;
+		menuSelectedIndex = -1;
+		Navigator::of(*element).popOverlay(overlayKey);
 	}
 
 	Child TextBox::State::build(const Element &element) {
@@ -54,17 +125,17 @@ namespace squi {
 					.onActive = [this](const Gesture::State &) {
 						active = true;
 						updateStatus();
+						updateOverlay();
 					},
 					.onInactive = [this](const Gesture::State &) {
 						active = false;
 						updateStatus();
 					},
-					.onUpdate = [this](const Gesture::State &state) {
-						if (!state.active) return;
-						if (widget->onArrowUp && state.isKeyPressedOrRepeat(GestureKey::up)) widget->onArrowUp();
-						if (widget->onArrowDown && state.isKeyPressedOrRepeat(GestureKey::down)) widget->onArrowDown();
+					.onClick = [this](const Gesture::State &) {
+						updateOverlay();
 					},
 					.child = AnimatedBox{
+						.key = targetKey,
 						.widget = widget->widget.withDefaults({
 							.width = Size::Shrink,
 							.height = widget->multiline ? SizeVariant(Size::Shrink) : 32.f,
@@ -130,7 +201,9 @@ namespace squi {
 													});
 												}
 											},
-											.onSubmit = widget->onSubmit,
+											.onSubmit = [this](const std::string &text) {
+												handleSubmit(text);
+											},
 											.active = status == Button::ButtonStatus::active,
 										};
 								}(),

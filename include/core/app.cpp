@@ -249,6 +249,11 @@ namespace squi::core {
 
 						renderObject.update();
 
+						for (const auto &task: postUpdateTasks) {
+							task();
+						}
+						postUpdateTasks.clear();
+
 						while (!dirtyElements.empty() || !dirtyResize.empty() || !dirtyReposition.empty()) {
 							while (!dirtyElements.empty()) {
 								auto it = dirtyElements.begin();
