@@ -6,6 +6,7 @@
 #include "forwards.hpp"
 #include "memory"
 #include "rect.hpp"
+#include "sizeConstraints.hpp"
 #include "vec2.hpp"
 #include "vector"
 #include <optional>
@@ -41,9 +42,20 @@ namespace squi::core {
 		std::optional<SizeVariant> width = std::nullopt;
 		std::optional<SizeVariant> height = std::nullopt;
 		std::optional<Alignment> alignment = std::nullopt;
-		std::optional<BoxConstraints> sizeConstraints = std::nullopt;
+		SizeConstraints sizeConstraints{};
 		std::optional<Margin> margin = std::nullopt;
 		std::optional<Margin> padding = std::nullopt;
+
+		inline Args withDefaults(const Args &defaults) const {
+			Args ret = *this;
+			if (!ret.width) ret.width = defaults.width;
+			if (!ret.height) ret.height = defaults.height;
+			if (!ret.alignment) ret.alignment = defaults.alignment;
+			ret.sizeConstraints = ret.sizeConstraints.withDefaults(defaults.sizeConstraints);
+			if (!ret.margin) ret.margin = defaults.margin;
+			if (!ret.padding) ret.padding = defaults.padding;
+			return ret;
+		}
 	};
 
 	struct RenderObject : std::enable_shared_from_this<RenderObject> {

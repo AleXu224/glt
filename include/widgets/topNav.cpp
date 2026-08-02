@@ -80,7 +80,7 @@ namespace squi {
 									  .width = Size::Shrink,
 									  .height = Size::Shrink,
 									  .alignment = Alignment::TopRight,
-									  .sizeConstraints = BoxConstraints{
+									  .sizeConstraints{
 										  .minWidth = 16.f,
 										  .minHeight = 16.f,
 									  },

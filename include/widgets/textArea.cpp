@@ -255,13 +255,6 @@ namespace squi {
 	}
 
 	Child TextArea::State::build(const Element &) {
-		auto constraints = widget->widget.sizeConstraints.value_or(BoxConstraints{
-			.minWidth = 100.f,
-		});
-
-		float availableWidth = constraints.maxWidth;
-		if (availableWidth <= 0.f) availableWidth = std::numeric_limits<float>::max();
-
 		this->element->addPostLayoutTask([this]() {
 			if (this->cachedVerticalScrollData != *this->verticalScrollController) {
 				this->cachedVerticalScrollData = *this->verticalScrollController;

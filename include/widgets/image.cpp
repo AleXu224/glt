@@ -133,17 +133,21 @@ namespace squi {
 
 			if (imageRenderObject->imageProvider != this->image) {
 				imageRenderObject->imageProvider = this->image;
+				imageRenderObject->data->sampler = nullptr;
+				app->needsRedraw = true;
+
 				auto imageLoadingThread = std::thread([renderObject = renderObject->shared_from_this(), element = renderObject->element->shared_from_this(), image = image]() {
-					if (auto *imageRenderObject = renderObject->as<ImageRenderObject>()) {
-						auto *app = renderObject->getApp();
-						imageRenderObject->data->sampler = app->samplerStore.getSampler(app->engine.instance, Store::Texture::getTexture(image));
-						std::scoped_lock _{app->taskMtx};
-						app->preUpdateTasks.emplace_back([app, element]() {
-							if (!element->mounted) return;
-							element->markNeedsRelayout();
-							app->inputQueue.push(StateChange{});
-						});
-					}
+					auto *app = renderObject->getApp();
+					auto sampler = app->samplerStore.getSampler(app->engine.instance, Store::Texture::getTexture(image));
+					std::scoped_lock _{app->taskMtx};
+					app->preUpdateTasks.emplace_back([app, element, image, renderObject, sampler]() {
+						if (!element->mounted) return;
+						auto *imageRenderObject = renderObject->as<ImageRenderObject>();
+						if (!imageRenderObject || imageRenderObject->imageProvider != image) return;
+						imageRenderObject->data->sampler = sampler;
+						element->markNeedsRelayout();
+						app->inputQueue.push(StateChange{});
+					});
 				});
 
 				imageLoadingThread.detach();

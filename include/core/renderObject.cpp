@@ -283,8 +283,8 @@ namespace squi::core {
 			alignment = args.alignment;
 			element->markNeedsReposition();
 		}
-		if (sizeConstraints != args.sizeConstraints.value_or(BoxConstraints{})) {
-			sizeConstraints = args.sizeConstraints.value_or(BoxConstraints{});
+		if (sizeConstraints != args.sizeConstraints) {
+			sizeConstraints = args.sizeConstraints;
 			element->markNeedsRelayout();
 		}
 		if (margin != args.margin.value_or(Margin{})) {

@@ -160,7 +160,7 @@ void glt::Engine::Runner::draw() {
 		auto res2 = Vulkan::getGraphicsQueue().resource.presentKHR(presentInfo);
 		if (res2 != vk::Result::eSuccess) outdatedFramebuffer = true;
 #ifdef _WIN32
-		// Whenever there was a windowed fullscreen application there are is a certain issue on windows that causes the
+		// Whenever there was a windowed fullscreen application there is a certain issue on windows that causes the
 		// screen to flicker. I am guessing windows does some compositor shenanigans that cause this.
 		// In any case, calling DwmFlush here seems to fix it. I'll take that.
 		DwmFlush();

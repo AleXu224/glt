@@ -99,7 +99,7 @@ Networking::ResponseBody Networking::parseResponse(std::string_view response) {
 	return ret;
 }
 
-Networking::Response Networking::get(const std::string &url) {
+Networking::Response Networking::get(const std::string &url, const std::unordered_map<std::string, std::string> &headers) {
 	std::string currentUrl = url;
 	constexpr int maxRedirects = 10;
 
@@ -147,9 +147,25 @@ Networking::Response Networking::get(const std::string &url) {
 
 		std::stringstream ss;
 		ss << parsedUrl.pathname();
-		if (!parsedUrl.search_parameters().empty()) ss << "?" << parsedUrl.search_parameters().to_string();
+		ss << parsedUrl.search();
 
-		stream.write_some(asio::buffer(std::format("GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: glt-net\r\nAccept: */*\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n", ss.str(), parsedUrl.host())), ec);
+		std::stringstream request;
+		request << std::format("GET {} HTTP/1.1\r\n", ss.str());
+		request << std::format("Host: {}\r\n", parsedUrl.host());
+		request << "User-Agent: glt-net\r\n";
+		request << "Accept: */*\r\n";
+		request << "Connection: close\r\n";
+		request << "Cache-Control: no-cache\r\n";
+		for (const auto &[key, value]: defaultHeaders) {
+			request << key << ": " << value << "\r\n";
+		}
+		for (const auto &[key, value]: headers) {
+			request << key << ": " << value << "\r\n";
+		}
+		request << "\r\n";
+
+		auto requestStr = request.str();
+		stream.write_some(asio::buffer(requestStr), ec);
 		if (ec) {
 			return Response{
 				.body = "",

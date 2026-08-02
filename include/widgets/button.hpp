@@ -75,8 +75,6 @@ namespace squi {
 
 			[[nodiscard]] Child getContent(const Style &style) const;
 
-			[[nodiscard]] Args getArgs() const;
-
 			void initState() override {
 				updateStatus();
 			}

@@ -35,17 +35,11 @@ namespace squi {
 
 		auto style = theme.fromStatus(status);
 
-		auto constraints = widget->widget.sizeConstraints.value_or(BoxConstraints{
-			.minWidth = 100.f,
-			.maxWidth = 200.f,
-		});
-
-		auto modifiedWidget = widget->widget;
-		modifiedWidget.width = modifiedWidget.width.value_or(Size::Wrap);
-		modifiedWidget.height = modifiedWidget.height.value_or(Size::Wrap);
-
 		return Column{
-			.widget = modifiedWidget,
+			.widget{
+				.width = Size::Wrap,
+				.height = Size::Wrap,
+			},
 			.spacing = 4.f,
 			.children{
 				Gesture{
@@ -66,13 +60,14 @@ namespace squi {
 						updateStatus();
 					},
 					.child = AnimatedBox{
-						.widget{
+						.widget = widget->widget.withDefaults({
 							.width = Size::Shrink,
 							.height = widget->multiline ? SizeVariant(Size::Shrink) : 32.f,
-							.sizeConstraints = BoxConstraints{
+							.sizeConstraints{
+								.minWidth = 100.f,
 								.minHeight = 32.f,
 							},
-						},
+						}),
 						.color = style.backgroundColor,
 						.borderColor = style.borderColor,
 						.borderWidth = style.borderWidth,
@@ -102,8 +97,7 @@ namespace squi {
 										return TextArea{
 											.widget{
 												.alignment = Alignment::CenterLeft,
-												.sizeConstraints = constraints,
-												.padding = Padding{}.withHorizontal(12.f),
+												.padding = Padding{12.f, 4.f},
 											},
 											.controller = widget->controller,
 											.onTextChanged = [this](const std::string &text) {
@@ -120,8 +114,7 @@ namespace squi {
 										return TextInput{
 											.widget{
 												.alignment = Alignment::CenterLeft,
-												.sizeConstraints = constraints,
-												.padding = Padding{}.withHorizontal(12.f).withVertical(4.f),
+												.padding = Padding{12.f, 4.f},
 											},
 											.controller = widget->controller,
 											.onTextChanged = [this](const std::string &text) {

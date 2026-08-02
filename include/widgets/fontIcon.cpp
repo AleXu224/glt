@@ -9,7 +9,7 @@ namespace squi {
 				.width = size,
 				.height = size,
 				.alignment = Alignment::Center,
-				.sizeConstraints = BoxConstraints{
+				.sizeConstraints{
 					.maxWidth = size,
 					.maxHeight = size,
 				},

@@ -24,7 +24,7 @@ namespace squi {
 			Animated<float> width{};
 			Animated<float> height{};
 			Animated<Alignment> alignment{};
-			Animated<BoxConstraints> sizeConstraints{};
+			Animated<SizeConstraints> sizeConstraints{};
 			Animated<Margin> margin{};
 			Animated<Margin> padding{};
 

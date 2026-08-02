@@ -187,4 +187,14 @@ namespace squi::core {
 			.shrinkHeight = to.shrinkHeight,
 		};
 	}
+
+	template<>
+	inline SizeConstraints Animator<SizeConstraints>::getValue(const SizeConstraints &from, const SizeConstraints &to, float t) {
+		return SizeConstraints{
+			.minWidth = from.minWidth.value_or(0.f) + ((to.minWidth.value_or(0.f) - from.minWidth.value_or(0.f)) * t),
+			.minHeight = from.minHeight.value_or(0.f) + ((to.minHeight.value_or(0.f) - from.minHeight.value_or(0.f)) * t),
+			.maxWidth = from.maxWidth.value_or(std::numeric_limits<float>::infinity()) + ((to.maxWidth.value_or(std::numeric_limits<float>::infinity()) - from.maxWidth.value_or(std::numeric_limits<float>::infinity())) * t),
+			.maxHeight = from.maxHeight.value_or(std::numeric_limits<float>::infinity()) + ((to.maxHeight.value_or(std::numeric_limits<float>::infinity()) - from.maxHeight.value_or(std::numeric_limits<float>::infinity())) * t),
+		};
+	}
 }// namespace squi::core

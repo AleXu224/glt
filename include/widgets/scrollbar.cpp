@@ -52,7 +52,7 @@ namespace squi {
 								.height = Size::Expand,
 							},
 							.builder = [this](BoxConstraints constraints) {
-								BoxConstraints sizeConstraints{};
+								SizeConstraints sizeConstraints{};
 								float pScrollSize = 1.f;
 								if (widget->controller->contentMainAxis > 0.f) {
 									pScrollSize = widget->controller->viewMainAxis / widget->controller->contentMainAxis;

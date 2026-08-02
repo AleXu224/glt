@@ -1,6 +1,7 @@
 #pragma once
 
 #include "margin.hpp"
+#include "sizeConstraints.hpp"
 #include "vec2.hpp"
 #include <cstdint>
 #include <cstring>
@@ -24,6 +25,25 @@ namespace squi::core {
 				&& maxHeight == other.maxHeight
 				&& shrinkWidth == other.shrinkWidth
 				&& shrinkHeight == other.shrinkHeight;
+		}
+
+		bool operator==(const SizeConstraints &other) const {
+			return minWidth == other.minWidth.value_or(0.f)
+				&& maxWidth == other.maxWidth.value_or(std::numeric_limits<float>::infinity())
+				&& minHeight == other.minHeight.value_or(0.f)
+				&& maxHeight == other.maxHeight.value_or(std::numeric_limits<float>::infinity());
+		}
+
+		bool operator!=(const SizeConstraints &other) const {
+			return !(*this == other);
+		}
+
+		BoxConstraints operator=(const SizeConstraints &other) {
+			minWidth = other.minWidth.value_or(0.f);
+			maxWidth = other.maxWidth.value_or(std::numeric_limits<float>::infinity());
+			minHeight = other.minHeight.value_or(0.f);
+			maxHeight = other.maxHeight.value_or(std::numeric_limits<float>::infinity());
+			return *this;
 		}
 
 		void extendToFitMarginPadding(const Margin &margin, const Margin &padding) {

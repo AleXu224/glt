@@ -136,7 +136,7 @@ namespace squi {
 							.widget{
 								.width = Size::Shrink,
 								.height = Size::Wrap,
-								.sizeConstraints = BoxConstraints{
+								.sizeConstraints{
 									.minWidth = 100.f,
 								},
 							},

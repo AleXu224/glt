@@ -28,7 +28,7 @@ namespace squi {
 		assignAndMount(width, widget->widget.width);
 		assignAndMount(height, widget->widget.height);
 		assignAndMount(alignment, widget->widget.alignment.value_or(Alignment{}));
-		assignAndMount(sizeConstraints, widget->widget.sizeConstraints.value_or(BoxConstraints{}));
+		assignAndMount(sizeConstraints, widget->widget.sizeConstraints);
 		assignAndMount(margin, widget->widget.margin.value_or(Margin{}));
 		assignAndMount(padding, widget->widget.padding.value_or(Padding{}));
 
@@ -57,7 +57,7 @@ namespace squi {
 		}
 
 		updateOptionalAnimated(alignment, widget->widget.alignment);
-		updateOptionalAnimated(sizeConstraints, widget->widget.sizeConstraints);
+		updateAnimated(sizeConstraints, widget->widget.sizeConstraints);
 		updateOptionalAnimated(margin, widget->widget.margin);
 		updateOptionalAnimated(padding, widget->widget.padding);
 
@@ -90,7 +90,7 @@ namespace squi {
 				.width = getOptionalValue(width, widget->widget.width),
 				.height = getOptionalValue(height, widget->widget.height),
 				.alignment = getOptionalValue(alignment, widget->widget.alignment),
-				.sizeConstraints = getOptionalValue(sizeConstraints, widget->widget.sizeConstraints),
+				.sizeConstraints = sizeConstraints.getValue(),
 				.margin = getOptionalValue(margin, widget->widget.margin),
 				.padding = getOptionalValue(padding, widget->widget.padding),
 			},

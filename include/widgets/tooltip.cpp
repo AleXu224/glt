@@ -42,7 +42,7 @@ namespace squi {
 						.widget{
 							.width = Size::Wrap,
 							.height = Size::Wrap,
-							.sizeConstraints = BoxConstraints{
+							.sizeConstraints{
 								.maxWidth = 600.f,
 							},
 							.padding = 8.f,
@@ -127,7 +127,7 @@ namespace squi {
 					.widget{
 						.width = Size::Wrap,
 						.height = Size::Wrap,
-						.sizeConstraints = BoxConstraints{
+						.sizeConstraints{
 							.maxWidth = 600.f,
 						},
 						.padding = 8.f,

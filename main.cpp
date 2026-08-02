@@ -182,7 +182,7 @@ struct Test : StatefulWidget {
 					},
 					TextBox{
 						.widget{
-							.sizeConstraints = BoxConstraints{
+							.sizeConstraints{
 								.minWidth = 200.f,
 							},
 						},
