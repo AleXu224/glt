@@ -13,8 +13,8 @@ namespace squi {
 	struct TextEditor {
 		std::string *text;
 		std::shared_ptr<const TextLayout> cachedLayoutPtr;
-		int64_t cursor = 0;
-		std::optional<int64_t> selectionStart;
+		int64_t *cursor = nullptr;
+		std::optional<int64_t> *selectionStart = nullptr;
 
 		std::function<void(const std::string &)> onTextChanged;
 

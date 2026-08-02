@@ -15,6 +15,8 @@ namespace squi {
 	void TextInput::State::initState() {
 		controller = widget->controller;
 		buffer.text = &controller.controlBlock->text;
+		buffer.cursor = &controller.controlBlock->cursor;
+		buffer.selectionStart = &controller.controlBlock->selectionStart;
 		buffer.onTextChanged = [this](const std::string &text) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			controller.notifyTextChanged();
@@ -23,6 +25,10 @@ namespace squi {
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
+		});
+		selectionObserver = controller.getSelectionObserver([this]() {
+			element->markNeedsReposition();
+			setState();
 		});
 		scaleObserver = element->getApp()->surface.onScaleChange.observe([this]() {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
@@ -36,6 +42,8 @@ namespace squi {
 		if (controller == widget->controller) return;
 		controller = widget->controller;
 		buffer.text = &controller.controlBlock->text;
+		buffer.cursor = &controller.controlBlock->cursor;
+		buffer.selectionStart = &controller.controlBlock->selectionStart;
 		buffer.onTextChanged = [this](const std::string &text) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			controller.notifyTextChanged();
@@ -44,6 +52,10 @@ namespace squi {
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
+		});
+		selectionObserver = controller.getSelectionObserver([this]() {
+			element->markNeedsReposition();
+			setState();
 		});
 	}
 
@@ -88,25 +100,25 @@ namespace squi {
 		if (clickCount == 1) {
 			dragType = DragType::Char;
 			setState([&]() {
-				buffer.cursor = newCursor;
+				*buffer.cursor = newCursor;
 			});
 			if (!state.inputState || !state.inputState->isKeyDown(GestureKey::leftShift))
-				buffer.selectionStart = std::nullopt;
+				*buffer.selectionStart = std::nullopt;
 			pivot = newCursor;
 		} else if (clickCount == 2) {
 			dragType = DragType::Word;
 			auto range = getWordRange(newCursor);
 			pivotRange = range;
 			setState([&]() {
-				buffer.selectionStart = range.first;
-				buffer.cursor = range.second;
+				*buffer.selectionStart = range.first;
+				*buffer.cursor = range.second;
 			});
 		} else if (clickCount == 3) {
 			dragType = DragType::Line;
 			pivotRange = {0, static_cast<int64_t>(buffer.text->size())};
 			setState([&]() {
-				buffer.selectionStart = 0;
-				buffer.cursor = static_cast<int64_t>(buffer.text->size());
+				*buffer.selectionStart = 0;
+				*buffer.cursor = static_cast<int64_t>(buffer.text->size());
 			});
 		}
 	}
@@ -120,28 +132,28 @@ namespace squi {
 
 		if (dragType == DragType::Char) {
 			setState([&]() {
-				if (!buffer.selectionStart.has_value()) buffer.selectionStart = pivot;
-				buffer.cursor = newPos;
+				if (!buffer.selectionStart->has_value()) *buffer.selectionStart = pivot;
+				*buffer.cursor = newPos;
 			});
 		} else if (dragType == DragType::Word) {
 			auto currentWord = getWordRange(newPos);
 			setState([&]() {
 				if (newPos >= pivotRange.second) {
-					buffer.selectionStart = pivotRange.first;
-					buffer.cursor = currentWord.second;
+					*buffer.selectionStart = pivotRange.first;
+					*buffer.cursor = currentWord.second;
 				} else if (newPos <= pivotRange.first) {
-					buffer.selectionStart = pivotRange.second;
-					buffer.cursor = currentWord.first;
+					*buffer.selectionStart = pivotRange.second;
+					*buffer.cursor = currentWord.first;
 				} else {
-					buffer.selectionStart = pivotRange.first;
-					buffer.cursor = pivotRange.second;
+					*buffer.selectionStart = pivotRange.first;
+					*buffer.cursor = pivotRange.second;
 				}
 			});
 		}
 	}
 
 	Child TextInput::State::getSelectionBox(uint32_t widthToStart) const {
-		if (!buffer.selectionStart.has_value()) return nullptr;
+		if (!buffer.selectionStart->has_value()) return nullptr;
 		auto selectionMin = buffer.getSelectionMin();
 		auto selectionMax = buffer.getSelectionMax();
 		widthToStart = static_cast<uint32_t>(buffer.cachedLayoutPtr->xForOffset(selectionMin));
@@ -183,7 +195,7 @@ namespace squi {
 	}
 
 	Child TextInput::State::build(const Element &) {
-		auto widthToCursor = static_cast<uint32_t>(buffer.cachedLayoutPtr->xForOffset(buffer.cursor));
+		auto widthToCursor = static_cast<uint32_t>(buffer.cachedLayoutPtr->xForOffset(*buffer.cursor));
 
 		this->element->addPostLayoutTask([this]() {
 			if (this->cachedScrollData != *this->scrollController) {
@@ -210,9 +222,9 @@ namespace squi {
 				handleMousePress(state);
 			},
 			.onDrag = [this](const Gesture::State &state) {
-				auto oldCursor = buffer.cursor;
+				auto oldCursor = *buffer.cursor;
 				handleMouseDrag(state);
-				if (oldCursor != buffer.cursor)
+				if (oldCursor != *buffer.cursor)
 					setState([&]() {
 						manuallyScrolling = false;
 					});
@@ -232,9 +244,9 @@ namespace squi {
 				}
 
 				auto &b = buffer;
-				auto oldCursor = b.cursor;
+				auto oldCursor = *b.cursor;
 				auto oldText = b.text;
-				auto oldSelectionStart = b.selectionStart;
+				auto oldSelectionStart = *b.selectionStart;
 
 				b.clampCursors();
 				b.handleTextInput(this->element->getApp()->inputState.g_textInput);
@@ -253,10 +265,14 @@ namespace squi {
 				b.handleCut(state);
 				b.handlePaste(state);
 
-				if (oldText != b.text || oldCursor != b.cursor || oldSelectionStart != b.selectionStart)
+				if (widget->onSubmit && (state.isKey(GestureKey::enter, GestureAction::press) || state.isKey(GestureKey::kp_enter, GestureAction::press))) {
+					widget->onSubmit(controller.controlBlock->text);
+				}
+
+				if (oldText != b.text || oldCursor != *b.cursor || oldSelectionStart != *b.selectionStart)
 					setState();
 
-				if (oldCursor != b.cursor) {
+				if (oldCursor != *b.cursor) {
 					this->element->markNeedsReposition();
 					setState([&]() {
 						manuallyScrolling = false;

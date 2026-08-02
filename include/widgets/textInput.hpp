@@ -15,13 +15,17 @@ namespace squi {
 		private:
 			struct ControlBlock {
 				Observable<const std::string &> textObservable{};
+				VoidObservable selectionEvent{};
 				std::string text{};
+				int64_t cursor = 0;
+				std::optional<int64_t> selectionStart;
 			};
 			std::shared_ptr<ControlBlock> controlBlock = std::make_shared<ControlBlock>();
 
 		public:
 			Controller(const std::string &initial = "") {
 				controlBlock->text = initial;
+				controlBlock->cursor = static_cast<int64_t>(initial.size());
 			}
 
 			[[nodiscard]] Observer<const std::string &> getTextObserver(const std::function<void(const std::string &)> &callback) const {
@@ -31,7 +35,10 @@ namespace squi {
 			void setText(const std::string &text) const {
 				if (controlBlock->text == text) return;
 				controlBlock->text = text;
+				controlBlock->cursor = static_cast<int64_t>(text.size());
+				controlBlock->selectionStart = std::nullopt;
 				controlBlock->textObservable.notify(controlBlock->text);
+				controlBlock->selectionEvent.notify();
 			}
 
 			[[nodiscard]] const std::string &getText() const {
@@ -46,6 +53,24 @@ namespace squi {
 				controlBlock->textObservable.notify(controlBlock->text);
 			}
 
+			[[nodiscard]] int64_t getCursor() const {
+				return controlBlock->cursor;
+			}
+
+			[[nodiscard]] std::optional<int64_t> getSelectionStart() const {
+				return controlBlock->selectionStart;
+			}
+
+			void setSelection(int64_t cursor, std::optional<int64_t> selectionStart = std::nullopt) const {
+				controlBlock->cursor = cursor;
+				controlBlock->selectionStart = selectionStart;
+				controlBlock->selectionEvent.notify();
+			}
+
+			[[nodiscard]] VoidObserver getSelectionObserver(const std::function<void()> &callback) const {
+				return controlBlock->selectionEvent.observe(callback);
+			}
+
 			friend TextInput;
 			friend TextArea;
 		};
@@ -55,12 +80,14 @@ namespace squi {
 		Args widget;
 		Controller controller{};
 		std::function<void(const std::string &)> onTextChanged;
+		std::function<void(const std::string &)> onSubmit;
 		bool active = false;
 
 		struct State : WidgetState<TextInput> {
 			TextEditor buffer;
 			Controller controller{};
 			Observer<const std::string &> textObserver{};
+			VoidObserver selectionObserver{};
 			VoidObserver scaleObserver{};
 
 			ScrollViewData cachedScrollData{};

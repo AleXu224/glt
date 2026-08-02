@@ -14,6 +14,9 @@ namespace squi {
 		bool multiline = false;
 		TextInput::Controller controller{};
 		std::function<std::optional<std::string>(const std::string &)> validator;
+		std::function<void(const std::string &)> onSubmit;
+		std::function<void()> onArrowUp;
+		std::function<void()> onArrowDown;
 
 		struct State : WidgetState<TextBox> {
 			Button::ButtonStatus status = Button::ButtonStatus::resting;

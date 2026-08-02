@@ -11,25 +11,25 @@ namespace squi {
 	}
 
 	void TextEditor::clampCursors() {
-		cursor = std::clamp(cursor, static_cast<int64_t>(0), static_cast<int64_t>(text->size()));
-		if (selectionStart.has_value()) {
-			auto clamped = std::clamp(selectionStart.value_or(0), static_cast<int64_t>(0), static_cast<int64_t>(text->size()));
-			if (cursor == clamped) {
-				selectionStart = std::nullopt;
+		*cursor = std::clamp(*cursor, static_cast<int64_t>(0), static_cast<int64_t>(text->size()));
+		if (selectionStart->has_value()) {
+			auto clamped = std::clamp(selectionStart->value_or(0), static_cast<int64_t>(0), static_cast<int64_t>(text->size()));
+			if (*cursor == clamped) {
+				*selectionStart = std::nullopt;
 			} else {
-				selectionStart = clamped;
+				*selectionStart = clamped;
 			}
 		}
 	}
 
 	int64_t TextEditor::getSelectionMin() const {
-		if (!selectionStart.has_value()) return cursor;
-		return std::min(selectionStart.value(), cursor);
+		if (!selectionStart->has_value()) return *cursor;
+		return std::min(selectionStart->value(), *cursor);
 	}
 
 	int64_t TextEditor::getSelectionMax() const {
-		if (!selectionStart.has_value()) return cursor;
-		return std::max(selectionStart.value(), cursor);
+		if (!selectionStart->has_value()) return *cursor;
+		return std::max(selectionStart->value(), *cursor);
 	}
 
 	void TextEditor::setText(const std::string &newText) {
@@ -40,21 +40,21 @@ namespace squi {
 
 	void TextEditor::clearSelection() {
 		clampCursors();
-		if (!selectionStart.has_value()) return;
+		if (!selectionStart->has_value()) return;
 		const auto min = getSelectionMin();
 		const auto max = getSelectionMax();
 
 		text->erase(min, max - min);
-		cursor = min;
-		selectionStart = std::nullopt;
+		*cursor = min;
+		*selectionStart = std::nullopt;
 		onTextChanged(*text);
 	}
 
 	void TextEditor::handleTextInput(const std::string &g_textInput) {
 		if (g_textInput.empty()) return;
 		clearSelection();
-		text->insert(cursor, g_textInput);
-		cursor += static_cast<int64_t>(g_textInput.size());
+		text->insert(*cursor, g_textInput);
+		*cursor += static_cast<int64_t>(g_textInput.size());
 		onTextChanged(*text);
 	}
 
@@ -101,21 +101,21 @@ namespace squi {
 
 	void TextEditor::handleBackspace(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::backspace)) {
-			if (selectionStart.has_value()) {
+			if (selectionStart->has_value()) {
 				clearSelection();
 				return;
 			}
 			const auto &keyState = key.value();
-			if (keyState.mods & static_cast<int>(GestureMod::control) && cursor > 0) {
-				auto pos = getPrevWordStart(cursor);
-				text->erase(pos, cursor - pos);
-				cursor = static_cast<int64_t>(pos);
+			if (keyState.mods & static_cast<int>(GestureMod::control) && *cursor > 0) {
+				auto pos = getPrevWordStart(*cursor);
+				text->erase(pos, *cursor - pos);
+				*cursor = static_cast<int64_t>(pos);
 				onTextChanged(*text);
-			} else if (cursor > 0) {
-				bool isCursorAtEnd = cursor == static_cast<int64_t>(text->size());
-				text->erase(cursor - 1, 1);
+			} else if (*cursor > 0) {
+				bool isCursorAtEnd = *cursor == static_cast<int64_t>(text->size());
+				text->erase(*cursor - 1, 1);
 				if (!isCursorAtEnd) {
-					--cursor;
+					--*cursor;
 				}
 				onTextChanged(*text);
 			}
@@ -124,17 +124,17 @@ namespace squi {
 
 	void TextEditor::handleDelete(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::del)) {
-			if (selectionStart.has_value()) {
+			if (selectionStart->has_value()) {
 				clearSelection();
 				return;
 			}
 			const auto &keyState = key.value();
-			if (keyState.mods & static_cast<int>(GestureMod::control) && cursor < static_cast<int64_t>(text->size())) {
-				auto pos = getNextWordStart(cursor);
-				text->erase(cursor, pos - cursor);
+			if (keyState.mods & static_cast<int>(GestureMod::control) && *cursor < static_cast<int64_t>(text->size())) {
+				auto pos = getNextWordStart(*cursor);
+				text->erase(*cursor, pos - *cursor);
 				onTextChanged(*text);
-			} else if (cursor < static_cast<int64_t>(text->size())) {
-				text->erase(cursor, 1);
+			} else if (*cursor < static_cast<int64_t>(text->size())) {
+				text->erase(*cursor, 1);
 				onTextChanged(*text);
 			}
 		}
@@ -143,23 +143,23 @@ namespace squi {
 	void TextEditor::handleLeftArrow(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::left)) {
 			bool removedSelection = false;
-			if (key->mods & static_cast<int>(GestureMod::shift) && cursor > 0) {
-				if (!selectionStart.has_value()) {
-					selectionStart = cursor;
+			if (key->mods & static_cast<int>(GestureMod::shift) && *cursor > 0) {
+				if (!selectionStart->has_value()) {
+					*selectionStart = *cursor;
 				}
-			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value()) {
+			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart->has_value()) {
 				clampCursors();
-				cursor = getSelectionMin();
-				selectionStart = std::nullopt;
+				*cursor = getSelectionMin();
+				*selectionStart = std::nullopt;
 				removedSelection = true;
 			}
 
-			if (cursor > 0 && !removedSelection) {
+			if (*cursor > 0 && !removedSelection) {
 				if (key->mods & static_cast<int>(GestureMod::control)) {
-					auto pos = getPrevWordStart(cursor);
-					cursor = static_cast<int64_t>(pos);
+					auto pos = getPrevWordStart(*cursor);
+					*cursor = static_cast<int64_t>(pos);
 				} else {
-					--cursor;
+					--*cursor;
 				}
 			}
 		}
@@ -168,23 +168,23 @@ namespace squi {
 	void TextEditor::handleRightArrow(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::right)) {
 			bool removedSelection = false;
-			if (key->mods & static_cast<int>(GestureMod::shift) && cursor < static_cast<int64_t>(text->size())) {
-				if (!selectionStart.has_value()) {
-					selectionStart = cursor;
+			if (key->mods & static_cast<int>(GestureMod::shift) && *cursor < static_cast<int64_t>(text->size())) {
+				if (!selectionStart->has_value()) {
+					*selectionStart = *cursor;
 				}
-			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value()) {
+			} else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart->has_value()) {
 				clampCursors();
-				cursor = getSelectionMax();
-				selectionStart = std::nullopt;
+				*cursor = getSelectionMax();
+				*selectionStart = std::nullopt;
 				removedSelection = true;
 			}
 
-			if (cursor < static_cast<int64_t>(text->size()) && !removedSelection) {
+			if (*cursor < static_cast<int64_t>(text->size()) && !removedSelection) {
 				if (key->mods & static_cast<int>(GestureMod::control)) {
-					auto pos = getNextWordStart(cursor);
-					cursor = static_cast<int64_t>(pos);
+					auto pos = getNextWordStart(*cursor);
+					*cursor = static_cast<int64_t>(pos);
 				} else {
-					++cursor;
+					++*cursor;
 				}
 			}
 		}
@@ -192,35 +192,35 @@ namespace squi {
 
 	void TextEditor::handleHome(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::home)) {
-			if (key->mods & static_cast<int>(GestureMod::shift) && cursor > 0 && !selectionStart.has_value())
-				selectionStart = cursor;
-			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value())
-				selectionStart = std::nullopt;
+			if (key->mods & static_cast<int>(GestureMod::shift) && *cursor > 0 && !selectionStart->has_value())
+				*selectionStart = *cursor;
+			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart->has_value())
+				*selectionStart = std::nullopt;
 
-			cursor = std::min<int64_t>(cursor, 0);
+			*cursor = std::min<int64_t>(*cursor, 0);
 		}
 	}
 
 	void TextEditor::handleEnd(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::end)) {
-			if (key->mods & static_cast<int>(GestureMod::shift) && cursor < static_cast<int64_t>(text->size()) && !selectionStart.has_value())
-				selectionStart = cursor;
-			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart.has_value())
-				selectionStart = std::nullopt;
+			if (key->mods & static_cast<int>(GestureMod::shift) && *cursor < static_cast<int64_t>(text->size()) && !selectionStart->has_value())
+				*selectionStart = *cursor;
+			else if (!(key->mods & static_cast<int>(GestureMod::shift)) && selectionStart->has_value())
+				*selectionStart = std::nullopt;
 
-			cursor = std::max(cursor, static_cast<int64_t>(text->size()));
+			*cursor = std::max(*cursor, static_cast<int64_t>(text->size()));
 		}
 	}
 
 	void TextEditor::handleCopy(const Gesture::State &state) const {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::c); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart.has_value()) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::c); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart->has_value()) {
 			auto textToCopy = text->substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 		}
 	}
 
 	void TextEditor::handleCut(const Gesture::State &state) {
-		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::x); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart.has_value()) {
+		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::x); key && key->mods & static_cast<int>(GestureMod::control) && selectionStart->has_value()) {
 			auto textToCopy = text->substr(getSelectionMin(), getSelectionMax() - getSelectionMin());
 			glfwSetClipboardString(nullptr, textToCopy.c_str());
 			clearSelection();
@@ -233,22 +233,22 @@ namespace squi {
 			if (!clipboardText) return;
 			clearSelection();
 			const auto clipboardString = std::string_view(clipboardText);
-			text->insert(cursor, clipboardString);
-			cursor += static_cast<int64_t>(clipboardString.size());
+			text->insert(*cursor, clipboardString);
+			*cursor += static_cast<int64_t>(clipboardString.size());
 			onTextChanged(*text);
 		}
 	}
 
 	void TextEditor::handleSelectAll(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::a); key && key->mods & static_cast<int>(GestureMod::control)) {
-			selectionStart = 0;
-			cursor = static_cast<int64_t>(text->size());
+			*selectionStart = 0;
+			*cursor = static_cast<int64_t>(text->size());
 		}
 	}
 
 	void TextEditor::handleEscape(const Gesture::State &state) {
 		if (const auto key = state.inputState->getKeyPressedOrRepeat(GestureKey::escape)) {
-			selectionStart = std::nullopt;
+			*selectionStart = std::nullopt;
 		}
 	}
 }// namespace squi

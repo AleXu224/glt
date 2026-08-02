@@ -59,6 +59,11 @@ namespace squi {
 						active = false;
 						updateStatus();
 					},
+					.onUpdate = [this](const Gesture::State &state) {
+						if (!state.active) return;
+						if (widget->onArrowUp && state.isKeyPressedOrRepeat(GestureKey::up)) widget->onArrowUp();
+						if (widget->onArrowDown && state.isKeyPressedOrRepeat(GestureKey::down)) widget->onArrowDown();
+					},
 					.child = AnimatedBox{
 						.widget = widget->widget.withDefaults({
 							.width = Size::Shrink,
@@ -125,6 +130,7 @@ namespace squi {
 													});
 												}
 											},
+											.onSubmit = widget->onSubmit,
 											.active = status == Button::ButtonStatus::active,
 										};
 								}(),
