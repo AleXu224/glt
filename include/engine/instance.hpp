@@ -121,7 +121,7 @@ namespace glt::Engine {
 
 		Instance(WindowOptions windowOptions = {});
 
-		void recreateSwapChain();
+		bool recreateSwapChain();
 
 		void frameEnd() const {
 			frameEndEvent.notify();

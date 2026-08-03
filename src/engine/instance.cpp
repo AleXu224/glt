@@ -33,17 +33,17 @@ Instance::Instance(WindowOptions options)
 	  }()},
 	  currentFrame(frames.front()) {}
 
-void glt::Engine::Instance::recreateSwapChain() {
+bool glt::Engine::Instance::recreateSwapChain() {
 	int width = 0;
 	int height = 0;
 	glfwGetFramebufferSize(window.ptr, &width, &height);
-	if (width == 0 || height == 0) return;
+	if (width == 0 || height == 0) return false;
 
 	auto swapChainSupport = querySwapChainSupport(Vulkan::physicalDevice());
 	auto newExtent = chooseSwapExtent(swapChainSupport.capabilities);
 
 	if (newExtent.width == swapChainExtent.width && newExtent.height == swapChainExtent.height)
-		return;
+		return true;
 
 	Vulkan::device().waitIdle();
 
@@ -58,6 +58,8 @@ void glt::Engine::Instance::recreateSwapChain() {
 	for (auto &frame: frames) {
 		frame.recreateCommandBuffer(Vulkan::device());
 	}
+
+	return true;
 }
 
 vk::raii::SurfaceKHR glt::Engine::Instance::createSurface() const {

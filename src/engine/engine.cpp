@@ -23,10 +23,11 @@ glt::Engine::Frame &glt::Engine::Runner::getCurrentFrame() {
 	return instance.frames.at(frameNumber % instance.frames.size());
 }
 
-void glt::Engine::Runner::recreateSwapChain() {
-	instance.recreateSwapChain();
+bool glt::Engine::Runner::recreateSwapChain() {
+	if (!instance.recreateSwapChain()) return false;
 	resized = false;
 	outdatedFramebuffer = false;
+	return true;
 }
 
 void glt::Engine::Runner::run(const std::function<bool()> &preDraw, const std::function<void()> &drawFunc, const std::function<void()> &cleanupFunc) {
@@ -69,13 +70,17 @@ void glt::Engine::Runner::draw() {
 
 	uint32_t swapchainImageIndex = 0;
 	if (!outdatedFramebuffer) {
-		auto [resNextImage, swapchainImageIndexVal] = instance.swapChain.acquireNextImage(1000000000, *instance.currentFrame.get().swapchainSemaphore);
-		if (resNextImage == vk::Result::eErrorOutOfDateKHR) {
+		try {
+			auto [resNextImage, swapchainImageIndexVal] = instance.swapChain.acquireNextImage(1000000000, *instance.currentFrame.get().swapchainSemaphore);
+			if (resNextImage == vk::Result::eErrorOutOfDateKHR) {
+				outdatedFramebuffer = true;
+			} else if (resNextImage != vk::Result::eSuccess && resNextImage != vk::Result::eSuboptimalKHR) {
+				return;
+			}
+			swapchainImageIndex = swapchainImageIndexVal;
+		} catch (const vk::OutOfDateKHRError &) {
 			outdatedFramebuffer = true;
-		} else if (resNextImage != vk::Result::eSuccess && resNextImage != vk::Result::eSuboptimalKHR) {
-			return;
 		}
-		swapchainImageIndex = swapchainImageIndexVal;
 	}
 	if (outdatedFramebuffer) {
 		return;

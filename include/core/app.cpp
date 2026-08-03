@@ -208,8 +208,9 @@ namespace squi::core {
 						inputState.parseInput(inputQueue.pop());
 						inputState.frameBegin();
 						if (engine.resized || engine.outdatedFramebuffer) {
-							engine.recreateSwapChain();
-							dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
+							if (engine.recreateSwapChain()) {
+								dirtyResize.insert_or_assign(renderObject.element, renderObject.weak_from_this());
+							}
 						}
 						const auto &width = static_cast<float>(engine.instance.swapChainExtent.width);
 						const auto &height = static_cast<float>(engine.instance.swapChainExtent.height);

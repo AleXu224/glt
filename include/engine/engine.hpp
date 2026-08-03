@@ -15,7 +15,7 @@ namespace glt::Engine {
 
 		Frame &getCurrentFrame();
 
-		void recreateSwapChain();
+		bool recreateSwapChain();
 
 		bool resized = false;
 		bool outdatedFramebuffer = false;
