@@ -23,14 +23,13 @@ namespace squi {
 	}
 
 	void Scrollable::ScrollableRenderObject::update() {
-		auto *app = getApp();
-		if (app) {
-			app->inputState.g_activeArea.emplace_back(getRect());
-		}
 		SingleChildRenderObject::update();
-		if (app) {
-			app->inputState.g_activeArea.pop_back();
-		}
+	}
+
+	bool Scrollable::ScrollableRenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		if (!getRect().contains(pos)) return false;
+		if (!child) return false;
+		return child->hitTest(pos, path);
 	}
 
 	vec2 Scrollable::ScrollableRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {

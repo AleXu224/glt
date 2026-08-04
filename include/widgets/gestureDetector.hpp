@@ -24,6 +24,9 @@ namespace squi {
 		std::function<void(const State &)> onDrag{};
 		std::function<void(const State &)> onUpdate{};
 
+		InputLevel requirements = InputLevel::scroll;
+		std::optional<float> dragThreshold{};
+
 		Child child{};
 
 		struct DetectorRenderObject;
@@ -37,6 +40,10 @@ namespace squi {
 			bool focusedOutside = false;
 			// Indicates if the widget has been activated by a click and no other widget has been focused since
 			bool active = false;
+			// Wether this gesture is currently being dragged
+			bool dragging = false;
+			// Wether the current press session has moved past the drag threshold and clicks are going to be ignored
+			bool reachedDragThreshold = false;
 			std::string textInput{};
 
 			vec2 scrollDelta{};
@@ -69,10 +76,12 @@ namespace squi {
 
 		struct DetectorRenderObject : SingleChildRenderObject {
 			State state{};
+			std::optional<float> effectiveDragThreshold{};
 
 			void update() override;
 			void init() override;
-			bool canClick() const;
+			[[nodiscard]] Rect getHitcheckRect() const override;
+			[[nodiscard]] std::optional<float> getEffectiveDragThreshold() const;
 		};
 
 		static std::shared_ptr<RenderObject> createRenderObject() {
@@ -82,6 +91,8 @@ namespace squi {
 		void updateRenderObject(RenderObject *renderObject) const {
 			// Update render object properties here
 		}
+
+		static void finalizeHitTest(squi::core::InputState &inputState);
 
 		[[nodiscard]] Args getArgs() const {
 			auto ret = widget;

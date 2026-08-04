@@ -6,6 +6,11 @@ namespace squi {
 		SingleChildRenderObject::update();
 	}
 
+	bool Visibility::VisibilityRenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		if (!visible) return false;
+		return SingleChildRenderObject::hitTest(pos, path);
+	}
+
 	vec2 Visibility::VisibilityRenderObject::calculateContentSize(BoxConstraints constraints, bool final) {
 		if (!visible) return vec2{0.f, 0.f};
 		return SingleChildRenderObject::calculateContentSize(constraints, final);

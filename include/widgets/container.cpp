@@ -31,4 +31,9 @@ namespace squi {
 			app->engine.instance.popScissor();
 		}
 	}
+
+	bool Container::ContainerRenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		if (shouldClipContent && !getRect().contains(pos)) return false;
+		return SingleChildRenderObject::hitTest(pos, path);
+	}
 }// namespace squi

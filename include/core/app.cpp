@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "fontStore.hpp"
+#include "widgets/gestureDetector.hpp"
 #include "widgets/layoutInspector.hpp"
 
 #include <GLFW/glfw3.h>
@@ -232,11 +233,6 @@ namespace squi::core {
 						// state.height = static_cast<float>(height);
 						// state.root = this;
 
-						inputState.g_activeArea.emplace_back(
-							vec2{0.0f, 0.0f},
-							surface.toLogical(vec2{width, height})
-						);
-
 						// Update animations
 						for (auto it = runningAnimations.begin(); it != runningAnimations.end();) {
 							auto *anim = *it;
@@ -246,6 +242,13 @@ namespace squi::core {
 							} else {
 								++it;
 							}
+						}
+
+						inputState.g_hitPath.clear();
+						inputState.g_hitIndex.clear();
+						if (inputState.g_cursorInside) {
+							renderObject.hitTest(inputState.g_cursorPos, inputState.g_hitPath);
+							Gesture::finalizeHitTest(inputState);
 						}
 
 						renderObject.update();
@@ -318,9 +321,6 @@ namespace squi::core {
 							}
 							postRepositionTasks.clear();
 						}
-
-						inputState.g_activeArea.pop_back();
-						if (!inputState.g_activeArea.empty()) throw std::runtime_error("Missing active area popback!");
 
 						forceRedraw = forceRedraw || inputState.isKeyPressedOrRepeat(GestureKey::f9);
 						{

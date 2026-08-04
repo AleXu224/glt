@@ -9,6 +9,7 @@
 #include "sizeConstraints.hpp"
 #include "vec2.hpp"
 #include "vector"
+#include "widgets/misc/gestureEnums.hpp"
 #include <optional>
 #include <span>
 #include <unordered_map>
@@ -20,6 +21,19 @@ namespace squi::core {
 	struct App;
 	struct RenderObjectWidget;
 	struct RenderObjectElement;
+
+	struct HitEntry {
+		RenderObject *renderObject = nullptr;
+		InputLevel grantLevel = InputLevel::none;
+		std::optional<float> effectiveDragThreshold{};
+
+		bool canHover = false;
+		bool canScroll = false;
+		bool canFocus = false;
+		bool canDrag = false;
+		bool canClick = false;
+		bool canActivate = false;
+	};
 
 	enum class Size : uint8_t {
 		// Will expand to fill all the available space
@@ -115,6 +129,8 @@ namespace squi::core {
 
 		[[nodiscard]] virtual Rect getHitcheckRect() const;
 
+		virtual bool hitTest(const vec2 &pos, std::vector<HitEntry> &path);
+
 		[[nodiscard]] Sizing getSizing(Axis axis) const {
 			const auto &dim = (axis == Axis::Horizontal) ? width : height;
 			if (std::holds_alternative<float>(dim)) {
@@ -173,6 +189,7 @@ namespace squi::core {
 		void positionContentAt(const Rect &newBounds) override;
 
 		void drawContent() override;
+		bool hitTest(const vec2 &pos, std::vector<HitEntry> &path) override;
 
 		void update() override {
 			if (child) {
@@ -221,6 +238,7 @@ namespace squi::core {
 		void positionContentAt(const Rect &newBounds) override;
 
 		void drawContent() override;
+		bool hitTest(const vec2 &pos, std::vector<HitEntry> &path) override;
 
 		void update() override {
 			for (const auto &child: std::views::reverse(children)) {

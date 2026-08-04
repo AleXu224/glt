@@ -365,4 +365,39 @@ namespace squi::core {
 			child->draw();
 		}
 	}
+
+	bool RenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		if (getHitcheckRect().contains(pos)) {
+			path.push_back(HitEntry{.renderObject = this});
+			return true;
+		}
+		return false;
+	}
+
+	bool SingleChildRenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		bool hit = false;
+		if (child) {
+			hit = child->hitTest(pos, path);
+		}
+		if (getHitcheckRect().contains(pos)) {
+			path.push_back(HitEntry{.renderObject = this});
+			return true;
+		}
+		return hit;
+	}
+
+	bool MultiChildRenderObject::hitTest(const vec2 &pos, std::vector<HitEntry> &path) {
+		bool hit = false;
+		for (auto it = children.rbegin(); it != children.rend(); ++it) {
+			if ((*it)->hitTest(pos, path)) {
+				hit = true;
+				break;
+			}
+		}
+		if (getHitcheckRect().contains(pos)) {
+			path.push_back(HitEntry{.renderObject = this});
+			return true;
+		}
+		return hit;
+	}
 }// namespace squi::core

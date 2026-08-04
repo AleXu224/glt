@@ -26,6 +26,16 @@ namespace squi {
 		repeat = 2
 	};
 
+	enum class InputLevel : uint8_t {
+		none = 0,
+		hover = 1,
+		scroll = 2,
+		focus = 3,
+		drag = 4,
+		click = 5,
+		activate = 6,
+	};
+
 	struct GestureMouseKey {
 		int8_t value;
 		constexpr GestureMouseKey(int8_t v) : value(v) {}

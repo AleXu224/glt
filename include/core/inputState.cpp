@@ -23,6 +23,8 @@ namespace squi::core {
 		g_scrollDelta = vec2{0};
 		g_textInput.clear();
 		g_keys.clear();
+		g_hitPath.clear();
+		g_hitIndex.clear();
 	}
 
 	const vec2 &InputState::getMousePos() const {

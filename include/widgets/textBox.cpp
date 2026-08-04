@@ -134,6 +134,7 @@ namespace squi {
 					.onClick = [this](const Gesture::State &) {
 						updateOverlay();
 					},
+					.requirements = InputLevel::activate,
 					.child = AnimatedBox{
 						.key = targetKey,
 						.widget = widget->widget.withDefaults({

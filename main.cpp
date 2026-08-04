@@ -25,6 +25,7 @@
 #include "widgets/button.hpp"
 #include "widgets/dialog.hpp"
 #include "widgets/fontIcon.hpp"
+#include "widgets/inputPassthrough.hpp"
 #include "widgets/liteFilter.hpp"
 #include "widgets/navigator.hpp"
 #include "widgets/numberBox.hpp"
@@ -712,6 +713,71 @@ struct AnimationsPage : StatefulWidget {
 		}
 	};
 };
+struct InputSystem : StatefulWidget {
+	// Args
+	Key key;
+	Args widget{};
+
+	struct State : WidgetState<InputSystem> {
+		Child build(const Element &element) override {
+			return ScrollView{
+				.children{
+					ScrollView{
+						.widget{
+							.width = 300.f,
+							.height = 200.f,
+						},
+						.children = [&]() {
+							Children ret;
+							for (int i = 0; i < 20; i++) {
+								ret.push_back(Text{.text = "Item " + std::to_string(i + 1)});
+							}
+							return ret;
+						}(),
+					},
+					Button{
+						.onClick = []() {
+							std::println("Parent Button clicked");
+						},
+						.child = Button{
+							.onClick = []() {
+								std::println("Nested Button clicked");
+							},
+							.child = "Nested button",
+						},
+					},
+					Button{
+						.onClick = []() {
+							std::println("Parent Button clicked");
+						},
+						.child = InputPassthrough{
+							.passthrough = InputLevel::click,
+							.child = Button{
+								.onClick = []() {
+									std::println("Nested Button clicked");
+								},
+								.child = "Nested button with InputPassthrough",
+							},
+						},
+					},
+					Column{.children = [&]() {
+						Children ret;
+						for (int i = 0; i < 20; i++) {
+							ret.push_back(Box{
+								.widget{
+									.width = 50.f,
+									.height = 50.f,
+								},
+								.color = Color::fromHSV(static_cast<float>(i) / 20.f, 0.8f, 0.8f),
+							});
+						}
+						return ret;
+					}()},
+				},
+			};
+		}
+	};
+};
 
 int main(int /*unused*/, char ** /*unused*/) {
 
@@ -876,6 +942,10 @@ int main(int /*unused*/, char ** /*unused*/) {
 				TopNav::Page{
 					.name = "Test 3",
 					.content = Test{},
+				},
+				TopNav::Page{
+					.name = "Input System",
+					.content = InputSystem{},
 				},
 			},
 		},

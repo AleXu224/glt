@@ -1,8 +1,10 @@
 #include "widgets/gestureDetector.hpp"
 
 #include "core/app.hpp"
+#include "inputPassthrough.hpp"
 #include "utils.hpp"
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 
 namespace squi {
@@ -90,6 +92,18 @@ namespace squi {
 		return inputState->g_cursorPos;
 	}
 
+	Rect Gesture::DetectorRenderObject::getHitcheckRect() const {
+		if (child) return child->getRect();
+		return getRect();
+	}
+
+	std::optional<float> Gesture::DetectorRenderObject::getEffectiveDragThreshold() const {
+		const auto &widget = *getWidgetAs<Gesture>();
+		if (widget.dragThreshold) return *widget.dragThreshold;
+		if (effectiveDragThreshold) return *effectiveDragThreshold;
+		return std::nullopt;
+	}
+
 	void Gesture::DetectorRenderObject::update() {
 		SingleChildRenderObject::update();
 		auto *app = getApp();
@@ -97,49 +111,68 @@ namespace squi {
 		auto &inputState = app->inputState;
 		auto &widget = static_cast<Gesture &>(*element->widget);
 
-		if (canClick()) {
-			state.scrollDelta = inputState.g_scrollDelta;
+		const auto hitIt = inputState.g_hitIndex.find(this);
+		const bool inPath = hitIt != inputState.g_hitIndex.end();
+		const HitEntry *hit = inPath ? &inputState.g_hitPath[hitIt->second] : nullptr;
 
-			if (!state.hovered && widget.onEnter) widget.onEnter(state);
-			state.hovered = true;
+		const bool hovered = inPath && hit->canHover;
+		if (hovered != state.hovered) {
+			state.hovered = hovered;
+			if (hovered) {
+				if (widget.onEnter) widget.onEnter(state);
+			} else {
+				if (widget.onLeave) widget.onLeave(state);
+			}
+		}
+		state.scrollDelta = hovered && hit->canScroll ? inputState.g_scrollDelta : vec2{0};
 
-			if (inputState.isKey(GestureMouseKey::left, GestureAction::press) && !state.focusedOutside) {
+		if (inputState.isKey(GestureMouseKey::left, GestureAction::press)) {
+			if (inPath && !state.focusedOutside && hit->canFocus) {
 				if (!state.focused) {
 					state.dragStart = inputState.g_cursorPos;
+					state.reachedDragThreshold = false;
 					if (widget.onPress) widget.onPress(state);
 					if (widget.onFocus) widget.onFocus(state);
 				}
 				state.focused = true;
-				if (!state.active && widget.onActive) widget.onActive(state);
-				state.active = true;
-			} else if (inputState.isKey(GestureMouseKey::left, GestureAction::release)) {
-				if (state.focused && !state.focusedOutside) {
+				if (hit->canActivate) {
+					if (!state.active && widget.onActive) widget.onActive(state);
+					state.active = true;
+				} else if (state.active && widget.onInactive) {
+					widget.onInactive(state);
+					state.active = false;
+				}
+				state.dragging = hit->canDrag;
+			} else {
+				if (!state.focused) {
+					if (state.active && widget.onInactive) widget.onInactive(state);
+					state.active = false;
+					state.focusedOutside = true;
+				}
+			}
+		} else if (inputState.isKey(GestureMouseKey::left, GestureAction::release)) {
+			if (state.focused) {
+				const bool canClick = inPath && hit->canClick && !state.reachedDragThreshold;
+				if (canClick) {
 					if (widget.onClick) widget.onClick(state);
 					if (widget.onRelease) widget.onRelease(state);
 				}
-				if (state.focused && widget.onFocusLoss) widget.onFocusLoss(state);
+				if (widget.onFocusLoss) widget.onFocusLoss(state);
 				state.focused = false;
 				state.focusedOutside = false;
-			}
-		} else {
-			state.scrollDelta = vec2{0};
-
-			if (state.hovered && widget.onLeave) widget.onLeave(state);
-			state.hovered = false;
-
-			if (inputState.isKey(GestureMouseKey::left, GestureAction::press) && !state.focused) {
-				state.focusedOutside = true;
-				if (state.active && widget.onInactive) widget.onInactive(state);
-				state.active = false;
-			} else if (inputState.isKey(GestureMouseKey::left, GestureAction::release)) {
-				if (state.focused && widget.onFocusLoss) widget.onFocusLoss(state);
-				state.focused = false;
+				state.dragging = false;
+			} else {
 				state.focusedOutside = false;
 			}
 		}
 
-		if (state.focused && widget.onDrag)
-			widget.onDrag(state);
+		if (state.focused) {
+			if (const auto threshold = getEffectiveDragThreshold()) {
+				const float dragDistance = (inputState.g_cursorPos - state.dragStart).length();
+				if (dragDistance > *threshold) state.reachedDragThreshold = true;
+			}
+			if (widget.onDrag && state.dragging) widget.onDrag(state);
+		}
 
 		if (state.active)
 			state.textInput = inputState.g_textInput;
@@ -157,26 +190,54 @@ namespace squi {
 		state.renderObject = this;
 	}
 
-	bool Gesture::DetectorRenderObject::canClick() const {
-		if (!child) return false;
+	void Gesture::finalizeHitTest(InputState &inputState) {
+		auto &path = inputState.g_hitPath;
+		auto &index = inputState.g_hitIndex;
+		index.clear();
+		index.reserve(path.size());
+		for (const auto &&[i, entry]: path | std::views::enumerate) {
+			index[entry.renderObject] = i;
+		}
 
-		auto *app = getApp();
-		if (!app) return false;
-
-		auto &inputState = app->inputState;
-
-		bool cursorInsideAnotherWidget = false;
-		const bool cursorInsideWidget = child->getRect().contains(inputState.g_cursorPos);
-		const bool cursorInsideActiveArea = inputState.g_activeArea.back().contains(inputState.g_cursorPos);
-		if (cursorInsideWidget && cursorInsideActiveArea) {
-			for (auto &widgetRect: inputState.g_hitCheckRects) {
-				if (widgetRect.contains(inputState.g_cursorPos)) {
-					cursorInsideAnotherWidget = true;
-					break;
-				}
+		InputLevel grantedLevel = InputLevel::none;
+		std::optional<float> activeDragThreshold{};
+		for (auto it = path.rbegin(); it != path.rend(); ++it) {
+			auto &entry = *it;
+			auto *renderObject = entry.renderObject;
+			if (auto *detector = dynamic_cast<DetectorRenderObject *>(renderObject)) {
+				entry.grantLevel = grantedLevel;
+				entry.effectiveDragThreshold = activeDragThreshold;
+				detector->effectiveDragThreshold = activeDragThreshold;
+				grantedLevel = std::max(grantedLevel, detector->getWidgetAs<Gesture>()->requirements);
+			} else if (auto *flags = dynamic_cast<InputPassthrough::InputPassthroughRenderObject *>(renderObject)) {
+				const auto *widget = flags->getWidgetAs<InputPassthrough>();
+				if (widget->override) grantedLevel = *widget->override;
+				grantedLevel = std::max(grantedLevel, widget->passthrough);
+				if (widget->dragThreshold) activeDragThreshold = *widget->dragThreshold;
 			}
 		}
 
-		return (inputState.g_cursorInside && !cursorInsideAnotherWidget && cursorInsideWidget && cursorInsideActiveArea);
+		bool hoverBlocked = false;
+		bool scrollBlocked = false;
+		bool focusBlocked = false;
+		bool dragBlocked = false;
+		bool clickBlocked = false;
+		bool activateBlocked = false;
+		for (auto &entry: path) {
+			auto *detector = dynamic_cast<DetectorRenderObject *>(entry.renderObject);
+			if (!detector) continue;
+			entry.canHover = !hoverBlocked;
+			entry.canScroll = !scrollBlocked;
+			entry.canFocus = !focusBlocked;
+			entry.canDrag = !dragBlocked;
+			entry.canClick = !clickBlocked;
+			entry.canActivate = !activateBlocked;
+			if (entry.grantLevel < InputLevel::hover) hoverBlocked = true;
+			if (entry.grantLevel < InputLevel::scroll) scrollBlocked = true;
+			if (entry.grantLevel < InputLevel::focus) focusBlocked = true;
+			if (entry.grantLevel < InputLevel::drag) dragBlocked = true;
+			if (entry.grantLevel < InputLevel::click) clickBlocked = true;
+			if (entry.grantLevel < InputLevel::activate) activateBlocked = true;
+		}
 	}
 }// namespace squi

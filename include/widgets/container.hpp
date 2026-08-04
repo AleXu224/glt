@@ -29,6 +29,7 @@ namespace squi {
 
 			void init() override;
 			void drawContent() override;
+			bool hitTest(const vec2 &pos, std::vector<HitEntry> &path) override;
 		};
 
 		static std::shared_ptr<RenderObject> createRenderObject();

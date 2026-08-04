@@ -96,6 +96,7 @@ namespace squi {
 					widget->onChange(newValue);
 				}
 			},
+			.requirements = InputLevel::drag,
 			.child = Stack{
 				.widget = newWidget,
 				.children{

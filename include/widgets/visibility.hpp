@@ -28,6 +28,7 @@ namespace squi {
 			}
 
 			void update() override;
+			bool hitTest(const vec2 &pos, std::vector<HitEntry> &path) override;
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override;
 			void positionContentAt(const Rect &newBounds) override;
 			void drawContent() override;

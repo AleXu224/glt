@@ -2,7 +2,7 @@
 
 #include "inputQueue.hpp"
 #include "optional"
-#include "rect.hpp"
+#include "renderObject.hpp"
 #include "unordered_map"
 #include "vec2.hpp"
 #include "vector"
@@ -25,10 +25,10 @@ namespace squi::core {
 		std::unordered_map<GestureMouseKey, KeyState> g_mouseKeys_persistent{};
 		std::string g_textInput{};
 		vec2 g_scrollDelta{0};
-		std::vector<Rect> g_hitCheckRects{};
-		// The area that can be currently interacted with
-		// Take a scrollable for example: the content that is scrolled away is not interactable
-		std::vector<Rect> g_activeArea{};
+		// The ordered render objects under the cursor, deepest first
+		std::vector<HitEntry> g_hitPath{};
+		// RenderObject > g_hitPath indexing
+		std::unordered_map<RenderObject *, size_t> g_hitIndex{};
 		float scale = 1.f;
 		bool g_cursorInside{false};
 

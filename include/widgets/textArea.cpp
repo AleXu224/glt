@@ -25,6 +25,7 @@ namespace squi {
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
+			setState();
 		});
 		selectionObserver = controller.getSelectionObserver([this]() {
 			element->markNeedsReposition();
@@ -52,6 +53,7 @@ namespace squi {
 		textObserver = controller.getTextObserver([this](const std::string &newText) {
 			buffer.regenerateLayout(font, 14.f, element->getApp()->surface.scale);
 			buffer.clampCursors();
+			setState();
 		});
 		selectionObserver = controller.getSelectionObserver([this]() {
 			element->markNeedsReposition();
