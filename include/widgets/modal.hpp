@@ -17,7 +17,7 @@ namespace squi {
 			VoidObserver closeObserver;
 			bool closing = false;
 			Animated<Color> backgroundColor{
-				.from = Color{0.f, 0.f, 0.f, 0.f},
+				.from = Color::transparent,
 				.duration = 200ms,
 			};
 

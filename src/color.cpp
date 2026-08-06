@@ -133,7 +133,6 @@ Color::operator glm::vec4() const {
 	};
 }
 
-// TODO: Add support for transition curves
 Color Color::transition(const Color &other, float t) const {
 	glm::vec4 color1 = *this;
 	glm::vec4 color2 = other;
@@ -151,6 +150,8 @@ Color Color::transition(const Color &other, float t) const {
 	auto newG = color1.y * (1.0f - t) + color2.y * t;
 	auto newB = color1.z * (1.0f - t) + color2.z * t;
 	auto newA = color1.w * (1.0f - t) + color2.w * t;
+
+	if (newA == 0.0f) return {0.0f, 0.0f, 0.0f, 0.0f};
 
 	// Convert back to straight alpha
 	newR /= newA;

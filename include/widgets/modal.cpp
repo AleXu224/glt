@@ -1,4 +1,5 @@
 #include "modal.hpp"
+#include "core/app.hpp"
 #include "navigator.hpp"
 #include "widgets/box.hpp"
 #include "widgets/gestureDetector.hpp"
@@ -28,8 +29,11 @@ namespace squi {
 					.followChild = true,
 					.visible = !closing,
 					.onDismiss = [this]() {
-						if (Navigator::of(*this->element).is(*this->element))
-							Navigator::of(*this->element).popOverlay();
+						auto app = this->element->getApp();
+						std::scoped_lock _{app->taskMtx};
+						app->postUpdateTasks.push_back([elem = this->element->shared_from_this()]() {
+							Navigator::of(*elem).popOverlay();
+						});
 					},
 					.child = widget->child,
 				},
@@ -40,6 +44,7 @@ namespace squi {
 	void Modal::State::observeCloseEvent() {
 		closeObserver = widget->closeEvent.observe([this]() {
 			if (closing) return;
+			if (!Navigator::of(*element).is(*element)) return;
 			setState([&]() {
 				closing = true;
 				backgroundColor = Color::transparent;

@@ -7,6 +7,7 @@
 #include "core/core.hpp"
 #include "core/curve.hpp"
 #include "vec2.hpp"
+#include <algorithm>
 #include <chrono>
 
 namespace squi::core {
@@ -97,7 +98,7 @@ namespace squi::core {
 				return to;
 			}
 			auto t = std::chrono::duration<float>(now - startTime).count() / std::chrono::duration<float>(duration).count();
-			t = curve(t);
+			t = curve(std::clamp(t, 0.f, 1.f));
 			return Animator<T>::getValue(from, to, t);
 		}
 
@@ -111,7 +112,7 @@ namespace squi::core {
 
 			from = getValue();
 			to = newTo;
-			startTime = std::chrono::steady_clock::now();
+			startTime = controller->getFrameStartTime();
 			completedNotified = false;
 			started = true;
 
