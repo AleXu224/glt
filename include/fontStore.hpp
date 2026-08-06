@@ -142,8 +142,16 @@ namespace squi {
 			~Font();
 
 			[[nodiscard]] float getLineHeight(float logicalSize, float scale = 1.f);
+
+			struct FontMetrics {
+				float ascender{};
+				float descender{};
+			};
+
+			[[nodiscard]] FontMetrics getFontMetrics(float logicalSize, float scale = 1.f);
 			[[nodiscard]] std::tuple<float, float> getTextSizeSafe(std::string_view text, float logicalSize, std::optional<float> logicalMaxWidth = {}, float scale = 1.f);
 			[[nodiscard]] TextLayout textLayout(std::string_view text, float logicalSize, std::optional<float> logicalMaxWidth = {}, float scale = 1.f);
+			[[nodiscard]] TextLayout textLayout(std::string_view text, float logicalSize, const vec2 &logicalOrigin, std::optional<float> logicalLineHeight, std::optional<float> logicalMaxWidth, float scale = 1.f);
 			[[nodiscard]] std::tuple<std::vector<std::vector<glt::Engine::TextQuad>>, float, float> generateQuads(std::string_view text, float logicalSize, const vec2 &pos, const Color &color, std::optional<float> logicalMaxWidth = {}, float scale = 1.f);
 			[[nodiscard]] std::shared_ptr<glt::Engine::Texture> getTexture() const;
 			[[nodiscard]] ImageProvider getImageProvider() const;

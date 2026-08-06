@@ -236,7 +236,22 @@ std::tuple<float, float> FontStore::Font::getTextSizeSafe(std::string_view text,
 	return {static_cast<float>(widestLine) / scale, static_cast<float>(static_cast<uint32_t>(lineCount) * lineHeight) / scale};
 }
 
+FontStore::Font::FontMetrics FontStore::Font::getFontMetrics(float logicalSize, float scale) {
+	std::lock_guard lock{fontMtx};
+	if (!face) return {};
+	const float pixelSize = std::round(std::abs(logicalSize) * scale);
+	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(pixelSize));
+	return {
+		.ascender = static_cast<float>(face->size->metrics.ascender >> 6) / scale,
+		.descender = static_cast<float>(face->size->metrics.descender >> 6) / scale,
+	};
+}
+
 TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize, std::optional<float> logicalMaxWidth, float scale) {
+	return textLayout(text, logicalSize, vec2{0.f}, std::nullopt, logicalMaxWidth, scale);
+}
+
+TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize, const vec2 &logicalOrigin, std::optional<float> logicalLineHeight, std::optional<float> logicalMaxWidth, float scale) {
 	std::lock_guard lock{fontMtx};
 	TextLayout result{};
 	if (!face || !loaded) return result;
@@ -249,7 +264,8 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 	}();
 	const float pixelSize = std::round(std::abs(logicalSize) * scale);
 	FT_Set_Pixel_Sizes(face, 0, static_cast<int32_t>(pixelSize));
-	const int32_t lineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	const int32_t faceLineHeight = (face->size->metrics.ascender >> 6) - (face->size->metrics.descender >> 6);
+	const int32_t lineHeight = logicalLineHeight.has_value() ? static_cast<int32_t>(std::round(logicalLineHeight.value() * scale)) : faceLineHeight;
 	result.lineHeight = static_cast<float>(lineHeight) / scale;
 
 	auto &sizeMap = getSizeMap(pixelSize);
@@ -267,6 +283,7 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 
 	int32_t widestLine = 0;
 	int32_t currentLineWidth = 0;
+	int32_t currentLineOriginX = static_cast<int32_t>(std::round(logicalOrigin.x * scale));
 	int32_t currentWordWidth = 0;
 	uint32_t previousCharIndex = 0;
 	uint32_t currentLineIndex = 0;
@@ -289,16 +306,17 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 		for (const auto &qc: currentWordChars) {
 			result.glyphs.push_back({
 				.byteOffset = qc.byteOffset,
-				.x = physicalToLogical(currentLineWidth + qc.offsetX),
+				.x = physicalToLogical(currentLineOriginX + currentLineWidth + qc.offsetX),
 				.advance = physicalToLogical(qc.charInfo.advance),
 				.lineIndex = currentLineIndex,
 			});
 			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
 				.size = physicalVecToLogical(qc.charInfo.size),
 				.offset = physicalVecToLogical(vec2{
-					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
-					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
-				}),
+												   toFloat(currentLineOriginX + currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
+												   toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
+											   })
+							  .withYOffset(logicalOrigin.y),
 				.uvTopLeft = qc.charInfo.uvTopLeft,
 				.uvBottomRight = qc.charInfo.uvBottomRight,
 			});
@@ -311,22 +329,23 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 	const auto pushWhitespaceToLine = [&]() {
 		const uint32_t yOffset = currentLineIndex * lineHeight;
 		auto it = std::lower_bound(currentWordChars.begin(), currentWordChars.end(), ' ', [&](const QuadChar &a, char) {
-			return a.character == ' ' && (a.offsetX + currentLineWidth + a.charInfo.advance) <= maxWidthClamped;
+			return a.character == ' ' && (currentLineOriginX + a.offsetX + currentLineWidth + a.charInfo.advance) <= maxWidthClamped;
 		});
 		int32_t whiteSpaceSize = 0;
 		for (const auto &qc: std::span(currentWordChars.begin(), it)) {
 			result.glyphs.push_back({
 				.byteOffset = qc.byteOffset,
-				.x = physicalToLogical(currentLineWidth + qc.offsetX),
+				.x = physicalToLogical(currentLineOriginX + currentLineWidth + qc.offsetX),
 				.advance = physicalToLogical(qc.charInfo.advance),
 				.lineIndex = currentLineIndex,
 			});
 			result.quads.back().emplace_back(glt::Engine::TextQuad::Args{
 				.size = physicalVecToLogical(qc.charInfo.size),
 				.offset = physicalVecToLogical(vec2{
-					toFloat(currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
-					toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
-				}),
+												   toFloat(currentLineOriginX + currentLineWidth + qc.offsetX) + qc.charInfo.offset.x,
+												   toFloat(static_cast<int32_t>(yOffset) + qc.offsetY) + qc.charInfo.offset.y,
+											   })
+							  .withYOffset(logicalOrigin.y),
 				.uvTopLeft = qc.charInfo.uvTopLeft,
 				.uvBottomRight = qc.charInfo.uvBottomRight,
 			});
@@ -340,9 +359,10 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 		currentWordWidth -= whiteSpaceSize;
 	};
 	const auto startNewLine = [&](std::optional<int64_t> newLineIndex = std::nullopt) {
-		widestLine = std::max(currentLineWidth, widestLine);
+		widestLine = std::max(currentLineOriginX + currentLineWidth, widestLine);
 		result.quads.emplace_back();
 		currentLineWidth = 0;
+		currentLineOriginX = 0;
 		currentLineIndex = static_cast<uint32_t>(result.quads.size() - 1);
 		if (newLineIndex.has_value()) {
 			result.glyphs.emplace_back(TextLayout::Glyph{
@@ -398,7 +418,7 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 		});
 		currentWordWidth += charInfo.advance;
 
-		if (currentLineWidth != 0 && (currentLineWidth + currentWordWidth) > maxWidthClamped) {
+		if ((currentLineOriginX + currentLineWidth) != 0 && (currentLineOriginX + currentLineWidth + currentWordWidth) > maxWidthClamped) {
 			pushWhitespaceToLine();
 			startNewLine();
 		}
@@ -407,9 +427,9 @@ TextLayout FontStore::Font::textLayout(std::string_view text, float logicalSize,
 	}
 	pushWordToLine();
 
-	widestLine = std::max(currentLineWidth, widestLine);
+	widestLine = std::max(currentLineOriginX + currentLineWidth, widestLine);
 	result.widestLine = static_cast<float>(widestLine) / scale;
-	result.totalHeight = static_cast<float>(result.quads.size() * lineHeight) / scale;
+	result.totalHeight = logicalOrigin.y + static_cast<float>(result.quads.size() * lineHeight) / scale;
 
 	return result;
 }

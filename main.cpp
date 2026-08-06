@@ -30,6 +30,7 @@
 #include "widgets/navigator.hpp"
 #include "widgets/numberBox.hpp"
 #include "widgets/offset.hpp"
+#include "widgets/richText.hpp"
 #include "widgets/row.hpp"
 #include "widgets/slideIn.hpp"
 #include "widgets/stack.hpp"
@@ -923,6 +924,40 @@ int main(int /*unused*/, char ** /*unused*/) {
 									.child = "A button inside the expander",
 								},
 								IconButton{},
+							},
+						},
+					},
+				},
+				TopNav::Page{
+					.name = "Test RichText",
+					.content = Container{
+						.widget{
+							.width = 500.f,
+							.padding = Padding{16.f},
+						},
+						.child = Column{
+							.spacing = 12.f,
+							.children{
+								RichText{
+									.text = std::vector<RichText::Span>{
+										RichText::Style{.font = FontStore::defaultIcons, .text = "\uE838"},
+										RichText::Style{.color = Color::orange, .text = "  Orange text "},
+										RichText::Style{.fontSize = 18.f, .font = FontStore::defaultFontBold, .text = "Bigger text"},
+										RichText::Style{.color = Color::green, .text = " green text "},
+										RichText::Style{.color = Color::red, .font = FontStore::defaultFontBold, .text = "Bold red text"},
+										RichText::Style{.text = " some long text that should wrap to the next line when it reaches the end of the container."},
+									},
+									.fontSize = 14.f,
+									.lineWrap = true,
+								},
+								RichText{
+									.text = std::vector<RichText::Span>{
+										"Plain text, ",
+										RichText::Style{.font = FontStore::defaultFontBoldItalic, .text = "bold italic"},
+										", ",
+										RichText::Style{.fontSize = 10.f, .color = Color::gray, .text = "small & dim"},
+									},
+								},
 							},
 						},
 					},
