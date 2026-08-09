@@ -45,16 +45,15 @@ namespace squi::core {
 		scaleMat[1][1] = scale;
 		inst.pushTransform(scaleMat);
 
-		auto &rootScissor = inst.scissorStack.back();
-		const auto savedLogical = rootScissor.logical;
-		rootScissor.logical = Rect::fromPosSize(
+		const auto savedLogical = inst.scissorStack.back().logical;
+		inst.scissorStack.back().logical = Rect::fromPosSize(
 			{0.f, 0.f},
 			{savedLogical.width() / scale, savedLogical.height() / scale}
 		);
 
 		child->draw();
 
-		rootScissor.logical = savedLogical;
+		inst.scissorStack.back().logical = savedLogical;
 		inst.popTransform();
 	}
 
