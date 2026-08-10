@@ -6,7 +6,7 @@ namespace squi {
 	struct Tooltip : StatefulWidget {
 		// Args
 		Key key;
-		std::string text;
+		std::variant<std::string, Child, std::function<Child()>> text;
 		Child child;
 
 		struct State : WidgetState<Tooltip> {

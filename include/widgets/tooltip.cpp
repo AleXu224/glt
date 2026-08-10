@@ -7,13 +7,14 @@
 #include "widgets/slideIn.hpp"
 #include "widgets/text.hpp"
 
+#include "utils.hpp"
 
 namespace squi {
 	struct TooltipBox : StatelessWidget {
 		// Args
 		Key key;
 		Rect bounds;
-		std::string text;
+		std::variant<std::string, Child, std::function<Child()>> text;
 
 		[[nodiscard]] Child build(const Element &) const {
 			return Offset{
@@ -52,11 +53,26 @@ namespace squi {
 						.borderWidth = 1.f,
 						.borderRadius = BorderRadius{4.f},
 						.borderPosition = Box::BorderPosition::outset,
-						.child = Text{
-							.text = text,
-							.lineWrap = true,
-							.color = Color::white,
-						},
+						.child = [&]() -> Child {
+							return std::visit(
+								utils::overloaded{
+									[](const std::string &text) -> Child {
+										return Text{
+											.text = text,
+											.lineWrap = true,
+											.color = Color::white,
+										};
+									},
+									[](const Child &child) -> Child {
+										return child;
+									},
+									[](const std::function<Child()> &childProvider) -> Child {
+										return childProvider();
+									},
+								},
+								text
+							);
+						}(),
 					},
 				},
 			};
