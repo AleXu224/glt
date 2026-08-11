@@ -159,6 +159,7 @@ namespace squi {
 
 	Child RichText::State::build(const Element &) {
 		return LayoutBuilder{
+			.widget = widget->widget,
 			.builder = [this](const BoxConstraints &constraints) -> Child {
 				const auto *w = this->widget;
 				const auto scale = element->getApp()->surface.scale;

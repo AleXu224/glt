@@ -22,12 +22,12 @@ namespace squi {
 
 		struct LayoutBuilderRenderObject : SingleChildRenderObject {
 			vec2 calculateContentSize(BoxConstraints constraints, bool final) override {
-				if (final) {
-					dynamic_cast<Element &>(*element).parentConstraints = constraints;
-					element->rebuild();
-					return SingleChildRenderObject::calculateContentSize(constraints, final);
-				}
-				return {};
+				// if (final) {
+				dynamic_cast<Element &>(*element).parentConstraints = constraints;
+				element->rebuild();
+				return SingleChildRenderObject::calculateContentSize(constraints, final);
+				// }
+				// return {};
 			}
 		};
 

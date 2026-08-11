@@ -13,9 +13,10 @@ namespace squi::core {
 	struct Element;
 	struct Child;
 
+	struct WidgetStateBase;
 
 	using Children = std::vector<Child>;
-    using WidgetPtr = Child;
+	using WidgetPtr = Child;
 	using StatelessWidgetPtr = Child;
 	using StatefulWidgetPtr = Child;
 	using RenderObjectWidgetPtr = Child;

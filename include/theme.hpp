@@ -1,6 +1,7 @@
 #pragma once
 
 #include "color.hpp"
+#include "core/forwards.hpp"
 
 namespace squi {
 	struct Theme {
@@ -8,6 +9,7 @@ namespace squi {
 
 		static Theme of(const core::Element &element);
 		static Theme of(const core::Element *element);
+		static Theme of(const core::WidgetStateBase *state);
 
 		static std::optional<Color> getSystemAccentColor();
 	};

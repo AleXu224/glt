@@ -22,6 +22,7 @@ namespace squi {
 			std::shared_ptr<ScrollViewData> controller{std::make_shared<ScrollViewData>()};
 			Observable<float> scrollUpdater;
 			Observer<float> scrollObserver;
+			VoidObserver contentObserver;
 
 			void initState() override;
 

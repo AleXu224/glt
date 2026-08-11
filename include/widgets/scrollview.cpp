@@ -16,6 +16,12 @@ namespace squi {
 				scroll = clampedScroll;
 			});
 		});
+		contentObserver = controller->onChange.observe([this]() {
+			auto clampedScroll = controller->clampScroll(scroll);
+			setState([&]() {
+				scroll = clampedScroll;
+			});
+		});
 	}
 
 	Child ScrollView::State::build(const Element &) {

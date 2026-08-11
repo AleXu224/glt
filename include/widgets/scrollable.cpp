@@ -87,8 +87,11 @@ namespace squi {
 				break;
 		}
 
-		controller->viewMainAxis = viewMainAxis;
-		controller->contentMainAxis = contentMainAxis;
+		if (controller->viewMainAxis != viewMainAxis || controller->contentMainAxis != contentMainAxis) {
+			controller->viewMainAxis = viewMainAxis;
+			controller->contentMainAxis = contentMainAxis;
+			controller->onChange.notify();
+		}
 	}
 
 	void Scrollable::ScrollableRenderObject::positionContentAt(const Rect &newBounds) {

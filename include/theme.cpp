@@ -24,6 +24,12 @@ namespace squi {
 		assert(element);
 		return of(*element);
 	}
+
+	Theme Theme::of(const core::WidgetStateBase *state) {
+		assert(state);
+		return of(*state->element);
+	}
+
 	std::optional<Color> Theme::getSystemAccentColor() {
 #ifndef _WIN32
 		return std::nullopt;

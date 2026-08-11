@@ -9,7 +9,7 @@ namespace squi {
 		Args widget;
 		Child icon;
 		std::variant<std::string, Child> title;
-		std::string subtitle;
+		std::variant<std::string, Child> subtitle;
 		bool defaultExpanded = false;
 		bool alwaysExpanded = false;
 		Child action;
