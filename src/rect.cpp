@@ -60,3 +60,9 @@ Rect Rect::transformed(const glm::mat4 &m) const {
 	auto size = this->size().rounded();
 	return Rect::fromPosSize(pos, size);
 }
+
+[[nodiscard]] squi::Rect squi::Rect::rounded(float scale) const {
+	auto pos = getTopLeft().rounded(scale);
+	auto size = this->size().rounded(scale);
+	return Rect::fromPosSize(pos, size);
+}

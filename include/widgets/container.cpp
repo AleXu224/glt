@@ -23,8 +23,9 @@ namespace squi {
 	}
 	void Container::ContainerRenderObject::drawContent() {
 		auto *app = this->getApp();
+		auto scale = this->getApp()->surface.scale;
 		if (shouldClipContent) {
-			app->engine.instance.pushScissor(getRect().rounded());
+			app->engine.instance.pushScissor(getRect().rounded(scale));
 		}
 		SingleChildRenderObject::drawContent();
 		if (shouldClipContent) {

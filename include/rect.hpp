@@ -107,6 +107,7 @@ namespace squi {
 		[[nodiscard]] Rect dragInside(Rect other) const;
 
 		[[nodiscard]] Rect rounded() const;
+		[[nodiscard]] Rect rounded(float scale) const;
 
 		bool operator==(const Rect &other) const = default;
 	};
