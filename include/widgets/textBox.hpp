@@ -46,6 +46,7 @@ namespace squi {
 
 			[[nodiscard]] bool isMouseButtonDown();
 
+			void initState() override;
 			void widgetUpdated() override;
 
 			Child build(const Element &) override;

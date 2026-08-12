@@ -46,6 +46,10 @@ namespace squi {
 		}
 		return false;
 	}
+	
+	void TextBox::State::initState() {
+		updateStatus();
+	}
 
 	void TextBox::State::updateOverlay() {
 		if (isMouseButtonDown()) return;
