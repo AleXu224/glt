@@ -17,9 +17,11 @@ namespace squi {
 
 		struct State : WidgetState<Expander> {
 			bool expanded = false;
+			bool expandedVisible = false;
 
 			void initState() override {
 				expanded = widget->alwaysExpanded ? true : widget->defaultExpanded;
+				expandedVisible = widget->alwaysExpanded ? true : widget->defaultExpanded;
 			}
 
 			Child build(const Element &element) override;

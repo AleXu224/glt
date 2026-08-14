@@ -24,7 +24,7 @@ namespace squi {
 					.color = Color::white * 0.0512f,
 					.borderColor = Color::black * 0.1f,
 					.borderWidth = 1.f,
-					.borderRadius = BorderRadius{4.f}.withBottom(expanded ? 0.f : 4.f),
+					.borderRadius = BorderRadius{4.f}.withBottom(expandedVisible ? 0.f : 4.f),
 					.borderPosition = Box::BorderPosition::outset,
 					.child = Row{
 						.widget{
@@ -84,7 +84,12 @@ namespace squi {
 									  .theme = Button::Theme::Subtle(),
 									  .onClick = [this](void) {
 										  setState([this]() {
-											  expanded = !expanded;
+											  if (expanded) {
+												  expandedVisible = false;
+											  } else {
+												  expanded = true;
+												  expandedVisible = true;
+											  }
 										  });
 									  },
 								  }
@@ -95,6 +100,12 @@ namespace squi {
 				expanded//
 					? SlideIn{
 						  .direction = Direction::top,
+						  .visible = expandedVisible,
+						  .onDismiss = [this](void) {
+							  setState([this]() {
+								  expanded = false;
+							  });
+						  },
 						  .child = Box{
 							  .widget{
 								  .height = Size::Shrink,
