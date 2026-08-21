@@ -64,8 +64,15 @@ namespace squi {
 						setState([&]() {
 							selectedIndices.erase(i);
 						});
+						bool newVal = false;
+						if (selectedIndices.empty()) {
+							for (size_t j = 0; j < widget->items.size(); ++j) {
+								selectedIndices.insert(j);
+							}
+							newVal = true;
+						}
 						if (widget->items[i].onUpdate) {
-							widget->items[i].onUpdate(false);
+							widget->items[i].onUpdate(newVal);
 						}
 					} else {
 						// Select this one
@@ -84,6 +91,9 @@ namespace squi {
 
 	core::Child LiteFilter::State::build(const Element &) {
 		return Row{
+			.widget{
+				.width = Size::Wrap,
+			},
 			.crossAxisAlignment = Flex::Alignment::center,
 			.spacing = 4.f,
 			.children = createButtons(),
