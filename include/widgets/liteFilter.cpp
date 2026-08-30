@@ -61,6 +61,7 @@ namespace squi {
 						}
 					} else if (isSelected) {
 						// Deselect this one
+						const auto previouslySelected = selectedIndices;
 						setState([&]() {
 							selectedIndices.erase(i);
 						});
@@ -73,6 +74,13 @@ namespace squi {
 						}
 						if (widget->items[i].onUpdate) {
 							widget->items[i].onUpdate(newVal);
+						}
+						if (newVal) {
+							for (size_t j = 0; j < widget->items.size(); ++j) {
+								if (j != i && !previouslySelected.contains(j) && widget->items[j].onUpdate) {
+									widget->items[j].onUpdate(true);
+								}
+							}
 						}
 					} else {
 						// Select this one

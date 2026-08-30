@@ -7,6 +7,7 @@ namespace squi {
 	struct LiteFilter : StatefulWidget {
 		struct Item {
 			std::string name;
+			bool selected = true;
 			std::function<void(bool)> onUpdate{};
 		};
 
@@ -21,7 +22,9 @@ namespace squi {
 
 			void initState() override {
 				for (size_t i = 0; i < widget->items.size(); ++i) {
-					selectedIndices.insert(i);
+					if (widget->items[i].selected) {
+						selectedIndices.insert(i);
+					}
 				}
 			}
 
