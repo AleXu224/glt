@@ -7,14 +7,6 @@
 
 namespace squi {
 	class Networking {
-		struct ResponseBody {
-			std::string body;
-			uint32_t statusCode;
-			std::unordered_map<std::string, std::string> headers;
-		};
-
-		static ResponseBody parseResponse(std::string_view response);
-
 	public:
 		static inline std::unordered_map<std::string, std::string> defaultHeaders{};
 
@@ -22,7 +14,7 @@ namespace squi {
 			std::string body;
 			uint32_t statusCode = 0;
 			std::unordered_map<std::string, std::string> headers{};
-			bool success;
+			bool success = false;
 			std::string error;
 		};
 

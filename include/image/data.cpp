@@ -26,8 +26,8 @@ squi::ImageData ImageData::fromBytes(unsigned char *bytes, uint32_t length) {
 
 squi::ImageData ImageData::fromUrl(const std::string &url) {
 	auto response = Networking::get(url);
-	if (!response.success) {
-		throw std::runtime_error(std::format("Failed to load image: {}", response.error));
+	if (!response.success || response.statusCode != 200) {
+		throw std::runtime_error(std::format("Failed to load image: '{}', error: '{}' reponse: {}", url, response.error, response.statusCode));
 	}
 	return fromBytes(reinterpret_cast<unsigned char *>(response.body.data()), (uint32_t) response.body.size());
 }
